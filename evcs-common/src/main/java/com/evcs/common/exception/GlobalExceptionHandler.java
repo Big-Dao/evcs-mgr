@@ -72,17 +72,9 @@ public class GlobalExceptionHandler {
     }
     
     /**
-     * 运行时异常处理
-     */
-    @ExceptionHandler(RuntimeException.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-    public Result<Void> handleRuntimeException(RuntimeException e) {
-        log.error("运行时异常", e);
-        return Result.failure(ResultCode.INTERNAL_SERVER_ERROR);
-    }
-    
-    /**
      * 通用异常处理
+     * 注意: 此处理器会捕获所有异常,包括RuntimeException
+     * BusinessException等特定异常会被更具体的处理器优先捕获
      */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)

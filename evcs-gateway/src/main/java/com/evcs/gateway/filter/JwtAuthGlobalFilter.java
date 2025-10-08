@@ -1,6 +1,8 @@
 package com.evcs.gateway.filter;
 
 import com.evcs.common.util.JwtUtil;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -14,6 +16,7 @@ import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -23,6 +26,7 @@ import java.util.UUID;
 public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
 
     private final JwtUtil jwtUtil;
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private static final Set<String> WHITELIST = Set.of(
             "/auth/login",
@@ -38,6 +42,9 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         var request = exchange.getRequest();
         var path = request.getURI().getPath();
+        
+        // Normalize path to prevent path traversal attacks
+        String normalizedPath = normalizePath(path);
 
         // Inject requestId if missing
         final String requestId = request.getHeaders().getFirst("X-Request-Id") != null 
@@ -48,8 +55,10 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
             exchange.getResponse().getHeaders().add("X-Request-Id", requestId);
         }
 
-        // Whitelist pass-through
-        boolean whitelisted = WHITELIST.stream().anyMatch(path::startsWith);
+        // Whitelist pass-through with normalized path
+        boolean whitelisted = WHITELIST.stream().anyMatch(pattern -> 
+            pattern.endsWith("/") ? normalizedPath.startsWith(pattern) : normalizedPath.equals(pattern)
+        );
         if (whitelisted) {
             return chain.filter(exchange);
         }
@@ -77,12 +86,56 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
         return chain.filter(mutated);
     }
 
+    /**
+     * Normalize path to prevent path traversal attacks
+     * Removes /./ and /../ sequences
+     */
+    private String normalizePath(String path) {
+        if (path == null || path.isEmpty()) {
+            return "/";
+        }
+        
+        // Remove leading/trailing whitespace
+        path = path.trim();
+        
+        // Split by / and rebuild path, skipping . and handling ..
+        String[] segments = path.split("/");
+        StringBuilder normalized = new StringBuilder();
+        
+        for (String segment : segments) {
+            if (segment.isEmpty() || ".".equals(segment)) {
+                continue;
+            }
+            if ("..".equals(segment)) {
+                // Remove last segment if exists
+                int lastSlash = normalized.lastIndexOf("/");
+                if (lastSlash > 0) {
+                    normalized.setLength(lastSlash);
+                }
+                continue;
+            }
+            normalized.append("/").append(segment);
+        }
+        
+        return normalized.length() == 0 ? "/" : normalized.toString();
+    }
+
     private Mono<Void> unauthorized(ServerWebExchange exchange, String message) {
         var response = exchange.getResponse();
         response.setStatusCode(HttpStatus.UNAUTHORIZED);
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
-        String body = "{\"code\":401,\"message\":\"" + message + "\"}";
-        var buffer = response.bufferFactory().wrap(body.getBytes(StandardCharsets.UTF_8));
+        
+        // Use ObjectMapper to properly escape JSON
+        Map<String, Object> body = Map.of("code", 401, "message", message);
+        byte[] bytes;
+        try {
+            bytes = objectMapper.writeValueAsBytes(body);
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize error response", e);
+            bytes = "{\"code\":401,\"message\":\"Unauthorized\"}".getBytes(StandardCharsets.UTF_8);
+        }
+        
+        var buffer = response.bufferFactory().wrap(bytes);
         return response.writeWith(Mono.just(buffer));
     }
 
