@@ -237,8 +237,10 @@ JWT Token配置：
 本项目采用MIT许可证，详情请参阅 [LICENSE](LICENSE) 文件。
 
 ## 📚 项目文档
-- 产品需求（PRD）：docs/PRODUCT-REQUIREMENTS.md
-- 技术方案：docs/TECHNICAL-DESIGN.md
-- 路线图与计划：docs/ROADMAP.md
-- 进度与里程碑：docs/PROGRESS.md
-- 变更日志：docs/CHANGELOG.md
+- **架构分析**：[docs/ARCHITECTURE-ANALYSIS.md](docs/ARCHITECTURE-ANALYSIS.md) - 完整架构分析文档 ⭐
+- 产品需求（PRD）：[docs/PRODUCT-REQUIREMENTS.md](docs/PRODUCT-REQUIREMENTS.md)
+- 技术方案：[docs/TECHNICAL-DESIGN.md](docs/TECHNICAL-DESIGN.md)
+- 路线图与计划：[docs/ROADMAP.md](docs/ROADMAP.md)
+- 进度与里程碑：[docs/PROGRESS.md](docs/PROGRESS.md)
+- 变更日志：[docs/CHANGELOG.md](docs/CHANGELOG.md)
+- 多租户隔离详解：[README-TENANT-ISOLATION.md](README-TENANT-ISOLATION.md)
