@@ -4,6 +4,13 @@ plugins {
 
 description = 'Common utilities and shared components'
 
+// Publish test fixtures so other modules can use test base classes
+java {
+    registerFeature('testFixtures') {
+        usingSourceSet(sourceSets.test)
+    }
+}
+
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-web'
     api 'org.springframework.boot:spring-boot-starter-validation'
@@ -21,4 +28,8 @@ dependencies {
     
     // Utilities
     api "cn.hutool:hutool-all:${hutoolVersion}"
+    
+    // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.h2database:h2'
 }
