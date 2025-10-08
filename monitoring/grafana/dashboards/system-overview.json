@@ -1,0 +1,130 @@
+{
+  "dashboard": {
+    "title": "EVCS System Overview",
+    "tags": ["evcs", "system"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Service Health Status",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "up{job=~\"evcs-.*\"}",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "options": {
+          "colorMode": "value",
+          "graphMode": "none",
+          "textMode": "value_and_name"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {"type": "value", "value": "0", "text": "DOWN", "color": "red"},
+              {"type": "value", "value": "1", "text": "UP", "color": "green"}
+            ],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 1, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "title": "QPS (Queries Per Second)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 4},
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{job=~\"evcs-.*\"}[1m])",
+            "legendFormat": "{{job}} - {{uri}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Response Time (P50, P95, P99)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 4},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(http_server_requests_seconds_bucket{job=~\"evcs-.*\"}[5m]))",
+            "legendFormat": "P50 - {{job}}"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{job=~\"evcs-.*\"}[5m]))",
+            "legendFormat": "P95 - {{job}}"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(http_server_requests_seconds_bucket{job=~\"evcs-.*\"}[5m]))",
+            "legendFormat": "P99 - {{job}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Time"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Error Rate (%)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 12},
+        "targets": [
+          {
+            "expr": "rate(http_server_requests_seconds_count{job=~\"evcs-.*\",status=~\"5..\"}[5m]) / rate(http_server_requests_seconds_count{job=~\"evcs-.*\"}[5m]) * 100",
+            "legendFormat": "{{job}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Error Rate"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "name": "High Error Rate",
+          "conditions": [
+            {
+              "evaluator": {"type": "gt", "params": [5]},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "type": "query"
+            }
+          ]
+        }
+      },
+      {
+        "id": 5,
+        "title": "JVM Memory Usage",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 12},
+        "targets": [
+          {
+            "expr": "jvm_memory_used_bytes{job=~\"evcs-.*\",area=\"heap\"}",
+            "legendFormat": "{{job}} - Heap Used"
+          },
+          {
+            "expr": "jvm_memory_max_bytes{job=~\"evcs-.*\",area=\"heap\"}",
+            "legendFormat": "{{job}} - Heap Max"
+          }
+        ],
+        "yaxes": [
+          {"format": "bytes", "label": "Memory"},
+          {"format": "short"}
+        ]
+      }
+    ],
+    "refresh": "30s",
+    "time": {"from": "now-1h", "to": "now"}
+  }
+}

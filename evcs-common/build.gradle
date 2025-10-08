@@ -21,4 +21,32 @@ dependencies {
     
     // Utilities
     api "cn.hutool:hutool-all:${hutoolVersion}"
+    
+    // Logging - JSON format support
+    api "net.logstash.logback:logstash-logback-encoder:${logstashLogbackVersion}"
+    
+    // Resilience4j for circuit breaker
+    api "io.github.resilience4j:resilience4j-spring-boot3:${resilience4jVersion}"
+    api "io.github.resilience4j:resilience4j-circuitbreaker:${resilience4jVersion}"
+    api "io.github.resilience4j:resilience4j-ratelimiter:${resilience4jVersion}"
+    api "io.github.resilience4j:resilience4j-retry:${resilience4jVersion}"
+    api "io.github.resilience4j:resilience4j-timelimiter:${resilience4jVersion}"
+    
+    // Test dependencies - expose to other modules
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+}
+
+// Create a test-jar artifact that other modules can depend on
+configurations {
+    testArtifacts
+}
+
+task testJar(type: Jar) {
+    archiveClassifier = 'tests'
+    from sourceSets.test.output
+}
+
+artifacts {
+    testArtifacts testJar
 }
