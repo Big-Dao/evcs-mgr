@@ -1,5 +1,6 @@
 plugins {
     id 'java-library'
+    id 'java-test-fixtures'
 }
 
 description = 'Common utilities and shared components'
@@ -21,4 +22,9 @@ dependencies {
     
     // Utilities
     api "cn.hutool:hutool-all:${hutoolVersion}"
+    
+    // Test fixtures dependencies
+    testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
+    testFixturesApi "com.baomidou:mybatis-plus-boot-starter:${mybatisPlusVersion}"
+    testFixturesApi 'com.h2database:h2:2.2.224'
 }
