@@ -22,3 +22,17 @@ dependencies {
     // Utilities
     api "cn.hutool:hutool-all:${hutoolVersion}"
 }
+
+// Make test classes available to other modules
+configurations {
+    testArtifacts
+}
+
+task testJar(type: Jar) {
+    archiveClassifier = 'test'
+    from sourceSets.test.output
+}
+
+artifacts {
+    testArtifacts testJar
+}

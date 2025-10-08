@@ -24,4 +24,9 @@ dependencies {
     implementation 'io.micrometer:micrometer-registry-prometheus'
 
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
+    
+    // Test dependencies
+    testImplementation project(':evcs-common')
+    testImplementation(project(path: ':evcs-common', configuration: 'testArtifacts'))
+    testImplementation 'com.h2database:h2'
 }
