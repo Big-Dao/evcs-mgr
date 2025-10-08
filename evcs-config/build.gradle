@@ -1,0 +1,16 @@
+plugins {
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+    id 'com.palantir.docker'
+}
+
+description = 'Configuration Center Service'
+
+dependencies {
+    implementation project(':evcs-common')
+    implementation 'org.springframework.cloud:spring-cloud-config-server'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    
+    // Git repository support
+    implementation 'org.eclipse.jgit:org.eclipse.jgit'
+}

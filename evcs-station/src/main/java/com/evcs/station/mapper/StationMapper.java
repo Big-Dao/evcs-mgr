@@ -1,0 +1,95 @@
+package com.evcs.station.mapper;
+
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.evcs.station.entity.Station;
+import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
+
+import java.util.List;
+
+/**
+ * 充电站数据访问接口
+ */
+@Mapper
+public interface StationMapper extends BaseMapper<Station> {
+
+    /**
+     * 分页查询充电站列表（包含统计信息）
+     */
+    @Select("""
+        SELECT s.*, 
+               COALESCE(c.total_chargers, 0) as totalChargers,
+               COALESCE(c.available_chargers, 0) as availableChargers,
+               COALESCE(c.charging_chargers, 0) as chargingChargers,
+               COALESCE(c.fault_chargers, 0) as faultChargers
+        FROM charging_station s
+        LEFT JOIN (
+            SELECT station_id,
+                   COUNT(*) as total_chargers,
+                   COUNT(CASE WHEN status = 1 THEN 1 END) as available_chargers,
+                   COUNT(CASE WHEN status = 2 THEN 1 END) as charging_chargers,
+                   COUNT(CASE WHEN status = 3 THEN 1 END) as fault_chargers
+            FROM charger 
+            WHERE deleted = 0
+            GROUP BY station_id
+        ) c ON s.station_id = c.station_id
+        ${ew.customSqlSegment}
+        """ )
+    IPage<Station> selectStationPageWithStats(Page<Station> page, @Param("ew") com.baomidou.mybatisplus.core.conditions.Wrapper<Station> wrapper);
+
+    /**
+     * 根据位置查询附近充电站
+     */
+    @Select("""
+        SELECT *, 
+               (6371 * acos(cos(radians(#{latitude})) * cos(radians(latitude)) * 
+                cos(radians(longitude) - radians(#{longitude})) + 
+                sin(radians(#{latitude})) * sin(radians(latitude)))) AS distance
+        FROM charging_station 
+        WHERE deleted = 0 AND status = 1
+          AND (6371 * acos(cos(radians(#{latitude})) * cos(radians(latitude)) * 
+                cos(radians(longitude) - radians(#{longitude})) + 
+                sin(radians(#{latitude})) * sin(radians(latitude)))) <= #{radius}
+        ORDER BY distance
+        LIMIT #{limit}
+        """)
+    List<Station> selectNearbyStations(@Param("latitude") Double latitude, 
+                                     @Param("longitude") Double longitude,
+                                     @Param("radius") Double radius,
+                                     @Param("limit") Integer limit);
+
+    /**
+     * 统计租户下的充电站数量
+     */
+    @Select("SELECT COUNT(*) FROM charging_station WHERE tenant_id = #{tenantId} AND deleted = 0")
+    Long countByTenantId(@Param("tenantId") Long tenantId);
+
+    /**
+     * 查询充电站详情（包含充电桩信息）
+     */
+    @Select("""
+        SELECT s.*, 
+               COALESCE(stats.total_chargers, 0) as totalChargers,
+               COALESCE(stats.available_chargers, 0) as availableChargers,
+               COALESCE(stats.charging_chargers, 0) as chargingChargers,
+               COALESCE(stats.fault_chargers, 0) as faultChargers,
+               COALESCE(stats.total_power, 0) as totalPower
+        FROM charging_station s
+        LEFT JOIN (
+            SELECT station_id,
+                   COUNT(*) as total_chargers,
+                   COUNT(CASE WHEN status = 1 THEN 1 END) as available_chargers,
+                   COUNT(CASE WHEN status = 2 THEN 1 END) as charging_chargers,
+                   COUNT(CASE WHEN status = 3 THEN 1 END) as fault_chargers,
+                   SUM(rated_power) as total_power
+            FROM charger 
+            WHERE deleted = 0
+            GROUP BY station_id
+        ) stats ON s.station_id = stats.station_id
+        WHERE s.station_id = #{stationId} AND s.deleted = 0
+        """)
+    Station selectStationWithStats(@Param("stationId") Long stationId);
+}

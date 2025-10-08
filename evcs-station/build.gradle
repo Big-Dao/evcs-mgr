@@ -1,0 +1,45 @@
+plugins {
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+    id 'com.palantir.docker'
+}
+
+description = 'Charging Station and Charger Management Service'
+
+dependencies {
+    implementation project(':evcs-common')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-websocket'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    implementation 'org.springframework.boot:spring-boot-starter-amqp'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    
+    // Database and ORM
+    implementation "org.postgresql:postgresql:${postgresqlVersion}"
+    implementation "com.baomidou:mybatis-plus-boot-starter:${mybatisPlusVersion}"
+    implementation 'org.mybatis:mybatis-spring:3.0.3'
+    implementation 'com.zaxxer:HikariCP'
+    
+    // Utilities
+    implementation "cn.hutool:hutool-all:${hutoolVersion}"
+    implementation 'org.apache.commons:commons-lang3'
+    
+    // API Documentation
+    implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
+    
+    // Protocol module
+    implementation project(":evcs-protocol")
+    // Order module - 注释掉以避免循环依赖，使用API调用替代
+    // implementation project(":evcs-order")
+    
+    // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testImplementation 'com.h2database:h2'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.testcontainers:junit-jupiter'
+}

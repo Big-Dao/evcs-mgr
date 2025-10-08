@@ -1,0 +1,17 @@
+package com.evcs.tenant;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
+
+/**
+ * 租户服务启动类
+ */
+@SpringBootApplication(scanBasePackages = "com.evcs")
+@EnableDiscoveryClient
+public class TenantServiceApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(TenantServiceApplication.class, args);
+    }
+}

@@ -1,0 +1,29 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: evcs-gateway
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=X-Request-Id RETAIN_UNIQUE
+      routes:
+        - id: evcs-auth
+          uri: http://localhost:8081
+          predicates:
+            - Path=/auth/**
+        - id: evcs-station
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/station/**
+    loadbalancer:
+      retry:
+        enabled: true
+
+# Unified logging pattern with requestId if present
+logging:
+  level:
+    org.springframework.cloud.gateway: info
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{X-Request-Id}] %logger{36} - %msg%n"

@@ -1,0 +1,26 @@
+pluginManagement {
+	repositories {
+		maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
+		maven { url 'https://maven.aliyun.com/repository/public' }
+		maven { url 'https://repo1.maven.org/maven2' }
+		gradlePluginPortal()
+	}
+}
+
+plugins {
+    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+}
+
+rootProject.name = 'evcs-mgr'
+
+include 'evcs-common'
+include 'evcs-gateway'
+include 'evcs-auth'
+include 'evcs-tenant'
+include 'evcs-station'
+include 'evcs-order'
+include 'evcs-payment'
+include 'evcs-protocol'
+include 'evcs-monitoring'
+include 'evcs-integration'
+include 'evcs-config'

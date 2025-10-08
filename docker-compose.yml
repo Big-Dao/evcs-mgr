@@ -1,0 +1,178 @@
+version: '3.8'
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: evcs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evcs_db
+      POSTGRES_USER: evcs_user
+      POSTGRES_PASSWORD: evcs_password
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - evcs-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: evcs-redis
+    restart: unless-stopped
+    command: redis-server --requirepass evcs_redis_password
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - evcs-network
+
+  # RabbitMQ消息队列
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: evcs-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: evcs_user
+      RABBITMQ_DEFAULT_PASS: evcs_password
+      TZ: Asia/Shanghai
+    ports:
+      - "5672:5672"   # AMQP端口
+      - "15672:15672" # 管理界面端口
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - evcs-network
+
+  # Eureka服务注册中心
+  eureka:
+    image: openjdk:21-jre-slim
+    container_name: evcs-eureka
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      JAVA_OPTS: "-Xms512m -Xmx512m"
+    networks:
+      - evcs-network
+    # 注意：实际部署时需要构建eureka镜像
+
+  # 配置中心
+  config-server:
+    image: openjdk:21-jre-slim
+    container_name: evcs-config
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka/
+    depends_on:
+      - eureka
+    networks:
+      - evcs-network
+
+  # API网关
+  gateway:
+    image: openjdk:21-jre-slim
+    container_name: evcs-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PASSWORD: evcs_redis_password
+    depends_on:
+      - eureka
+      - redis
+    networks:
+      - evcs-network
+
+  # 认证服务
+  auth-service:
+    image: openjdk:21-jre-slim
+    container_name: evcs-auth
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/evcs_db
+      SPRING_DATASOURCE_USERNAME: evcs_user
+      SPRING_DATASOURCE_PASSWORD: evcs_password
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PASSWORD: evcs_redis_password
+    depends_on:
+      - eureka
+      - postgres
+      - redis
+    networks:
+      - evcs-network
+
+  # 租户服务
+  tenant-service:
+    image: openjdk:21-jre-slim
+    container_name: evcs-tenant
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/evcs_db
+      SPRING_DATASOURCE_USERNAME: evcs_user
+      SPRING_DATASOURCE_PASSWORD: evcs_password
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PASSWORD: evcs_redis_password
+    depends_on:
+      - eureka
+      - postgres
+      - redis
+    networks:
+      - evcs-network
+
+  # 充电站服务
+  station-service:
+    image: openjdk:21-jre-slim
+    container_name: evcs-station
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: http://eureka:8761/eureka/
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/evcs_db
+      SPRING_DATASOURCE_USERNAME: evcs_user
+      SPRING_DATASOURCE_PASSWORD: evcs_password
+      SPRING_REDIS_HOST: redis
+      SPRING_REDIS_PASSWORD: evcs_redis_password
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_RABBITMQ_USERNAME: evcs_user
+      SPRING_RABBITMQ_PASSWORD: evcs_password
+    depends_on:
+      - eureka
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - evcs-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  evcs-network:
+    driver: bridge

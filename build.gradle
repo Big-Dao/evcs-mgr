@@ -1,0 +1,106 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.2' apply false
+    id 'io.spring.dependency-management' version '1.1.4' apply false
+    id 'com.palantir.docker' version '0.35.0' apply false
+}
+
+group = 'com.evcs'
+version = '1.0.0'
+
+repositories {
+    maven { url 'https://maven.aliyun.com/repository/public' }
+    maven { url 'https://maven.aliyun.com/repository/central' }
+    maven { url 'https://repo1.maven.org/maven2' }
+    mavenCentral()
+}
+
+// Java版本配置
+allprojects {
+    apply plugin: 'java'
+    
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+    
+    repositories {
+        maven { url 'https://maven.aliyun.com/repository/public' }
+        maven { url 'https://maven.aliyun.com/repository/central' }
+        maven { url 'https://repo1.maven.org/maven2' }
+        mavenCentral()
+    }
+}
+
+// 子项目通用配置
+subprojects {
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+    
+    group = rootProject.group
+    version = rootProject.version
+    
+    // 依赖版本管理
+    ext {
+        springCloudVersion = '2023.0.0'
+        postgresqlVersion = '42.7.1'
+        redisVersion = '5.0.1'
+        jwtVersion = '4.4.0'
+        mybatisPlusVersion = '3.5.6'
+        fastjson2Version = '2.0.45'
+        hutoolVersion = '5.8.25'
+        knife4jVersion = '4.4.0'
+    }
+    
+    dependencyManagement {
+        imports {
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+        }
+    }
+    
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter'
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+        
+        // Lombok
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+        testCompileOnly 'org.projectlombok:lombok'
+        testAnnotationProcessor 'org.projectlombok:lombok'
+    }
+    
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
+    
+    // 编译配置
+    tasks.withType(JavaCompile) {
+        options.encoding = 'UTF-8'
+    }
+    
+    def hasBootApplication = fileTree('src/main/java') {
+        include '**/*Application.java'
+    }.files
+    
+    tasks.named('bootJar') {
+        enabled = !hasBootApplication.isEmpty()
+    }
+    tasks.named('jar') {
+        enabled = hasBootApplication.isEmpty()
+    }
+}
+
+// Docker构建配置
+configure(subprojects.findAll { !it.name.endsWith('-common') }) {
+    apply plugin: 'com.palantir.docker'
+    
+    def registryHost = 'registry.cn-hangzhou.aliyuncs.com'
+
+    docker {
+        name "${registryHost}/${project.group}/${project.name}:${project.version}"
+        dockerfile file('Dockerfile')
+        files bootJar.archiveFile
+        buildArgs(['JAR_FILE': "${bootJar.archiveFileName}"])
+        tag 'latest', "${registryHost}/${project.group}/${project.name}:latest"
+    }
+}

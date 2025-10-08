@@ -1,0 +1,166 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Gradle daemon log
+gradle-app.setting
+
+# Gradle cache
+.gradletasknamecache
+
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Compiled class files
+**/build/classes/
+**/build/generated/
+**/build/resources/
+**/build/tmp/
+**/build/libs/
+**/build/distributions/
+**/build/resolvedMainClassName
+
+# Package Files
+*.zip
+*.tar.gz
+*.rar
+
+# Log files
+*.log
+logs/
+**/logs/
+
+# IDE - IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# IDE - Eclipse
+.classpath
+.project
+.settings/
+*.launch
+.metadata/
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+
+# IDE - VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# IDE - NetBeans
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Docker
+docker-compose.override.yml
+.env
+.env.local
+.env.*.local
+
+# Application specific
+**/application-local.yml
+**/application-dev.yml
+**/application-prod.yml
+application-secrets.yml
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Redis
+dump.rdb
+
+# Maven (if used alongside Gradle)
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# Node (if frontend is added later)
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Temporary files
+*.tmp
+*.temp
+*.cache
+
+# Spring Boot
+spring-shell.log
+
+# JVM crash logs
+hs_err_pid*.log
+
+# Test coverage reports
+.jacoco/
+*.exec
+
+# Documentation build
+**/build/docs/
+
+# Sensitive files
+**/*.key
+**/*.pem
+**/*.p12
+**/*.keystore
+**/*.jks
+**/secrets/
+**/credentials/
