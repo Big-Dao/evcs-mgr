@@ -1,0 +1,68 @@
+# evcs-order 模块测试配置
+spring:
+  application:
+    name: evcs-order-test
+
+  main:
+    allow-bean-definition-overriding: true
+
+  # 禁用不必要的组件
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
+      - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+
+  # 使用内存数据库
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:order_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password: 
+
+  sql:
+    init:
+      mode: always
+      # schema-locations: classpath:schema-h2.sql
+
+eureka:
+  client:
+    enabled: false
+
+# MyBatis Plus配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 日志配置
+logging:
+  level:
+    com.evcs.order: debug
+    org.springframework.test: warn
+
+# 多租户配置
+evcs:
+  tenant:
+    enabled: true
+    tenant-id-column: tenant_id
+    ignore-tables:
+      - sys_tenant
+      - sys_user
+      - sys_role
+    default-tenant-id: 1
