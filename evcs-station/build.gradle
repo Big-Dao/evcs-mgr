@@ -42,4 +42,5 @@ dependencies {
     testImplementation 'com.h2database:h2'
     testImplementation 'org.testcontainers:postgresql'
     testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation(testFixtures(project(':evcs-common')))
 }
