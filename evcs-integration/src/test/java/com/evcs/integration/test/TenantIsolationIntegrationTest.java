@@ -63,26 +63,26 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
 
         // 租户2不能访问租户1的数据
         runAsTenant(2L, () -> {
-            Station station = stationService.getStationById(stationIdTenant1);
+            Station station = stationService.getById(stationIdTenant1);
             assertTenantIsolation(station, "租户2不应该能访问租户1的充电站");
         });
 
         // 租户1不能访问租户2的数据
         runAsTenant(1L, () -> {
-            Station station = stationService.getStationById(stationIdTenant2);
+            Station station = stationService.getById(stationIdTenant2);
             assertTenantIsolation(station, "租户1不应该能访问租户2的充电站");
         });
 
         // 租户1可以访问自己的数据
         runAsTenant(1L, () -> {
-            Station station = stationService.getStationById(stationIdTenant1);
+            Station station = stationService.getById(stationIdTenant1);
             assertNotNull(station, "租户1应该能访问自己的充电站");
             assertEquals("租户1的充电站", station.getStationName());
         });
 
         // 租户2可以访问自己的数据
         runAsTenant(2L, () -> {
-            Station station = stationService.getStationById(stationIdTenant2);
+            Station station = stationService.getById(stationIdTenant2);
             assertNotNull(station, "租户2应该能访问自己的充电站");
             assertEquals("租户2的充电站", station.getStationName());
         });
@@ -190,7 +190,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
             assertTenantContext(2L, "租户上下文应该已切换到租户2");
             
             // 尝试访问租户1的数据
-            Station station = stationService.getStationById(stationId1);
+            Station station = stationService.getById(stationId1);
             assertNull(station, "在租户2的上下文中不应该能访问租户1的数据");
         });
 
@@ -200,7 +200,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
             assertTenantContext(1L, "租户上下文应该已切换回租户1");
             
             // 验证可以访问自己的数据
-            Station station = stationService.getStationById(stationId1);
+            Station station = stationService.getById(stationId1);
             assertNotNull(station, "在租户1的上下文中应该能访问自己的数据");
             assertEquals("切换测试-租户1", station.getStationName());
         });
@@ -239,7 +239,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
 
         // 验证租户1只能查询到自己的数据
         runAsTenant(1L, () -> {
-            var stations = stationService.listStations();
+            var stations = stationService.list();
             assertNotNull(stations, "应该能查询到充电站列表");
             // 至少有3个（因为可能有之前测试创建的数据）
             assertTrue(stations.size() >= 3, "租户1应该至少能查到3个自己的充电站");
@@ -249,7 +249,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
 
         // 验证租户2只能查询到自己的数据
         runAsTenant(2L, () -> {
-            var stations = stationService.listStations();
+            var stations = stationService.list();
             assertNotNull(stations, "应该能查询到充电站列表");
             // 至少有2个
             assertTrue(stations.size() >= 2, "租户2应该至少能查到2个自己的充电站");

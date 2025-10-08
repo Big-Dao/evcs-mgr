@@ -74,16 +74,16 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         assertTrue(charger2Saved, "充电桩2应该保存成功");
 
         // 4. 验证可以查询到充电站及其充电桩
-        Station retrievedStation = stationService.getStationById(station.getStationId());
+        Station retrievedStation = stationService.getById(station.getStationId());
         assertNotNull(retrievedStation, "应该能查询到充电站");
         assertEquals(station.getStationCode(), retrievedStation.getStationCode());
 
         // 5. 验证充电桩属于该充电站
-        Charger retrievedCharger1 = chargerService.getChargerById(charger1.getChargerId());
+        Charger retrievedCharger1 = chargerService.getById(charger1.getChargerId());
         assertNotNull(retrievedCharger1, "应该能查询到充电桩1");
         assertEquals(station.getStationId(), retrievedCharger1.getStationId(), "充电桩1应该属于创建的充电站");
 
-        Charger retrievedCharger2 = chargerService.getChargerById(charger2.getChargerId());
+        Charger retrievedCharger2 = chargerService.getById(charger2.getChargerId());
         assertNotNull(retrievedCharger2, "应该能查询到充电桩2");
         assertEquals(station.getStationId(), retrievedCharger2.getStationId(), "充电桩2应该属于创建的充电站");
     }
@@ -104,13 +104,13 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         assertNotNull(station.getStationId());
 
         // 2. 更新充电站状态为维护中
-        Station updateStation = stationService.getStationById(station.getStationId());
+        Station updateStation = stationService.getById(station.getStationId());
         updateStation.setStatus(2); // 维护中
         boolean updated = stationService.updateStation(updateStation);
         assertTrue(updated, "充电站状态应该更新成功");
 
         // 3. 验证状态已更新
-        Station verifyStation = stationService.getStationById(station.getStationId());
+        Station verifyStation = stationService.getById(station.getStationId());
         assertEquals(2, verifyStation.getStatus(), "充电站状态应该是维护中");
 
         // 4. 再次更新为停止运营
@@ -119,7 +119,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         assertTrue(updated, "充电站状态应该更新成功");
 
         // 5. 最终验证
-        Station finalStation = stationService.getStationById(station.getStationId());
+        Station finalStation = stationService.getById(station.getStationId());
         assertEquals(0, finalStation.getStatus(), "充电站状态应该是停止运营");
     }
 
@@ -150,13 +150,13 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         assertNotNull(charger.getChargerId());
 
         // 3. 模拟充电流程：空闲 -> 充电中
-        Charger updateCharger = chargerService.getChargerById(charger.getChargerId());
+        Charger updateCharger = chargerService.getById(charger.getChargerId());
         updateCharger.setStatus(2); // 充电中
         boolean updated = chargerService.updateCharger(updateCharger);
         assertTrue(updated, "充电桩状态应该更新为充电中");
 
         // 4. 验证状态
-        Charger chargingCharger = chargerService.getChargerById(charger.getChargerId());
+        Charger chargingCharger = chargerService.getById(charger.getChargerId());
         assertEquals(2, chargingCharger.getStatus(), "充电桩应该处于充电中状态");
 
         // 5. 充电完成：充电中 -> 空闲
@@ -165,7 +165,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         assertTrue(updated, "充电桩状态应该恢复为空闲");
 
         // 6. 最终验证
-        Charger finalCharger = chargerService.getChargerById(charger.getChargerId());
+        Charger finalCharger = chargerService.getById(charger.getChargerId());
         assertEquals(1, finalCharger.getStatus(), "充电桩应该恢复空闲状态");
     }
 
@@ -201,7 +201,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         assertTrue(chargerDeleted, "充电桩应该删除成功");
 
         // 4. 验证充电桩已删除（使用软删除，查询不到）
-        Charger deletedCharger = chargerService.getChargerById(chargerId);
+        Charger deletedCharger = chargerService.getById(chargerId);
         assertNull(deletedCharger, "删除后应该查询不到充电桩");
 
         // 5. 删除充电站
@@ -209,7 +209,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         assertTrue(stationDeleted, "充电站应该删除成功");
 
         // 6. 验证充电站已删除
-        Station deletedStation = stationService.getStationById(stationId);
+        Station deletedStation = stationService.getById(stationId);
         assertNull(deletedStation, "删除后应该查询不到充电站");
     }
 }

@@ -67,15 +67,15 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
     void testInvalidParameterException() {
         // 测试空值参数
         assertThrows(Exception.class, () -> {
-            stationService.getStationById(null);
+            stationService.getById(null);
         }, "传入null ID应该抛出异常");
 
         // 测试负数ID
-        Station station = stationService.getStationById(-1L);
+        Station station = stationService.getById(-1L);
         assertNull(station, "负数ID应该查询不到数据");
 
         // 测试不存在的ID
-        Station notExist = stationService.getStationById(999999999L);
+        Station notExist = stationService.getById(999999999L);
         assertNull(notExist, "不存在的ID应该查询不到数据");
     }
 
@@ -112,7 +112,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
             boolean deleted = stationService.deleteStation(station.getStationId());
             if (deleted) {
                 // 如果删除成功，验证充电桩也被删除了（级联删除）
-                Charger deletedCharger = chargerService.getChargerById(charger.getChargerId());
+                Charger deletedCharger = chargerService.getById(charger.getChargerId());
                 assertNull(deletedCharger, "充电桩应该被级联删除");
             }
         } catch (Exception e) {
@@ -164,7 +164,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         Thread thread1 = new Thread(() -> {
             try {
                 setupTenantContext();
-                Station s1 = stationService.getStationById(stationId);
+                Station s1 = stationService.getById(stationId);
                 s1.setStationName("线程1修改");
                 Thread.sleep(50); // 模拟一些处理时间
                 thread1Success[0] = stationService.updateStation(s1);
@@ -178,7 +178,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         Thread thread2 = new Thread(() -> {
             try {
                 setupTenantContext();
-                Station s2 = stationService.getStationById(stationId);
+                Station s2 = stationService.getById(stationId);
                 s2.setStationName("线程2修改");
                 Thread.sleep(50); // 模拟一些处理时间
                 thread2Success[0] = stationService.updateStation(s2);
@@ -199,7 +199,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         
         // 验证最终状态
         setupTenantContext();
-        Station finalStation = stationService.getStationById(stationId);
+        Station finalStation = stationService.getById(stationId);
         assertNotNull(finalStation, "最终应该能查询到充电站");
         assertTrue(finalStation.getStationName().contains("修改"), "名称应该被修改");
         clearTenantContext();
@@ -249,7 +249,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         try {
             stationService.saveStation(station);
             // 如果保存成功，验证数据是否被截断
-            Station saved = stationService.getStationById(station.getStationId());
+            Station saved = stationService.getById(station.getStationId());
             if (saved != null) {
                 assertTrue(saved.getAddress().length() <= 500, "地址应该被截断到合理长度");
             }
@@ -294,12 +294,12 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         // 测试业务规则：例如，不允许将充电站状态直接从运营中(1)改为删除(3)
         // 注意：具体业务规则需要根据实际实现来测试
         try {
-            Station updateStation = stationService.getStationById(station.getStationId());
+            Station updateStation = stationService.getById(station.getStationId());
             updateStation.setStatus(3); // 假设3是一个无效状态
             stationService.updateStation(updateStation);
             
             // 如果没有抛出异常，验证状态是否正确
-            Station verifyStation = stationService.getStationById(station.getStationId());
+            Station verifyStation = stationService.getById(station.getStationId());
             // 根据业务规则验证
         } catch (BusinessException e) {
             // 预期的业务异常
