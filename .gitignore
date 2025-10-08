@@ -1,4 +1,20 @@
 # ============================================
+# EVCS Manager - .gitignore Configuration
+# ============================================
+# This file specifies intentionally untracked files to ignore.
+# Configured for: Gradle, Java 21, Spring Boot, Docker, Multi-IDE support
+#
+# Key features:
+# - Excludes build artifacts and compiled files
+# - Preserves Gradle wrapper JAR (required for builds)
+# - Supports IntelliJ IDEA, Eclipse, VS Code, NetBeans
+# - Ignores sensitive configuration and secrets
+# - Platform-agnostic (Windows, macOS, Linux)
+#
+# Last updated: 2025-10-08
+# ============================================
+
+# ============================================
 # Gradle Build System
 # ============================================
 .gradle/
