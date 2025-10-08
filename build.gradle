@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.2.2' apply false
     id 'io.spring.dependency-management' version '1.1.4' apply false
     id 'com.palantir.docker' version '0.35.0' apply false
+    id 'jacoco' // 代码覆盖率
 }
 
 group = 'com.evcs'
@@ -36,6 +37,7 @@ allprojects {
 subprojects {
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'jacoco'
     
     group = rootProject.group
     version = rootProject.version
@@ -71,6 +73,53 @@ subprojects {
     
     tasks.named('test') {
         useJUnitPlatform()
+        
+        // 测试失败后继续执行其他测试
+        ignoreFailures = false
+        
+        // 显示测试输出
+        testLogging {
+            events "passed", "skipped", "failed"
+            exceptionFormat "full"
+            showStandardStreams = false
+        }
+        
+        // 生成测试报告
+        finalizedBy jacocoTestReport
+    }
+    
+    // JaCoCo测试覆盖率报告配置
+    jacocoTestReport {
+        dependsOn test
+        
+        reports {
+            xml.required = true
+            html.required = true
+            html.outputLocation = file("${buildDir}/reports/jacoco")
+        }
+        
+        afterEvaluate {
+            classDirectories.setFrom(files(classDirectories.files.collect {
+                fileTree(dir: it, exclude: [
+                    '**/entity/**',
+                    '**/dto/**',
+                    '**/vo/**',
+                    '**/*Application.class'
+                ])
+            }))
+        }
+    }
+    
+    // JaCoCo覆盖率验证
+    jacocoTestCoverageVerification {
+        violationRules {
+            rule {
+                enabled = false // 暂时禁用，项目成熟后可启用
+                limit {
+                    minimum = 0.60 // 60%覆盖率
+                }
+            }
+        }
     }
     
     // 编译配置
