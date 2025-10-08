@@ -62,8 +62,13 @@ public class AuthController {
     @Operation(summary = "获取用户信息", description = "获取当前登录用户的详细信息")
     @GetMapping("/userinfo")
     public Result<LoginResponse.UserInfo> getUserInfo(HttpServletRequest request) {
-        // TODO: 实现获取当前用户信息逻辑
-        return Result.success("获取成功", null);
+        String token = extractToken(request);
+        if (token == null) {
+            return Result.error("未提供访问令牌");
+        }
+        
+        LoginResponse.UserInfo userInfo = userService.getUserInfoFromToken(token);
+        return Result.success("获取成功", userInfo);
     }
     
     /**

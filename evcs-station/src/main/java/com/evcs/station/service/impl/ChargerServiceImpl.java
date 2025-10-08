@@ -8,12 +8,15 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.station.entity.Charger;
+import com.evcs.station.event.ChargingStartEvent;
+import com.evcs.station.event.ChargingStopEvent;
 import com.evcs.protocol.api.IOCPPProtocolService;
 import com.evcs.protocol.api.ICloudChargeProtocolService;
 import com.evcs.station.mapper.ChargerMapper;
 import com.evcs.station.service.IChargerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,8 +34,7 @@ import java.util.stream.Collectors;
 public class ChargerServiceImpl extends ServiceImpl<ChargerMapper, Charger> implements IChargerService {
     private final IOCPPProtocolService ocppService;
     private final ICloudChargeProtocolService cloudService;
-    // 注释掉订单服务依赖以避免循环依赖，后续使用事件或REST API调用
-    // private final IChargingOrderService orderService;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 分页查询充电桩列表
@@ -211,8 +213,12 @@ public class ChargerServiceImpl extends ServiceImpl<ChargerMapper, Charger> impl
         }
         boolean dbOk = baseMapper.startChargingSession(chargerId, sessionId, userId, LocalDateTime.now()) > 0;
         if (dbOk) {
-            // TODO: 使用事件机制通知订单服务创建订单，避免循环依赖
-            // 可以通过消息队列或事件发布机制实现
+            // 发布充电开始事件，订单服务监听此事件创建订单
+            Long billingPlanId = null; // 可以从请求参数传入
+            eventPublisher.publishEvent(new ChargingStartEvent(
+                this, charger.getStationId(), chargerId, sessionId, 
+                userId, billingPlanId, TenantContext.getCurrentTenantId()
+            ));
             log.info("充电会话开始，充电桩ID: {}, 会话ID: {}, 用户ID: {}", chargerId, sessionId, userId);
         }
         return dbOk;
@@ -233,8 +239,10 @@ public class ChargerServiceImpl extends ServiceImpl<ChargerMapper, Charger> impl
         invokeStopProtocol(charger);
         boolean ok = baseMapper.endChargingSession(chargerId, energy, duration) > 0;
         if (ok && sessionId != null) {
-            // TODO: 使用事件机制通知订单服务完成订单，避免循环依赖
-            // 可以通过消息队列或事件发布机制实现
+            // 发布充电停止事件，订单服务监听此事件完成订单
+            eventPublisher.publishEvent(new ChargingStopEvent(
+                this, sessionId, energy, duration, TenantContext.getCurrentTenantId()
+            ));
             log.info("充电会话结束，会话ID: {}, 充电量: {}, 时长: {}", sessionId, energy, duration);
         }
         return ok;
@@ -253,10 +261,11 @@ public class ChargerServiceImpl extends ServiceImpl<ChargerMapper, Charger> impl
      * 检查充电桩编码是否存在
      */
     @Override
+    @DataScope
     public boolean checkChargerCodeExists(String chargerCode, Long excludeId) {
         QueryWrapper<Charger> wrapper = new QueryWrapper<>();
         wrapper.eq("charger_code", chargerCode);
-        wrapper.eq("tenant_id", TenantContext.getCurrentTenantId());
+        // MyBatis Plus自动添加tenant_id过滤
         
         if (excludeId != null) {
             wrapper.ne("charger_id", excludeId);
