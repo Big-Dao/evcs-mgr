@@ -26,7 +26,5 @@ dependencies {
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
     
     // Test dependencies
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'com.h2database:h2'
-    testImplementation(testFixtures(project(':evcs-common')))
+    testImplementation testFixtures(project(':evcs-common'))
 }

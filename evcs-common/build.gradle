@@ -25,6 +25,6 @@ dependencies {
     
     // Test fixtures dependencies
     testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
-    testFixturesApi 'org.springframework.boot:spring-boot-starter-web'
-    testFixturesApi 'com.h2database:h2'
+    testFixturesApi "com.baomidou:mybatis-plus-boot-starter:${mybatisPlusVersion}"
+    testFixturesApi 'com.h2database:h2:2.2.224'
 }

@@ -66,7 +66,6 @@ public abstract class BaseTenantIsolationTest {
      * @param tenantId 租户ID
      * @param supplier 要执行的操作
      * @return 操作结果
-     * @throws Exception 如果操作执行时抛出异常
      */
     protected <T> T runAsTenant(Long tenantId, TenantSupplier<T> supplier) throws Exception {
         try {
