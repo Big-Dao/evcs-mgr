@@ -114,18 +114,18 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
             return station.getStationId();
         });
 
-        // Act & Assert - 租户2尝试更新租户1的充电站
-        runAsTenant(2L, () -> {
-            Station station = new Station();
-            station.setStationId(stationId);
-            station.setStationName("尝试修改");
-            station.setAddress("尝试修改地址");
-            
-            // 由于租户隔离，update应该不会更新任何记录
-            boolean result = stationService.updateStation(station);
-            // 根据实际实现，这里可能返回false或抛出异常
-            // 如果返回false，表示没有更新任何记录（因为找不到该ID的记录）
-        });
+        // Act & Assert - 租户2尝试更新租户1的充电站，应该抛出异常
+        assertThrows(RuntimeException.class, () -> {
+            runAsTenant(2L, () -> {
+                Station station = new Station();
+                station.setStationId(stationId);
+                station.setStationName("尝试修改");
+                station.setAddress("尝试修改地址");
+                
+                // 由于租户隔离，租户2看不到租户1的数据，会抛出"充电站不存在"异常
+                stationService.updateStation(station);
+            });
+        }, "租户2不应该能够更新租户1的充电站");
 
         // Assert - 验证租户1的充电站未被修改
         runAsTenant(1L, () -> {
