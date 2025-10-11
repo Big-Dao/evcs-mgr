@@ -24,7 +24,6 @@ dependencies {
     // API Documentation
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
     
-    // Payment SDK placeholders (will be added when integrating real payment SDKs)
-    // implementation 'com.alipay.sdk:alipay-sdk-java:4.38.10.ALL'
-    // implementation 'com.github.wechatpay-apiv3:wechatpay-apache-httpclient:0.4.9'
+    // Test dependencies
+    testImplementation testFixtures(project(':evcs-common'))
 }

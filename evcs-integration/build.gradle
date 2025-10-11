@@ -22,4 +22,12 @@ dependencies {
     
     // API Documentation
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
+    
+    // Test dependencies for integration tests
+    testImplementation project(':evcs-station')
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'com.h2database:h2'
+    
+    // Include test utilities from evcs-common
+    testImplementation project(path: ':evcs-common', configuration: 'testOutput')
 }

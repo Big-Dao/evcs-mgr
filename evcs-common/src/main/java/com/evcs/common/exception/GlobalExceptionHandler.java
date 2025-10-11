@@ -3,6 +3,7 @@ package com.evcs.common.exception;
 import com.evcs.common.result.Result;
 import com.evcs.common.result.ResultCode;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -23,10 +24,22 @@ import java.util.stream.Collectors;
 public class GlobalExceptionHandler {
     
     /**
+     * 租户上下文缺失异常处理
+     */
+    @ExceptionHandler(TenantContextMissingException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @Order(1)
+    public Result<Void> handleTenantContextMissingException(TenantContextMissingException e) {
+        log.error("租户上下文缺失: {}", e.getMessage());
+        return Result.failure(ResultCode.UNAUTHORIZED.getCode(), e.getMessage());
+    }
+    
+    /**
      * 业务异常处理
      */
     @ExceptionHandler(BusinessException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @Order(2)
     public Result<Void> handleBusinessException(BusinessException e) {
         log.warn("业务异常: {}", e.getMessage());
         return Result.failure(e.getCode(), e.getMessage());
