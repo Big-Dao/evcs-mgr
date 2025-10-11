@@ -70,4 +70,9 @@ public interface UserService {
      * 启用/禁用用户
      */
     void changeStatus(Long userId, Integer status);
+    
+    /**
+     * 从Token获取用户信息
+     */
+    LoginResponse.UserInfo getUserInfoFromToken(String token);
 }

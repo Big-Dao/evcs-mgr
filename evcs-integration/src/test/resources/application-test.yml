@@ -1,0 +1,33 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    username: sa
+    password: 
+    
+  h2:
+    console:
+      enabled: true
+      
+  jpa:
+    database-platform: org.hibernate.dialect.H2Dialect
+    show-sql: false
+    
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+evcs:
+  tenant:
+    enabled: true
+    tenant-id-column: tenant_id
+
+logging:
+  level:
+    com.evcs: DEBUG
+    root: INFO

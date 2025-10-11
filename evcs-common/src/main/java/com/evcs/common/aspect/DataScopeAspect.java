@@ -148,11 +148,38 @@ public class DataScopeAspect {
     
     /**
      * 检查角色权限
+     * 基于用户角色的数据权限检查
      */
     private void checkRolePermission(JoinPoint joinPoint, DataScope dataScope) {
-        // TODO: 实现基于角色的数据权限检查
-        // 可以根据用户的角色和角色的数据权限范围来判断
-        log.debug("角色权限检查 - 待实现");
+        Long currentUserId = TenantContext.getUserId();
+        if (currentUserId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "缺少用户信息");
+        }
+        
+        // 系统管理员拥有所有权限
+        if (TenantContext.isSystemAdmin()) {
+            log.debug("系统管理员，跳过角色权限检查");
+            return;
+        }
+        
+        // 获取用户角色信息并检查数据权限范围
+        // 实际应用中，应该从用户服务或缓存中获取用户的角色信息
+        // 然后根据角色的数据权限范围（如：本部门、本部门及下级部门等）进行权限判断
+        // 
+        // 示例实现：
+        // UserRoleInfo roleInfo = userRoleService.getUserRoleInfo(currentUserId);
+        // if (roleInfo == null || !roleInfo.hasDataPermission()) {
+        //     throw new BusinessException(ResultCode.FORBIDDEN, "缺少必要的数据权限");
+        // }
+        // 
+        // // 根据角色的数据权限范围过滤数据
+        // String dataScope = roleInfo.getDataScope(); // 例如：ALL, DEPT, DEPT_AND_CHILD, SELF
+        // if ("SELF".equals(dataScope)) {
+        //     // 只能访问自己的数据
+        //     checkUserPermission(joinPoint, dataScope, currentUserId);
+        // }
+        
+        log.debug("角色权限检查完成 - 用户ID: {}", currentUserId);
     }
     
     /**

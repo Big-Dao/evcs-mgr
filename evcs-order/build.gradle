@@ -8,6 +8,7 @@ description = 'Charging Order Management Service'
 
 dependencies {
     implementation project(':evcs-common')
+    implementation project(':evcs-protocol')
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
@@ -26,7 +27,5 @@ dependencies {
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
     
     // Test dependencies
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'com.h2database:h2'
     testImplementation testFixtures(project(':evcs-common'))
 }
