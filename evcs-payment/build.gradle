@@ -22,4 +22,7 @@ dependencies {
     
     // API Documentation
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
+    
+    // Test dependencies
+    testImplementation testFixtures(project(':evcs-common'))
 }

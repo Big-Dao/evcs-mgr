@@ -24,7 +24,7 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
 
     @Test
     @DisplayName("数据隔离 - 租户1的充电站不能被租户2访问")
-    void testStationIsolationBetweenTenants() {
+    void testStationIsolationBetweenTenants() throws Exception {
         // Arrange & Act - 租户1创建充电站
         Long stationId = runAsTenant(1L, () -> {
             Station station = new Station();
@@ -102,7 +102,7 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
 
     @Test
     @DisplayName("更新隔离 - 租户不能更新其他租户的充电站")
-    void testUpdateIsolation() {
+    void testUpdateIsolation() throws Exception {
         // Arrange - 租户1创建充电站
         Long stationId = runAsTenant(1L, () -> {
             Station station = new Station();
@@ -138,7 +138,7 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
 
     @Test
     @DisplayName("删除隔离 - 租户不能删除其他租户的充电站")
-    void testDeleteIsolation() {
+    void testDeleteIsolation() throws Exception {
         // Arrange - 租户1创建充电站
         Long stationId = runAsTenant(1L, () -> {
             Station station = new Station();

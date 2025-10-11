@@ -1,6 +1,7 @@
 package com.evcs.common.tenant;
 
 import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
+import com.evcs.common.exception.TenantContextMissingException;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
@@ -55,9 +56,8 @@ public class CustomTenantLineHandler implements TenantLineHandler {
     public Expression getTenantId() {
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            log.warn("租户上下文中未找到租户ID，可能导致数据访问异常");
-            // 返回一个不存在的租户ID，确保查询不到任何数据
-            return new LongValue(-1);
+            log.error("租户上下文中未找到租户ID，无法执行SQL操作");
+            throw new TenantContextMissingException("执行数据库操作时租户上下文缺失，请确保已正确设置租户信息");
         }
         
         log.debug("SQL租户过滤 - 租户ID: {}", tenantId);
