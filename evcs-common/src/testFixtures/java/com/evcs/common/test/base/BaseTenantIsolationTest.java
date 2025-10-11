@@ -71,6 +71,8 @@ public abstract class BaseTenantIsolationTest {
         try {
             TenantContext.setCurrentTenantId(tenantId);
             return supplier.get();
+        } catch (Exception e) {
+            throw new RuntimeException("执行租户操作失败", e);
         } finally {
             TenantContext.clear();
         }

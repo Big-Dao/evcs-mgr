@@ -1,0 +1,56 @@
+{
+  "index_patterns": ["evcs-*"],
+  "settings": {
+    "number_of_shards": 3,
+    "number_of_replicas": 1,
+    "index.refresh_interval": "5s",
+    "index.max_result_window": 10000
+  },
+  "mappings": {
+    "properties": {
+      "@timestamp": {
+        "type": "date"
+      },
+      "level": {
+        "type": "keyword"
+      },
+      "logger": {
+        "type": "keyword"
+      },
+      "thread": {
+        "type": "keyword"
+      },
+      "message": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "app": {
+        "type": "keyword"
+      },
+      "traceId": {
+        "type": "keyword"
+      },
+      "tenantId": {
+        "type": "long"
+      },
+      "userId": {
+        "type": "long"
+      },
+      "stack_trace": {
+        "type": "text"
+      },
+      "geoip": {
+        "properties": {
+          "location": {
+            "type": "geo_point"
+          }
+        }
+      }
+    }
+  }
+}

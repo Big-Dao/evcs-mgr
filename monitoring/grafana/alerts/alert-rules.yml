@@ -1,0 +1,124 @@
+groups:
+  - name: evcs_system_alerts
+    interval: 30s
+    rules:
+      # Service down alert
+      - alert: ServiceDown
+        expr: up{job=~"evcs-.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          category: system
+        annotations:
+          summary: "EVCS Service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} has been down for more than 1 minute."
+      
+      # High error rate alert
+      - alert: HighErrorRate
+        expr: |
+          (
+            rate(http_server_requests_seconds_count{job=~"evcs-.*",status=~"5.."}[5m]) 
+            / 
+            rate(http_server_requests_seconds_count{job=~"evcs-.*"}[5m])
+          ) * 100 > 5
+        for: 5m
+        labels:
+          severity: warning
+          category: system
+        annotations:
+          summary: "High error rate on {{ $labels.job }}"
+          description: "Error rate is {{ $value | humanize }}% on {{ $labels.job }} for the past 5 minutes."
+      
+      # High response time alert
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95, 
+            rate(http_server_requests_seconds_bucket{job=~"evcs-.*"}[5m])
+          ) > 2
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High response time on {{ $labels.job }}"
+          description: "P95 response time is {{ $value | humanize }}s on {{ $labels.job }}."
+      
+      # High memory usage alert
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            jvm_memory_used_bytes{job=~"evcs-.*",area="heap"} 
+            / 
+            jvm_memory_max_bytes{job=~"evcs-.*",area="heap"}
+          ) * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+          category: resource
+        annotations:
+          summary: "High memory usage on {{ $labels.job }}"
+          description: "Memory usage is {{ $value | humanize }}% on {{ $labels.job }}."
+
+  - name: evcs_business_alerts
+    interval: 1m
+    rules:
+      # Order creation failure rate alert
+      - alert: HighOrderFailureRate
+        expr: |
+          (1 - evcs_order_success_rate) * 100 > 10
+        for: 5m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "High order creation failure rate"
+          description: "Order failure rate is {{ $value | humanize }}% for the past 5 minutes."
+      
+      # Charger offline rate alert
+      - alert: HighChargerOfflineRate
+        expr: |
+          (1 - evcs_charger_online_rate) * 100 > 20
+        for: 10m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "High charger offline rate"
+          description: "Charger offline rate is {{ $value | humanize }}%."
+      
+      # Payment failure rate alert
+      - alert: HighPaymentFailureRate
+        expr: |
+          (1 - evcs_payment_success_rate) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "High payment failure rate"
+          description: "Payment failure rate is {{ $value | humanize }}% for the past 5 minutes."
+      
+      # Low billing accuracy alert
+      - alert: LowBillingAccuracy
+        expr: |
+          evcs_billing_accuracy_rate * 100 < 95
+        for: 10m
+        labels:
+          severity: critical
+          category: business
+        annotations:
+          summary: "Low billing accuracy"
+          description: "Billing accuracy is only {{ $value | humanize }}%."
+      
+      # No active orders alert (potential system issue)
+      - alert: NoActiveOrders
+        expr: |
+          evcs_charger_charging_count == 0 AND
+          hour() >= 8 AND hour() <= 22
+        for: 30m
+        labels:
+          severity: warning
+          category: business
+        annotations:
+          summary: "No active charging sessions"
+          description: "No charging sessions active during business hours for 30 minutes."
