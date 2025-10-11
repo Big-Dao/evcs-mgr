@@ -1,0 +1,135 @@
+# Resilience4j默认配置
+# 各服务可以在自己的application.yml中覆盖这些配置
+
+resilience4j:
+  # 熔断器配置
+  circuitbreaker:
+    configs:
+      default:
+        # 滑动窗口大小
+        slidingWindowSize: 100
+        # 滑动窗口类型：COUNT_BASED 或 TIME_BASED
+        slidingWindowType: COUNT_BASED
+        # 最小调用次数（达到此数量后才开始计算失败率）
+        minimumNumberOfCalls: 10
+        # 熔断器打开的失败率阈值（百分比）
+        failureRateThreshold: 50
+        # 慢调用阈值（秒）
+        slowCallDurationThreshold: 3s
+        # 慢调用率阈值（百分比）
+        slowCallRateThreshold: 50
+        # 半开状态允许的调用数
+        permittedNumberOfCallsInHalfOpenState: 5
+        # 熔断器保持打开状态的时间
+        waitDurationInOpenState: 60s
+        # 是否自动从打开状态转换到半开状态
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        # 记录的异常类型
+        recordExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+          - org.springframework.web.client.HttpServerErrorException
+        # 忽略的异常类型
+        ignoreExceptions:
+          - java.lang.IllegalArgumentException
+          - com.evcs.common.exception.BusinessException
+    
+    instances:
+      # 支付服务熔断配置
+      paymentService:
+        baseConfig: default
+        failureRateThreshold: 50
+        waitDurationInOpenState: 5m
+        slidingWindowSize: 50
+      
+      # 协议服务熔断配置
+      protocolService:
+        baseConfig: default
+        slowCallDurationThreshold: 2s
+        slowCallRateThreshold: 50
+        waitDurationInOpenState: 3m
+        slidingWindowSize: 50
+  
+  # 重试配置
+  retry:
+    configs:
+      default:
+        # 最大重试次数
+        maxAttempts: 3
+        # 等待时间
+        waitDuration: 1s
+        # 重试间隔乘数
+        exponentialBackoffMultiplier: 2
+        # 是否启用指数退避
+        enableExponentialBackoff: true
+        # 重试的异常类型
+        retryExceptions:
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
+        # 忽略的异常类型
+        ignoreExceptions:
+          - java.lang.IllegalArgumentException
+          - com.evcs.common.exception.BusinessException
+    
+    instances:
+      paymentService:
+        baseConfig: default
+        maxAttempts: 3
+      
+      protocolService:
+        baseConfig: default
+        maxAttempts: 2
+  
+  # 限流器配置
+  ratelimiter:
+    configs:
+      default:
+        # 限流周期
+        limitRefreshPeriod: 1s
+        # 限流周期内允许的请求数
+        limitForPeriod: 100
+        # 获取许可的超时时间
+        timeoutDuration: 0s
+    
+    instances:
+      # API限流
+      apiRateLimiter:
+        baseConfig: default
+        limitForPeriod: 1000
+      
+      # 支付限流
+      paymentRateLimiter:
+        baseConfig: default
+        limitForPeriod: 50
+  
+  # 时间限制器配置
+  timelimiter:
+    configs:
+      default:
+        # 超时时间
+        timeoutDuration: 5s
+        # 是否取消运行中的Future
+        cancelRunningFuture: true
+    
+    instances:
+      paymentService:
+        timeoutDuration: 10s
+      
+      protocolService:
+        timeoutDuration: 5s
+  
+  # Bulkhead（舱壁）配置
+  bulkhead:
+    configs:
+      default:
+        # 最大并发调用数
+        maxConcurrentCalls: 25
+        # 最大等待时间
+        maxWaitDuration: 0ms
+    
+    instances:
+      paymentService:
+        maxConcurrentCalls: 10
+      
+      protocolService:
+        maxConcurrentCalls: 20
