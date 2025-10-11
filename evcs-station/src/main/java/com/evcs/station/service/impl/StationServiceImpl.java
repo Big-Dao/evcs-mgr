@@ -7,7 +7,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.tenant.TenantContext;
+import com.evcs.station.entity.Charger;
 import com.evcs.station.entity.Station;
+import com.evcs.station.mapper.ChargerMapper;
 import com.evcs.station.mapper.StationMapper;
 import com.evcs.station.service.IStationService;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +27,8 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class StationServiceImpl extends ServiceImpl<StationMapper, Station> implements IStationService {
+    
+    private final ChargerMapper chargerMapper;
 
     /**
      * 分页查询充电站列表（包含统计信息）
@@ -149,7 +153,12 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station> impl
     @DataScope
     public boolean deleteStation(Long stationId) {
         // 检查是否有充电桩
-        // TODO: 实现检查逻辑
+        long chargerCount = chargerMapper.selectCount(
+            new QueryWrapper<Charger>().eq("station_id", stationId)
+        );
+        if (chargerCount > 0) {
+            throw new RuntimeException("该充电站下存在充电桩，无法删除");
+        }
         
         return this.removeById(stationId);
     }
@@ -192,10 +201,11 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station> impl
      * 检查充电站编码是否存在
      */
     @Override
+    @DataScope
     public boolean checkStationCodeExists(String stationCode, Long excludeId) {
         QueryWrapper<Station> wrapper = new QueryWrapper<>();
         wrapper.eq("station_code", stationCode);
-        wrapper.eq("tenant_id", TenantContext.getCurrentTenantId());
+        // MyBatis Plus自动添加tenant_id过滤
         
         if (excludeId != null) {
             wrapper.ne("station_id", excludeId);

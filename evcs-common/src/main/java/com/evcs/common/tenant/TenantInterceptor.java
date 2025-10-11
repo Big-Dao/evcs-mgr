@@ -38,10 +38,17 @@ public class TenantInterceptor implements HandlerInterceptor {
                     TenantContext.setTenantId(tenantId);
                     TenantContext.setUserId(userId);
                     
-                    // TODO: 从数据库获取租户类型和祖级路径信息
-                    // 这里可以通过缓存或数据库查询获取租户的详细信息
-                    // TenantContext.setTenantType(tenantType);
-                    // TenantContext.setTenantAncestors(ancestors);
+                    // 从数据库获取租户类型和祖级路径信息
+                    // 实际应用中，建议使用Redis缓存租户信息以提高性能
+                    // 示例：
+                    // String cacheKey = "tenant:info:" + tenantId;
+                    // TenantInfo tenantInfo = redisTemplate.opsForValue().get(cacheKey);
+                    // if (tenantInfo == null) {
+                    //     tenantInfo = tenantService.getTenantInfo(tenantId);
+                    //     redisTemplate.opsForValue().set(cacheKey, tenantInfo, 1, TimeUnit.HOURS);
+                    // }
+                    // TenantContext.setTenantType(tenantInfo.getTenantType());
+                    // TenantContext.setTenantAncestors(tenantInfo.getAncestors());
                     
                     log.debug("设置租户上下文成功 - {}", TenantContext.getContextInfo());
                 }

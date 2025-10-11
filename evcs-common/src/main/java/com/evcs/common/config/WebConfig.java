@@ -1,7 +1,10 @@
 package com.evcs.common.config;
 
+import com.evcs.common.filter.RequestIdFilter;
 import com.evcs.common.tenant.TenantInterceptor;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -47,8 +50,19 @@ public class WebConfig implements WebMvcConfigurer {
                         "/tenant/check-code"
                 )
                 .order(1); // 设置拦截器执行顺序
-
-    // TODO: 可增加一个 Servlet Filter 为非网关服务生成 X-Request-Id，以便与网关一致
-
+    }
+    
+    /**
+     * 注册RequestId过滤器
+     * 为非网关服务生成X-Request-Id，以便与网关一致
+     */
+    @Bean
+    public FilterRegistrationBean<RequestIdFilter> requestIdFilter() {
+        FilterRegistrationBean<RequestIdFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new RequestIdFilter());
+        registration.addUrlPatterns("/*");
+        registration.setOrder(0); // 最先执行，确保所有请求都有RequestId
+        registration.setName("requestIdFilter");
+        return registration;
     }
 }
