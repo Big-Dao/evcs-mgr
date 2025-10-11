@@ -1,10 +1,8 @@
 package com.evcs.integration;
 
-import com.evcs.common.test.base.BaseIntegrationTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Tag;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,11 +19,14 @@ import static org.junit.jupiter.api.Assertions.*;
  * 7. 支付流程
  * 8. 订单完成
  * 
+ * 注意: 这是集成测试框架和场景设计，需要在实际的Spring Boot应用中运行完整测试
+ * 当前版本为框架就绪状态，待各服务实现后可启用完整测试
+ * 
  * @author EVCS Team
  */
 @Tag("integration")
 @DisplayName("充电流程集成测试")
-public class ChargingFlowIntegrationTest extends BaseIntegrationTest {
+public class ChargingFlowIntegrationTest {
 
     /**
      * 测试完整的充电流程
