@@ -64,7 +64,7 @@ public class AuthController {
     public Result<LoginResponse.UserInfo> getUserInfo(HttpServletRequest request) {
         String token = extractToken(request);
         if (token == null) {
-            return Result.error("未提供访问令牌");
+            return Result.failure("未提供访问令牌");
         }
         
         LoginResponse.UserInfo userInfo = userService.getUserInfoFromToken(token);
