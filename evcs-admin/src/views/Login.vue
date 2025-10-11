@@ -1,0 +1,111 @@
+<template>
+  <div class="login-container">
+    <el-card class="login-card">
+      <div class="logo-section">
+        <el-icon style="font-size: 48px; color: #409eff;"><Lightning /></el-icon>
+        <h1>EVCS Manager</h1>
+        <p>充电站管理系统</p>
+      </div>
+      <el-form :model="loginForm" :rules="rules" ref="loginFormRef">
+        <el-form-item prop="username">
+          <el-input
+            v-model="loginForm.username"
+            placeholder="用户名"
+            prefix-icon="User"
+            size="large"
+          />
+        </el-form-item>
+        <el-form-item prop="password">
+          <el-input
+            v-model="loginForm.password"
+            type="password"
+            placeholder="密码"
+            prefix-icon="Lock"
+            size="large"
+            @keyup.enter="handleLogin"
+          />
+        </el-form-item>
+        <el-form-item>
+          <el-button
+            type="primary"
+            size="large"
+            style="width: 100%"
+            :loading="loading"
+            @click="handleLogin"
+          >
+            登录
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import type { FormInstance, FormRules } from 'element-plus'
+
+const router = useRouter()
+const loginFormRef = ref<FormInstance>()
+const loading = ref(false)
+
+const loginForm = reactive({
+  username: 'admin',
+  password: 'admin123'
+})
+
+const rules: FormRules = {
+  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+}
+
+const handleLogin = async () => {
+  if (!loginFormRef.value) return
+  
+  await loginFormRef.value.validate((valid) => {
+    if (valid) {
+      loading.value = true
+      // Simulate login
+      setTimeout(() => {
+        localStorage.setItem('token', 'mock-token-' + Date.now())
+        ElMessage.success('登录成功')
+        router.push('/')
+        loading.value = false
+      }, 500)
+    }
+  })
+}
+</script>
+
+<style scoped>
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.login-card {
+  width: 400px;
+  padding: 20px;
+}
+
+.logo-section {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.logo-section h1 {
+  margin: 10px 0 5px 0;
+  font-size: 28px;
+  color: #303133;
+}
+
+.logo-section p {
+  color: #909399;
+  font-size: 14px;
+}
+</style>
