@@ -54,7 +54,7 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
 
     @Test
     @DisplayName("查询隔离 - 列表查询只返回当前租户的充电站")
-    void testQueryIsolation() {
+    void testQueryIsolation() throws Exception {
         // Arrange - 租户1创建2个充电站
         runAsTenant(1L, () -> {
             for (int i = 0; i < 2; i++) {
