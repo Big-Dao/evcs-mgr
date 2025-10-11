@@ -5,6 +5,22 @@ plugins {
 
 description = 'Common utilities and shared components'
 
+// Make test classes available to other modules
+configurations {
+    testOutput {
+        extendsFrom testImplementation
+    }
+}
+
+task testJar(type: Jar) {
+    archiveClassifier = 'tests'
+    from sourceSets.test.output
+}
+
+artifacts {
+    testOutput testJar
+}
+
 dependencies {
     api 'org.springframework.boot:spring-boot-starter-web'
     api 'org.springframework.boot:spring-boot-starter-validation'
