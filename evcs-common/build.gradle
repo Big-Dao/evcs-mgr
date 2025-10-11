@@ -21,4 +21,7 @@ dependencies {
     
     // Utilities
     api "cn.hutool:hutool-all:${hutoolVersion}"
+    
+    // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
