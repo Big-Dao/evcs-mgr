@@ -19,11 +19,11 @@ dependencies {
     
     // Database
     implementation "org.postgresql:postgresql:${postgresqlVersion}"
+    implementation "com.baomidou:mybatis-plus-spring-boot3-starter:${mybatisPlusVersion}"
     
     // API Documentation
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
     
     // Test dependencies
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation project(path: ':evcs-common', configuration: 'testArtifacts')
+    testImplementation testFixtures(project(':evcs-common'))
 }

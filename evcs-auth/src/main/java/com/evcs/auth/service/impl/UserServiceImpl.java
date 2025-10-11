@@ -96,8 +96,58 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public LoginResponse refreshToken(String refreshToken) {
-        // TODO: 实现Token刷新逻辑
-        throw new BusinessException("Token刷新功能待实现");
+        // 验证Token有效性
+        if (!jwtUtil.verifyToken(refreshToken)) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "Token无效或已过期");
+        }
+        
+        // 检查Token是否在黑名单中
+        String blacklistKey = "blacklist:token:" + refreshToken;
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(blacklistKey))) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "Token已失效");
+        }
+        
+        // 从Token中提取用户信息
+        Long userId = jwtUtil.getUserId(refreshToken);
+        Long tenantId = jwtUtil.getTenantId(refreshToken);
+        
+        if (userId == null || tenantId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "Token信息不完整");
+        }
+        
+        // 查询用户最新状态
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_FOUND);
+        }
+        
+        // 检查用户状态
+        if (user.getStatus() == 0) {
+            throw new BusinessException(ResultCode.USER_DISABLED);
+        }
+        
+        // 生成新Token
+        String newToken = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getTenantId());
+        
+        // 构建响应
+        LoginResponse response = new LoginResponse();
+        response.setAccessToken(newToken);
+        response.setTokenType("Bearer");
+        response.setExpiresIn(7200L); // 2小时
+        
+        LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();
+        userInfo.setId(user.getId());
+        userInfo.setUsername(user.getUsername());
+        userInfo.setRealName(user.getRealName());
+        userInfo.setPhone(user.getPhone());
+        userInfo.setEmail(user.getEmail());
+        userInfo.setAvatar(user.getAvatar());
+        userInfo.setGender(user.getGender());
+        userInfo.setTenantId(user.getTenantId());
+        
+        response.setUser(userInfo);
+        
+        return response;
     }
     
     @Override
@@ -221,5 +271,44 @@ public class UserServiceImpl implements UserService {
         user.setStatus(status);
         user.setUpdateTime(LocalDateTime.now());
         userMapper.updateById(user);
+    }
+    
+    @Override
+    public LoginResponse.UserInfo getUserInfoFromToken(String token) {
+        // 验证Token有效性
+        if (!jwtUtil.verifyToken(token)) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "Token无效或已过期");
+        }
+        
+        // 检查Token是否在黑名单中
+        String blacklistKey = "blacklist:token:" + token;
+        if (Boolean.TRUE.equals(stringRedisTemplate.hasKey(blacklistKey))) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "Token已失效");
+        }
+        
+        // 从Token中提取用户ID
+        Long userId = jwtUtil.getUserId(token);
+        if (userId == null) {
+            throw new BusinessException(ResultCode.UNAUTHORIZED, "Token信息不完整");
+        }
+        
+        // 查询用户信息
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            throw new BusinessException(ResultCode.USER_NOT_FOUND);
+        }
+        
+        // 构建用户信息
+        LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();
+        userInfo.setId(user.getId());
+        userInfo.setUsername(user.getUsername());
+        userInfo.setRealName(user.getRealName());
+        userInfo.setPhone(user.getPhone());
+        userInfo.setEmail(user.getEmail());
+        userInfo.setAvatar(user.getAvatar());
+        userInfo.setGender(user.getGender());
+        userInfo.setTenantId(user.getTenantId());
+        
+        return userInfo;
     }
 }

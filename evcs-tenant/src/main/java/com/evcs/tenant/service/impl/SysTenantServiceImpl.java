@@ -187,7 +187,17 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
             throw new RuntimeException("存在子租户，无法删除");
         }
         
-        // TODO: 检查租户下是否有其他业务数据
+        // 检查租户下是否有业务数据
+        // 注意：这里使用原生SQL直接查询，因为切换租户上下文可能导致问题
+        Long stationCount = baseMapper.countByTenantId("evcs_station", tenantId);
+        if (stationCount != null && stationCount > 0) {
+            throw new RuntimeException("租户下存在充电站数据，无法删除");
+        }
+        
+        Long orderCount = baseMapper.countByTenantId("evcs_charging_order", tenantId);
+        if (orderCount != null && orderCount > 0) {
+            throw new RuntimeException("租户下存在订单数据，无法删除");
+        }
         
         return this.removeById(tenantId);
     }

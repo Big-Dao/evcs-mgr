@@ -33,8 +33,8 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     @DataScope
     public boolean createOrderOnStart(Long stationId, Long chargerId, String sessionId, Long userId, Long billingPlanId) {
         // 幂等：同一租户+sessionId 已存在则直接返回成功
+        // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder exist = this.getOne(new QueryWrapper<ChargingOrder>()
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .eq("session_id", sessionId)
                 .orderByDesc("id").last("limit 1"));
         if (exist != null) {
@@ -59,9 +59,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     @Override
     @DataScope
     public boolean completeOrderOnStop(String sessionId, Double energy, Long duration) {
+        // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("session_id", sessionId)
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .orderByDesc("id").last("limit 1"));
         if (order == null) {
             return false;
@@ -85,18 +85,18 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     @Override
     @DataScope
     public ChargingOrder getBySessionId(String sessionId) {
+        // MyBatis Plus自动添加tenant_id过滤
         return this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("session_id", sessionId)
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .orderByDesc("id").last("limit 1"));
     }
 
     @Override
     @DataScope
     public boolean markToPay(Long orderId) {
+        // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .last("limit 1"));
         if (order == null) return false;
         // 允许从 COMPLETED(1) 进入 TO_PAY(10)，幂等允许重复设置
@@ -110,9 +110,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     @Override
     @DataScope
     public boolean markPaid(Long orderId) {
+        // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .last("limit 1"));
         if (order == null) return false;
         // 允许从 TO_PAY(10) 进入 PAID(11)，幂等允许重复设置
@@ -126,9 +126,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     @Override
     @DataScope
     public com.evcs.order.dto.PayParams createPayment(Long orderId) {
+        // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .last("limit 1"));
         if (order == null) return null;
         // 进入待支付
@@ -155,9 +155,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
         meterRegistry.counter("evcs.order.paid").increment();
 
         if (tradeId == null || tradeId.isEmpty()) return false;
+        // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("payment_trade_id", tradeId)
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .last("limit 1"));
         if (order == null) return false;
         if (!success) return false;
@@ -172,9 +172,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     @Override
     @DataScope
     public boolean cancelOrder(Long orderId) {
+        // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .last("limit 1"));
         if (order == null) return false;
         // 未支付的订单允许取消（非已支付/已退款）
@@ -189,9 +189,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     @Override
     @DataScope
     public boolean markRefunding(Long orderId) {
+        // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .last("limit 1"));
         if (order == null) return false;
         if (order.getStatus() != null && (order.getStatus() == 11 || order.getStatus() == 12)) {
@@ -204,9 +204,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     @Override
     @DataScope
     public boolean markRefunded(Long orderId) {
+        // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .last("limit 1"));
         if (order == null) return false;
         if (order.getStatus() != null && (order.getStatus() == 12 || order.getStatus() == 13)) {
@@ -216,9 +216,11 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
         return false;
     }
 
+    @Override
+    @DataScope
     public IPage<ChargingOrder> pageOrders(Page<ChargingOrder> page, Long stationId, Long chargerId, Long userId, Integer status) {
         QueryWrapper<ChargingOrder> wrapper = new QueryWrapper<>();
-        wrapper.eq("tenant_id", TenantContext.getCurrentTenantId());
+        // MyBatis Plus自动添加tenant_id过滤
         if (stationId != null) wrapper.eq("station_id", stationId);
         if (chargerId != null) wrapper.eq("charger_id", chargerId);
         if (userId != null) wrapper.eq("user_id", userId);

@@ -67,7 +67,7 @@ public abstract class BaseTenantIsolationTest {
      * @param supplier 要执行的操作
      * @return 操作结果
      */
-    protected <T> T runAsTenant(Long tenantId, TenantSupplier<T> supplier) {
+    protected <T> T runAsTenant(Long tenantId, TenantSupplier<T> supplier) throws Exception {
         try {
             TenantContext.setCurrentTenantId(tenantId);
             return supplier.get();
