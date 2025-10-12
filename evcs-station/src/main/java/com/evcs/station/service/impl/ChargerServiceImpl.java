@@ -78,7 +78,7 @@ public class ChargerServiceImpl extends ServiceImpl<ChargerMapper, Charger> impl
         // 排序
         wrapper.orderByAsc("station_id").orderByAsc("charger_code");
         
-        return baseMapper.selectChargerPage(page, wrapper);
+        return this.page(page, wrapper);
     }
 
     /**

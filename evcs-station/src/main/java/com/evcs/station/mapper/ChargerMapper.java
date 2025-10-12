@@ -29,11 +29,6 @@ public interface ChargerMapper extends BaseMapper<Charger> {
     List<Charger> selectByStationId(@Param("stationId") Long stationId);
 
     /**
-     * 分页查询充电桩列表
-     */
-    IPage<Charger> selectChargerPage(Page<Charger> page, @Param("ew") com.baomidou.mybatisplus.core.conditions.Wrapper<Charger> wrapper);
-
-    /**
      * 更新充电桩状态
      */
     @Update("""

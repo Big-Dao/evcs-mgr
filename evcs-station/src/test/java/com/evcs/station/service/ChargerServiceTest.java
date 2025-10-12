@@ -130,7 +130,7 @@ class ChargerServiceTest extends BaseServiceTest {
         assertTrue(result);
         Charger updated = chargerService.getById(charger.getChargerId());
         assertEquals("更新后的充电桩名称", updated.getChargerName());
-        assertEquals(new java.math.BigDecimal("150.0"), updated.getRatedPower());
+        assertEquals(0, new java.math.BigDecimal("150.0").compareTo(updated.getRatedPower()));
     }
 
     @Test
@@ -153,7 +153,7 @@ class ChargerServiceTest extends BaseServiceTest {
         // Assert
         assertTrue(result);
         Charger updated = chargerService.getById(charger.getChargerId());
-        assertEquals(0, updated.getStatus());
+        assertEquals(0, updated.getEnabled());
 
         // Act - 启用
         result = chargerService.changeStatus(charger.getChargerId(), 1);
@@ -161,7 +161,7 @@ class ChargerServiceTest extends BaseServiceTest {
         // Assert
         assertTrue(result);
         updated = chargerService.getById(charger.getChargerId());
-        assertEquals(1, updated.getStatus());
+        assertEquals(1, updated.getEnabled());
     }
 
     @Test
