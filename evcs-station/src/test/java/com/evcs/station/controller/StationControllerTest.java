@@ -17,7 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 充电站Controller测试类
  */
-@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class})
+@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class, com.evcs.station.config.TestConfig.class})
 @DisplayName("充电站Controller测试")
 class StationControllerTest extends BaseControllerTest {
 

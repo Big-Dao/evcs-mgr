@@ -37,6 +37,7 @@ spring:
   sql:
     init:
       mode: always
+      schema-locations: classpath:schema-h2.sql
 
 eureka:
   client:
