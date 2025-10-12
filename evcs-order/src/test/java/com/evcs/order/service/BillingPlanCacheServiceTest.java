@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * @author EVCS Team
  * @since M4 - Week 4 Performance Optimization
  */
-@SpringBootTest
+@SpringBootTest(classes = {BillingPlanCacheServiceImpl.class})
 @ActiveProfiles("test")
 @DisplayName("计费计划缓存服务测试")
 class BillingPlanCacheServiceTest {
