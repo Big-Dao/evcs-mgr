@@ -6,6 +6,10 @@ spring:
   application:
     name: evcs-station-test
   
+  # 禁用RabbitMQ for tests
+  rabbitmq:
+    enabled: false
+  
   # 禁用不必要的组件以避免循环依赖
   autoconfigure:
     exclude:
@@ -14,6 +18,8 @@ spring:
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration
   
   # 禁用 Spring Cloud Config
   cloud:
