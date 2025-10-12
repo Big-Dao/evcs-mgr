@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import jakarta.annotation.Resource;
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,7 +41,6 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         station.setLatitude(39.9087);
         station.setLongitude(116.4089);
         station.setStatus(1);
-        station.setOperatorName("测试运营商");
         
         boolean stationSaved = stationService.saveStation(station);
         assertTrue(stationSaved, "充电站应该保存成功");
@@ -54,7 +54,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         charger1.setChargerName("1号充电桩");
         charger1.setChargerType(1); // 直流快充
         charger1.setStatus(1); // 空闲
-        charger1.setRatedPower(60.0);
+        charger1.setRatedPower(new BigDecimal("60.0"));
         
         boolean charger1Saved = chargerService.saveCharger(charger1);
         assertTrue(charger1Saved, "充电桩1应该保存成功");
@@ -68,7 +68,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         charger2.setChargerName("2号充电桩");
         charger2.setChargerType(2); // 交流慢充
         charger2.setStatus(1);
-        charger2.setRatedPower(7.0);
+        charger2.setRatedPower(new BigDecimal("7.0"));
         
         boolean charger2Saved = chargerService.saveCharger(charger2);
         assertTrue(charger2Saved, "充电桩2应该保存成功");
@@ -144,7 +144,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         charger.setChargerName("测试充电桩");
         charger.setChargerType(1);
         charger.setStatus(1); // 空闲
-        charger.setRatedPower(120.0);
+        charger.setRatedPower(new BigDecimal("120.0"));
         
         chargerService.saveCharger(charger);
         assertNotNull(charger.getChargerId());
@@ -191,7 +191,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         charger.setChargerName("待删除充电桩");
         charger.setChargerType(1);
         charger.setStatus(0); // 离线
-        charger.setRatedPower(60.0);
+        charger.setRatedPower(new BigDecimal("60.0"));
         
         chargerService.saveCharger(charger);
         Long chargerId = charger.getChargerId();

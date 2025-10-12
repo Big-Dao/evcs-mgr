@@ -2,6 +2,7 @@ package com.evcs.integration.test;
 
 import com.evcs.common.exception.BusinessException;
 import com.evcs.common.exception.TenantContextMissingException;
+import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.test.base.BaseIntegrationTest;
 import com.evcs.common.test.util.TestDataFactory;
 import com.evcs.station.entity.Charger;
@@ -13,6 +14,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import jakarta.annotation.Resource;
+import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -101,7 +103,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         charger.setChargerName("测试充电桩");
         charger.setChargerType(1);
         charger.setStatus(1);
-        charger.setRatedPower(60.0);
+        charger.setRatedPower(new BigDecimal("60.0"));
         
         chargerService.saveCharger(charger);
 
@@ -125,7 +127,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
     @DisplayName("测试租户上下文缺失异常")
     void testTenantContextMissingException() {
         // 清除租户上下文
-        clearTenantContext();
+        TenantContext.clear();
         
         // 尝试执行需要租户上下文的操作
         assertThrows(TenantContextMissingException.class, () -> {
@@ -163,7 +165,8 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         
         Thread thread1 = new Thread(() -> {
             try {
-                setupTenantContext();
+                TenantContext.setCurrentTenantId(DEFAULT_TENANT_ID);
+                TenantContext.setCurrentUserId(DEFAULT_USER_ID);
                 Station s1 = stationService.getById(stationId);
                 s1.setStationName("线程1修改");
                 Thread.sleep(50); // 模拟一些处理时间
@@ -171,13 +174,14 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
             } catch (Exception e) {
                 // 可能因为并发冲突失败
             } finally {
-                clearTenantContext();
+                TenantContext.clear();
             }
         });
 
         Thread thread2 = new Thread(() -> {
             try {
-                setupTenantContext();
+                TenantContext.setCurrentTenantId(DEFAULT_TENANT_ID);
+                TenantContext.setCurrentUserId(DEFAULT_USER_ID);
                 Station s2 = stationService.getById(stationId);
                 s2.setStationName("线程2修改");
                 Thread.sleep(50); // 模拟一些处理时间
@@ -185,7 +189,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
             } catch (Exception e) {
                 // 可能因为并发冲突失败
             } finally {
-                clearTenantContext();
+                TenantContext.clear();
             }
         });
 
@@ -198,11 +202,12 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         assertTrue(thread1Success[0] || thread2Success[0], "至少有一个线程应该更新成功");
         
         // 验证最终状态
-        setupTenantContext();
+        TenantContext.setCurrentTenantId(DEFAULT_TENANT_ID);
+        TenantContext.setCurrentUserId(DEFAULT_USER_ID);
         Station finalStation = stationService.getById(stationId);
         assertNotNull(finalStation, "最终应该能查询到充电站");
         assertTrue(finalStation.getStationName().contains("修改"), "名称应该被修改");
-        clearTenantContext();
+        TenantContext.clear();
     }
 
     @Test
@@ -269,7 +274,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         charger.setChargerName("外键测试充电桩");
         charger.setChargerType(1);
         charger.setStatus(1);
-        charger.setRatedPower(60.0);
+        charger.setRatedPower(new BigDecimal("60.0"));
         
         // 应该抛出外键约束异常
         assertThrows(Exception.class, () -> {

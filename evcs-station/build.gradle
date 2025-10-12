@@ -6,6 +6,16 @@ plugins {
 
 description = 'Charging Station and Charger Management Service'
 
+// 为了支持其他模块在测试中依赖本模块，需要配置jar任务
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+bootJar {
+    archiveClassifier = 'boot'
+}
+
 dependencies {
     implementation project(':evcs-common')
     implementation 'org.springframework.boot:spring-boot-starter-web'

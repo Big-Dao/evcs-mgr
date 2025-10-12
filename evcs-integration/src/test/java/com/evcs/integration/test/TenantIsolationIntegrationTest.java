@@ -1,5 +1,6 @@
 package com.evcs.integration.test;
 
+import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.test.base.BaseTenantIsolationTest;
 import com.evcs.common.test.util.TestDataFactory;
 import com.evcs.station.entity.Station;
@@ -26,7 +27,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
 
     @Test
     @DisplayName("测试不同租户的数据隔离")
-    void testDataIsolationBetweenTenants() {
+    void testDataIsolationBetweenTenants() throws Exception {
         // 租户1创建充电站
         Long stationIdTenant1 = runAsTenant(1L, () -> {
             Station station = new Station();
@@ -150,7 +151,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
     @DisplayName("测试租户上下文缺失时的异常处理")
     void testMissingTenantContextException() {
         // 清除租户上下文
-        clearTenantContext();
+        TenantContext.clear();
         
         // 尝试在没有租户上下文的情况下执行操作
         assertThrows(Exception.class, () -> {
@@ -169,7 +170,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
 
     @Test
     @DisplayName("测试租户切换时的上下文正确性")
-    void testTenantContextSwitching() {
+    void testTenantContextSwitching() throws Exception {
         // 创建租户1的数据
         Long stationId1 = runAsTenant(1L, () -> {
             Station station = new Station();
@@ -187,7 +188,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
         // 切换到租户2
         runAsTenant(2L, () -> {
             // 验证租户上下文已切换
-            assertTenantContext(2L, "租户上下文应该已切换到租户2");
+            assertCurrentTenant(2L);
             
             // 尝试访问租户1的数据
             Station station = stationService.getById(stationId1);
@@ -197,7 +198,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
         // 切换回租户1
         runAsTenant(1L, () -> {
             // 验证租户上下文已切换回来
-            assertTenantContext(1L, "租户上下文应该已切换回租户1");
+            assertCurrentTenant(1L);
             
             // 验证可以访问自己的数据
             Station station = stationService.getById(stationId1);
