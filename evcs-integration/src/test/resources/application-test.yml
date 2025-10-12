@@ -32,6 +32,11 @@ spring:
     username: sa
     password: 
     
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-h2.sql
+      
   h2:
     console:
       enabled: true
