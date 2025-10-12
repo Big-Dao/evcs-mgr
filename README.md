@@ -194,7 +194,8 @@ docker-compose up -d
 - 数据库管理（Adminer）：http://localhost:8090
 - RabbitMQ管理：http://localhost:15672
 
-详细文档：[测试环境部署指南](docs/TEST-ENVIRONMENT-GUIDE.md)
+**快速开始**: [测试环境5分钟快速部署](TEST-ENVIRONMENT-QUICKSTART.md)  
+**详细文档**: [测试环境完整部署指南](docs/TEST-ENVIRONMENT-GUIDE.md)
 
 ## 🔧 配置说明
 

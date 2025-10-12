@@ -59,6 +59,12 @@
   - 配置参数说明、故障排查
   - 适合：运维部署、环境配置
 
+- **[TEST-ENVIRONMENT-GUIDE.md](./TEST-ENVIRONMENT-GUIDE.md)** 🧪 **测试环境部署指南** ⭐ **新增！**
+  - 一键部署测试环境、自动化验证
+  - 健康检查和冒烟测试
+  - 适合：快速部署测试环境、人工测试
+  - 另见：[5分钟快速开始](../TEST-ENVIRONMENT-QUICKSTART.md)
+
 - **[OPERATIONS-MANUAL.md](./OPERATIONS-MANUAL.md)** 🔧 **运维手册**
   - 监控、日志、备份恢复
   - 故障排查、性能优化、应急响应
