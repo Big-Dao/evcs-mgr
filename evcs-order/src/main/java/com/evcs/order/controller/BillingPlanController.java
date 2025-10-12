@@ -5,6 +5,7 @@ import com.evcs.common.result.Result;
 import com.evcs.order.entity.BillingPlan;
 import com.evcs.order.entity.BillingPlanSegment;
 import com.evcs.order.service.IBillingPlanService;
+import com.evcs.order.service.IBillingPlanCacheService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -22,6 +23,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 @RequiredArgsConstructor
 public class BillingPlanController {
     private final IBillingPlanService planService;
+    private final IBillingPlanCacheService cacheService;
 
     @PostMapping
     @Operation(summary = "创建计费计划")
@@ -111,14 +113,22 @@ public class BillingPlanController {
             }
         }
         boolean ok = planService.updateById(plan);
-        if (ok && plan.getIsDefault() != null && plan.getIsDefault() == 1 && plan.getStatus() != null && plan.getStatus() == 1) {
-            BillingPlan reset = new BillingPlan();
-            reset.setIsDefault(0);
-            planService.update(reset, new QueryWrapper<BillingPlan>()
-                    .eq("tenant_id", plan.getTenantId())
-                    .eq("station_id", plan.getStationId())
-                    .eq("status", 1)
-                    .ne("id", plan.getId()));
+        if (ok) {
+            // 缓存失效
+            if (plan.getStationId() != null) {
+                cacheService.invalidate(plan.getStationId(), plan.getId());
+                cacheService.invalidateDefault(plan.getStationId());
+            }
+            
+            if (plan.getIsDefault() != null && plan.getIsDefault() == 1 && plan.getStatus() != null && plan.getStatus() == 1) {
+                BillingPlan reset = new BillingPlan();
+                reset.setIsDefault(0);
+                planService.update(reset, new QueryWrapper<BillingPlan>()
+                        .eq("tenant_id", plan.getTenantId())
+                        .eq("station_id", plan.getStationId())
+                        .eq("status", 1)
+                        .ne("id", plan.getId()));
+            }
         }
         return Result.success(ok);
     }
@@ -141,7 +151,12 @@ public class BillingPlanController {
         if (segments != null && segments.size() > 96) {
             return Result.fail("分段数量不能超过96");
         }
-        return Result.success(planService.saveSegments(planId, segments, requireFullDay));
+        boolean ok = planService.saveSegments(planId, segments, requireFullDay);
+        if (ok) {
+            // 缓存失效
+            cacheService.invalidateSegments(planId);
+        }
+        return Result.success(ok);
     }
 
     @GetMapping("/{planId}/segments")
@@ -173,6 +188,7 @@ public class BillingPlanController {
     @DataScope
     public Result<Boolean> refresh(@PathVariable Long planId) {
         planService.evictCache(planId);
+        cacheService.invalidateSegments(planId);
         return Result.success(true);
     }
 
