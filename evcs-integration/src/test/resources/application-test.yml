@@ -1,4 +1,27 @@
 spring:
+  main:
+    allow-bean-definition-overriding: true
+
+  application:
+    name: evcs-integration-test
+  
+  # 禁用不必要的组件
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
+      - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+  
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+  
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
@@ -12,10 +35,17 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     show-sql: false
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
     
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+    map-underscore-to-camel-case: true
   global-config:
     db-config:
       logic-delete-field: deleted
@@ -26,8 +56,16 @@ evcs:
   tenant:
     enabled: true
     tenant-id-column: tenant_id
+    ignore-tables:
+      - sys_tenant
+      - sys_user
+      - sys_role
+      - sys_permission
+    default-tenant-id: 1
 
 logging:
   level:
     com.evcs: DEBUG
+    org.springframework.test: warn
+    org.springframework.web: warn
     root: INFO
