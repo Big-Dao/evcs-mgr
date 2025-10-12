@@ -7,12 +7,17 @@ evcs-mgr/
 ├── docker-compose.yml          # 完整部署配置（生产环境）
 ├── docker-compose.dev.yml      # 开发环境配置（包含应用服务）
 ├── docker-compose.local.yml    # 本地开发配置（仅基础设施）
+├── docker-compose.test.yml     # 测试环境配置（CI/CD和人工测试）
 ├── evcs-tenant/Dockerfile      # 租户服务Docker镜像
 ├── evcs-station/Dockerfile     # 充电站服务Docker镜像
 └── scripts/
-    ├── start-local.ps1         # 启动本地基础设施
-    ├── start-dev.ps1           # 启动完整开发环境
-    └── stop-all.ps1            # 停止所有服务
+    ├── start-local.ps1         # 启动本地基础设施（Windows）
+    ├── start-dev.ps1           # 启动完整开发环境（Windows）
+    ├── start-test.sh           # 启动测试环境（Linux/macOS）
+    ├── health-check.sh         # 健康检查脚本
+    ├── smoke-test.sh           # 冒烟测试脚本
+    ├── stop-test.sh            # 停止测试环境
+    └── stop-all.ps1            # 停止所有服务（Windows）
 ```
 
 ## 快速开始
@@ -51,6 +56,33 @@ docker-compose -f docker-compose.dev.yml logs -f station-service
 # 停止服务
 docker-compose -f docker-compose.dev.yml down
 ```
+
+### 方式三：测试环境（推荐用于CI/CD和人工测试）
+
+一键部署完整测试环境，包含自动化验证：
+
+```bash
+# Linux/macOS - 启动测试环境
+./scripts/start-test.sh
+
+# 运行健康检查
+./scripts/health-check.sh
+
+# 运行冒烟测试
+./scripts/smoke-test.sh
+
+# 停止测试环境
+./scripts/stop-test.sh
+```
+
+**测试环境特点**：
+- ✅ 独立的测试数据库和配置
+- ✅ 自动化健康检查和冒烟测试
+- ✅ 完整的服务日志和监控
+- ✅ 包含Adminer数据库管理工具
+- ✅ 适合CI/CD集成
+
+详见：[测试环境部署指南](docs/TEST-ENVIRONMENT-GUIDE.md)
 
 ## 服务访问地址
 

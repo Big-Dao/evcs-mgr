@@ -163,6 +163,39 @@ docker-compose up -d
 - Redis：localhost:6379
 - RabbitMQ管理界面：http://localhost:15672
 
+### 测试环境部署
+
+快速部署测试环境进行人工测试：
+
+```bash
+# 启动测试环境（包含所有服务）
+./scripts/start-test.sh
+
+# 运行健康检查
+./scripts/health-check.sh
+
+# 运行冒烟测试
+./scripts/smoke-test.sh
+
+# 停止测试环境
+./scripts/stop-test.sh
+```
+
+**测试环境特点**：
+- ✅ 一键部署，包含完整服务栈
+- ✅ 自动化健康检查和冒烟测试
+- ✅ 独立的测试数据库和配置
+- ✅ 完善的日志和监控
+- ✅ 适合CI/CD集成
+
+**访问地址**：
+- 租户服务：http://localhost:8081
+- 充电站服务：http://localhost:8082
+- 数据库管理（Adminer）：http://localhost:8090
+- RabbitMQ管理：http://localhost:15672
+
+详细文档：[测试环境部署指南](docs/TEST-ENVIRONMENT-GUIDE.md)
+
 ## 🔧 配置说明
 
 ### 数据库配置
