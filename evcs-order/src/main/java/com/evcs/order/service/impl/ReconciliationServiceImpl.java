@@ -46,10 +46,10 @@ public class ReconciliationServiceImpl implements ReconciliationService {
         
         try {
             // 使用分页查询处理订单，避免一次性加载所有数据导致OOM
+            // MyBatis Plus自动添加tenant_id过滤
             do {
                 Page<ChargingOrder> page = new Page<>(currentPage, BATCH_SIZE);
                 QueryWrapper<ChargingOrder> qw = new QueryWrapper<ChargingOrder>()
-                        .eq("tenant_id", TenantContext.getCurrentTenantId())
                         .ge("create_time", start)
                         .lt("create_time", end)
                         .orderByAsc("id"); // 保证顺序一致性
