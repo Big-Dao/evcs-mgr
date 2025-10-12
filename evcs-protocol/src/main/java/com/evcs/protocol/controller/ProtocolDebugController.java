@@ -18,7 +18,7 @@ import java.util.UUID;
  * 提供协议事件模拟和查看功能，方便开发和测试
  */
 @Slf4j
-@RestController
+@RestController("protocolEventDebugController")
 @RequestMapping("/debug/protocol")
 @RequiredArgsConstructor
 public class ProtocolDebugController {

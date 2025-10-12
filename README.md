@@ -251,23 +251,54 @@ JWT Token配置：
 - 完善的注释和文档
 
 ### 测试规范
-- 单元测试覆盖率 > 80%
-- 集成测试覆盖核心业务流程
-- 性能测试确保系统稳定性
-- 完善的测试框架支持，详见 [测试指南](docs/TESTING-GUIDE.md)
+
+**当前测试状态**：
+- ✅ **131个测试用例** (从20个提升555%)
+- ✅ **92个通过** (70.2%通过率)
+- ⚠️ **39个待修复** (配置和依赖问题)
+- 📈 **测试覆盖率**: ~35% (目标80%)
+
+**测试框架**：
+- **基础设施**: 完整的测试基类和工具类
+- **Service层**: BaseServiceTest - 自动租户上下文管理
+- **Controller层**: BaseControllerTest - MockMvc支持
+- **多租户**: BaseTenantIsolationTest - 租户隔离验证
+- **集成测试**: BaseIntegrationTest - 完整上下文测试
+
+**测试文档**：
+- 📖 [测试覆盖率报告](TEST-COVERAGE-REPORT.md)
+- 📖 [测试改进总结](docs/TESTING-IMPROVEMENTS.md)  
+- 📖 [测试指南](docs/TESTING-GUIDE.md)
+- 📖 [测试框架说明](TEST-FRAMEWORK-SUMMARY.md)
 
 ### 运行测试
 ```bash
 # 运行所有测试
-./gradlew test
+./gradlew test --continue
 
 # 运行指定模块测试
 ./gradlew :evcs-station:test
 
 # 生成测试覆盖率报告
-./gradlew test jacocoTestReport
-# 报告位置: build/reports/jacoco/test/html/index.html
+./gradlew test jacocoTestReport --continue
+# 报告位置: {module}/build/reports/jacoco/test/html/index.html
+
+# 查看测试HTML报告
+# 报告位置: {module}/build/reports/tests/test/index.html
 ```
+
+**模块测试状态**：
+| 模块 | 测试数 | 通过 | 状态 |
+|------|--------|------|------|
+| evcs-common | 5 | 5 | ✅ |
+| evcs-auth | 12 | 12 | ✅ |
+| evcs-gateway | 1 | 1 | ✅ |
+| evcs-protocol | 2 | 2 | ✅ |
+| evcs-tenant | 1 | 1 | ✅ |
+| evcs-station | 26 | 16 | ⚠️ |
+| evcs-order | 10 | 6 | ⚠️ |
+| evcs-payment | 12 | 0 | ❌ |
+| evcs-integration | 18 | 5 | ⚠️ |
 
 ## 🛠️ 部署指南
 

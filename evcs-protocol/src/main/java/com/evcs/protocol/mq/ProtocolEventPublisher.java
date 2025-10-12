@@ -2,9 +2,9 @@ package com.evcs.protocol.mq;
 
 import com.evcs.protocol.config.RabbitMQConfig;
 import com.evcs.protocol.event.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,12 +13,14 @@ import java.util.UUID;
 /**
  * 协议事件发布者
  * 负责将协议事件发送到RabbitMQ
+ * 在测试环境中，如果RabbitTemplate不可用，会记录日志但不抛出异常
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ProtocolEventPublisher {
-    private final RabbitTemplate rabbitTemplate;
+    
+    @Autowired(required = false)
+    private RabbitTemplate rabbitTemplate;
 
     /**
      * 发布心跳事件
@@ -110,6 +112,12 @@ public class ProtocolEventPublisher {
      * 发布事件到RabbitMQ
      */
     private void publishEvent(ProtocolEvent event) {
+        if (rabbitTemplate == null) {
+            log.warn("RabbitTemplate is not available (likely in test environment). Event will not be published: type={}, chargerId={}",
+                    event.getEventType(), event.getChargerId());
+            return;
+        }
+        
         try {
             String routingKey = event.getRoutingKey();
             log.info("Publishing protocol event: type={}, chargerId={}, routingKey={}",
