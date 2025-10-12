@@ -1,6 +1,6 @@
 package com.evcs.order.mq;
 
-import com.evcs.common.context.TenantContext;
+import com.evcs.common.tenant.TenantContext;
 import com.evcs.order.entity.ChargingOrder;
 import com.evcs.order.service.IChargingOrderService;
 import com.evcs.protocol.event.StartEvent;
@@ -72,10 +72,8 @@ public class ChargingEventConsumer {
                 order.setChargerId(event.getChargerId());
                 order.setUserId(event.getUserId());
                 order.setSessionId(event.getSessionId());
-                order.setOrderNo(event.getOrderNo());
                 order.setStartTime(LocalDateTime.now());
-                order.setStatus(1); // 充电中
-                order.setInitialEnergy(event.getInitialEnergy());
+                order.setStatus(ChargingOrder.STATUS_CREATED); // 已创建
                 order.setTenantId(event.getTenantId());
                 
                 boolean saved = orderService.save(order);
@@ -142,10 +140,9 @@ public class ChargingEventConsumer {
                 
                 // 2. 更新订单状态为已完成
                 order.setEndTime(LocalDateTime.now());
-                order.setStatus(2); // 已完成
+                order.setStatus(ChargingOrder.STATUS_COMPLETED); // 已完成
                 order.setEnergy(event.getEnergy());
-                order.setDuration(event.getDuration() != null ? event.getDuration().intValue() : null);
-                order.setStopReason(event.getReason());
+                order.setDuration(event.getDuration());
                 
                 // 3. 计算费用（TODO: 实现计费逻辑，这里先设置为0）
                 // order.setTotalAmount(...);

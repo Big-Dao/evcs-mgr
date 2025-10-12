@@ -1,6 +1,6 @@
 package com.evcs.protocol.controller;
 
-import com.evcs.common.core.Result;
+import com.evcs.common.result.Result;
 import com.evcs.protocol.event.*;
 import com.evcs.protocol.mq.ProtocolEventPublisher;
 import lombok.Data;
@@ -49,7 +49,7 @@ public class ProtocolDebugController {
             return Result.success("Heartbeat event sent successfully");
         } catch (Exception e) {
             log.error("Failed to simulate heartbeat", e);
-            return Result.error("Failed to simulate heartbeat: " + e.getMessage());
+            return Result.failure("Failed to simulate heartbeat: " + e.getMessage());
         }
     }
     
@@ -74,7 +74,7 @@ public class ProtocolDebugController {
             return Result.success("Status change event sent successfully");
         } catch (Exception e) {
             log.error("Failed to simulate status change", e);
-            return Result.error("Failed to simulate status change: " + e.getMessage());
+            return Result.failure("Failed to simulate status change: " + e.getMessage());
         }
     }
     
@@ -106,7 +106,7 @@ public class ProtocolDebugController {
                     new SimulateResponse(sessionId, orderNo));
         } catch (Exception e) {
             log.error("Failed to simulate charging start", e);
-            return Result.error("Failed to simulate charging start: " + e.getMessage());
+            return Result.failure("Failed to simulate charging start: " + e.getMessage());
         }
     }
     
@@ -135,7 +135,7 @@ public class ProtocolDebugController {
             return Result.success("Charging stop event sent successfully");
         } catch (Exception e) {
             log.error("Failed to simulate charging stop", e);
-            return Result.error("Failed to simulate charging stop: " + e.getMessage());
+            return Result.failure("Failed to simulate charging stop: " + e.getMessage());
         }
     }
     
