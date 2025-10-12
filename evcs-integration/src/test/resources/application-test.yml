@@ -5,6 +5,10 @@ spring:
   application:
     name: evcs-integration-test
   
+  # 禁用RabbitMQ for tests
+  rabbitmq:
+    enabled: false
+  
   # 禁用不必要的组件
   autoconfigure:
     exclude:
