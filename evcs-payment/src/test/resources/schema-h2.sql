@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS payment_order (
     update_time TIMESTAMP,
     create_by BIGINT,
     update_by BIGINT,
-    deleted INTEGER DEFAULT 0
+    deleted INTEGER DEFAULT 0,
+    version INTEGER DEFAULT 0
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_payment_trade_no ON payment_order(trade_no);
