@@ -166,8 +166,8 @@ else
     echo "=========================================="
     echo ""
     echo -e "${YELLOW}排查建议:${NC}"
-    echo "  1. 检查服务日志: docker-compose -f docker-compose.test.yml logs"
-    echo "  2. 检查容器状态: docker-compose -f docker-compose.test.yml ps"
+    echo "  1. 检查服务日志: docker compose -f docker-compose.test.yml logs"
+    echo "  2. 检查容器状态: docker compose -f docker-compose.test.yml ps"
     echo "  3. 重新部署环境: ./scripts/start-test.sh"
     echo ""
     exit 1

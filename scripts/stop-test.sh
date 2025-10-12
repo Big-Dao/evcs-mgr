@@ -32,7 +32,7 @@ fi
 
 echo ""
 echo -e "${YELLOW}停止测试环境服务...${NC}"
-docker-compose -f docker-compose.test.yml down $VOLUME_FLAG --remove-orphans
+docker compose -f docker-compose.test.yml down $VOLUME_FLAG --remove-orphans
 
 echo ""
 echo -e "${GREEN}测试环境已停止${NC}"

@@ -44,13 +44,13 @@
 
 ```powershell
 # 1. 启动测试环境
-docker-compose -f docker-compose.test.yml up --build -d
+docker compose -f docker-compose.test.yml up --build -d
 
 # 2. 查看服务状态
-docker-compose -f docker-compose.test.yml ps
+docker compose -f docker-compose.test.yml ps
 
 # 3. 停止测试环境
-docker-compose -f docker-compose.test.yml down
+docker compose -f docker-compose.test.yml down
 ```
 
 ---
@@ -134,23 +134,23 @@ chmod +x scripts/*.sh
 
 ```bash
 # 停止旧环境
-docker-compose -f docker-compose.test.yml down
+docker compose -f docker-compose.test.yml down
 
 # 启动新环境（不重新构建）
-docker-compose -f docker-compose.test.yml up -d
+docker compose -f docker-compose.test.yml up -d
 
 # 或者重新构建并启动
-docker-compose -f docker-compose.test.yml up --build -d
+docker compose -f docker-compose.test.yml up --build -d
 ```
 
 ### 4. 等待服务就绪
 
 ```bash
 # 查看服务启动状态
-docker-compose -f docker-compose.test.yml ps
+docker compose -f docker-compose.test.yml ps
 
 # 查看服务日志
-docker-compose -f docker-compose.test.yml logs -f
+docker compose -f docker-compose.test.yml logs -f
 ```
 
 等待所有服务状态变为 `healthy` 或 `running`，通常需要1-2分钟。
@@ -346,14 +346,14 @@ http://localhost:8082/swagger-ui.html
 
 ```bash
 # 查看容器状态
-docker-compose -f docker-compose.test.yml ps
+docker compose -f docker-compose.test.yml ps
 
 # 查看失败服务的日志
-docker-compose -f docker-compose.test.yml logs tenant-service
-docker-compose -f docker-compose.test.yml logs station-service
+docker compose -f docker-compose.test.yml logs tenant-service
+docker compose -f docker-compose.test.yml logs station-service
 
 # 查看最近的日志
-docker-compose -f docker-compose.test.yml logs --tail=100 tenant-service
+docker compose -f docker-compose.test.yml logs --tail=100 tenant-service
 ```
 
 **常见原因**:
@@ -369,10 +369,10 @@ docker-compose -f docker-compose.test.yml logs --tail=100 tenant-service
 
 ```bash
 # 检查PostgreSQL是否运行
-docker-compose -f docker-compose.test.yml ps postgres
+docker compose -f docker-compose.test.yml ps postgres
 
 # 检查PostgreSQL日志
-docker-compose -f docker-compose.test.yml logs postgres
+docker compose -f docker-compose.test.yml logs postgres
 
 # 手动测试连接
 docker exec evcs-postgres-test pg_isready -U evcs_test
@@ -426,16 +426,16 @@ curl -v http://localhost:8081/actuator/health
 
 ```bash
 # 所有服务日志
-docker-compose -f docker-compose.test.yml logs
+docker compose -f docker-compose.test.yml logs
 
 # 特定服务日志
-docker-compose -f docker-compose.test.yml logs tenant-service
+docker compose -f docker-compose.test.yml logs tenant-service
 
 # 实时跟踪日志
-docker-compose -f docker-compose.test.yml logs -f tenant-service
+docker compose -f docker-compose.test.yml logs -f tenant-service
 
 # 最近N行日志
-docker-compose -f docker-compose.test.yml logs --tail=100 station-service
+docker compose -f docker-compose.test.yml logs --tail=100 station-service
 ```
 
 ### 进入容器调试
@@ -462,14 +462,14 @@ docker exec -it evcs-redis-test /bin/sh
 ./scripts/stop-test.sh
 
 # 或手动停止
-docker-compose -f docker-compose.test.yml down
+docker compose -f docker-compose.test.yml down
 ```
 
 ### 完全清理（删除数据）
 
 ```bash
 # 停止并删除所有数据
-docker-compose -f docker-compose.test.yml down -v
+docker compose -f docker-compose.test.yml down -v
 
 # 清理Docker资源
 docker system prune -f
@@ -480,7 +480,7 @@ docker volume prune -f
 
 ```bash
 # 1. 完全清理
-docker-compose -f docker-compose.test.yml down -v
+docker compose -f docker-compose.test.yml down -v
 
 # 2. 重新启动
 ./scripts/start-test.sh

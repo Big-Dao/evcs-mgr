@@ -55,13 +55,13 @@ jobs:
       if: failure()
       run: |
         echo "=== Tenant Service Logs ==="
-        docker-compose -f docker-compose.test.yml logs tenant-service
+        docker compose -f docker-compose.test.yml logs tenant-service
         echo ""
         echo "=== Station Service Logs ==="
-        docker-compose -f docker-compose.test.yml logs station-service
+        docker compose -f docker-compose.test.yml logs station-service
         echo ""
         echo "=== PostgreSQL Logs ==="
-        docker-compose -f docker-compose.test.yml logs postgres
+        docker compose -f docker-compose.test.yml logs postgres
 
     - name: Upload logs as artifact on failure
       if: failure()

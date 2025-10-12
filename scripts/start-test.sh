@@ -51,11 +51,11 @@ fi
 
 echo ""
 echo -e "${YELLOW}停止并清理旧的测试环境...${NC}"
-docker-compose -f docker-compose.test.yml down --remove-orphans
+docker compose -f docker-compose.test.yml down --remove-orphans
 
 echo ""
 echo -e "${YELLOW}启动测试环境 (可能需要几分钟)...${NC}"
-docker-compose -f docker-compose.test.yml up $BUILD_FLAG -d
+docker compose -f docker-compose.test.yml up $BUILD_FLAG -d
 
 # 等待服务启动
 echo ""
@@ -65,7 +65,7 @@ sleep 10
 # 检查服务状态
 echo ""
 echo -e "${CYAN}检查服务状态...${NC}"
-docker-compose -f docker-compose.test.yml ps
+docker compose -f docker-compose.test.yml ps
 
 echo ""
 echo "=========================================="
@@ -86,12 +86,12 @@ echo "  curl http://localhost:8081/actuator/health"
 echo "  curl http://localhost:8082/actuator/health"
 echo ""
 echo -e "${YELLOW}查看日志:${NC}"
-echo "  docker-compose -f docker-compose.test.yml logs -f"
-echo "  docker-compose -f docker-compose.test.yml logs -f tenant-service"
-echo "  docker-compose -f docker-compose.test.yml logs -f station-service"
+echo "  docker compose -f docker-compose.test.yml logs -f"
+echo "  docker compose -f docker-compose.test.yml logs -f tenant-service"
+echo "  docker compose -f docker-compose.test.yml logs -f station-service"
 echo ""
 echo -e "${YELLOW}停止服务:${NC}"
-echo "  docker-compose -f docker-compose.test.yml down"
+echo "  docker compose -f docker-compose.test.yml down"
 echo ""
 echo -e "${CYAN}运行健康检查:${NC}"
 echo "  ./scripts/health-check.sh"

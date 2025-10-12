@@ -126,7 +126,7 @@ else
     echo "=========================================="
     echo ""
     echo -e "${YELLOW}查看失败服务的日志:${NC}"
-    echo "  docker-compose -f docker-compose.test.yml logs tenant-service"
-    echo "  docker-compose -f docker-compose.test.yml logs station-service"
+    echo "  docker compose -f docker-compose.test.yml logs tenant-service"
+    echo "  docker compose -f docker-compose.test.yml logs station-service"
     exit 1
 fi
