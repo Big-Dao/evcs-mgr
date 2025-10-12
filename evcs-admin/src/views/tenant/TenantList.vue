@@ -48,8 +48,9 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
+            <el-button link type="primary" size="small" @click="handleView(row)">详情</el-button>
             <el-button link type="primary" size="small" @click="handleEdit(row)">编辑</el-button>
             <el-button link type="danger" size="small" @click="handleDelete(row)">删除</el-button>
           </template>
@@ -111,8 +112,11 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+
+const router = useRouter()
 
 const searchForm = reactive({
   name: '',
@@ -205,6 +209,10 @@ const handleReset = () => {
 const handleAdd = () => {
   dialogTitle.value = '新增租户'
   dialogVisible.value = true
+}
+
+const handleView = (row: any) => {
+  router.push(`/tenants/${row.tenantId}`)
 }
 
 const handleEdit = (row: any) => {

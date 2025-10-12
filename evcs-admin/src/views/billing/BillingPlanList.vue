@@ -121,7 +121,10 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+const router = useRouter()
 
 const searchForm = reactive({
   name: '',
@@ -210,7 +213,7 @@ const handleReset = () => {
 }
 
 const handleAdd = () => {
-  ElMessage.info('新增计费方案功能')
+  router.push('/billing-plans/new')
 }
 
 const handleView = (row: any) => {
@@ -218,7 +221,7 @@ const handleView = (row: any) => {
 }
 
 const handleEdit = (row: any) => {
-  ElMessage.info('编辑计费方案: ' + row.planName)
+  router.push(`/billing-plans/${row.planId}/edit`)
 }
 
 const handlePreview = (_row: any) => {

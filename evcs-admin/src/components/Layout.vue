@@ -14,14 +14,22 @@
           <el-icon><DataAnalysis /></el-icon>
           <span>仪表盘</span>
         </el-menu-item>
-        <el-menu-item index="/tenants">
-          <el-icon><OfficeBuilding /></el-icon>
-          <span>租户管理</span>
-        </el-menu-item>
-        <el-menu-item index="/users">
-          <el-icon><User /></el-icon>
-          <span>用户管理</span>
-        </el-menu-item>
+        <el-sub-menu index="/tenants">
+          <template #title>
+            <el-icon><OfficeBuilding /></el-icon>
+            <span>租户管理</span>
+          </template>
+          <el-menu-item index="/tenants">租户列表</el-menu-item>
+          <el-menu-item index="/tenants/tree">租户树形</el-menu-item>
+        </el-sub-menu>
+        <el-sub-menu index="/users">
+          <template #title>
+            <el-icon><User /></el-icon>
+            <span>用户管理</span>
+          </template>
+          <el-menu-item index="/users">用户列表</el-menu-item>
+          <el-menu-item index="/roles">角色管理</el-menu-item>
+        </el-sub-menu>
         <el-menu-item index="/stations">
           <el-icon><Location /></el-icon>
           <span>充电站管理</span>
@@ -30,10 +38,14 @@
           <el-icon><Monitor /></el-icon>
           <span>充电桩管理</span>
         </el-menu-item>
-        <el-menu-item index="/orders">
-          <el-icon><Document /></el-icon>
-          <span>订单管理</span>
-        </el-menu-item>
+        <el-sub-menu index="/orders">
+          <template #title>
+            <el-icon><Document /></el-icon>
+            <span>订单管理</span>
+          </template>
+          <el-menu-item index="/orders">订单列表</el-menu-item>
+          <el-menu-item index="/orders/dashboard">订单统计</el-menu-item>
+        </el-sub-menu>
         <el-menu-item index="/billing-plans">
           <el-icon><Coin /></el-icon>
           <span>计费方案</span>

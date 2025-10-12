@@ -84,7 +84,10 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+
+const router = useRouter()
 
 const searchForm = reactive({
   orderNo: '',
@@ -155,7 +158,7 @@ const handleReset = () => {
 }
 
 const handleView = (row: any) => {
-  ElMessage.info('查看订单详情: ' + row.orderNo)
+  router.push(`/orders/${row.orderId}`)
 }
 
 const handleReconcile = (row: any) => {

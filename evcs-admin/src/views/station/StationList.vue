@@ -102,7 +102,10 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+const router = useRouter()
 
 const viewMode = ref('list')
 
@@ -177,7 +180,7 @@ const handleAdd = () => {
 }
 
 const handleView = (row: any) => {
-  ElMessage.info('查看充电站详情: ' + row.stationName)
+  router.push(`/stations/${row.stationId}`)
 }
 
 const handleEdit = (row: any) => {
