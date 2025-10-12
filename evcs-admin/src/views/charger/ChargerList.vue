@@ -76,7 +76,10 @@
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+const router = useRouter()
 
 const searchForm = reactive({
   code: '',
@@ -167,7 +170,7 @@ const handleAdd = () => {
 }
 
 const handleView = (row: any) => {
-  ElMessage.info('查看充电桩详情: ' + row.chargerCode)
+  router.push(`/chargers/${row.chargerId}`)
 }
 
 const handleEdit = (row: any) => {

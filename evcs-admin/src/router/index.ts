@@ -26,10 +26,34 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '租户管理', icon: 'OfficeBuilding' }
       },
       {
+        path: 'tenants/:id',
+        name: 'TenantDetail',
+        component: () => import('@/views/tenant/TenantDetail.vue'),
+        meta: { title: '租户详情', icon: 'OfficeBuilding', hidden: true }
+      },
+      {
+        path: 'tenants/tree',
+        name: 'TenantTree',
+        component: () => import('@/views/tenant/TenantTree.vue'),
+        meta: { title: '租户树形', icon: 'Tree', hidden: true }
+      },
+      {
         path: 'users',
         name: 'Users',
         component: () => import('@/views/user/UserList.vue'),
         meta: { title: '用户管理', icon: 'User' }
+      },
+      {
+        path: 'users/:id',
+        name: 'UserDetail',
+        component: () => import('@/views/user/UserDetail.vue'),
+        meta: { title: '用户详情', icon: 'User', hidden: true }
+      },
+      {
+        path: 'roles',
+        name: 'Roles',
+        component: () => import('@/views/user/RoleList.vue'),
+        meta: { title: '角色管理', icon: 'Avatar', hidden: true }
       },
       {
         path: 'stations',
@@ -38,10 +62,22 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '充电站管理', icon: 'Location' }
       },
       {
+        path: 'stations/:id',
+        name: 'StationDetail',
+        component: () => import('@/views/station/StationDetail.vue'),
+        meta: { title: '充电站详情', icon: 'Location', hidden: true }
+      },
+      {
         path: 'chargers',
         name: 'Chargers',
         component: () => import('@/views/charger/ChargerList.vue'),
         meta: { title: '充电桩管理', icon: 'Monitor' }
+      },
+      {
+        path: 'chargers/:id',
+        name: 'ChargerDetail',
+        component: () => import('@/views/charger/ChargerDetail.vue'),
+        meta: { title: '充电桩详情', icon: 'Monitor', hidden: true }
       },
       {
         path: 'orders',
@@ -50,10 +86,34 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '订单管理', icon: 'Document' }
       },
       {
+        path: 'orders/:id',
+        name: 'OrderDetail',
+        component: () => import('@/views/order/OrderDetail.vue'),
+        meta: { title: '订单详情', icon: 'Document', hidden: true }
+      },
+      {
+        path: 'orders/dashboard',
+        name: 'OrderDashboard',
+        component: () => import('@/views/order/OrderDashboard.vue'),
+        meta: { title: '订单统计', icon: 'DataAnalysis', hidden: true }
+      },
+      {
         path: 'billing-plans',
         name: 'BillingPlans',
         component: () => import('@/views/billing/BillingPlanList.vue'),
         meta: { title: '计费方案', icon: 'Coin' }
+      },
+      {
+        path: 'billing-plans/new',
+        name: 'BillingPlanNew',
+        component: () => import('@/views/billing/BillingPlanForm.vue'),
+        meta: { title: '新增计费方案', icon: 'Coin', hidden: true }
+      },
+      {
+        path: 'billing-plans/:id/edit',
+        name: 'BillingPlanEdit',
+        component: () => import('@/views/billing/BillingPlanForm.vue'),
+        meta: { title: '编辑计费方案', icon: 'Coin', hidden: true }
       }
     ]
   }
