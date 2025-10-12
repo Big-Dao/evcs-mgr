@@ -29,9 +29,9 @@ public class BillingPlanController {
     @Operation(summary = "创建计费计划")
     @DataScope
     public Result<BillingPlan> create(@Valid @RequestBody BillingPlan plan) {
+        // MyBatis Plus自动添加tenant_id过滤
         if (plan.getStatus() != null && plan.getStatus() == 1 && plan.getStationId() != null) {
             long cnt = planService.count(new QueryWrapper<BillingPlan>()
-                    .eq("tenant_id", plan.getTenantId())
                     .eq("station_id", plan.getStationId())
                     .eq("status", 1));
             if (cnt >= 16) {
@@ -44,7 +44,6 @@ public class BillingPlanController {
             BillingPlan reset = new BillingPlan();
             reset.setIsDefault(0);
             planService.update(reset, new QueryWrapper<BillingPlan>()
-                    .eq("tenant_id", plan.getTenantId())
                     .eq("station_id", plan.getStationId())
                     .eq("status", 1)
                     .ne("id", plan.getId()));
@@ -86,11 +85,11 @@ public class BillingPlanController {
         patch.setId(planId);
         patch.setIsDefault(1);
         boolean ok = planService.updateById(patch);
+        // MyBatis Plus自动添加tenant_id过滤
         if (ok) {
             BillingPlan reset = new BillingPlan();
             reset.setIsDefault(0);
             planService.update(reset, new QueryWrapper<BillingPlan>()
-                    .eq("tenant_id", plan.getTenantId())
                     .eq("station_id", stationId)
                     .eq("status", 1)
                     .ne("id", planId));
@@ -102,9 +101,9 @@ public class BillingPlanController {
     @Operation(summary = "更新计费计划")
     @DataScope
     public Result<Boolean> update(@Valid @RequestBody BillingPlan plan) {
+        // MyBatis Plus自动添加tenant_id过滤
         if (plan.getStatus() != null && plan.getStatus() == 1 && plan.getStationId() != null) {
             long cnt = planService.count(new QueryWrapper<BillingPlan>()
-                    .eq("tenant_id", plan.getTenantId())
                     .eq("station_id", plan.getStationId())
                     .eq("status", 1)
                     .ne("id", plan.getId()));
@@ -124,7 +123,6 @@ public class BillingPlanController {
                 BillingPlan reset = new BillingPlan();
                 reset.setIsDefault(0);
                 planService.update(reset, new QueryWrapper<BillingPlan>()
-                        .eq("tenant_id", plan.getTenantId())
                         .eq("station_id", plan.getStationId())
                         .eq("status", 1)
                         .ne("id", plan.getId()));

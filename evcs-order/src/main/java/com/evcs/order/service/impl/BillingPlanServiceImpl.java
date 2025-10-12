@@ -26,9 +26,9 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
     @DataScope
     public BillingPlan getChargerPlan(Long chargerId, Long stationId) {
         // 简化：根据站点默认，再回退到全局默认（station_id 为空）
+        // MyBatis Plus自动添加tenant_id过滤
         java.time.LocalDate today = java.time.LocalDate.now();
         BillingPlan stationDefault = this.getOne(new QueryWrapper<BillingPlan>()
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .eq("station_id", stationId)
                 .eq("status", 1)
                 .and(q -> q.isNull("effective_start_date").or().le("effective_start_date", today))
@@ -36,7 +36,6 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
                 .orderByDesc("priority").orderByDesc("is_default").orderByDesc("id").last("limit 1"));
         if (stationDefault != null) return stationDefault;
         return this.getOne(new QueryWrapper<BillingPlan>()
-                .eq("tenant_id", TenantContext.getCurrentTenantId())
                 .isNull("station_id")
                 .eq("status", 1)
                 .and(q -> q.isNull("effective_start_date").or().le("effective_start_date", today))
@@ -91,9 +90,9 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
         if (src == null) return null;
 
         // 限制同站点启用计划数量（如新计划启用）
+        // MyBatis Plus自动添加tenant_id过滤
         if (newPlan.getStatus() != null && newPlan.getStatus() == 1 && newPlan.getStationId() != null) {
             long cnt = this.count(new QueryWrapper<BillingPlan>()
-                    .eq("tenant_id", src.getTenantId())
                     .eq("station_id", newPlan.getStationId())
                     .eq("status", 1));
             if (cnt >= 16) {

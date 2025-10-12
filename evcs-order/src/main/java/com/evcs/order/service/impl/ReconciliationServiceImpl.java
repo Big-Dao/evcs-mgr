@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.tenant.TenantContext;
+import com.evcs.common.validation.TimeRangeValidator;
 import com.evcs.order.entity.ChargingOrder;
 import com.evcs.order.mapper.ChargingOrderMapper;
 import com.evcs.order.service.ReconciliationService;
@@ -46,10 +47,10 @@ public class ReconciliationServiceImpl implements ReconciliationService {
         
         try {
             // 使用分页查询处理订单，避免一次性加载所有数据导致OOM
+            // MyBatis Plus自动添加tenant_id过滤
             do {
                 Page<ChargingOrder> page = new Page<>(currentPage, BATCH_SIZE);
                 QueryWrapper<ChargingOrder> qw = new QueryWrapper<ChargingOrder>()
-                        .eq("tenant_id", TenantContext.getCurrentTenantId())
                         .ge("create_time", start)
                         .lt("create_time", end)
                         .orderByAsc("id"); // 保证顺序一致性
@@ -91,16 +92,15 @@ public class ReconciliationServiceImpl implements ReconciliationService {
     private void processOrder(ChargingOrder order, ReconcileResult result) {
         boolean hasIssue = false;
         
-        // 检查时间范围有效性
-        if (order.getStartTime() != null && order.getEndTime() != null 
-                && !order.getEndTime().isAfter(order.getStartTime())) {
+        // 使用TimeRangeValidator统一检查时间范围有效性
+        if (!TimeRangeValidator.isValidTimeRangeOrNull(order.getStartTime(), order.getEndTime())) {
             result.invalidTimeRange++;
             hasIssue = true;
         }
         
         // 检查已完成订单是否有结束时间
-        if (order.getEndTime() == null && (order.getStatus() != null 
-                && order.getStatus() >= ChargingOrder.STATUS_COMPLETED)) {
+        // status字段有数据库默认值0，无需null检查
+        if (order.getEndTime() == null && order.getStatus() >= ChargingOrder.STATUS_COMPLETED) {
             result.missingEndTime++;
             hasIssue = true;
         }
