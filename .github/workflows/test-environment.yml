@@ -42,26 +42,49 @@ jobs:
         ./scripts/start-test.sh
 
     - name: Wait for services to be ready
-      run: sleep 30
+      run: |
+        echo "Waiting for services to start..."
+        sleep 60
+        echo "Checking container status..."
+        docker compose -f docker-compose.test.yml ps
 
     - name: Run health checks
       run: ./scripts/health-check.sh
+      timeout-minutes: 10
+
+    - name: Show container status after health check
+      if: always()
+      run: |
+        echo "=== Container Status ==="
+        docker compose -f docker-compose.test.yml ps
+        echo "=== Container Resource Usage ==="
+        docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}"
 
     - name: Run smoke tests
       if: github.event.inputs.skip_tests != 'true'
       run: ./scripts/smoke-test.sh
+      timeout-minutes: 10
 
     - name: Collect service logs on failure
       if: failure()
       run: |
-        echo "=== Tenant Service Logs ==="
-        docker compose -f docker-compose.test.yml logs tenant-service
+        echo "=== Container Status ==="
+        docker compose -f docker-compose.test.yml ps
         echo ""
-        echo "=== Station Service Logs ==="
-        docker compose -f docker-compose.test.yml logs station-service
+        echo "=== Tenant Service Logs (last 200 lines) ==="
+        docker compose -f docker-compose.test.yml logs --tail=200 tenant-service
         echo ""
-        echo "=== PostgreSQL Logs ==="
-        docker compose -f docker-compose.test.yml logs postgres
+        echo "=== Station Service Logs (last 200 lines) ==="
+        docker compose -f docker-compose.test.yml logs --tail=200 station-service
+        echo ""
+        echo "=== PostgreSQL Logs (last 100 lines) ==="
+        docker compose -f docker-compose.test.yml logs --tail=100 postgres
+        echo ""
+        echo "=== Redis Logs (last 50 lines) ==="
+        docker compose -f docker-compose.test.yml logs --tail=50 redis
+        echo ""
+        echo "=== RabbitMQ Logs (last 50 lines) ==="
+        docker compose -f docker-compose.test.yml logs --tail=50 rabbitmq
 
     - name: Upload logs as artifact on failure
       if: failure()
