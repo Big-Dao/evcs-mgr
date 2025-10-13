@@ -28,10 +28,33 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Show system information
+      run: |
+        echo "=== System Information ==="
+        echo "Docker version:"
+        docker --version
+        docker compose version
+        echo "Available disk space:"
+        df -h
+        echo "Memory:"
+        free -h
+
     - name: Grant execute permission for scripts
       run: |
         chmod +x gradlew
         chmod +x scripts/*.sh
+
+    - name: Free up disk space
+      run: |
+        echo "Disk space before cleanup:"
+        df -h
+        echo "Removing unnecessary files..."
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        echo "Disk space after cleanup:"
+        df -h
 
     - name: Build application
       run: |
@@ -45,7 +68,10 @@ jobs:
         export CI=true
         echo "Starting test environment deployment..."
         echo "This will build Docker images and start all services..."
+        echo "Current disk usage:"
+        df -h /
         ./scripts/start-test.sh
+        echo "Test environment started successfully"
 
     - name: Wait for services to be ready
       run: |
@@ -55,7 +81,14 @@ jobs:
         docker compose -f docker-compose.test.yml ps
 
     - name: Run health checks
-      run: ./scripts/health-check.sh
+      run: |
+        echo "Running health checks..."
+        if ! ./scripts/health-check.sh; then
+          echo "Health check failed! Showing service logs..."
+          docker compose -f docker-compose.test.yml logs --tail=50
+          exit 1
+        fi
+        echo "All health checks passed"
       timeout-minutes: 10
 
     - name: Show container status after health check
