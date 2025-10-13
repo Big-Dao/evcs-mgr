@@ -76,19 +76,38 @@ jobs:
     - name: Wait for services to be ready
       run: |
         echo "Waiting for services to start..."
-        sleep 60
-        echo "Checking container status..."
+        echo "Initial wait (30s)..."
+        sleep 30
+        echo "Checking container status after 30s..."
         docker compose -f docker-compose.test.yml ps
+        echo "Continuing wait (additional 60s)..."
+        sleep 60
+        echo "Final container status:"
+        docker compose -f docker-compose.test.yml ps
+        echo "Checking service health status..."
+        docker compose -f docker-compose.test.yml ps --format json | grep -q '"Health":"healthy"' && echo "Some services are healthy" || echo "Waiting for services to become healthy..."
 
     - name: Run health checks
       run: |
         echo "Running health checks..."
-        if ! ./scripts/health-check.sh; then
-          echo "Health check failed! Showing service logs..."
-          docker compose -f docker-compose.test.yml logs --tail=50
-          exit 1
-        fi
-        echo "All health checks passed"
+        MAX_RETRIES=3
+        RETRY_COUNT=0
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          if ./scripts/health-check.sh; then
+            echo "All health checks passed"
+            exit 0
+          else
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "Health check failed (attempt $RETRY_COUNT/$MAX_RETRIES). Waiting 30s before retry..."
+              sleep 30
+            else
+              echo "Health check failed after $MAX_RETRIES attempts! Showing service logs..."
+              docker compose -f docker-compose.test.yml logs --tail=50
+              exit 1
+            fi
+          fi
+        done
       timeout-minutes: 10
 
     - name: Show container status after health check
