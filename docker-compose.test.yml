@@ -41,7 +41,7 @@ services:
     volumes:
       - redis_test_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      test: ["CMD", "redis-cli", "-a", "test_redis_123", "ping"]
       interval: 10s
       timeout: 3s
       retries: 5
