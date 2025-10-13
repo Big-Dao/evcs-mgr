@@ -15,7 +15,7 @@ on:
 jobs:
   test-deployment:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
     - name: Checkout code
@@ -34,11 +34,17 @@ jobs:
         chmod +x scripts/*.sh
 
     - name: Build application
-      run: ./gradlew build -x test --no-daemon
+      run: |
+        echo "Building application with Gradle..."
+        ./gradlew build -x test --no-daemon
+        echo "Build completed successfully"
 
     - name: Start test environment
+      timeout-minutes: 20
       run: |
         export CI=true
+        echo "Starting test environment deployment..."
+        echo "This will build Docker images and start all services..."
         ./scripts/start-test.sh
 
     - name: Wait for services to be ready
