@@ -1,0 +1,184 @@
+# 测试环境配置
+# 用途：CI/CD自动化测试和人工测试环境
+# 特点：包含完整的服务栈，带健康检查和监控
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: evcs-postgres-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evcs_mgr_test
+      POSTGRES_USER: evcs_test
+      POSTGRES_PASSWORD: test_password_123
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./sql/charging_station_tables.sql:/docker-entrypoint-initdb.d/02-station.sql
+      - ./sql/evcs_order_tables.sql:/docker-entrypoint-initdb.d/03-order.sql
+      - ./sql/payment_order.sql:/docker-entrypoint-initdb.d/04-payment.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evcs_test -d evcs_mgr_test"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - evcs-test-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: evcs-redis-test
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass test_redis_123
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_test_data:/data
+    healthcheck:
+      test: ["CMD", "sh", "-c", "redis-cli -a test_redis_123 ping 2>/dev/null || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks:
+      - evcs-test-network
+
+  # RabbitMQ消息队列
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: evcs-rabbitmq-test
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: evcs_test
+      RABBITMQ_DEFAULT_PASS: test_mq_123
+      TZ: Asia/Shanghai
+    ports:
+      - "5672:5672"   # AMQP端口
+      - "15672:15672" # 管理界面端口
+    volumes:
+      - rabbitmq_test_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - evcs-test-network
+
+  # 租户服务
+  tenant-service:
+    build:
+      context: .
+      dockerfile: evcs-tenant/Dockerfile
+    image: evcs-tenant:test
+    container_name: evcs-tenant-test
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,test
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/evcs_mgr_test
+      - SPRING_DATASOURCE_USERNAME=evcs_test
+      - SPRING_DATASOURCE_PASSWORD=test_password_123
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=test_redis_123
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=evcs_test
+      - SPRING_RABBITMQ_PASSWORD=test_mq_123
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_EVCS=DEBUG
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - evcs-test-network
+
+  # 充电站服务
+  station-service:
+    build:
+      context: .
+      dockerfile: evcs-station/Dockerfile
+    image: evcs-station:test
+    container_name: evcs-station-test
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker,test
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/evcs_mgr_test
+      - SPRING_DATASOURCE_USERNAME=evcs_test
+      - SPRING_DATASOURCE_PASSWORD=test_password_123
+      - SPRING_REDIS_HOST=redis
+      - SPRING_REDIS_PORT=6379
+      - SPRING_REDIS_PASSWORD=test_redis_123
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=evcs_test
+      - SPRING_RABBITMQ_PASSWORD=test_mq_123
+      - JAVA_OPTS=-Xms256m -Xmx512m -XX:+UseG1GC
+      - LOGGING_LEVEL_ROOT=INFO
+      - LOGGING_LEVEL_COM_EVCS=DEBUG
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      tenant-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+    networks:
+      - evcs-test-network
+
+  # Adminer数据库管理工具（测试环境专用）
+  adminer:
+    image: adminer:latest
+    container_name: evcs-adminer-test
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      - postgres
+    networks:
+      - evcs-test-network
+
+volumes:
+  postgres_test_data:
+    driver: local
+  redis_test_data:
+    driver: local
+  rabbitmq_test_data:
+    driver: local
+
+networks:
+  evcs-test-network:
+    driver: bridge
+    name: evcs-test-network

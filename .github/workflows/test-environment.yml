@@ -1,0 +1,197 @@
+name: Test Environment Deployment
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+    inputs:
+      skip_tests:
+        description: 'Skip smoke tests'
+        required: false
+        default: 'false'
+
+jobs:
+  test-deployment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: gradle
+
+    - name: Show system information
+      run: |
+        echo "=== System Information ==="
+        echo "Docker version:"
+        docker --version
+        docker compose version
+        echo "Available disk space:"
+        df -h
+        echo "Memory:"
+        free -h
+
+    - name: Grant execute permission for scripts
+      run: |
+        chmod +x gradlew
+        chmod +x scripts/*.sh
+
+    - name: Free up disk space
+      run: |
+        echo "Disk space before cleanup:"
+        df -h
+        echo "Removing unnecessary files..."
+        sudo rm -rf /usr/share/dotnet
+        sudo rm -rf /opt/ghc
+        sudo rm -rf "/usr/local/share/boost"
+        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        echo "Disk space after cleanup:"
+        df -h
+
+    - name: Build application
+      run: |
+        echo "Building application with Gradle..."
+        ./gradlew build -x test --no-daemon
+        echo "Build completed successfully"
+
+    - name: Start test environment
+      timeout-minutes: 20
+      run: |
+        export CI=true
+        echo "Starting test environment deployment..."
+        echo "This will build Docker images and start all services..."
+        echo "Current disk usage:"
+        df -h /
+        ./scripts/start-test.sh
+        echo "Test environment started successfully"
+
+    - name: Wait for services to be ready
+      run: |
+        echo "Waiting for services to start..."
+        echo "Initial wait (30s)..."
+        sleep 30
+        echo "Checking container status after 30s..."
+        docker compose -f docker-compose.test.yml ps
+        echo "Continuing wait (additional 60s)..."
+        sleep 60
+        echo "Final container status:"
+        docker compose -f docker-compose.test.yml ps
+        echo "Checking service health status..."
+        docker compose -f docker-compose.test.yml ps --format json | grep -q '"Health":"healthy"' && echo "Some services are healthy" || echo "Waiting for services to become healthy..."
+
+    - name: Run health checks
+      run: |
+        echo "Running health checks..."
+        MAX_RETRIES=3
+        RETRY_COUNT=0
+        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+          if ./scripts/health-check.sh; then
+            echo "All health checks passed"
+            exit 0
+          else
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "Health check failed (attempt $RETRY_COUNT/$MAX_RETRIES). Waiting 30s before retry..."
+              sleep 30
+            else
+              echo "Health check failed after $MAX_RETRIES attempts! Showing service logs..."
+              docker compose -f docker-compose.test.yml logs --tail=50
+              exit 1
+            fi
+          fi
+        done
+      timeout-minutes: 10
+
+    - name: Show container status after health check
+      if: always()
+      run: |
+        echo "=== Container Status ==="
+        docker compose -f docker-compose.test.yml ps
+        echo "=== Container Resource Usage ==="
+        docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+
+    - name: Run smoke tests
+      if: github.event.inputs.skip_tests != 'true'
+      run: ./scripts/smoke-test.sh
+      timeout-minutes: 10
+
+    - name: Collect service logs on failure
+      if: failure()
+      run: |
+        echo "=== Container Status ==="
+        docker compose -f docker-compose.test.yml ps
+        echo ""
+        echo "=== Tenant Service Logs (last 200 lines) ==="
+        docker compose -f docker-compose.test.yml logs --tail=200 tenant-service
+        echo ""
+        echo "=== Station Service Logs (last 200 lines) ==="
+        docker compose -f docker-compose.test.yml logs --tail=200 station-service
+        echo ""
+        echo "=== PostgreSQL Logs (last 100 lines) ==="
+        docker compose -f docker-compose.test.yml logs --tail=100 postgres
+        echo ""
+        echo "=== Redis Logs (last 50 lines) ==="
+        docker compose -f docker-compose.test.yml logs --tail=50 redis
+        echo ""
+        echo "=== RabbitMQ Logs (last 50 lines) ==="
+        docker compose -f docker-compose.test.yml logs --tail=50 rabbitmq
+
+    - name: Upload logs as artifact on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-environment-logs
+        path: |
+          **/*.log
+        retention-days: 7
+
+    - name: Stop test environment
+      if: always()
+      run: |
+        export CI=true
+        ./scripts/stop-test.sh
+
+    - name: Clean up Docker resources
+      if: always()
+      run: |
+        docker system prune -f
+        docker volume prune -f
+
+  build-docker-images:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build tenant service image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./evcs-tenant/Dockerfile
+        push: false
+        tags: evcs-tenant:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Build station service image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./evcs-station/Dockerfile
+        push: false
+        tags: evcs-station:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
