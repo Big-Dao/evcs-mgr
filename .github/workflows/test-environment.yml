@@ -176,6 +176,17 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    # 1. 这里插入 JDK 步骤
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    # 2. 这里插入 jar 构建步骤
+    - name: Build evcs-tenant jar
+      run: ./gradlew :evcs-tenant:build
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
