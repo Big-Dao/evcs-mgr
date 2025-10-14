@@ -28,6 +28,9 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Ensure JAVA_HOME is set correctly
+      run: echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
+
     - name: Show system information
       run: |
         echo "=== System Information ==="
