@@ -1,6 +1,20 @@
 # Copilot Instructions for EVCS Manager
 
-This is a multi-tenant electric vehicle charging station management platform built with Spring Boot 3.2.2 and Java 21. The system is designed around a sophisticated four-layer multi-tenant data isolation architecture.
+## Project Overview
+
+This is a multi-tenant electric vehicle charging station (EVCS) management platform built with Spring Boot 3.2.2 and Java 21. The system is designed around a sophisticated four-layer multi-tenant data isolation architecture, supporting multiple charging protocols (OCPP, CloudCharge) and payment gateways (Alipay, WeChat Pay).
+
+**Project Status**: ✅ P2 & P3 phases completed  
+**Primary Language**: Java 21  
+**Build Tool**: Gradle 8.5  
+**Database**: PostgreSQL 15 + Redis 7  
+**Message Queue**: RabbitMQ  
+
+For detailed information, see:
+- [README.md](/README.md) - Project overview
+- [docs/DEVELOPER-GUIDE.md](/docs/DEVELOPER-GUIDE.md) - Comprehensive development guide
+- [docs/TECHNICAL-DESIGN.md](/docs/TECHNICAL-DESIGN.md) - Architecture design
+- [docs/TESTING-QUICKSTART.md](/docs/TESTING-QUICKSTART.md) - Testing guide
 
 ## Core Architecture
 
@@ -141,4 +155,139 @@ Protocol support is stored in charger entity `supported_protocols` JSONB field.
 - Spatial data with `latitude`/`longitude` for location searches
 - Triggers for automatic timestamp updates
 
-When implementing new features, follow the established multi-tenant patterns and always test tenant isolation thoroughly.
+## Build & Testing Commands
+
+### Build the Project
+```bash
+# Full build with tests
+./gradlew build
+
+# Build without tests (for faster iteration)
+./gradlew build -x test
+
+# Build specific module
+./gradlew :evcs-station:build
+```
+
+### Run Tests
+```bash
+# Run all tests
+./gradlew test
+
+# Run tests for specific module
+./gradlew :evcs-station:test
+
+# Run tests with coverage
+./gradlew test jacocoTestReport
+```
+
+### Run Services Locally
+```bash
+# Start infrastructure (PostgreSQL, Redis, RabbitMQ)
+docker-compose -f docker-compose.local.yml up -d
+
+# Run gateway service
+./gradlew :evcs-gateway:bootRun
+
+# Run specific service
+./gradlew :evcs-station:bootRun
+```
+
+### Access Services
+- Swagger API Documentation: http://localhost:8080/doc.html
+- Actuator Health Check: http://localhost:8080/actuator/health
+
+## Code Quality Standards
+
+### Naming Conventions
+- **Classes**: PascalCase (e.g., `ChargingStationService`)
+- **Methods**: camelCase (e.g., `findStationById`)
+- **Constants**: UPPER_SNAKE_CASE (e.g., `DEFAULT_TENANT_ID`)
+- **Packages**: lowercase (e.g., `com.evcs.station`)
+
+### Code Organization
+- **Controllers**: Handle HTTP requests, validate input, call services
+- **Services**: Contain business logic, transaction boundaries
+- **Mappers**: MyBatis Plus data access interfaces
+- **Entities**: Database entities extending `BaseEntity`
+- **DTOs**: Data transfer objects for API requests/responses
+
+### Testing Best Practices
+- Use `@SpringBootTest` for integration tests
+- Extend `BaseServiceTest` or `BaseControllerTest` for test utilities
+- Use `@DisplayName` annotations for readable test names
+- Follow AAA pattern: Arrange, Act, Assert
+- Use `TestDataFactory` to generate unique test data
+- Always clear `TenantContext` in test cleanup
+
+Example test structure:
+```java
+@SpringBootTest
+@DisplayName("Charging Station Service Tests")
+class ChargingStationServiceTest extends BaseServiceTest {
+    
+    @Test
+    @DisplayName("Create station - should succeed with valid data")
+    void testCreateStation() {
+        // Arrange
+        ChargingStation station = new ChargingStation();
+        station.setCode(TestDataFactory.generateCode("STATION"));
+        station.setName("Test Station");
+        
+        // Act
+        boolean result = stationService.save(station);
+        
+        // Assert
+        assertTrue(result, "Station should be created successfully");
+        assertEquals(DEFAULT_TENANT_ID, station.getTenantId());
+    }
+}
+```
+
+### Documentation
+- Add JavaDoc for public APIs and complex logic
+- Keep comments concise and explain "why", not "what"
+- Update relevant documentation in `/docs` when making architectural changes
+
+## Common Pitfalls to Avoid
+
+1. **Forgetting Tenant Context**: Always set `TenantContext` before business operations in services
+2. **Hardcoding Test Data**: Use `TestDataFactory.generateCode()` for unique test data
+3. **Missing @Transactional**: Add to service methods that modify data
+4. **Ignoring @DataScope**: Apply appropriate data scope annotations to controller methods
+5. **Not Clearing Context**: Always clear `TenantContext` in finally blocks or test cleanup
+6. **Circular Dependencies**: Keep module dependencies unidirectional
+
+## Git Workflow
+
+### Commit Message Format
+Follow Conventional Commits:
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Types**: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
+
+**Example**:
+```
+feat(station): add bulk import for charging stations
+
+- Support Excel file import
+- Implement data validation
+- Add progress tracking
+
+Closes #123
+```
+
+### Branch Naming
+- Feature: `feature/description`
+- Bug fix: `fix/description`
+- Documentation: `docs/description`
+
+## Important Notes
+
+When implementing new features, follow the established multi-tenant patterns and always test tenant isolation thoroughly. Ensure all database queries respect tenant boundaries and all service methods properly handle tenant context.
