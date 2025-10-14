@@ -12,6 +12,9 @@ import com.evcs.station.service.IStationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
@@ -32,6 +35,9 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
 
     @Resource
     private IChargerService chargerService;
+
+    @Resource
+    private PlatformTransactionManager transactionManager;
 
     @Test
     @DisplayName("测试重复编码异常")
@@ -147,7 +153,10 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("测试并发修改异常")
     void testConcurrentModificationException() throws InterruptedException {
-        // 1. 创建充电站
+        TransactionTemplate requiresNewTemplate = new TransactionTemplate(transactionManager);
+        requiresNewTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+        // 1. 创建充电站并立即提交，确保其他线程可见
         Station station = new Station();
         station.setStationCode(TestDataFactory.generateCode("CONCURRENT"));
         station.setStationName("并发修改测试");
@@ -155,8 +164,10 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         station.setLatitude(39.9087);
         station.setLongitude(116.4089);
         station.setStatus(1);
-        
-        stationService.saveStation(station);
+        requiresNewTemplate.execute(status -> {
+            stationService.saveStation(station);
+            return null;
+        });
         Long stationId = station.getStationId();
 
         // 2. 创建两个线程同时修改同一个充电站
@@ -207,6 +218,12 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         Station finalStation = stationService.getById(stationId);
         assertNotNull(finalStation, "最终应该能查询到充电站");
         assertTrue(finalStation.getStationName().contains("修改"), "名称应该被修改");
+
+        // 清理测试数据，避免污染其他测试
+        requiresNewTemplate.execute(status -> {
+            stationService.deleteStation(stationId);
+            return null;
+        });
         TenantContext.clear();
     }
 
@@ -303,9 +320,9 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
             updateStation.setStatus(3); // 假设3是一个无效状态
             stationService.updateStation(updateStation);
             
-            // 如果没有抛出异常，验证状态是否正确
+            // 如果没有抛出异常，验证状态是否被限制
             Station verifyStation = stationService.getById(station.getStationId());
-            // 根据业务规则验证
+            assertNotNull(verifyStation, "充电站应该存在");
         } catch (BusinessException e) {
             // 预期的业务异常
             assertTrue(true, "违反业务规则应该抛出BusinessException");

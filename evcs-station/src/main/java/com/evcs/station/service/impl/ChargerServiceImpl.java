@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
+import com.evcs.common.exception.TenantContextMissingException;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.event.ChargingStartEvent;
@@ -13,6 +14,7 @@ import com.evcs.station.event.ChargingStopEvent;
 import com.evcs.protocol.api.IOCPPProtocolService;
 import com.evcs.protocol.api.ICloudChargeProtocolService;
 import com.evcs.station.mapper.ChargerMapper;
+import com.evcs.station.mapper.StationMapper;
 import com.evcs.station.service.IChargerService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +37,7 @@ public class ChargerServiceImpl extends ServiceImpl<ChargerMapper, Charger> impl
     private final IOCPPProtocolService ocppService;
     private final ICloudChargeProtocolService cloudService;
     private final ApplicationEventPublisher eventPublisher;
+    private final StationMapper stationMapper;
 
     /**
      * 分页查询充电桩列表
@@ -102,11 +105,22 @@ public class ChargerServiceImpl extends ServiceImpl<ChargerMapper, Charger> impl
         if (checkChargerCodeExists(charger.getChargerCode(), null)) {
             throw new RuntimeException("充电桩编码已存在");
         }
+        if (charger.getStationId() == null) {
+            throw new IllegalArgumentException("stationId must not be null");
+        }
+        Long tenantId = TenantContext.getCurrentTenantId();
+        if (tenantId == null) {
+            throw new TenantContextMissingException("执行充电桩保存操作时缺少租户上下文");
+        }
+        Long userId = TenantContext.getCurrentUserId();
+        if (stationMapper.selectById(charger.getStationId()) == null) {
+            throw new RuntimeException("关联的充电站不存在");
+        }
         
         // 设置租户信息
-        charger.setTenantId(TenantContext.getCurrentTenantId());
+        charger.setTenantId(tenantId);
         charger.setCreateTime(LocalDateTime.now());
-        charger.setCreateBy(TenantContext.getCurrentUserId());
+    charger.setCreateBy(userId != null ? userId : 0L);
         
         // 设置默认值
         if (charger.getStatus() == null) {

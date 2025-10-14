@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
+import com.evcs.common.exception.TenantContextMissingException;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.entity.Station;
@@ -17,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -29,6 +31,15 @@ import java.util.List;
 public class StationServiceImpl extends ServiceImpl<StationMapper, Station> implements IStationService {
     
     private final ChargerMapper chargerMapper;
+
+    @Override
+    @DataScope
+    public Station getById(Serializable stationId) {
+        if (stationId == null) {
+            throw new IllegalArgumentException("stationId must not be null");
+        }
+        return super.getById(stationId);
+    }
 
     /**
      * 分页查询充电站列表（包含统计信息）
@@ -90,15 +101,20 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station> impl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean saveStation(Station station) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        if (tenantId == null) {
+            throw new TenantContextMissingException("执行充电站保存操作时缺少租户上下文");
+        }
+        Long userId = TenantContext.getCurrentUserId();
         // 检查充电站编码是否重复
         if (checkStationCodeExists(station.getStationCode(), null)) {
             throw new RuntimeException("充电站编码已存在");
         }
         
         // 设置租户信息
-        station.setTenantId(TenantContext.getCurrentTenantId());
+        station.setTenantId(tenantId);
         station.setCreateTime(LocalDateTime.now());
-        station.setCreateBy(TenantContext.getCurrentUserId());
+    station.setCreateBy(userId != null ? userId : 0L);
         
         // 设置默认值
         if (station.getStatus() == null) {

@@ -25,7 +25,7 @@ import java.util.List;
 @Slf4j
 @Tag(name = "充电站管理", description = "充电站CRUD操作和查询")
 @RestController
-@RequestMapping("/station")
+@RequestMapping({"/station", "/api/stations"})
 @RequiredArgsConstructor
 @Validated
 public class StationController {
@@ -36,7 +36,7 @@ public class StationController {
      * 分页查询充电站列表
      */
     @Operation(summary = "分页查询充电站列表", description = "支持按名称、编码、状态、地区查询，返回分页结果")
-    @GetMapping("/page")
+    @GetMapping({"", "/", "/page"})
     @PreAuthorize("hasPermission('station:list')")
     @DataScope
     public Result<IPage<Station>> getStationPage(
@@ -91,12 +91,16 @@ public class StationController {
      * 更新充电站信息
      */
     @Operation(summary = "更新充电站", description = "更新充电站信息")
-    @PutMapping
+    @PutMapping("/{stationId}")
     @PreAuthorize("hasPermission('station:edit')")
     @DataScope(value = DataScope.DataScopeType.USER)
-    public Result<Void> updateStation(@Parameter(description = "充电站信息") @RequestBody @Valid Station station) {
+    public Result<Void> updateStation(
+            @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId,
+            @Parameter(description = "充电站信息") @RequestBody @Valid Station station) {
         if (station.getStationId() == null) {
-            return Result.fail("充电站ID不能为空");
+            station.setStationId(stationId);
+        } else if (!stationId.equals(station.getStationId())) {
+            return Result.fail("路径ID与请求体中的充电站ID不一致");
         }
         
         try {
