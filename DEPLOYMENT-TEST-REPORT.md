@@ -41,6 +41,14 @@ COPY evcs-tenant/build/libs/evcs-tenant-*.jar app.jar
 ...
 ```
 
+**重要**: Dockerfile现在依赖预构建的JAR文件。`start-test.sh`脚本已更新，会自动执行以下步骤：
+1. 检查是否需要重新构建
+2. 使用Gradle构建JAR文件
+3. 构建Docker镜像
+4. 启动容器
+
+这确保了JAR文件在Docker构建之前就已经存在。
+
 ### 3. 数据库配置修复 (Database Configuration Fix)
 
 #### PostgreSQL扩展缺失
@@ -197,9 +205,14 @@ EVCS Manager - 启动测试环境
 Docker运行正常 ✓
 
 配置文件检查通过 ✓
+
+构建应用JAR文件...
+BUILD SUCCESSFUL in 33s
+应用构建成功 ✓
+
+将重新构建Docker镜像...
 ...
 基础设施服务启动成功 ✓
-应用服务启动失败 ✗
 ```
 
 ## 🎯 下一步行动 (Next Steps)
