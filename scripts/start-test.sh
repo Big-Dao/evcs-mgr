@@ -37,16 +37,37 @@ echo ""
 
 # 询问是否重新构建
 if [ -z "$CI" ]; then
-    read -p "是否重新构建应用镜像? (y/N): " rebuild
+    read -p "是否重新构建应用? (y/N): " rebuild
 else
     rebuild="y"
-    echo "CI环境检测到，将自动重新构建镜像"
+    echo "CI环境检测到，将自动重新构建应用"
 fi
 
-BUILD_FLAG=""
+# 构建应用JAR文件
 if [ "$rebuild" = "y" ] || [ "$rebuild" = "Y" ]; then
+    echo ""
+    echo -e "${YELLOW}构建应用JAR文件...${NC}"
+    ./gradlew clean build -x test --no-daemon
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}错误: 应用构建失败!${NC}"
+        exit 1
+    fi
+    echo -e "${GREEN}应用构建成功 ✓${NC}"
     BUILD_FLAG="--build"
-    echo -e "${YELLOW}将重新构建应用镜像...${NC}"
+    echo -e "${YELLOW}将重新构建Docker镜像...${NC}"
+else
+    # 检查JAR文件是否存在
+    if [ ! -f "evcs-tenant/build/libs/evcs-tenant-1.0.0.jar" ] || [ ! -f "evcs-station/build/libs/evcs-station-1.0.0-boot.jar" ]; then
+        echo ""
+        echo -e "${YELLOW}未找到预构建的JAR文件，开始构建...${NC}"
+        ./gradlew clean build -x test --no-daemon
+        if [ $? -ne 0 ]; then
+            echo -e "${RED}错误: 应用构建失败!${NC}"
+            exit 1
+        fi
+        echo -e "${GREEN}应用构建成功 ✓${NC}"
+    fi
+    BUILD_FLAG="--build"
 fi
 
 echo ""
