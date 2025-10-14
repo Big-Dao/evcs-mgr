@@ -1,33 +1,17 @@
-# 多阶段构建
-FROM gradle:8.5-jdk21-alpine AS builder
-
-WORKDIR /app
-
-# 复制gradle配置文件
-COPY settings.gradle build.gradle ./
-COPY gradle ./gradle
-COPY gradlew ./
-
-# 复制common模块（依赖）
-COPY evcs-common ./evcs-common
-
-# 复制tenant模块
-COPY evcs-tenant ./evcs-tenant
-
-# 构建应用
-RUN ./gradlew :evcs-tenant:build -x test --no-daemon
-
-# 运行阶段
+# 运行阶段 - 使用预构建的JAR文件
 FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
+
+# 创建日志目录
+RUN mkdir -p /app/logs && chmod 777 /app/logs
 
 # 创建非root用户
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
 
-# 从构建阶段复制jar文件
-COPY --from=builder /app/evcs-tenant/build/libs/evcs-tenant-*.jar app.jar
+# 复制预构建的jar文件
+COPY evcs-tenant/build/libs/evcs-tenant-*.jar app.jar
 
 # 健康检查
 HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
