@@ -1,19 +1,14 @@
-package com.evcs.auth;
+package com.evcs.protocol;
 
 import org.springframework.boot.SpringApplication;
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
-/**
- * 认证服务启动类
- */
 @SpringBootApplication(scanBasePackages = "com.evcs")
 @EnableDiscoveryClient
-@MapperScan("com.evcs.auth.mapper")
-public class AuthApplication {
-    
+public class ProtocolServiceApplication {
+
     public static void main(String[] args) {
-        SpringApplication.run(AuthApplication.class, args);
+        SpringApplication.run(ProtocolServiceApplication.class, args);
     }
 }

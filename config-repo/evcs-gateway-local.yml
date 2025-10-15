@@ -1,0 +1,54 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: evcs-gateway
+  main:
+    web-application-type: reactive
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.JdbcTemplateAutoConfiguration
+  cloud:
+    gateway:
+      default-filters:
+        - DedupeResponseHeader=X-Request-Id RETAIN_UNIQUE
+      routes:
+        - id: evcs-auth
+          uri: lb://evcs-auth
+          predicates:
+            - Path=/auth/**
+        - id: evcs-station
+          uri: lb://evcs-station
+          predicates:
+            - Path=/api/station/**
+        - id: evcs-order
+          uri: lb://evcs-order
+          predicates:
+            - Path=/api/orders/**
+        - id: evcs-payment
+          uri: lb://evcs-payment
+          predicates:
+            - Path=/api/payments/**
+    loadbalancer:
+      retry:
+        enabled: true
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{X-Request-Id}] %logger{36} - %msg%n"
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

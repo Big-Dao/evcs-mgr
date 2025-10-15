@@ -1,19 +1,17 @@
-package com.evcs.auth;
+package com.evcs.monitoring;
 
 import org.springframework.boot.SpringApplication;
-import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
 /**
- * 认证服务启动类
+ * Entry point for the monitoring and alert service.
  */
 @SpringBootApplication(scanBasePackages = "com.evcs")
 @EnableDiscoveryClient
-@MapperScan("com.evcs.auth.mapper")
-public class AuthApplication {
-    
+public class MonitoringServiceApplication {
+
     public static void main(String[] args) {
-        SpringApplication.run(AuthApplication.class, args);
+        SpringApplication.run(MonitoringServiceApplication.class, args);
     }
 }

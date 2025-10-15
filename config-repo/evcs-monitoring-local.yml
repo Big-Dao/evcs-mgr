@@ -1,0 +1,75 @@
+server:
+  port: 8087
+
+spring:
+  application:
+    name: evcs-monitoring
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:evcs_mgr}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      pool-name: HikariCP-Monitoring
+      minimum-idle: 5
+      maximum-pool-size: 10
+      auto-commit: true
+      idle-timeout: 30000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+      connection-test-query: SELECT 1
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+      database: 3
+      lettuce:
+        pool:
+          max-active: 50
+          max-idle: 10
+          min-idle: 0
+          max-wait: 2000ms
+  rabbitmq:
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:guest}
+    password: ${RABBIT_PASS:guest}
+    virtual-host: ${RABBIT_VHOST:/}
+
+logging:
+  level:
+    com.evcs.monitoring: info
+    org.springframework.security: warn
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+metrics:
+  export:
+    prometheus:
+      enabled: true
+
+tracing:
+  sampling:
+    probability: 1.0
+
+evcs:
+  tenant:
+    enabled: true
+    tenant-id-column: tenant_id
+    ignore-tables:
+      - sys_tenant
+      - sys_user
+      - sys_role
+      - sys_permission
+    default-tenant-id: 1
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}

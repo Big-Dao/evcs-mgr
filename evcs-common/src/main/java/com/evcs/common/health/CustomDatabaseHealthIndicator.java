@@ -3,6 +3,7 @@ package com.evcs.common.health;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
@@ -16,6 +17,7 @@ import java.sql.Statement;
  */
 @Slf4j
 @Component
+@ConditionalOnBean(DataSource.class)
 public class CustomDatabaseHealthIndicator implements HealthIndicator {
 
     private final DataSource dataSource;

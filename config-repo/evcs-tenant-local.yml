@@ -1,19 +1,14 @@
-# 租户服务配置文件
+server:
+  port: 8086
+
 spring:
   application:
     name: evcs-tenant
-  config:
-    import: "configserver:http://localhost:8888"
-  cloud:
-    config:
-      profile: local
-  
-  # 数据源配置
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/evcs_mgr?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:evcs_mgr}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: ${DB_USER:postgres}
+    password: ${DB_PASSWORD:postgres}
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
       pool-name: HikariCP-Tenant
@@ -24,13 +19,11 @@ spring:
       max-lifetime: 1800000
       connection-timeout: 30000
       connection-test-query: SELECT 1
-
-  # Redis配置
   data:
     redis:
-      host: localhost
-      port: 6379
-      password: 
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
       database: 0
       lettuce:
         pool:
@@ -38,20 +31,13 @@ spring:
           max-idle: 10
           min-idle: 0
           max-wait: 2000ms
-
-  # RabbitMQ配置
   rabbitmq:
-    host: localhost
-    port: 5672
-    username: guest
-    password: guest
-    virtual-host: /
+    host: ${RABBIT_HOST:localhost}
+    port: ${RABBIT_PORT:5672}
+    username: ${RABBIT_USER:guest}
+    password: ${RABBIT_PASS:guest}
+    virtual-host: ${RABBIT_VHOST:/}
 
-# 服务端口
-server:
-  port: 8081
-
-# MyBatis Plus配置
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
@@ -63,32 +49,30 @@ mybatis-plus:
       logic-not-delete-value: 0
   type-aliases-package: com.evcs.tenant.entity
 
-# 日志配置
 logging:
   level:
     com.evcs.tenant.mapper: debug
     com.evcs.common.tenant: debug
     org.springframework.security: debug
-    
-# Actuator配置
+
 management:
   endpoints:
     web:
       exposure:
         include: health,info,metrics
 
-# 多租户配置
 evcs:
   tenant:
-    # 启用多租户功能
     enabled: true
-    # 租户ID字段名
     tenant-id-column: tenant_id
-    # 忽略多租户的表
     ignore-tables:
       - sys_tenant
       - sys_user
       - sys_role
       - sys_permission
-    # 默认租户ID（系统管理员）
     default-tenant-id: 1
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}

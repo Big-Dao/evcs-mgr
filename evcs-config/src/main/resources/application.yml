@@ -1,0 +1,23 @@
+server:
+  port: 8888
+
+spring:
+  application:
+    name: evcs-config
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  profiles:
+    group:
+      local:
+        - native
+  cloud:
+    config:
+      server:
+        native:
+          search-locations: file:../config-repo
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

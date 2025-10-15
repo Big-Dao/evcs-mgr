@@ -1,40 +1,8 @@
-server:
-  port: 8084
-
 spring:
   application:
     name: evcs-payment
-  
-  # Database Configuration
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:evcs}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASSWORD:postgres}
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
-
-# MyBatis Plus Configuration
-mybatis-plus:
-  mapper-locations: classpath*:/mapper/**/*.xml
-  type-aliases-package: com.evcs.payment.entity
-  configuration:
-    map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
-  global-config:
-    db-config:
-      logic-delete-field: deleted
-      logic-delete-value: 1
-      logic-not-delete-value: 0
-
-# Logging Configuration
-logging:
-  level:
-    com.evcs.payment: INFO
-    com.evcs.payment.mapper: DEBUG
-  pattern:
-    console: '%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{50} - %msg%n'
+  config:
+    import: "configserver:http://localhost:8888"
+  cloud:
+    config:
+      profile: local

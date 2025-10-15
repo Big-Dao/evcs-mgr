@@ -1,22 +1,22 @@
-# EVCS Manager AI Guide
-- **Platform**: Spring Boot 3.2.2 + Java 21 multi-tenant EV charging suite; microservices live under `evcs-*` modules with shared foundations in `evcs-common`.
-- **Isolation Stack**: Database `tenant_id` column → MyBatis Plus `TenantLineInnerInterceptor` using `CustomTenantLineHandler` (watch `IGNORE_TABLES`) → service-layer `@DataScope` + `DataScopeAspect` → API layer `TenantContext` populated from JWT headers in `evcs-auth`.
-- **Tenant Context**: Set `TenantContext.setCurrentTenantId/UserId` before writes, clear in `finally`; `MybatisPlusConfig.CustomMetaObjectHandler` backfills tenant, audit, and soft-delete fields on `BaseEntity` descendants.
-- **Service Pattern**: Service implementations extend MyBatis Plus base classes, annotate queries with `@DataScope(TENANT or TENANT_HIERARCHY)` and wrap mutations in `@Transactional`; prefer lambda wrappers over manual SQL so tenant filters apply.
-- **Controller Pattern**: Controllers return `Result<T>` from `com.evcs.common.result`, apply `@PreAuthorize` plus `@DataScope`, and use `@Validated`/`@Valid` on request DTOs; map 404/business errors to `Result.fail` with localized messages.
-- **Module Roles**: `evcs-station` manages stations/chargers, `evcs-order` orchestrates charging sessions, `evcs-payment` owns channel adapters (Alipay/WeChat), `evcs-protocol` normalizes OCPP & CloudCharge traffic, `evcs-gateway` fronts APIs, `evcs-tenant` handles hierarchy/auth seeds.
-- **Protocol Flow**: `evcs-protocol` publishes heartbeat/status/charging events to the topic exchange `evcs.protocol.events`; `evcs-station` consumes heartbeat/status queues for device state and `evcs-order` consumes `evcs.protocol.charging` to open/close orders.
-- **Persistence**: Entity mappers live beside entities; configuration in `evcs-common/config/MybatisPlusConfig.java` also enables pagination and optimistic locking. Add new tables with `tenant_id` and update `sql/init.sql` plus module-specific DDL under `sql/`.
-- **Security & JWT**: JWT utilities (`evcs-common/util/JwtUtil.java`) derive tenant/user IDs; align new permission strings with the `hasPermission` checks used in controllers and seed them in SQL fixtures.
-- **Build**: Use `./gradlew build` for full verification, `./gradlew :module:bootRun` to run a service, and `./gradlew build -x test` for faster compile cycles when tests are unchanged.
-- **Infra Startup**: Run `docker-compose -f docker-compose.local.yml up -d postgres redis rabbitmq` (or the scripts in `scripts/`) before launching services so RabbitMQ/Redis/PostgreSQL endpoints resolve.
-- **Testing Workflow**: `./gradlew test --continue` runs all suites; for focus, target modules (`./gradlew :evcs-station:test`). Reuse test fixtures in `evcs-common/src/testFixtures` (`BaseServiceTest`, `BaseControllerTest`, `TestDataFactory`) to auto-manage tenant context and rollback.
-- **Coverage & Reports**: Generate coverage via `./gradlew test jacocoTestReport` and inspect module-specific reports under `build/reports/jacoco/test/html/index.html`; functional reports live in `build/reports/tests/test/index.html`.
-- **Messaging Reliability**: Consumers (e.g., `evcs-order/mq/ChargingEventConsumer`) enforce manual acks and TenantContext wrapping—mirror that pattern for new listeners and guard against duplicate events.
-- **Configuration**: Each module keeps YAML under `src/main/resources`; keep shared constants in `evcs-common` and externalize secrets via environment overrides when editing configs.
-- **Logging & Tracing**: Classes rely on Lombok `@Slf4j`; request correlation comes from `evcs-common/filter/RequestIdFilter`, so include request/tenant IDs in logs and never use `System.out`.
-- **Gradle Conventions**: Root `build.gradle` centralizes dependency versions; register new modules in `settings.gradle` and prefer BOMs already declared.
-- **Docs & References**: Architecture deep dives live in `docs/TECHNICAL-DESIGN.md` and tenant specifics in `README-TENANT-ISOLATION.md`; update relevant docs when altering flows.
-- **Path Instructions**: Before touching module code, check `.github/instructions/*.instructions.md` for extra guardrails (e.g., station module constraints).
-- **Collaboration**: Follow Conventional Commit messages, keep changes scoped per module, and avoid rewriting user-managed files without direction.
-- **Clarify Early**: If tenant scope, protocol routing, or payment channel behavior is ambiguous, pause and ask—downstream services depend on those contracts.
+# EVCS Manager AI 指南
+- **技术栈**：Spring Boot 3.2.2 + Java 21，多租户充电业务以 `evcs-*` 模块划分，共享能力集中在 `evcs-common`。
+- **隔离链路**：数据库 `tenant_id` 字段 → MyBatis Plus `TenantLineInnerInterceptor`（使用 `CustomTenantLineHandler`，留意 `IGNORE_TABLES`）→ 服务层 `@DataScope` + `DataScopeAspect` → API 层在 `evcs-auth` 中用 JWT 填充 `TenantContext`。
+- **租户上下文**：写入前调用 `TenantContext.setCurrentTenantId/UserId`，在 `finally` 中清理；`MybatisPlusConfig.CustomMetaObjectHandler` 会为继承 `BaseEntity` 的实体自动补齐租户、审计与软删字段。
+- **服务套路**：Service 实现类继承 MyBatis Plus 基类，查询方法加 `@DataScope(TENANT / TENANT_HIERARCHY)`，修改操作加 `@Transactional`，优先使用 LambdaWrapper 以保留租户过滤。
+- **控制器风格**：统一返回 `com.evcs.common.result.Result<T>`，配合 `@PreAuthorize` 与 `@DataScope`，请求 DTO 使用 `@Validated/@Valid`；404 或业务异常通过 `Result.fail` 返回本地化消息。
+- **模块职责**：`evcs-station` 管站点与充电桩，`evcs-order` 调度充电会话，`evcs-payment` 管支付通道（支付宝/微信），`evcs-protocol` 处理 OCPP 与云快充，`evcs-gateway` 作为入口，`evcs-tenant` 管租户层级与初始数据。
+- **协议事件流**：`evcs-protocol` 将心跳/状态/充电事件发布到主题交换机 `evcs.protocol.events`；`evcs-station` 订阅心跳与状态队列做设备状态更新，`evcs-order` 消费 `evcs.protocol.charging` 以开关订单。
+- **数据持久化**：实体与 Mapper 紧邻；`evcs-common/config/MybatisPlusConfig.java` 还配置了分页与乐观锁。新增表务必包含 `tenant_id`，并同步更新 `sql/init.sql` 及各模块 SQL。
+- **安全与 JWT**：`evcs-common/util/JwtUtil.java` 负责解析租户与用户；新增接口时需在控制器增加 `hasPermission` 字符串，并在 SQL 初始化脚本补充权限种子。
+- **构建流程**：`./gradlew build` 做全量校验，`./gradlew :module:bootRun` 运行单服务，快速迭代可用 `./gradlew build -x test`。
+- **环境启动**：开发前先执行 `docker-compose -f docker-compose.local.yml up -d postgres redis rabbitmq`，或使用 `scripts/` 下的 `start-test.sh`、`health-check.sh` 快速复现 CI 环境。
+- **测试流程**：`./gradlew test --continue` 执行全量；聚焦模块使用 `./gradlew :evcs-station:test`；测试夹具位于 `evcs-common/src/testFixtures`，包括 `BaseServiceTest`、`BaseControllerTest`、`TestDataFactory`，自动托管租户上下文与回滚。
+- **覆盖率报告**：通过 `./gradlew test jacocoTestReport` 生成；HTML 报告在各模块 `build/reports/jacoco/test/html/index.html`，测试结果页位于 `build/reports/tests/test/index.html`。
+- **消息可靠性**：消费端（如 `evcs-order/mq/ChargingEventConsumer`）统一使用手动 ack，并在处理前设置 `TenantContext`；新增监听器时保持相同幂等与上下文模式。
+- **配置管理**：各模块的 YAML 均在 `src/main/resources`；共享常量尽量放在 `evcs-common`，敏感配置通过环境变量覆盖。
+- **日志追踪**：类上使用 Lombok `@Slf4j`，请求链路由 `evcs-common/filter/RequestIdFilter` 注入 request/tenant ID；禁止使用 `System.out`。
+- **Gradle 约定**：根 `build.gradle` 统一依赖版本；新模块需在 `settings.gradle` 注册，并优先复用已存在的 BOM。
+- **文档索引**：架构详见 `docs/TECHNICAL-DESIGN.md`，租户细节参考 `README-TENANT-ISOLATION.md`；改动核心流程时同步更新相关文档。
+- **路径指引**：在改动具体模块前，先查阅 `.github/instructions/*.instructions.md` 的路径级约束（如 station 模块特别规则）。
+- **协作规范**：遵循 Conventional Commit，尽量在单模块内完成改动，不要覆盖用户已存在的自定义修改。
+- **及时澄清**：若对租户边界、协议路由或支付通道行为存在疑问，先与团队确认再动手，避免跨模块回归。
