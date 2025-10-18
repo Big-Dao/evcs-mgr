@@ -3,7 +3,7 @@ spring:
   application:
     name: evcs-tenant
   config:
-    import: "configserver:http://localhost:8888"
+    import: "optional:configserver:http://localhost:8888"
   cloud:
     config:
       profile: local

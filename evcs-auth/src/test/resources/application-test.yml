@@ -3,6 +3,10 @@ spring:
   application:
     name: evcs-auth-test
 
+  # 禁用Config Server导入（覆盖主配置）
+  config:
+    import: "optional:"
+
   main:
     allow-bean-definition-overriding: true
 
@@ -27,7 +31,7 @@ spring:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:auth_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
     username: sa
-    password: 
+    password:
 
   sql:
     init:
@@ -58,8 +62,8 @@ logging:
 # JWT配置（测试用）
 jwt:
   secret: test-secret-key-for-testing-purposes-only
-  expiration: 3600000  # 1 hour
-  
+  expiration: 3600000 # 1 hour
+
 # 多租户配置
 evcs:
   tenant:

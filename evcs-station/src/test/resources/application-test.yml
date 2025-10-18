@@ -5,11 +5,16 @@ spring:
 
   application:
     name: evcs-station-test
-  
+
+  # 禁用Config Server导入（覆盖主配置）
+  # 注意：Spring Boot不接受"none"作为值，使用autoconfigure.exclude已足够禁用Config Client
+  config:
+    import: "optional:"
+
   # 禁用RabbitMQ for tests
   rabbitmq:
     enabled: false
-  
+
   # 禁用不必要的组件以避免循环依赖
   autoconfigure:
     exclude:
@@ -21,7 +26,7 @@ spring:
       - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
       - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
       - org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration
-  
+
   # 禁用 Spring Cloud Config
   cloud:
     discovery:
@@ -30,14 +35,14 @@ spring:
       enabled: false
       import-check:
         enabled: false
-  
+
   # 使用内存数据库进行测试
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
     username: sa
-    password: 
-  
+    password:
+
   h2:
 
   sql:

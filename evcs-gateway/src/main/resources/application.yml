@@ -4,7 +4,7 @@ spring:
   main:
     web-application-type: reactive
   config:
-    import: "configserver:http://localhost:8888"
+    import: "optional:configserver:http://localhost:8888"
   cloud:
     config:
       profile: local
