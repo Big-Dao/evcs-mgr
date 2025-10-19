@@ -5,7 +5,8 @@
 ## 📌 项目状态
 
 **当前阶段**: ✅ P2 & P3 全部完成  
-**最近更新**: 2025-10-12
+**最近更新**: 2025-10-12  
+**下一步计划**: 📋 [12周行动计划](NEXT-STEPS-QUICK-GUIDE.md) | [详细计划](docs/NEXT-STEP-PLAN.md)
 
 ### 已完成里程碑
 - ✅ **P0 & P1**: 核心架构与基础功能（多租户、计费、订单）
@@ -25,14 +26,13 @@
   - M7: 监控体系建设 ✅
   - M8: 文档体系完善 ✅
 
-### 下一步计划（P4）
-- 📱 用户移动端APP（iOS + Android）
-- 📲 微信小程序 + 支付宝小程序
-- 📊 BI报表与数据大屏
-- ☁️ Kubernetes编排与服务网格
-- 🧪 单元测试覆盖率提升至80%+
+### 下一步计划（P4 - 12周计划）
+- 🧪 **Week 1-4**: 质量提升（测试覆盖率80%+、性能测试）
+- 🎨 **Week 5-8**: 前端开发（管理后台 + 用户端小程序）
+- 🔌 **Week 9-10**: 协议与集成（OCPP完善 + 支付扩展）
+- 🚀 **Week 11-12**: 运维优化与生产上线
 
-详见：[项目路线图](docs/ROADMAP.md) | [进度追踪](docs/PROGRESS.md)
+**立即查看**: [📋 快速指南](NEXT-STEPS-QUICK-GUIDE.md) | [📖 详细计划](docs/NEXT-STEP-PLAN.md) | [路线图](docs/ROADMAP.md) | [进度追踪](docs/PROGRESS.md)
 
 ---
 
@@ -361,10 +361,23 @@ JWT Token配置：
 本项目采用MIT许可证，详情请参阅 [LICENSE](LICENSE) 文件。
 
 ## 📚 项目文档
-- 产品需求（PRD）：[docs/PRODUCT-REQUIREMENTS.md](docs/PRODUCT-REQUIREMENTS.md)
-- 技术方案：[docs/TECHNICAL-DESIGN.md](docs/TECHNICAL-DESIGN.md)
+
+### 规划与进度
+- **下一步计划（快速指南）**：[NEXT-STEPS-QUICK-GUIDE.md](NEXT-STEPS-QUICK-GUIDE.md) ⭐️ 🆕
+- **下一步计划（详细版）**：[docs/NEXT-STEP-PLAN.md](docs/NEXT-STEP-PLAN.md) 🆕
 - 路线图与计划：[docs/ROADMAP.md](docs/ROADMAP.md)
 - 进度与里程碑：[docs/PROGRESS.md](docs/PROGRESS.md)
 - 变更日志：[docs/CHANGELOG.md](docs/CHANGELOG.md)
-- **测试指南**：[docs/TESTING-GUIDE.md](docs/TESTING-GUIDE.md) ⭐️
+
+### 技术文档
+- 产品需求（PRD）：[docs/PRODUCT-REQUIREMENTS.md](docs/PRODUCT-REQUIREMENTS.md)
+- 技术方案：[docs/TECHNICAL-DESIGN.md](docs/TECHNICAL-DESIGN.md)
 - 多租户隔离详解：[README-TENANT-ISOLATION.md](README-TENANT-ISOLATION.md)
+- API文档：[docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md)
+- **开发者指南**：[docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) ⭐️
+- **测试指南**：[docs/TESTING-GUIDE.md](docs/TESTING-GUIDE.md) ⭐️
+
+### 运维文档
+- 部署指南：[docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md)
+- 运维手册：[docs/OPERATIONS-MANUAL.md](docs/OPERATIONS-MANUAL.md)
+- 测试环境快速部署：[TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md)
