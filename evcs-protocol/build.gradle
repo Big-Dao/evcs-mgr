@@ -6,6 +6,14 @@ plugins {
 
 description = 'OCPP and Cloud Fast Charging Protocol Service'
 
+bootJar {
+    archiveClassifier = 'boot'
+}
+
+tasks.named('jar') {
+    enabled = true
+}
+
 dependencies {
     implementation project(':evcs-common')
     implementation 'org.springframework.boot:spring-boot-starter-web'
