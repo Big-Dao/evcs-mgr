@@ -9,6 +9,8 @@ spring:
 
   main:
     allow-bean-definition-overriding: true
+  flyway:
+    enabled: false
 
   # 禁用RabbitMQ for tests
   rabbitmq:
@@ -22,6 +24,8 @@ spring:
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration
 
   cloud:
     discovery:

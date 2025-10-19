@@ -20,7 +20,8 @@ CREATE TABLE IF NOT EXISTS charging_order (
     update_time TIMESTAMP,
     create_by BIGINT,
     update_by BIGINT,
-    deleted INTEGER DEFAULT 0
+    deleted INTEGER DEFAULT 0,
+    version INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS billing_plan (
@@ -38,7 +39,8 @@ CREATE TABLE IF NOT EXISTS billing_plan (
     update_time TIMESTAMP,
     create_by BIGINT,
     update_by BIGINT,
-    deleted INTEGER DEFAULT 0
+    deleted INTEGER DEFAULT 0,
+    version INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS billing_plan_segment (
@@ -51,7 +53,8 @@ CREATE TABLE IF NOT EXISTS billing_plan_segment (
     update_time TIMESTAMP,
     create_by BIGINT,
     update_by BIGINT,
-    deleted INTEGER DEFAULT 0
+    deleted INTEGER DEFAULT 0,
+    version INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS billing_rate (
@@ -64,7 +67,8 @@ CREATE TABLE IF NOT EXISTS billing_rate (
     update_time TIMESTAMP,
     create_by BIGINT,
     update_by BIGINT,
-    deleted INTEGER DEFAULT 0
+    deleted INTEGER DEFAULT 0,
+    version INTEGER DEFAULT 0
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS uk_billing_plan_code_tenant ON billing_plan(code, tenant_id);
