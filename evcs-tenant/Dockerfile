@@ -1,29 +1,16 @@
-# 运行阶段 - 使用预构建的JAR文件
+FROM gradle:8.5-jdk21-alpine AS build
+WORKDIR /workspace
+COPY . .
+RUN chmod +x gradlew && sed -i 's/\r$//' gradlew
+RUN ./gradlew :evcs-tenant:bootJar --no-daemon
+
 FROM eclipse-temurin:21-jre-alpine
-
 WORKDIR /app
-
-# 创建日志目录
-RUN mkdir -p /app/logs && chmod 777 /app/logs
-
-# 创建非root用户
+RUN apk add --no-cache curl
+COPY --from=build /workspace/evcs-tenant/build/libs/evcs-tenant-*.jar app.jar
 RUN addgroup -S spring && adduser -S spring -G spring
 USER spring:spring
-
-# 复制预构建的jar文件
-COPY evcs-tenant/build/libs/evcs-tenant-*.jar app.jar
-
-# 健康检查
-HEALTHCHECK --interval=30s --timeout=3s --start-period=60s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1
-
-# 暴露端口
-EXPOSE 8081
-
-# 启动应用
-ENTRYPOINT ["java", \
-    "-Djava.security.egd=file:/dev/./urandom", \
-    "-Dspring.cloud.config.enabled=false", \
-    "-Dspring.cloud.discovery.enabled=false", \
-    "-jar", \
-    "app.jar"]
+ENV JAVA_OPTS=""
+EXPOSE 8086
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD curl --fail http://localhost:8086/actuator/health || exit 1
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar app.jar"]

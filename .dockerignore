@@ -1,0 +1,12 @@
+.git
+.gradle/
+build/
+*/build/
+!gradle/wrapper/
+out/
+*/out/
+bin/
+*/bin/
+.idea/
+*.iml
+.DS_Store
