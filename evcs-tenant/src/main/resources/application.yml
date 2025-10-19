@@ -3,11 +3,11 @@ spring:
   application:
     name: evcs-tenant
   config:
-    import: "configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
   cloud:
     config:
       profile: local
-  
+
   # 数据源配置
   datasource:
     driver-class-name: org.postgresql.Driver
@@ -69,7 +69,7 @@ logging:
     com.evcs.tenant.mapper: debug
     com.evcs.common.tenant: debug
     org.springframework.security: debug
-    
+
 # Actuator配置
 management:
   endpoints:
