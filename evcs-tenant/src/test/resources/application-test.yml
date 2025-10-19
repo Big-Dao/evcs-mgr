@@ -1,33 +1,32 @@
-# evcs-order 模块测试配置
+# 简化的测试环境配置
 spring:
+  main:
+    allow-bean-definition-overriding: true
+
   application:
-    name: evcs-order-test
+    name: evcs-tenant-test
 
   # 禁用Config Server导入（覆盖主配置）
   config:
     import: "optional:"
 
-  main:
-    allow-bean-definition-overriding: true
-  flyway:
-    enabled: false
-
   # 禁用RabbitMQ for tests
   rabbitmq:
     enabled: false
 
-  # 禁用不必要的组件
+  # 禁用不必要的组件以避免循环依赖
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
-      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration
-      - org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration
+      - org.springframework.boot.autoconfigure.jms.JmsAutoConfiguration
 
+  # 禁用 Spring Cloud Config
   cloud:
     discovery:
       enabled: false
@@ -36,12 +35,16 @@ spring:
       import-check:
         enabled: false
 
-  # 使用内存数据库
+  # 使用内存数据库进行测试
   datasource:
     driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:order_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
     username: sa
     password:
+
+  h2:
+    console:
+      enabled: true
 
   sql:
     init:
@@ -51,6 +54,8 @@ spring:
 eureka:
   client:
     enabled: false
+    register-with-eureka: false
+    fetch-registry: false
 
 # MyBatis Plus配置
 mybatis-plus:
@@ -66,8 +71,9 @@ mybatis-plus:
 # 日志配置
 logging:
   level:
-    com.evcs.order: debug
+    com.evcs.tenant: debug
     org.springframework.test: warn
+    org.springframework.web: warn
 
 # 多租户配置
 evcs:
@@ -78,4 +84,5 @@ evcs:
       - sys_tenant
       - sys_user
       - sys_role
+      - sys_permission
     default-tenant-id: 1
