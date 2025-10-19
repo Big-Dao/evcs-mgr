@@ -1,5 +1,6 @@
 package com.evcs.tenant;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
@@ -9,6 +10,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
  */
 @SpringBootApplication(scanBasePackages = "com.evcs")
 @EnableDiscoveryClient
+@MapperScan("com.evcs.tenant.mapper")
 public class TenantServiceApplication {
 
     public static void main(String[] args) {
