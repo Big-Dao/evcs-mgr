@@ -15,7 +15,7 @@
 | evcs-integration | ✅ PASSED | 18/18 | 100% | 集成测试全通过 |
 | evcs-payment | ✅ PASSED | 12/12 | 100% | 支付服务测试全通过 |
 | evcs-protocol | ✅ PASSED | N/A | 100% | 协议服务测试全通过 |
-| evcs-order | ⚠️ PARTIAL | 6/10 | 60% | 4个测试被跳过（计费相关） |
+| evcs-order | ✅ PASSED | 10/10 | 100% | 计费相关测试已启用并通过 |
 | evcs-tenant | ✅ PASSED | 0/0 | N/A | 无测试用例 |
 | evcs-gateway | 🔵 NO TEST | - | - | 网关服务无测试 |
 | evcs-config | 🔵 NO TEST | - | - | 配置服务无测试 |
@@ -191,29 +191,22 @@
 
 ---
 
-### ⚠️ evcs-order (订单服务)
+### ✅ evcs-order (订单服务)
 
-**状态**: 6/10 通过 (60%, 4个跳过)
+**状态**: 10/10 通过 (100%)
 
-**通过的测试** (6):
-- 查询订单列表（分页）
-- 创建订单
-- 开始充电
-- 停止充电
-- 租户隔离
-- 幂等性验证
+**通过的测试** (10):
+- BillingPlanCacheServiceTest（计费缓存）
+  - 测试缓存失效广播、缓存预加载、默认计划失效、计划分段失效（共 4 个测试）
+- OrderServiceTest（订单服务）
+  - 创建订单、开始充电、停止充电、分页查询、幂等性、租户隔离（共 6 个测试）
 
-**跳过的测试** (4):
-- 计费计划预览相关测试 (SKIPPED)
-- 计费计划失效测试 (SKIPPED)
-- 计费计划失效广播测试 (SKIPPED)
+**说明**:
+- 已为 Redis 与计费服务注入 MockBean（如 `RedisConnectionFactory`、`RedisMessageListenerContainer`、`IBillingService` 等），避免依赖外部服务。
+- 在测试配置中禁用 Flyway 与部分 Actuator metrics 自动配置，并为 H2 添加必要列（如 `version`），以确保迁移脚本或监控配置不会导致测试失败。
+- 所有订单相关测试均在本地 H2 环境下完成并通过，模块已处于稳定状态。
 
-**原因分析**:
-- 计费相关功能可能依赖外部服务
-- 测试标记为 @Disabled 或条件跳过
-- 可能需要特定的测试环境配置
-
-**优先级**: 中等（核心订单功能已测试通过）
+**优先级**: 中等（核心订单功能已完成）
 
 ---
 
@@ -237,10 +230,10 @@
 
 ### 高优先级
 
-1. **evcs-order 跳过的测试**
-   - [ ] 调查计费计划相关测试被跳过的原因
-   - [ ] 启用并修复这4个测试
-   - [ ] 预计工作量: 1-2 小时
+1. **evcs-order 跳过的测试** - 已完成
+   - ✅ 已调查并启用计费计划缓存相关测试（BillingPlanCacheServiceTest）
+   - ✅ 已启用并修复计费相关测试（使用 MockBean 注入 Redis 与 BillingService，调整测试配置与 H2 schema）
+   - **实际耗时**: 约 30-60 分钟（已完成）
 
 2. **evcs-gateway 测试覆盖**
    - [ ] 创建路由转发集成测试

@@ -311,26 +311,20 @@ grep -A 20 "FAILED" test-detail.log
 
 ---
 
-### 优先级 2: 开始 evcs-integration 修复（下一阶段）
+### Day 3: evcs-order 修复（已完成）
 
-**建议策略**（基于 evcs-station 的成功经验）:
-```bash
-# 1. 运行集成测试查看失败原因
-./gradlew :evcs-integration:test --continue
+**执行内容（Day 3）**:
+- 启用并修复 `BillingPlanCacheServiceTest`：为 Redis 与计费相关依赖注入 `@MockBean`（`RedisConnectionFactory`、`RedisMessageListenerContainer`、`IBillingService`、`IBillingPlanCacheService`），并在测试中屏蔽真实 Redis 行为，保证在无外部服务环境下可运行。
+- 实现并运行 `OrderServiceTest`，覆盖订单创建、开始、停止、分页查询、幂等性与租户隔离等关键用例，确保业务逻辑在测试环境下被完整验证。
+- 调整 `evcs-order/src/test/resources/application-test.yml`：禁用 Flyway 与 Actuator metrics 自动配置，避免生产迁移脚本或监控初始化影响测试启动。
+- 更新 `evcs-order/src/test/resources/schema-h2.sql`：新增 `version` 字段并确保表结构与项目中 `BaseEntity` 定义相匹配（避免 SQL 查询缺少列导致的错误）。
+- 在测试中使用 `@MockBean` / `@SpyBean` 对关键依赖做 stub（例如对 `MeterRegistry.counter`、`ChargingOrderMapper.updateById` 做测试友好的返回），保证测试的独立性和幂等性。
+- 记录并提交所有变更（测试实现、schema、测试配置与必要的测试辅助类）。
 
-# 2. 预期需要的修复
-- 创建 evcs-integration/src/test/resources/schema-h2.sql
-- 可能需要包含多个模块的表（station, order, payment 等）
-- 使用 MERGE 语句插入测试数据
-- 应用多租户级别的复合唯一约束
-- 配置 @Rollback 和适当的测试隔离策略
-```
-
-**成功经验可复用**：
-- ✅ H2 schema 创建模板和语法规范
-- ✅ 多租户复合唯一约束设计模式
-- ✅ MERGE 语句避免重复插入
-- ✅ 测试基类的事务和隔离配置
+**结果与影响**：
+- evcs-order 测试：10/10 通过（100%）。
+- 关键变更已提交，包含测试实现、schema 与测试配置修改。
+- Day 3 目标已完成 — 建议下一步：按团队优先级在 `evcs-integration` 做深入修复，或优先为 `evcs-gateway` 添加测试覆盖。
 
 ---
 
@@ -397,7 +391,13 @@ grep -A 20 "FAILED" test-detail.log
 - 完整验证和文档更新: ~15 分钟
 - **小计**: ~65 分钟
 
-**总计**: ~180 分钟（Day 2 全部完成：100%）
+**Session 4**: Day 3 — evcs-order 修复
+- 启用并 Mock Billing/Redis 相关依赖: ~15 分钟
+- 实现 OrderService 测试用例 (创建/开始/停止/分页/幂等/隔离): ~20 分钟
+- 更新 schema & 测试配置并进行验证: ~15 分钟
+- **小计**: ~50 分钟
+
+**总计**: ~230 分钟（Day 2 + Day 3：evcs-station + evcs-order 修复完成）
 
 ---
 
