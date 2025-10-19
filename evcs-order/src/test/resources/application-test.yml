@@ -3,8 +3,14 @@ spring:
   application:
     name: evcs-order-test
 
+  # 禁用Config Server导入（覆盖主配置）
+  config:
+    import: "optional:"
+
   main:
     allow-bean-definition-overriding: true
+  flyway:
+    enabled: false
 
   # 禁用RabbitMQ for tests
   rabbitmq:
@@ -18,6 +24,8 @@ spring:
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration
 
   cloud:
     discovery:
@@ -32,7 +40,7 @@ spring:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:order_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
     username: sa
-    password: 
+    password:
 
   sql:
     init:

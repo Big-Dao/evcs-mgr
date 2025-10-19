@@ -4,11 +4,15 @@ spring:
 
   application:
     name: evcs-integration-test
-  
+
+  # 禁用Config Server导入（覆盖主配置）
+  config:
+    import: "optional:"
+
   # 禁用RabbitMQ for tests
   rabbitmq:
     enabled: false
-  
+
   # 禁用不必要的组件
   autoconfigure:
     exclude:
@@ -17,7 +21,7 @@ spring:
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
-  
+
   cloud:
     discovery:
       enabled: false
@@ -25,22 +29,22 @@ spring:
       enabled: false
       import-check:
         enabled: false
-  
+
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
     username: sa
-    password: 
-    
+    password:
+
   sql:
     init:
       mode: always
       schema-locations: classpath:schema-h2.sql
-      
+
   h2:
     console:
       enabled: true
-      
+
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     show-sql: false
@@ -50,7 +54,7 @@ eureka:
     enabled: false
     register-with-eureka: false
     fetch-registry: false
-    
+
 mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl

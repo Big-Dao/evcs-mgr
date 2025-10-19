@@ -25,11 +25,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/debug/protocol")
 public class ProtocolDebugController {
 
-    @Autowired(required = false)
-    private Object ocppService; // 实际类型: IOCPPProtocolService from evcs-protocol
-
-    @Autowired(required = false)
-    private Object cloudService; // 实际类型: ICloudChargeProtocolService from evcs-protocol
+    /**
+     * Protocol服务注入已移除，避免Object类型导致的bean冲突
+     * Week 9 TODO: 重新设计protocol依赖方式
+     */
 
     @Autowired
     private ChargerMapper chargerMapper;
@@ -49,37 +48,9 @@ public class ProtocolDebugController {
             description = "充电桩ID"
         ) @PathVariable @NotNull Long chargerId
     ) {
-        if (ocppService == null && cloudService == null) {
-            return Result.fail("协议服务未配置");
-        }
-
-        Charger charger = chargerMapper.selectById(chargerId);
-        if (charger == null) {
-            return Result.fail("充电桩不存在");
-        }
-
-        try {
-            boolean ok;
-            if (useOcpp(charger) && ocppService != null) {
-                ok = (Boolean) ocppService
-                    .getClass()
-                    .getMethod("sendHeartbeat", Long.class)
-                    .invoke(ocppService, chargerId);
-            } else if (cloudService != null) {
-                ok = (Boolean) cloudService
-                    .getClass()
-                    .getMethod("reportHeartbeat", Long.class)
-                    .invoke(cloudService, chargerId);
-            } else {
-                return Result.fail("对应协议服务不可用");
-            }
-            return ok
-                ? Result.success("心跳触发成功")
-                : Result.fail("心跳触发失败");
-        } catch (Exception e) {
-            log.error("触发心跳失败", e);
-            return Result.fail("触发心跳失败: " + e.getMessage());
-        }
+        // Protocol服务已临时禁用 (Week 1 Day 1)
+        // 将在Week 9重新启用
+        return Result.fail("协议调试功能暂时禁用，将在Week 9重新启用");
     }
 
     @PostMapping("/{chargerId}/status")
@@ -92,37 +63,8 @@ public class ProtocolDebugController {
             description = "状态：0离线，1空闲，2充电中，3故障等"
         ) @RequestParam Integer status
     ) {
-        if (ocppService == null && cloudService == null) {
-            return Result.fail("协议服务未配置");
-        }
-
-        Charger charger = chargerMapper.selectById(chargerId);
-        if (charger == null) {
-            return Result.fail("充电桩不存在");
-        }
-
-        try {
-            boolean ok;
-            if (useOcpp(charger) && ocppService != null) {
-                ok = (Boolean) ocppService
-                    .getClass()
-                    .getMethod("updateStatus", Long.class, Integer.class)
-                    .invoke(ocppService, chargerId, status);
-            } else if (cloudService != null) {
-                ok = (Boolean) cloudService
-                    .getClass()
-                    .getMethod("reportStatus", Long.class, Integer.class)
-                    .invoke(cloudService, chargerId, status);
-            } else {
-                return Result.fail("对应协议服务不可用");
-            }
-            return ok
-                ? Result.success("状态上报成功")
-                : Result.fail("状态上报失败");
-        } catch (Exception e) {
-            log.error("上报状态失败", e);
-            return Result.fail("上报状态失败: " + e.getMessage());
-        }
+        // Protocol服务已临时禁用 (Week 1 Day 1)
+        return Result.fail("协议调试功能暂时禁用，将在Week 9重新启用");
     }
 
     @PostMapping("/{chargerId}/start")

@@ -34,11 +34,10 @@ public class ChargerServiceImpl
     extends ServiceImpl<ChargerMapper, Charger>
     implements IChargerService {
 
-    @Autowired(required = false)
-    private Object ocppService; // 实际类型: IOCPPProtocolService from evcs-protocol
-
-    @Autowired(required = false)
-    private Object cloudService; // 实际类型: ICloudChargeProtocolService from evcs-protocol
+    /**
+     * Protocol服务注入已移除，避免Object类型导致的bean冲突
+     * Week 9 TODO: 重新设计protocol依赖方式
+     */
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;
@@ -487,83 +486,15 @@ public class ChargerServiceImpl
         String sessionId,
         Long userId
     ) {
-        if (ocppService == null && cloudService == null) {
-            log.warn("协议服务未配置，跳过协议启动");
-            return true; // 优雅降级，允许继续
-        }
-
-        try {
-            String protocols = charger.getSupportedProtocols();
-            if (
-                protocols != null &&
-                protocols.toLowerCase().contains("ocpp") &&
-                ocppService != null
-            ) {
-                return (Boolean) ocppService
-                    .getClass()
-                    .getMethod(
-                        "startCharging",
-                        Long.class,
-                        String.class,
-                        Long.class
-                    )
-                    .invoke(
-                        ocppService,
-                        charger.getChargerId(),
-                        sessionId,
-                        userId
-                    );
-            }
-            if (cloudService != null) {
-                return (Boolean) cloudService
-                    .getClass()
-                    .getMethod(
-                        "startCharging",
-                        Long.class,
-                        String.class,
-                        Long.class
-                    )
-                    .invoke(
-                        cloudService,
-                        charger.getChargerId(),
-                        sessionId,
-                        userId
-                    );
-            }
-            return true; // 无可用服务时优雅降级
-        } catch (Exception e) {
-            log.error("调用协议启动失败: {}", e.getMessage(), e);
-            return false;
-        }
+        // Protocol服务已临时禁用 (Week 1 Day 1)
+        // 优雅降级：允许业务逻辑继续，但不调用实际协议
+        log.warn("协议服务已禁用，充电启动协议调用跳过（Week 9重新启用）");
+        return true;
     }
 
     private void invokeStopProtocol(Charger charger) {
-        if (ocppService == null && cloudService == null) {
-            log.warn("协议服务未配置，跳过协议停止");
-            return; // 优雅降级
-        }
-
-        try {
-            String protocols = charger.getSupportedProtocols();
-            if (
-                protocols != null &&
-                protocols.toLowerCase().contains("ocpp") &&
-                ocppService != null
-            ) {
-                ocppService
-                    .getClass()
-                    .getMethod("stopCharging", Long.class)
-                    .invoke(ocppService, charger.getChargerId());
-                return;
-            }
-            if (cloudService != null) {
-                cloudService
-                    .getClass()
-                    .getMethod("stopCharging", Long.class)
-                    .invoke(cloudService, charger.getChargerId());
-            }
-        } catch (Exception e) {
-            log.error("调用协议停止失败: {}", e.getMessage(), e);
-        }
+        // Protocol服务已临时禁用 (Week 1 Day 1)
+        // 优雅降级：允许业务逻辑继续，但不调用实际协议
+        log.warn("协议服务已禁用，充电停止协议调用跳过（Week 9重新启用）");
     }
 }
