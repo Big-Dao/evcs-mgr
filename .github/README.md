@@ -1,48 +1,90 @@
-# GitHub Configuration
+# GitHub 配置目录
 
-This directory contains GitHub-specific configuration files for the EVCS Manager project.
+本目录包含 EVCS Manager 项目的 GitHub 专用配置文件。
 
-## Files
+## 📄 文件说明
 
 ### copilot-instructions.md
-Custom instructions for GitHub Copilot coding agent. These instructions help Copilot understand:
-- Project architecture (multi-tenant system)
-- Development patterns and best practices
-- Build and test commands
-- Code quality standards
-- Common pitfalls to avoid
+GitHub Copilot AI 助手的自定义指令。这些指令帮助 Copilot 理解：
+- 项目架构（多租户系统）
+- 开发模式和最佳实践
+- 构建和测试命令
+- 代码质量标准
+- 常见陷阱和注意事项
 
-**Last updated**: 2025-10-20
+**最后更新**: 2025-10-20
+
+### MAINTENANCE.md
+`.github` 目录的维护指南，包括：
+- 各文件的作用和维护优先级
+- 维护时机和清单
+- 维护历史记录
+
+**最后更新**: 2025-10-20
 
 ### pull_request_template_deployment.md
-Template for deployment-related pull requests.
+部署相关 Pull Request 的模板。
+
+### instructions/
+模块级和路径级的 Copilot 指令：
+- `common.instructions.md` - evcs-common 模块开发规范
+- `station.instructions.md` - evcs-station 模块开发规范
+- `test.instructions.md` - 测试代码编写规范
 
 ### workflows/
-GitHub Actions workflow definitions for CI/CD pipelines.
+GitHub Actions 工作流定义，用于 CI/CD 流水线：
+- `build.yml` - 自动构建流程
+- `test-environment.yml` - 测试环境部署流程
 
-## Path-Specific Instructions (Future Enhancement)
+---
 
-For more granular control, path-specific instructions can be added in `.github/instructions/` directory:
+## 🎯 路径级指令说明
 
-```
-.github/instructions/
-├── station.instructions.md      # For evcs-station module
-├── payment.instructions.md      # For evcs-payment module
-└── protocol.instructions.md     # For evcs-protocol module
-```
+路径级指令可以为特定代码路径提供更细粒度的规范控制。
 
-Path-specific instruction format:
+### 指令格式
+
 ```markdown
 ---
 applyTo: "evcs-station/**/*.java"
 ---
 
-# Station Module Instructions
-- Focus on multi-tenant data isolation
-- Always validate station ownership
+# 站点模块指令
+- 关注多租户数据隔离
+- 始终验证站点所有权
 ```
 
-## Resources
+### 已配置的指令
 
-- [GitHub Copilot Custom Instructions Documentation](https://docs.github.com/en/copilot/how-tos/configure-custom-instructions/add-repository-instructions)
-- [Best Practices for GitHub Copilot](https://docs.github.com/en/copilot/tutorials/coding-agent/get-the-best-results)
+```
+.github/instructions/
+├── common.instructions.md      # evcs-common 模块
+├── station.instructions.md     # evcs-station 模块
+└── test.instructions.md        # 测试代码
+```
+
+### 添加新指令
+
+如需为新模块添加指令：
+1. 在 `instructions/` 目录下创建 `[module].instructions.md`
+2. 使用 YAML frontmatter 指定 `applyTo` 路径
+3. 编写该模块的特定开发规范
+
+---
+
+## 📚 参考资源
+
+### GitHub 官方文档
+- [GitHub Copilot 自定义指令文档](https://docs.github.com/zh/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot)
+- [GitHub Copilot 最佳实践](https://docs.github.com/zh/copilot/using-github-copilot/best-practices-for-using-github-copilot)
+- [GitHub Actions 文档](https://docs.github.com/zh/actions)
+
+### 项目相关文档
+- [../DOCUMENTATION-INDEX.md](../DOCUMENTATION-INDEX.md) - 项目文档导航
+- [MAINTENANCE.md](MAINTENANCE.md) - 维护指南
+- [../docs/DEVELOPER-GUIDE.md](../docs/DEVELOPER-GUIDE.md) - 开发者指南
+
+---
+
+**目录创建**: 2025-10-14  
+**最后更新**: 2025-10-20
