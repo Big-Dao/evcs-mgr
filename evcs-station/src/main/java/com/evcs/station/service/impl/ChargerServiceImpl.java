@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.exception.TenantContextMissingException;
 import com.evcs.common.tenant.TenantContext;
+import com.evcs.protocol.api.ICloudChargeProtocolService;
+import com.evcs.protocol.api.IOCPPProtocolService;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.event.ChargingStartEvent;
 import com.evcs.station.event.ChargingStopEvent;
@@ -35,10 +37,10 @@ public class ChargerServiceImpl
     implements IChargerService {
 
     @Autowired(required = false)
-    private Object ocppService; // 实际类型: IOCPPProtocolService from evcs-protocol
+    private IOCPPProtocolService ocppService;
 
     @Autowired(required = false)
-    private Object cloudService; // 实际类型: ICloudChargeProtocolService from evcs-protocol
+    private ICloudChargeProtocolService cloudService;
 
     @Autowired
     private ApplicationEventPublisher eventPublisher;

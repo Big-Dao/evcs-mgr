@@ -1,5 +1,5 @@
 x-java-env: &java-env
-  JAVA_OPTS: "-Xms256m -Xmx512m"
+  JAVA_OPTS: "-Xms256m -Xmx512m -Dspring.config.import=optional:configserver:http://config-server:8888"
   SPRING_PROFILES_ACTIVE: "local"
   CONFIG_SERVER_URL: "http://config-server:8888"
   SPRING_CLOUD_CONFIG_PROFILE: "local"
@@ -9,14 +9,14 @@ x-java-env: &java-env
   DB_NAME: "evcs_mgr"
   DB_USER: "postgres"
   DB_PASSWORD: "postgres"
-  REDIS_HOST: "redis"
-  REDIS_PORT: "6379"
-  REDIS_PASSWORD: ""
-  RABBIT_HOST: "rabbitmq"
-  RABBIT_PORT: "5672"
-  RABBIT_USER: "guest"
-  RABBIT_PASS: "guest"
-  RABBIT_VHOST: "/"
+  SPRING_DATA_REDIS_HOST: "redis"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_DATA_REDIS_PASSWORD: ""
+  SPRING_RABBITMQ_HOST: "rabbitmq"
+  SPRING_RABBITMQ_PORT: "5672"
+  SPRING_RABBITMQ_USERNAME: "guest"
+  SPRING_RABBITMQ_PASSWORD: "guest"
+  SPRING_RABBITMQ_VIRTUAL_HOST: "/"
 
 services:
   postgres:

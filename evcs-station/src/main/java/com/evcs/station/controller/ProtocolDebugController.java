@@ -1,6 +1,8 @@
 package com.evcs.station.controller;
 
 import com.evcs.common.result.Result;
+import com.evcs.protocol.api.ICloudChargeProtocolService;
+import com.evcs.protocol.api.IOCPPProtocolService;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.mapper.ChargerMapper;
 import com.evcs.station.service.IChargerService;
@@ -14,22 +16,22 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * 协议调试控制器
- * 使用Optional依赖处理evcs-protocol模块，避免编译时依赖问题
+ * 使用Optional依赖处理evcs-protocol模块,避免编译时依赖问题
  */
 @Slf4j
 @Tag(
     name = "协议调试",
-    description = "用于本地联调，触发协议层心跳/状态/开始/停止"
+    description = "用于本地联调,触发协议层心跳/状态/开始/停止"
 )
 @RestController("stationProtocolDebugController")
 @RequestMapping("/debug/protocol")
 public class ProtocolDebugController {
 
     @Autowired(required = false)
-    private Object ocppService; // 实际类型: IOCPPProtocolService from evcs-protocol
+    private IOCPPProtocolService ocppService;
 
     @Autowired(required = false)
-    private Object cloudService; // 实际类型: ICloudChargeProtocolService from evcs-protocol
+    private ICloudChargeProtocolService cloudService;
 
     @Autowired
     private ChargerMapper chargerMapper;

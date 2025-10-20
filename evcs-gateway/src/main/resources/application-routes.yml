@@ -1,0 +1,74 @@
+spring:
+  cloud:
+    gateway:
+      routes:
+        # 认证服务路由
+        - id: auth-service
+          uri: lb://evcs-auth
+          predicates:
+            - Path=/auth/**
+          filters:
+            - StripPrefix=1
+            
+        # 租户服务路由
+        - id: tenant-service
+          uri: lb://evcs-tenant
+          predicates:
+            - Path=/tenant/**
+          filters:
+            - StripPrefix=1
+            
+        # 站点服务路由
+        - id: station-service
+          uri: lb://evcs-station
+          predicates:
+            - Path=/station/**
+          filters:
+            - StripPrefix=1
+            
+        # 订单服务路由
+        - id: order-service
+          uri: lb://evcs-order
+          predicates:
+            - Path=/order/**
+          filters:
+            - StripPrefix=1
+            
+        # 支付服务路由
+        - id: payment-service
+          uri: lb://evcs-payment
+          predicates:
+            - Path=/payment/**
+          filters:
+            - StripPrefix=1
+            
+        # 协议服务路由
+        - id: protocol-service
+          uri: lb://evcs-protocol
+          predicates:
+            - Path=/protocol/**
+          filters:
+            - StripPrefix=1
+            
+        # 监控服务路由
+        - id: monitoring-service
+          uri: lb://evcs-monitoring
+          predicates:
+            - Path=/monitoring/**
+          filters:
+            - StripPrefix=1
+      
+      # 全局CORS配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: false
+            maxAge: 3600

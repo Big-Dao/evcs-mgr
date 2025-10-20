@@ -1,0 +1,10 @@
+FROM eclipse-temurin:21-jre-alpine
+WORKDIR /app
+RUN apk add --no-cache curl wget
+COPY build/libs/evcs-payment-*.jar app.jar
+RUN addgroup -S spring && adduser -S spring -G spring
+USER spring:spring
+ENV JAVA_OPTS=""
+EXPOSE 8084
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:8084/actuator/health || exit 1
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar app.jar"]

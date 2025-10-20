@@ -1,7 +1,8 @@
 package com.evcs.station.config;
 
+import com.evcs.protocol.api.ICloudChargeProtocolService;
+import com.evcs.protocol.api.IOCPPProtocolService;
 import jakarta.annotation.PostConstruct;
-import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
@@ -15,10 +16,10 @@ import org.springframework.context.annotation.Configuration;
 public class ProtocolConfig {
 
     @Autowired(required = false)
-    private Object ocppService; // 实际类型: IOCPPProtocolService from evcs-protocol
+    private IOCPPProtocolService ocppService;
 
     @Autowired(required = false)
-    private Object cloudService; // 实际类型: ICloudChargeProtocolService from evcs-protocol
+    private ICloudChargeProtocolService cloudService;
 
     @PostConstruct
     public void init() {

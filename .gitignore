@@ -52,6 +52,7 @@ out/
 .classpath
 .project
 .settings/
+.factorypath
 *.launch
 .metadata/
 bin/
