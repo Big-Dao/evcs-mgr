@@ -15,7 +15,7 @@ CREATE TABLE charging_order (
     user_id BIGINT,
     start_time TIMESTAMP,
     end_time TIMESTAMP,
-    energy DOUBLE,
+    energy DOUBLE PRECISION,
     duration BIGINT,
     amount DECIMAL(10,2),
     billing_plan_id BIGINT,
