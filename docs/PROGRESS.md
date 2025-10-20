@@ -1,6 +1,23 @@
 # 进度与里程碑
 
-## 最近更新（2025-10-12）
+## 最近更新（2025-10-20）
+
+### ✅ 新增完成（2025-10-20）
+- **Docker 部署完成**: 13个服务全部容器化并健康运行
+  - 业务服务: gateway, auth, tenant, station, order, payment, protocol, monitoring (8个)
+  - 基础设施: config-server, eureka, postgresql, redis, rabbitmq (5个)
+  - 验证: 所有服务健康检查通过，Eureka 8/8 实例注册成功
+- **测试基础设施完善**: H2 PostgreSQL兼容模式配置，修复5个SQL相关问题
+- **工作流规范**: 建立"先测试再提交"的开发流程
+- **Git 提交**: 6个提交推送到主分支（Docker部署 + 测试修复）
+
+### 当前状态（2025-10-20）
+- **阶段**: P4 Week 1 - 质量提升
+- **测试覆盖率**: ~30% (目标: 本周50%, 最终80%)
+- **测试状态**: 部分模块测试失败，需要修复
+  - ⚠️ evcs-integration: 12/18 tests failed
+  - ⚠️ evcs-payment, evcs-station, evcs-tenant: 部分失败
+  - ✅ evcs-order: ChargingOrderServiceTest 通过
 
 ### ✅ 已完成（P0 & P1）
 - 分时计费计划与分段校验、桩绑定
