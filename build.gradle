@@ -48,11 +48,11 @@ subprojects {
     // 依赖版本管理
     ext {
         springCloudVersion = '2023.0.0'
-        postgresqlVersion = '42.7.1'
+        postgresqlVersion = '42.7.4'  // 升级：安全补丁和性能优化
         redisVersion = '5.0.1'
         jwtVersion = '4.4.0'
-        mybatisPlusVersion = '3.5.6'
-    mybatisSpringVersion = '3.0.3'
+        mybatisPlusVersion = '3.5.7'  // 渐进升级：3.5.6 → 3.5.7 (更稳定)
+    mybatisSpringVersion = '3.0.3'  // 保持稳定版本
         fastjson2Version = '2.0.45'
         hutoolVersion = '5.8.25'
         knife4jVersion = '4.4.0'

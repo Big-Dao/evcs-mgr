@@ -38,7 +38,7 @@ spring:
   # 使用内存数据库进行测试
   datasource:
     driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    url: jdbc:h2:mem:testdb;MODE=PostgreSQL;CASE_INSENSITIVE_IDENTIFIERS=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
     username: sa
     password:
 

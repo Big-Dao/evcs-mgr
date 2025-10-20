@@ -1,6 +1,7 @@
 package com.evcs.tenant.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.evcs.common.entity.BaseEntity;
@@ -11,11 +12,17 @@ import lombok.EqualsAndHashCode;
  * 租户实体
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = false)  // 不包含父类字段
 @TableName("sys_tenant")
 public class SysTenant extends BaseEntity {
+    /**
+     * 主键ID (对应数据库id列)
+     * 注意：这里使用独立的id字段而不是复用父类的tenantId
+     */
     @TableId(value = "id", type = IdType.AUTO)
-    private Long tenantId;
+    @TableField("id")
+    private Long id;
+    
     private String tenantCode;
     private String tenantName;
     private Long parentId;

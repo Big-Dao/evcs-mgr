@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.evcs.tenant.mapper.SysTenantMapper">
+    
+    <!-- 自定义结果映射，明确指定列名到属性的映射 -->
+    <resultMap id="BaseResultMap" type="com.evcs.tenant.entity.SysTenant">
+        <id column="id" property="tenantId" jdbcType="BIGINT"/>
+        <result column="tenant_code" property="tenantCode" jdbcType="VARCHAR"/>
+        <result column="tenant_name" property="tenantName" jdbcType="VARCHAR"/>
+        <result column="parent_id" property="parentId" jdbcType="BIGINT"/>
+        <result column="ancestors" property="ancestors" jdbcType="VARCHAR"/>
+        <result column="contact_person" property="contactPerson" jdbcType="VARCHAR"/>
+        <result column="contact_phone" property="contactPhone" jdbcType="VARCHAR"/>
+        <result column="contact_email" property="contactEmail" jdbcType="VARCHAR"/>
+        <result column="address" property="address" jdbcType="VARCHAR"/>
+        <result column="social_code" property="socialCode" jdbcType="VARCHAR"/>
+        <result column="license_url" property="licenseUrl" jdbcType="VARCHAR"/>
+        <result column="tenant_type" property="tenantType" jdbcType="INTEGER"/>
+        <result column="status" property="status" jdbcType="INTEGER"/>
+        <result column="expire_time" property="expireTime" jdbcType="TIMESTAMP"/>
+        <result column="max_users" property="maxUsers" jdbcType="INTEGER"/>
+        <result column="max_stations" property="maxStations" jdbcType="INTEGER"/>
+        <result column="max_chargers" property="maxChargers" jdbcType="INTEGER"/>
+        <result column="remark" property="remark" jdbcType="VARCHAR"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+        <result column="create_by" property="createBy" jdbcType="BIGINT"/>
+        <result column="update_by" property="updateBy" jdbcType="BIGINT"/>
+        <result column="deleted" property="deleted" jdbcType="INTEGER"/>
+        <result column="version" property="version" jdbcType="INTEGER"/>
+        <result column="tenant_id" property="tenantId" jdbcType="BIGINT"/>
+    </resultMap>
+    
+</mapper>

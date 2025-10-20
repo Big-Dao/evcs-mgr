@@ -20,11 +20,13 @@ public interface StationMapper extends BaseMapper<Station> {
      * 分页查询充电站列表（包含统计信息）
      */
     @Select("""
-        SELECT s.*, 
-               COALESCE(c.total_chargers, 0) as totalChargers,
-               COALESCE(c.available_chargers, 0) as availableChargers,
-               COALESCE(c.charging_chargers, 0) as chargingChargers,
-               COALESCE(c.fault_chargers, 0) as faultChargers
+        SELECT s.station_id, s.tenant_id, s.station_code, s.station_name, s.address,
+               s.latitude, s.longitude, s.status, s.province, s.city, s.district,
+               s.create_time, s.update_time, s.create_by, s.update_by, s.deleted,
+               COALESCE(c.total_chargers, 0) as total_chargers,
+               COALESCE(c.available_chargers, 0) as available_chargers,
+               COALESCE(c.charging_chargers, 0) as charging_chargers,
+               COALESCE(c.fault_chargers, 0) as fault_chargers
         FROM charging_station s
         LEFT JOIN (
             SELECT station_id,
@@ -44,7 +46,10 @@ public interface StationMapper extends BaseMapper<Station> {
      * 根据位置查询附近充电站
      */
     @Select("""
-        SELECT *, 
+        SELECT station_id, tenant_id, station_code, station_name, address,
+               latitude, longitude, status, province, city, district,
+               total_chargers, available_chargers, charging_chargers, fault_chargers,
+               create_time, update_time, create_by, update_by, deleted,
                (6371 * acos(cos(radians(#{latitude})) * cos(radians(latitude)) * 
                 cos(radians(longitude) - radians(#{longitude})) + 
                 sin(radians(#{latitude})) * sin(radians(latitude)))) AS distance
@@ -71,11 +76,13 @@ public interface StationMapper extends BaseMapper<Station> {
      * 查询充电站详情（包含充电桩信息）
      */
     @Select("""
-        SELECT s.*, 
-               COALESCE(stats.total_chargers, 0) as totalChargers,
-               COALESCE(stats.available_chargers, 0) as availableChargers,
-               COALESCE(stats.charging_chargers, 0) as chargingChargers,
-               COALESCE(stats.fault_chargers, 0) as faultChargers,
+        SELECT s.station_id, s.tenant_id, s.station_code, s.station_name, s.address,
+               s.latitude, s.longitude, s.status, s.province, s.city, s.district,
+               s.create_time, s.update_time, s.create_by, s.update_by, s.deleted,
+               COALESCE(stats.total_chargers, 0) as total_chargers,
+               COALESCE(stats.available_chargers, 0) as available_chargers,
+               COALESCE(stats.charging_chargers, 0) as charging_chargers,
+               COALESCE(stats.fault_chargers, 0) as fault_chargers,
                COALESCE(stats.total_power, 0) as totalPower
         FROM charging_station s
         LEFT JOIN (

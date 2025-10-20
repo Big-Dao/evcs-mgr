@@ -77,7 +77,7 @@ class TenantControllerTest extends BaseControllerTest {
             }
             """;
 
-        mockMvc.perform(put("/tenant/" + tenant.getTenantId())
+        mockMvc.perform(put("/tenant/" + tenant.getId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(updateBody))
                 .andExpect(status().isOk())
@@ -92,7 +92,7 @@ class TenantControllerTest extends BaseControllerTest {
         SysTenant tenant = createAndSaveTenant("CTRL_TEST003", "控制器测试租户3");
 
         // When & Then: 删除租户
-        mockMvc.perform(delete("/tenant/" + tenant.getTenantId()))
+        mockMvc.perform(delete("/tenant/" + tenant.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("租户删除成功"));
@@ -105,7 +105,7 @@ class TenantControllerTest extends BaseControllerTest {
         SysTenant tenant = createAndSaveTenant("CTRL_TEST004", "控制器测试租户4");
 
         // When & Then: 查询租户
-        mockMvc.perform(get("/tenant/" + tenant.getTenantId()))
+        mockMvc.perform(get("/tenant/" + tenant.getId()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.tenantCode").value("CTRL_TEST004"))
@@ -136,15 +136,15 @@ class TenantControllerTest extends BaseControllerTest {
         SysTenant parent = createAndSaveTenant("SUB_CTRL_P", "父租户");
 
         SysTenant child1 = createTestTenant("SUB_CTRL_C1", "子租户1");
-        child1.setParentId(parent.getTenantId());
+        child1.setParentId(parent.getId());
         sysTenantService.saveTenant(child1);
 
         SysTenant child2 = createTestTenant("SUB_CTRL_C2", "子租户2");
-        child2.setParentId(parent.getTenantId());
+        child2.setParentId(parent.getId());
         sysTenantService.saveTenant(child2);
 
         // When & Then: 查询子租户
-        mockMvc.perform(get("/tenant/" + parent.getTenantId() + "/children"))
+        mockMvc.perform(get("/tenant/" + parent.getId() + "/children"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").isArray());
@@ -158,7 +158,7 @@ class TenantControllerTest extends BaseControllerTest {
 
         // When & Then: 查询租户树
         mockMvc.perform(get("/tenant/tree")
-                .param("rootId", root.getTenantId().toString()))
+                .param("rootId", root.getId().toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -170,24 +170,24 @@ class TenantControllerTest extends BaseControllerTest {
         SysTenant tenant = createAndSaveTenant("STATUS_CTRL", "状态控制器租户");
 
         // When & Then: 禁用租户
-        mockMvc.perform(put("/tenant/" + tenant.getTenantId() + "/status")
+        mockMvc.perform(put("/tenant/" + tenant.getId() + "/status")
                 .param("status", "0"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.message").value("状态修改成功"));
 
         // Verify: 验证状态已更改
-        SysTenant updated = sysTenantService.getTenantById(tenant.getTenantId());
+        SysTenant updated = sysTenantService.getTenantById(tenant.getId());
         assertThat(updated.getStatus()).isEqualTo(0);
 
         // When & Then: 启用租户
-        mockMvc.perform(put("/tenant/" + tenant.getTenantId() + "/status")
+        mockMvc.perform(put("/tenant/" + tenant.getId() + "/status")
                 .param("status", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
 
         // Verify: 验证状态已更改
-        updated = sysTenantService.getTenantById(tenant.getTenantId());
+        updated = sysTenantService.getTenantById(tenant.getId());
         assertThat(updated.getStatus()).isEqualTo(1);
     }
 

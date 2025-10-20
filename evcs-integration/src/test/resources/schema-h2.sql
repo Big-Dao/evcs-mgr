@@ -15,10 +15,8 @@ CREATE TABLE IF NOT EXISTS charging_station (
     province VARCHAR(50),
     city VARCHAR(50),
     district VARCHAR(50),
-    total_chargers INTEGER DEFAULT 0,
-    available_chargers INTEGER DEFAULT 0,
-    charging_chargers INTEGER DEFAULT 0,
-    fault_chargers INTEGER DEFAULT 0,
+    -- 统计字段已移除 (total_chargers, available_chargers, charging_chargers, fault_chargers)
+    -- 这些字段通过 StationMapper 的 JOIN 查询实时计算
     create_time TIMESTAMP,
     update_time TIMESTAMP,
     create_by BIGINT,
@@ -87,22 +85,28 @@ CREATE TABLE IF NOT EXISTS charging_order (
     tenant_id BIGINT NOT NULL,
     station_id BIGINT,
     charger_id BIGINT,
-    session_id VARCHAR(64),
+    session_id VARCHAR(64) NOT NULL,
     user_id BIGINT,
+
     start_time TIMESTAMP,
     end_time TIMESTAMP,
-    energy DOUBLE,
-    duration BIGINT,
-    amount DECIMAL(10,2),
+
+    energy DECIMAL(12,4),       -- kWh
+    duration BIGINT,            -- minutes
+    amount DECIMAL(12,4),       -- total amount
+
     billing_plan_id BIGINT,
     payment_trade_id VARCHAR(100),
     paid_time TIMESTAMP,
-    status INTEGER DEFAULT 0,
-    create_time TIMESTAMP,
-    update_time TIMESTAMP,
+
+    status INTEGER DEFAULT 0,   -- 0-created, 1-completed, 2-cancelled, 10-to_pay, 11-paid, 12-refunding, 13-refunded
+
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     create_by BIGINT,
     update_by BIGINT,
-    deleted INTEGER DEFAULT 0
+    deleted INTEGER DEFAULT 0,
+    version INTEGER DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS billing_plan (

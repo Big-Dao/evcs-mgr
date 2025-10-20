@@ -2,6 +2,7 @@ package com.evcs.station.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.IdType;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import com.evcs.common.entity.BaseEntity;
@@ -19,14 +20,9 @@ public class Charger extends BaseEntity {
     /**
      * 主键ID
      */
-    @TableId
+    @TableId(value = "charger_id", type = IdType.AUTO)
     private Long chargerId;
 
-    /**
-     * 租户ID（多租户隔离字段）
-     */
-    private Long tenantId;
-    
     /**
      * 充电桩编码
      */

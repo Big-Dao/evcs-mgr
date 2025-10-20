@@ -11,6 +11,7 @@ import com.evcs.common.tenant.TenantContext;
 import com.evcs.protocol.api.ICloudChargeProtocolService;
 import com.evcs.protocol.api.IOCPPProtocolService;
 import com.evcs.station.entity.Charger;
+import com.evcs.station.entity.Station;
 import com.evcs.station.event.ChargingStartEvent;
 import com.evcs.station.event.ChargingStopEvent;
 import com.evcs.station.mapper.ChargerMapper;
@@ -127,12 +128,14 @@ public class ChargerServiceImpl
             );
         }
         Long userId = TenantContext.getCurrentUserId();
-        if (stationMapper.selectById(charger.getStationId()) == null) {
+        Station station = stationMapper.selectById(charger.getStationId());
+        if (station == null) {
             throw new RuntimeException("关联的充电站不存在");
         }
 
         // 设置租户信息
         charger.setTenantId(tenantId);
+        charger.setStationCode(station.getStationCode()); // 设置充电站编码
         charger.setCreateTime(LocalDateTime.now());
         charger.setCreateBy(userId != null ? userId : 0L);
 

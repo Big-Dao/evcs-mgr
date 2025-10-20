@@ -6,6 +6,7 @@ import cn.hutool.core.lang.tree.Tree;
 import cn.hutool.core.lang.tree.TreeNode;
 import cn.hutool.core.lang.tree.TreeUtil;
 import cn.hutool.core.util.StrUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -71,18 +72,21 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
     @Override
     @DataScope
     public List<Tree<Long>> getTenantTree() {
-        List<SysTenant> tenantList = this.list(new QueryWrapper<SysTenant>()
-                .eq("status", 1)
-                .orderByAsc("tenant_id"));
+        LambdaQueryWrapper<SysTenant> wrapper = new LambdaQueryWrapper<>();
+        wrapper.ne(SysTenant::getId, 0L)  // 排除虚拟根节点
+               .eq(SysTenant::getStatus, 1)
+               .orderByAsc(SysTenant::getId);
+        List<SysTenant> tenantList = this.list(wrapper);
         
         if (CollUtil.isEmpty(tenantList)) {
             return CollUtil.newArrayList();
         }
         
         List<TreeNode<Long>> nodeList = tenantList.stream()
+                .filter(tenant -> tenant.getId() != null)  // 过滤掉ID为null的记录
                 .map(tenant -> {
                     TreeNode<Long> node = new TreeNode<>();
-                    node.setId(tenant.getTenantId());
+                    node.setId(tenant.getId());
                     node.setParentId(tenant.getParentId());
                     node.setName(tenant.getTenantName());
                     node.setExtra(BeanUtil.beanToMap(tenant));
@@ -124,7 +128,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
             }
             
             // 构建祖级列表
-            String ancestors = parentTenant.getAncestors() + "," + parentTenant.getTenantId();
+            String ancestors = parentTenant.getAncestors() + "," + parentTenant.getId();
             tenant.setAncestors(ancestors);
         } else {
             tenant.setParentId(0L);
@@ -146,7 +150,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
     @Transactional(rollbackFor = Exception.class)
     public boolean updateTenant(SysTenant tenant) {
         // 检查租户是否存在
-        SysTenant existTenant = this.getById(tenant.getTenantId());
+        SysTenant existTenant = this.getById(tenant.getId());
         if (existTenant == null) {
             throw new RuntimeException("租户不存在");
         }
@@ -154,7 +158,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
         // 检查租户编码是否重复（排除自己）
         long count = this.count(new QueryWrapper<SysTenant>()
                 .eq("tenant_code", tenant.getTenantCode())
-                .ne("tenant_id", tenant.getTenantId()));
+                .ne("id", tenant.getId()));
         if (count > 0) {
             throw new RuntimeException("租户编码已存在");
         }
@@ -225,7 +229,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
             if (newParent == null) {
                 throw new RuntimeException("新父租户不存在");
             }
-            newAncestors = newParent.getAncestors() + "," + newParent.getTenantId();
+            newAncestors = newParent.getAncestors() + "," + newParent.getId();
         }
         
         // 更新当前租户
@@ -266,10 +270,10 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
      */
     private void updateChildrenAncestors(SysTenant tenant) {
         List<SysTenant> children = this.list(new QueryWrapper<SysTenant>()
-                .eq("parent_id", tenant.getTenantId()));
+                .eq("parent_id", tenant.getId()));
         
         for (SysTenant child : children) {
-            String newAncestors = tenant.getAncestors() + "," + tenant.getTenantId();
+            String newAncestors = tenant.getAncestors() + "," + tenant.getId();
             child.setAncestors(newAncestors);
             child.setUpdateTime(LocalDateTime.now());
             child.setUpdateBy(TenantContext.getCurrentTenantId());
@@ -313,7 +317,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
     @Override
     public boolean changeStatus(Long tenantId, Integer status) {
         SysTenant tenant = new SysTenant();
-        tenant.setTenantId(tenantId);
+        tenant.setId(tenantId);
         tenant.setStatus(status);
         tenant.setUpdateTime(LocalDateTime.now());
         tenant.setUpdateBy(TenantContext.getCurrentUserId());
@@ -326,8 +330,8 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
     private void findChildren(List<SysTenant> allTenants, Long parentId, List<Long> children) {
         for (SysTenant tenant : allTenants) {
             if (Objects.equals(tenant.getParentId(), parentId)) {
-                children.add(tenant.getTenantId());
-                findChildren(allTenants, tenant.getTenantId(), children);
+                children.add(tenant.getId());
+                findChildren(allTenants, tenant.getId(), children);
             }
         }
     }

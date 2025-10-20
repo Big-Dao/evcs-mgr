@@ -37,7 +37,7 @@ class SysTenantServiceImplTest extends BaseServiceTest {
 
         // Then: 验证结果
         assertThat(result).isTrue();
-        assertThat(tenant.getTenantId()).isNotNull();
+        assertThat(tenant.getId()).isNotNull();
     }
 
     @Test
@@ -54,7 +54,7 @@ class SysTenantServiceImplTest extends BaseServiceTest {
 
         // Then: 验证更新
         assertThat(result).isTrue();
-        SysTenant updated = sysTenantService.getTenantById(tenant.getTenantId());
+        SysTenant updated = sysTenantService.getTenantById(tenant.getId());
         assertThat(updated.getTenantName()).isEqualTo("更新后的系统租户");
         assertThat(updated.getContactPerson()).isEqualTo("更新后的联系人");
     }
@@ -65,7 +65,7 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         // Given: 创建租户
         SysTenant tenant = createTestSysTenant("SYS_TEST003", "系统测试租户3");
         sysTenantService.saveTenant(tenant);
-        Long tenantId = tenant.getTenantId();
+        Long tenantId = tenant.getId();
 
         // When: 删除租户
         boolean result = sysTenantService.deleteTenant(tenantId);
@@ -84,7 +84,7 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         sysTenantService.saveTenant(tenant);
 
         // When: 根据ID查询
-        SysTenant found = sysTenantService.getTenantById(tenant.getTenantId());
+        SysTenant found = sysTenantService.getTenantById(tenant.getId());
 
         // Then: 验证查询结果
         assertThat(found).isNotNull();
@@ -137,11 +137,11 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         sysTenantService.saveTenant(parent);
 
         SysTenant child1 = createTestSysTenant("TREE_CHILD1", "树形子租户1");
-        child1.setParentId(parent.getTenantId());
+        child1.setParentId(parent.getId());
         sysTenantService.saveTenant(child1);
 
         SysTenant child2 = createTestSysTenant("TREE_CHILD2", "树形子租户2");
-        child2.setParentId(parent.getTenantId());
+        child2.setParentId(parent.getId());
         sysTenantService.saveTenant(child2);
 
         // When: 查询租户树
@@ -160,15 +160,15 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         sysTenantService.saveTenant(parent);
 
         SysTenant child1 = createTestSysTenant("SUB_CHILD1", "子租户1");
-        child1.setParentId(parent.getTenantId());
+        child1.setParentId(parent.getId());
         sysTenantService.saveTenant(child1);
 
         SysTenant child2 = createTestSysTenant("SUB_CHILD2", "子租户2");
-        child2.setParentId(parent.getTenantId());
+        child2.setParentId(parent.getId());
         sysTenantService.saveTenant(child2);
 
         // When: 查询子租户
-        List<SysTenant> subTenants = sysTenantService.getSubTenants(parent.getTenantId());
+        List<SysTenant> subTenants = sysTenantService.getSubTenants(parent.getId());
 
         // Then: 验证结果
         assertThat(subTenants).isNotNull();
@@ -183,15 +183,15 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         sysTenantService.saveTenant(parent);
 
         SysTenant child = createTestSysTenant("CHILDREN_C", "子租户");
-        child.setParentId(parent.getTenantId());
+        child.setParentId(parent.getId());
         sysTenantService.saveTenant(child);
 
         SysTenant grandChild = createTestSysTenant("CHILDREN_GC", "孙租户");
-        grandChild.setParentId(child.getTenantId());
+        grandChild.setParentId(child.getId());
         sysTenantService.saveTenant(grandChild);
 
         // When: 查询所有子节点
-        List<Long> childrenIds = sysTenantService.getTenantChildren(parent.getTenantId());
+        List<Long> childrenIds = sysTenantService.getTenantChildren(parent.getId());
 
         // Then: 验证结果应包含子节点和孙节点
         assertThat(childrenIds).isNotNull();
@@ -209,19 +209,19 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         sysTenantService.saveTenant(newParent);
 
         SysTenant child = createTestSysTenant("MOVE_CHILD", "待移动子租户");
-        child.setParentId(oldParent.getTenantId());
+        child.setParentId(oldParent.getId());
         sysTenantService.saveTenant(child);
 
         // When: 移动租户
         boolean result = sysTenantService.moveTenant(
-            child.getTenantId(), 
-            newParent.getTenantId()
+            child.getId(), 
+            newParent.getId()
         );
 
         // Then: 验证移动结果
         assertThat(result).isTrue();
-        SysTenant moved = sysTenantService.getTenantById(child.getTenantId());
-        assertThat(moved.getParentId()).isEqualTo(newParent.getTenantId());
+        SysTenant moved = sysTenantService.getTenantById(child.getId());
+        assertThat(moved.getParentId()).isEqualTo(newParent.getId());
     }
 
     @Test
@@ -233,11 +233,11 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         sysTenantService.saveTenant(tenant);
 
         // When: 禁用租户
-        boolean result = sysTenantService.changeStatus(tenant.getTenantId(), 0);
+        boolean result = sysTenantService.changeStatus(tenant.getId(), 0);
 
         // Then: 验证状态变更
         assertThat(result).isTrue();
-        SysTenant updated = sysTenantService.getTenantById(tenant.getTenantId());
+        SysTenant updated = sysTenantService.getTenantById(tenant.getId());
         assertThat(updated.getStatus()).isEqualTo(0);
     }
 
@@ -250,11 +250,11 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         sysTenantService.saveTenant(tenant);
 
         // When: 启用租户
-        boolean result = sysTenantService.changeStatus(tenant.getTenantId(), 1);
+        boolean result = sysTenantService.changeStatus(tenant.getId(), 1);
 
         // Then: 验证状态变更
         assertThat(result).isTrue();
-        SysTenant updated = sysTenantService.getTenantById(tenant.getTenantId());
+        SysTenant updated = sysTenantService.getTenantById(tenant.getId());
         assertThat(updated.getStatus()).isEqualTo(1);
     }
 
@@ -298,7 +298,7 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         // When: 检查编码时排除自身
         boolean exists = sysTenantService.checkTenantCodeExists(
             "EXCLUDE_SELF", 
-            tenant.getTenantId()
+            tenant.getId()
         );
 
         // Then: 不应该认为存在（因为排除了自身）

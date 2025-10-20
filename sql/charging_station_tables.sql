@@ -29,9 +29,8 @@ CREATE TABLE IF NOT EXISTS charging_station (
     parking_fee DECIMAL(8,2) DEFAULT 0, -- 停车费(元/小时)
     service_fee DECIMAL(8,2) DEFAULT 0, -- 服务费(元/度)
     
-    -- 设施信息
-    total_chargers INTEGER DEFAULT 0, -- 总充电桩数
-    available_chargers INTEGER DEFAULT 0, -- 可用充电桩数
+    -- 充电桩统计字段已移除 (total_chargers, available_chargers, charging_chargers, fault_chargers)
+    -- 这些数据通过视图 v_station_detail 实时计算
     
     -- 支付方式 (PostgreSQL数组)
     payment_methods INTEGER[] DEFAULT ARRAY[1,2,3], -- 1-支付宝 2-微信 3-银联 4-现金
@@ -55,8 +54,8 @@ CREATE TABLE IF NOT EXISTS charging_station (
     deleted INTEGER DEFAULT 0,
     
     -- 约束
-    CONSTRAINT uk_station_code_tenant UNIQUE(station_code, tenant_id),
-    CONSTRAINT fk_station_tenant FOREIGN KEY (tenant_id) REFERENCES sys_tenant(tenant_id)
+    CONSTRAINT uk_station_code_tenant UNIQUE(station_code, tenant_id)
+    -- 注意：不添加外键约束到 sys_tenant，因为可能在不同的初始化阶段
 );
 
 -- =====================================================
@@ -188,33 +187,9 @@ CREATE TRIGGER update_charger_modtime
 -- =====================================================
 -- 触发器 - 更新充电站统计信息
 -- =====================================================
-CREATE OR REPLACE FUNCTION update_station_charger_count()
-RETURNS TRIGGER AS $$
-BEGIN
-    -- 更新充电站的充电桩统计
-    UPDATE charging_station SET
-        total_chargers = (
-            SELECT COUNT(*) FROM charger 
-            WHERE station_id = COALESCE(NEW.station_id, OLD.station_id) 
-            AND deleted = 0
-        ),
-        available_chargers = (
-            SELECT COUNT(*) FROM charger 
-            WHERE station_id = COALESCE(NEW.station_id, OLD.station_id) 
-            AND status = 1 
-            AND deleted = 0
-        )
-    WHERE station_id = COALESCE(NEW.station_id, OLD.station_id);
-    
-    RETURN COALESCE(NEW, OLD);
-END;
-$$ language 'plpgsql';
-
--- 充电桩变更时更新充电站统计
-DROP TRIGGER IF EXISTS update_station_stats ON charger;
-CREATE TRIGGER update_station_stats
-    AFTER INSERT OR UPDATE OR DELETE ON charger
-    FOR EACH ROW EXECUTE FUNCTION update_station_charger_count();
+-- 注意：充电桩统计字段已从 charging_station 表中移除
+-- 统计信息通过视图 v_station_detail 实时计算，不再需要触发器维护
+-- 旧的 update_station_charger_count() 函数和 update_station_stats 触发器已删除
 
 -- =====================================================
 -- 初始化数据

@@ -147,108 +147,8 @@ CREATE TABLE sys_role_permission (
 -- 2. 充电站管理模块
 -- ============================================
 
--- 充电站表
-CREATE TABLE charging_station (
-    id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
-    station_code VARCHAR(50) UNIQUE NOT NULL,
-    station_name VARCHAR(100) NOT NULL,
-    operator_id BIGINT REFERENCES sys_tenant(id),
-    operator_name VARCHAR(100),
-    station_type INTEGER DEFAULT 1, -- 1-直流快充，2-交流慢充，3-混合站
-    province VARCHAR(20),
-    city VARCHAR(20),
-    district VARCHAR(20),
-    address VARCHAR(200),
-    longitude DECIMAL(10,7),
-    latitude DECIMAL(10,7),
-    contact_person VARCHAR(50),
-    contact_phone VARCHAR(20),
-    service_time VARCHAR(50),
-    parking_fee VARCHAR(200),
-    payment_methods INTEGER[] DEFAULT ARRAY[1,2,3], -- PostgreSQL数组类型
-    total_chargers INTEGER DEFAULT 0,
-    available_chargers INTEGER DEFAULT 0,
-    faulty_chargers INTEGER DEFAULT 0,
-    charging_chargers INTEGER DEFAULT 0,
-    status INTEGER DEFAULT 1, -- 0-建设中，1-运营中，2-维护中，3-停用
-    support_reservation INTEGER DEFAULT 0, -- 0-否，1-是
-    network_type INTEGER DEFAULT 2, -- 1-有线，2-4G，3-5G，4-WiFi
-    last_heartbeat TIMESTAMP,
-    image_urls JSONB, -- JSON数组
-    facilities JSONB, -- JSON对象
-    tenant_id BIGINT NOT NULL REFERENCES sys_tenant(id),
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    create_by BIGINT,
-    update_by BIGINT,
-    deleted INTEGER DEFAULT 0,
-    version INTEGER DEFAULT 1,
-    remark TEXT
-);
-
--- 为充电站表创建索引
-CREATE INDEX idx_station_code ON charging_station(station_code);
-CREATE INDEX idx_station_tenant ON charging_station(tenant_id, status, deleted);
-CREATE INDEX idx_station_operator ON charging_station(operator_id);
-CREATE INDEX idx_station_location ON charging_station(province, city, district);
-CREATE INDEX idx_station_geo ON charging_station USING GIST(ll_to_earth(latitude, longitude)) WHERE latitude IS NOT NULL AND longitude IS NOT NULL;
-
--- 充电桩表
-CREATE TABLE charger (
-    id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
-    charger_code VARCHAR(50) UNIQUE NOT NULL,
-    charger_name VARCHAR(100) NOT NULL,
-    station_id BIGINT NOT NULL REFERENCES charging_station(id),
-    station_code VARCHAR(50) NOT NULL,
-    charger_type INTEGER DEFAULT 1, -- 1-直流快充，2-交流慢充
-    brand VARCHAR(50),
-    model VARCHAR(50),
-    manufacturer VARCHAR(100),
-    production_date DATE,
-    operation_date DATE,
-    rated_power DECIMAL(8,2), -- kW
-    input_voltage INTEGER, -- V
-    output_voltage_range VARCHAR(50), -- V
-    output_current_range VARCHAR(50), -- A
-    gun_count INTEGER DEFAULT 1,
-    gun_types INTEGER[] DEFAULT ARRAY[1], -- PostgreSQL数组：1-国标，2-欧标，3-美标
-    supported_protocols JSONB, -- JSON对象
-    status INTEGER DEFAULT 1, -- 0-离线，1-空闲，2-充电中，3-故障，4-维护，5-预约中
-    fault_code VARCHAR(20),
-    fault_description VARCHAR(200),
-    last_heartbeat TIMESTAMP,
-    total_charging_sessions BIGINT DEFAULT 0,
-    total_charging_energy DECIMAL(12,2) DEFAULT 0, -- kWh
-    total_charging_time BIGINT DEFAULT 0, -- 分钟
-    current_session_id VARCHAR(50),
-    current_user_id BIGINT,
-    charging_start_time TIMESTAMP,
-    charged_energy DECIMAL(10,2) DEFAULT 0, -- kWh
-    charged_duration INTEGER DEFAULT 0, -- 分钟
-    current_power DECIMAL(8,2), -- kW
-    current_voltage DECIMAL(8,2), -- V
-    current_current DECIMAL(8,2), -- A
-    temperature DECIMAL(5,2), -- ℃
-    signal_strength INTEGER, -- dbm
-    firmware_version VARCHAR(50),
-    last_maintenance_time TIMESTAMP,
-    next_maintenance_time TIMESTAMP,
-    enabled INTEGER DEFAULT 1, -- 0-禁用，1-启用
-    tenant_id BIGINT NOT NULL REFERENCES sys_tenant(id),
-    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    create_by BIGINT,
-    update_by BIGINT,
-    deleted INTEGER DEFAULT 0,
-    version INTEGER DEFAULT 1,
-    remark TEXT
-);
-
--- 为充电桩表创建索引
-CREATE INDEX idx_charger_code ON charger(charger_code);
-CREATE INDEX idx_charger_station ON charger(station_id, status, enabled, deleted);
-CREATE INDEX idx_charger_tenant ON charger(tenant_id, status, deleted);
-CREATE INDEX idx_charger_status ON charger(status, enabled) WHERE deleted = 0;
+-- 充电站和充电桩表由 charging_station_tables.sql 创建
+-- （为了保持代码一致性，这两个表的定义移到了专门的文件中）
 
 -- ============================================
 -- 触发器：自动更新时间戳
@@ -268,8 +168,7 @@ CREATE TRIGGER update_tenant_updated_time BEFORE UPDATE ON sys_tenant FOR EACH R
 CREATE TRIGGER update_user_updated_time BEFORE UPDATE ON sys_user FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
 CREATE TRIGGER update_role_updated_time BEFORE UPDATE ON sys_role FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
 CREATE TRIGGER update_permission_updated_time BEFORE UPDATE ON sys_permission FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
-CREATE TRIGGER update_station_updated_time BEFORE UPDATE ON charging_station FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
-CREATE TRIGGER update_charger_updated_time BEFORE UPDATE ON charger FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
+-- charging_station 和 charger 表的触发器由 charging_station_tables.sql 创建
 
 -- ============================================
 -- 初始化数据
@@ -296,5 +195,4 @@ COMMENT ON TABLE sys_tenant IS '租户表';
 COMMENT ON TABLE sys_user IS '用户表';
 COMMENT ON TABLE sys_role IS '角色表';
 COMMENT ON TABLE sys_permission IS '权限表';
-COMMENT ON TABLE charging_station IS '充电站表';
-COMMENT ON TABLE charger IS '充电桩表';
+-- charging_station 和 charger 表的注释由 charging_station_tables.sql 创建

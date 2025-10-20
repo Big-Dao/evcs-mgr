@@ -64,13 +64,13 @@ public class TenantIsolationTest implements CommandLineRunner {
             parentTenant.setCreateBy(1L);
             
             boolean result1 = tenantService.saveTenant(parentTenant);
-            log.info("创建父租户结果: {}, 租户ID: {}", result1, parentTenant.getTenantId());
+            log.info("创建父租户结果: {}, 租户ID: {}", result1, parentTenant.getId());
             
             // 创建子租户
             SysTenant childTenant = new SysTenant();
             childTenant.setTenantCode("CHILD_001");
             childTenant.setTenantName("子租户1");
-            childTenant.setParentId(parentTenant.getTenantId());
+            childTenant.setParentId(parentTenant.getId());
             childTenant.setContactPerson("李四");
             childTenant.setContactPhone("13800138002");
             childTenant.setContactEmail("lisi@child.com");
@@ -79,7 +79,7 @@ public class TenantIsolationTest implements CommandLineRunner {
             childTenant.setCreateBy(1L);
             
             boolean result2 = tenantService.saveTenant(childTenant);
-            log.info("创建子租户结果: {}, 租户ID: {}", result2, childTenant.getTenantId());
+            log.info("创建子租户结果: {}, 租户ID: {}", result2, childTenant.getId());
             
         } finally {
             TenantContext.clear();

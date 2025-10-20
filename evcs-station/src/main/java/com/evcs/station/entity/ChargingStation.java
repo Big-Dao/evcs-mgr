@@ -1,5 +1,7 @@
 package com.evcs.station.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.evcs.common.entity.BaseEntity;
 import lombok.Data;
@@ -14,6 +16,12 @@ import java.math.BigDecimal;
 @EqualsAndHashCode(callSuper = true)
 @TableName("charging_station")
 public class ChargingStation extends BaseEntity {
+    
+    /**
+     * 主键ID
+     */
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
     
     /**
      * 充电站编码

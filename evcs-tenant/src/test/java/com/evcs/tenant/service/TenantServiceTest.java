@@ -45,7 +45,7 @@ class TenantServiceTest extends BaseServiceTest {
         assertThat(created.getId()).isNotNull();
         assertThat(created.getTenantCode()).isEqualTo("TEST001");
         assertThat(created.getTenantName()).isEqualTo("测试租户1");
-        assertThat(created.getTenantId()).isEqualTo(DEFAULT_TENANT_ID);
+        assertThat(created.getId()).isEqualTo(DEFAULT_TENANT_ID);
     }
 
     @Test
