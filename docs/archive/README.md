@@ -2,6 +2,14 @@
 
 本目录包含已完成阶段的历史文档，供参考查阅。
 
+## 最近归档
+
+**日期**: 2025-10-20  
+**内容**: 测试修复报告（evcs-tenant, evcs-order, evcs-payment, evcs-integration）  
+**位置**: `test-fixes/`
+
+---
+
 ## 归档说明
 
 - **归档日期**: 2025-10-12
@@ -9,6 +17,14 @@
 - **归档内容**: 已完成周次的总结文档、里程碑交付文档、已修复问题的分析文档
 
 ## 目录结构
+
+### test-fixes/ ⭐ 新增
+测试修复的详细报告（2025-10-20 归档）：
+- **TEST-FIX-EVCS-TENANT-REPORT.md** - evcs-tenant 模块测试修复（93% → 100%）
+- **TEST-FIX-SESSION-2-SUMMARY.md** - evcs-order 和 evcs-payment 修复总结
+- **TABLE-STRUCTURE-FIX-SUCCESS-REPORT.md** - evcs-integration 表结构修复（0% → 100%）
+
+**修复成果**: 总体测试通过率从 68% 提升至 96%
 
 ### completed-weeks/
 已完成周次的总结文档：
