@@ -50,9 +50,10 @@
 
 ### 部署文档
 - [DOCKER-DEPLOYMENT.md](DOCKER-DEPLOYMENT.md) - Docker 部署指南 ⭐
+- [docs/deployment/DOCKER-DEPLOYMENT-STATUS.md](docs/deployment/DOCKER-DEPLOYMENT-STATUS.md) - Docker 部署验证报告
+- [docs/deployment/DEPLOYMENT-TESTING-SUMMARY.md](docs/deployment/DEPLOYMENT-TESTING-SUMMARY.md) - 部署测试总结
+- [docs/deployment/DEPLOYMENT-TEST-REPORT.md](docs/deployment/DEPLOYMENT-TEST-REPORT.md) - 部署测试详细报告
 - [docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md) - 完整部署指南
-- [DEPLOYMENT-TESTING-SUMMARY.md](DEPLOYMENT-TESTING-SUMMARY.md) - 部署测试总结
-- [DOCKER-DEPLOYMENT-STATUS.md](DOCKER-DEPLOYMENT-STATUS.md) - Docker 部署状态
 
 ### 运维手册
 - [docs/OPERATIONS-MANUAL.md](docs/OPERATIONS-MANUAL.md) - 运维手册
@@ -70,9 +71,9 @@
 - [docs/TEST-ENVIRONMENT-GUIDE.md](docs/TEST-ENVIRONMENT-GUIDE.md) - 测试环境详细指南
 
 ### 测试报告
-- [TEST-COVERAGE-REPORT.md](TEST-COVERAGE-REPORT.md) - 测试覆盖率报告
-- [TEST-COMPLETION-SUMMARY.md](TEST-COMPLETION-SUMMARY.md) - 测试完成总结
-- [DEPLOYMENT-TEST-REPORT.md](DEPLOYMENT-TEST-REPORT.md) - 部署测试报告
+- [docs/testing/TEST-COVERAGE-REPORT.md](docs/testing/TEST-COVERAGE-REPORT.md) - 测试覆盖率报告
+- [docs/testing/TEST-COMPLETION-SUMMARY.md](docs/testing/TEST-COMPLETION-SUMMARY.md) - 测试完成总结
+- [docs/testing/TEST-FIX-GUIDE.md](docs/testing/TEST-FIX-GUIDE.md) - 测试修复指南
 
 ---
 
@@ -89,21 +90,22 @@
 - [.github/instructions/test.instructions.md](.github/instructions/test.instructions.md) - 测试编写规范
 
 ### 问题修复
-- [IDE-FIX-GUIDE.md](IDE-FIX-GUIDE.md) - IDE 错误修复指南
-- [TEST-FIX-GUIDE.md](TEST-FIX-GUIDE.md) - 测试修复指南
+- [docs/development/IDE-FIX-GUIDE.md](docs/development/IDE-FIX-GUIDE.md) - IDE 错误修复指南
 
 ---
 
 ## 📊 周报与总结
 
-### 最新周报
-- [第8周完成报告.md](第8周完成报告.md) - 第8周完成报告
-- [第7周完成报告.md](第7周完成报告.md) - 第7周完成报告
+### 最新周报（已归档）
+- [docs/archive/completed-weeks/第8周完成报告.md](docs/archive/completed-weeks/第8周完成报告.md) - 第8周完成报告
+- [docs/archive/completed-weeks/第7周完成报告.md](docs/archive/completed-weeks/第7周完成报告.md) - 第7周完成报告
 
-### Day-by-Day 进度
-- [WEEK1-DAY1-SUMMARY.md](WEEK1-DAY1-SUMMARY.md)
-- [WEEK1-DAY2-PROGRESS.md](WEEK1-DAY2-PROGRESS.md)
-- [WEEK1-DAY1-3-FINAL-REPORT.md](WEEK1-DAY1-3-FINAL-REPORT.md)
+### Day-by-Day 进度（已归档）
+- [docs/archive/progress-reports/](docs/archive/progress-reports/) - 每日进度报告归档
+  - WEEK1-DAY1-SUMMARY.md
+  - WEEK1-DAY2-PROGRESS.md
+  - WEEK1-DAY1-3-FINAL-REPORT.md
+  - 等共12个临时进度报告
 
 ---
 
@@ -120,12 +122,17 @@
 
 ### 已完成阶段
 - [docs/archive/completed-weeks/](docs/archive/completed-weeks/) - 已完成周报归档
+  - 第8周完成报告.md
+  - 第7周完成报告.md
+  - 第7周任务验收清单.md
   - WEEK1-EXECUTIVE-SUMMARY.md
   - WEEK2-COMPLETION-SUMMARY.md
   - WEEK4-COMPLETION-SUMMARY.md
   - WEEK5-COMPLETION-SUMMARY.md
   - WEEK6-SUMMARY.md
-  - 第7周任务验收清单.md
+
+### 临时进度报告
+- [docs/archive/progress-reports/](docs/archive/progress-reports/) - 临时进度报告归档（12个文档）
 
 ### 历史规划
 - [docs/archive/old-planning/](docs/archive/old-planning/) - 历史规划文档
