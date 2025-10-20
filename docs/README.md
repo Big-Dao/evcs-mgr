@@ -81,7 +81,7 @@
   - 适合：测试工程师、QA
 
 #### 架构专题
-- **[TENANT_ISOLATION_COMPARISON.md](./TENANT_ISOLATION_COMPARISON.md)** 🔒 **多租户方案对比**
+- **[TENANT-ISOLATION-COMPARISON.md](./TENANT-ISOLATION-COMPARISON.md)** 🔒 **多租户方案对比**
   - Schema隔离 vs 行级隔离对比分析
   - 适合：理解多租户架构设计
 
@@ -128,7 +128,7 @@
 - [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md)
 - [TECHNICAL-DESIGN.md](./TECHNICAL-DESIGN.md)
 - [API-DOCUMENTATION.md](./API-DOCUMENTATION.md)
-- [TENANT_ISOLATION_COMPARISON.md](./TENANT_ISOLATION_COMPARISON.md)
+- [TENANT-ISOLATION-COMPARISON.md](./TENANT-ISOLATION-COMPARISON.md)
 
 #### 🧪 测试工程师
 **测试工作流**：
@@ -159,7 +159,7 @@
 1. **第1天**: [README.md](../README.md) - 项目总览
 2. **第2天**: [TECHNICAL-DESIGN.md](./TECHNICAL-DESIGN.md) - 技术架构
 3. **第3天**: [PROGRESS.md](./PROGRESS.md) - 当前进度与规划
-4. **第4天**: [TENANT_ISOLATION_COMPARISON.md](./TENANT_ISOLATION_COMPARISON.md) - 多租户架构
+4. **第4天**: [TENANT-ISOLATION-COMPARISON.md](./TENANT-ISOLATION-COMPARISON.md) - 多租户架构
 5. **第5天**: [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md) - 开发指南，开始参与开发
 
 ---
@@ -175,7 +175,7 @@
 #### 💻 开发与实现
 - 想了解技术架构 → [TECHNICAL-DESIGN.md](./TECHNICAL-DESIGN.md)
 - 想了解开发规范 → [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md)
-- 想了解多租户实现 → [TENANT_ISOLATION_COMPARISON.md](./TENANT_ISOLATION_COMPARISON.md)
+- 想了解多租户实现 → [TENANT-ISOLATION-COMPARISON.md](./TENANT-ISOLATION-COMPARISON.md)
 - 想看代码示例 → [TenantIsolationDemo.java](./TenantIsolationDemo.java)
 - 想了解API接口 → [API-DOCUMENTATION.md](./API-DOCUMENTATION.md)
 

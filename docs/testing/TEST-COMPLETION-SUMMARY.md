@@ -297,7 +297,7 @@ public class XxxTest extends BaseServiceTest {
 ### 创建的文档
 - `TEST-PROGRESS-REPORT.md` - 详细进度报告
 - `TEST-COMPLETION-SUMMARY.md` - 本总结文档 (当前)
-- `NEXT-STEP-PROGRESS.md` - 初始计划文档
+- `NEXT-STEP-PROGRESS-REPORT.md` - 初始计划文档
 - `TEST-FRAMEWORK-SUMMARY.md` - 测试框架指南
 
 ### 项目文档

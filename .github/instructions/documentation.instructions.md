@@ -38,7 +38,7 @@ priority: high
 - ✅ `*-QUICKSTART.md` - 5-10 分钟快速开始指南
 - ✅ `*-DEPLOYMENT.md` - 快速部署指南
 - ✅ 关键技术说明（如 `README-TENANT-ISOLATION.md`）
-- ✅ 项目当前进度追踪（如 `NEXT-STEP-PROGRESS.md`）
+- ✅ 项目当前进度追踪（如 `NEXT-STEP-PROGRESS-REPORT.md`）
 
 **禁止的文档类型**：
 - ❌ 临时进度报告（应放在 `docs/archive/progress-reports/`）

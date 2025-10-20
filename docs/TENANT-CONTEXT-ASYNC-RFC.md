@@ -132,7 +132,7 @@
 阶段 0 — 准备（1-2 天）
 - 审计/清点：列出全仓库中所有 executor 创建点与 `@Async` 使用点（包括直接 `Executors.*`）。生成清单（优先级标签：high/medium/low）。  
 - 确认标准：定义通过的并发测试与泄露检测用例（如 `TenantContextTaskDecoratorTest` 一类）。  
-- 文档：把本 RFC 更新到 `evcs-mgr/docs/TENANT_CONTEXT_ASYNC_RFC.md` 并在团队内部同步。
+- 文档：把本 RFC 更新到 `evcs-mgr/docs/TENANT-CONTEXT-ASYNC-RFC.md` 并在团队内部同步。
 
 阶段 1 — 在 `evcs-common` 与核心 executor 上部署 `TaskDecorator`（1-3 天）
 - 已完成：`TenantContextTaskDecorator` 与 `AsyncConfig`（将 `chargingExecutor` 作为默认 `taskExecutor`）。  

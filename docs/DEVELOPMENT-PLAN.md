@@ -769,7 +769,7 @@ P2阶段原计划（部分未完成）：
 - [技术方案设计](./TECHNICAL-DESIGN.md)
 - [进度与里程碑](./PROGRESS.md)
 - [开发者指南](./DEVELOPER-GUIDE.md)
-- [多租户隔离方案对比](./TENANT_ISOLATION_COMPARISON.md)
+- [多租户隔离方案对比](./TENANT-ISOLATION-COMPARISON.md)
 - [历史错误分析报告](./archive/old-issues/错误分类图表.md)（已修复）
 
 ### 10.2 外部依赖

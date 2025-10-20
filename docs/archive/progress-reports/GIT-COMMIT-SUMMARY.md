@@ -228,7 +228,7 @@ Bean名称冲突: ProtocolDebugController
 - [Week 1 修复进度追踪](WEEK1-FIX-PROGRESS.md)
 - [Day 1 工作总结](WEEK1-DAY1-SUMMARY.md)
 - [12周详细计划](docs/NEXT-STEP-PLAN.md)
-- [快速指南](NEXT-STEPS-QUICK-GUIDE.md)
+- [快速指南](NEXT-STEPS-QUICKSTART.md)
 - [任务看板](docs/PLAN-KANBAN.md)
 
 ---

@@ -6,7 +6,7 @@
 
 **当前阶段**: ✅ P3 完成，进入 P4 质量提升阶段  
 **最近更新**: 2025-10-20  
-**下一步计划**: 📋 [12周行动计划](NEXT-STEPS-QUICK-GUIDE.md) | [当前进度](NEXT-STEP-PROGRESS.md)
+**下一步计划**: 📋 [12周行动计划](NEXT-STEPS-QUICKSTART.md) | [当前进度](NEXT-STEP-PROGRESS-REPORT.md)
 
 ### 最新完成（2025-10-20）
 - ✅ **Docker 部署完成**: 13个服务全部容器化，健康检查通过
@@ -47,7 +47,7 @@
 - 🔌 **Week 9-10**: 协议与集成（OCPP完善 + 支付扩展）
 - 🚀 **Week 11-12**: 运维优化与生产上线
 
-**立即查看**: [📋 快速指南](NEXT-STEPS-QUICK-GUIDE.md) | [� 当前进度](NEXT-STEP-PROGRESS.md) | [路线图](docs/ROADMAP.md) | [历史进度](docs/PROGRESS.md)
+**立即查看**: [📋 快速指南](NEXT-STEPS-QUICKSTART.md) | [📈 当前进度](NEXT-STEP-PROGRESS-REPORT.md) | [路线图](docs/ROADMAP.md) | [历史进度](docs/PROGRESS.md)
 
 ---
 
@@ -400,8 +400,8 @@ JWT Token配置：
 **完整文档导航**：[📚 DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) ⭐
 
 ### 快速开始
-- **下一步计划（快速指南）**：[NEXT-STEPS-QUICK-GUIDE.md](NEXT-STEPS-QUICK-GUIDE.md) ⭐ 🆕
-- **当前进度报告**：[NEXT-STEP-PROGRESS.md](NEXT-STEP-PROGRESS.md) 🆕
+- **下一步计划（快速指南）**：[NEXT-STEPS-QUICKSTART.md](NEXT-STEPS-QUICKSTART.md) ⭐ 🆕
+- **当前进度报告**：[NEXT-STEP-PROGRESS-REPORT.md](NEXT-STEP-PROGRESS-REPORT.md) 🆕
 - **Docker 部署**：[DOCKER-DEPLOYMENT.md](DOCKER-DEPLOYMENT.md) ⭐
 - **测试环境快速部署**：[TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md) ⭐
 - **多租户隔离详解**：[README-TENANT-ISOLATION.md](README-TENANT-ISOLATION.md)
