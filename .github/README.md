@@ -30,6 +30,9 @@ GitHub Copilot AI 助手的自定义指令。这些指令帮助 Copilot 理解�
 - `common.instructions.md` - evcs-common 模块开发规范
 - `station.instructions.md` - evcs-station 模块开发规范
 - `test.instructions.md` - 测试代码编写规范
+- `documentation.instructions.md` - **文档管理规范**（⭐ 新增）
+
+**最后更新**: 2025-10-20
 
 ### workflows/
 GitHub Actions 工作流定义，用于 CI/CD 流水线：
@@ -58,10 +61,20 @@ applyTo: "evcs-station/**/*.java"
 
 ```
 .github/instructions/
-├── common.instructions.md      # evcs-common 模块
-├── station.instructions.md     # evcs-station 模块
-└── test.instructions.md        # 测试代码
+├── common.instructions.md        # evcs-common 模块规范
+├── station.instructions.md       # evcs-station 模块规范
+├── test.instructions.md          # 测试代码规范
+└── documentation.instructions.md # 文档管理规范 ⭐ 新增
 ```
+
+### 指令作用域
+
+| 指令文件 | 应用路径 | 主要约束 |
+|---------|---------|---------|
+| `common.instructions.md` | `evcs-common/**/*.java` | 向后兼容、多租户框架、零业务逻辑 |
+| `station.instructions.md` | `evcs-station/**/*.java` | 站点层级、多租户隔离、实时更新 |
+| `test.instructions.md` | `**/src/test/**/*.java` | 测试框架、AAA 模式、租户上下文 |
+| `documentation.instructions.md` | `**/*.md` | 文档结构、命名规范、生命周期管理 |
 
 ### 添加新指令
 

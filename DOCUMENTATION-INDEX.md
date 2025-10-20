@@ -89,6 +89,7 @@
 - [.github/instructions/common.instructions.md](.github/instructions/common.instructions.md) - evcs-common 模块规范
 - [.github/instructions/station.instructions.md](.github/instructions/station.instructions.md) - evcs-station 模块规范
 - [.github/instructions/test.instructions.md](.github/instructions/test.instructions.md) - 测试编写规范
+- [.github/instructions/documentation.instructions.md](.github/instructions/documentation.instructions.md) - **文档管理规范** ⭐ **（新增）**
 
 ### 问题修复
 - [docs/development/IDE-FIX-GUIDE.md](docs/development/IDE-FIX-GUIDE.md) - IDE 错误修复指南

@@ -16,6 +16,7 @@
 - **配置管理**：各模块的 YAML 均在 `src/main/resources`；共享常量尽量放在 `evcs-common`，敏感配置通过环境变量覆盖。
 - **日志追踪**：类上使用 Lombok `@Slf4j`，请求链路由 `evcs-common/filter/RequestIdFilter` 注入 request/tenant ID；禁止使用 `System.out`。
 - **Gradle 约定**：根 `build.gradle` 统一依赖版本；新模块需在 `settings.gradle` 注册，并优先复用已存在的 BOM。
+- **文档管理**：遵循 `.github/instructions/documentation.instructions.md` 规范；根目录文档不超过 10 个，临时报告归档到 `docs/archive/`，重复内容立即合并，文档修改后更新索引。
 - **文档索引**：架构详见 `docs/TECHNICAL-DESIGN.md`，租户细节参考 `README-TENANT-ISOLATION.md`；改动核心流程时同步更新相关文档。
 - **路径指引**：在改动具体模块前，先查阅 `.github/instructions/*.instructions.md` 的路径级约束（如 station 模块特别规则）。
 - **协作规范**：遵循 Conventional Commit，尽量在单模块内完成改动，不要覆盖用户已存在的自定义修改。
