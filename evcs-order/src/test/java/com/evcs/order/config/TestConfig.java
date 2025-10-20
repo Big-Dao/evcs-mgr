@@ -37,3 +37,4 @@ public class TestConfig {
         return (RedisTemplate<String, Object>) mock(RedisTemplate.class);
     }
 }
+
