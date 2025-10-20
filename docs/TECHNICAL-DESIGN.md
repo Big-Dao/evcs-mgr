@@ -1,5 +1,9 @@
 # 技术方案设计
 
+> **最后更新**: 2025-10-20  
+> **维护者**: EVCS Architecture Team  
+> **状态**: 已发布
+
 ## 1. 架构总览
 - Spring Boot 3.2、Java 21、Gradle 8.5
 - 微服务模块：auth/gateway/common/station/order/payment/protocol/tenant/monitoring
