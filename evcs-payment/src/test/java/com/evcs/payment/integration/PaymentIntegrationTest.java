@@ -32,7 +32,15 @@ import static org.junit.jupiter.api.Assertions.*;
  * 4. 多租户隔离
  * 5. 幂等性保证
  */
-@SpringBootTest(classes = PaymentServiceApplication.class)
+@SpringBootTest(
+    classes = PaymentServiceApplication.class,
+    properties = {
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.url=jdbc:h2:mem:payment_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH",
+        "spring.datasource.username=sa",
+        "spring.datasource.password="
+    }
+)
 @ActiveProfiles("test")
 @DisplayName("支付服务集成测试")
 class PaymentIntegrationTest extends BaseIntegrationTest {

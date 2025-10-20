@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
@@ -29,10 +31,9 @@ import org.springframework.data.redis.listener.RedisMessageListenerContainer;
  * 2. 注入需要测试的Service
  * 3. 根据实际业务编写测试用例
  */
-@SpringBootTest(
-    classes = { com.evcs.order.OrderServiceApplication.class },
-    webEnvironment = SpringBootTest.WebEnvironment.NONE
-)
+@SpringBootTest(classes = {com.evcs.order.OrderServiceApplication.class})
+@ActiveProfiles("test")
+@Import(com.evcs.order.config.TestConfig.class)
 @DisplayName("订单服务测试")
 class OrderServiceTest extends BaseServiceTest {
 
@@ -42,15 +43,6 @@ class OrderServiceTest extends BaseServiceTest {
     @MockBean
     private IBillingService billingService;
 
-    @MockBean
-    private MeterRegistry meterRegistry;
-
-    @MockBean
-    private RedisConnectionFactory redisConnectionFactory;
-
-    @MockBean
-    private RedisMessageListenerContainer redisMessageListenerContainer;
-
     @SpyBean
     private ChargingOrderMapper chargingOrderMapper;
 
@@ -59,15 +51,6 @@ class OrderServiceTest extends BaseServiceTest {
 
     @org.junit.jupiter.api.BeforeEach
     void initMocks() {
-        // Stub MeterRegistry.counter to return a mock Counter to avoid NPEs during tests
-        io.micrometer.core.instrument.Counter mockCounter =
-            org.mockito.Mockito.mock(
-                io.micrometer.core.instrument.Counter.class
-            );
-        org.mockito.Mockito.when(
-            meterRegistry.counter(org.mockito.ArgumentMatchers.anyString())
-        ).thenReturn(mockCounter);
-
         // Stub billingService.calculateAmount to always return zero amount to simplify tests
         java.math.BigDecimal zero = java.math.BigDecimal.ZERO;
         org.mockito.Mockito.when(

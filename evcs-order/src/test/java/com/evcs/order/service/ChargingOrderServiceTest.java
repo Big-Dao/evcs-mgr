@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 
@@ -34,6 +35,7 @@ import static org.mockito.Mockito.when;
  * 4. 多租户数据隔离
  */
 @SpringBootTest(classes = {OrderServiceApplication.class})
+@ActiveProfiles("test")
 @Import(TestConfig.class)
 @DisplayName("充电订单服务测试")
 class ChargingOrderServiceTest extends BaseServiceTest {
