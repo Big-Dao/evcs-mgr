@@ -13,8 +13,8 @@
 | [README.md](README.md) | 项目概览、技术栈、快速启动 | 所有人 ⭐ |
 | [DOCKER-DEPLOYMENT.md](DOCKER-DEPLOYMENT.md) | Docker 快速部署指南 | 开发者/运维 ⭐ |
 | [TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md) | 测试环境 5分钟快速启动 | 开发者 ⭐ |
-| [NEXT-STEPS-QUICK-GUIDE.md](NEXT-STEPS-QUICK-GUIDE.md) | 12周行动计划（P4阶段） | 项目经理 ⭐ |
-| [NEXT-STEP-PROGRESS.md](NEXT-STEP-PROGRESS.md) | 当前进度报告（每日更新） | 项目经理/开发者 ⭐ |
+| [NEXT-STEPS-QUICKSTART.md](NEXT-STEPS-QUICKSTART.md) | 12周行动计划（P4阶段） | 项目经理 ⭐ |
+| [NEXT-STEP-PROGRESS-REPORT.md](NEXT-STEP-PROGRESS-REPORT.md) | 当前进度报告（每日更新） | 项目经理/开发者 ⭐ |
 | [README-TENANT-ISOLATION.md](README-TENANT-ISOLATION.md) | 多租户隔离技术说明 | 架构师/开发者 |
 
 ---
@@ -36,7 +36,8 @@
 ### 架构设计
 - [docs/TECHNICAL-DESIGN.md](docs/TECHNICAL-DESIGN.md) - 技术架构设计 ⭐
 - [README-TENANT-ISOLATION.md](README-TENANT-ISOLATION.md) - 多租户隔离架构 ⭐
-- [docs/TENANT_ISOLATION_COMPARISON.md](docs/TENANT_ISOLATION_COMPARISON.md) - 租户隔离方案对比
+- [docs/TENANT-ISOLATION-COMPARISON.md](docs/TENANT-ISOLATION-COMPARISON.md) - 租户隔离方案对比
+- [docs/TENANT-CONTEXT-ASYNC-RFC.md](docs/TENANT-CONTEXT-ASYNC-RFC.md) - 租户上下文异步方案 RFC
 - [docs/协议事件模型说明.md](docs/协议事件模型说明.md) - 协议事件架构
 
 ### API 文档
