@@ -22,7 +22,7 @@ GitHub Copilot AI 助手的自定义指令。这些指令帮助 Copilot 理解�
 
 **最后更新**: 2025-10-20
 
-### pull_request_template_deployment.md
+### pull-request-template-deployment.md
 部署相关 Pull Request 的模板。
 
 ### instructions/

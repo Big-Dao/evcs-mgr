@@ -10,7 +10,7 @@
 .github/
 ├── copilot-instructions.md           ⭐ GitHub Copilot 项目级指令
 ├── README.md                          📝 本目录说明文档
-├── pull_request_template_deployment.md  PR 模板
+├── pull-request-template-deployment.md  PR 模板
 │
 ├── instructions/                      🎯 模块级 Copilot 指令
 │   ├── common.instructions.md         - evcs-common 模块规范
@@ -88,7 +88,7 @@
 
 **当前状态**: ✅ 已更新 (2025-10-20)
 
-#### 5. pull_request_template_deployment.md
+#### 5. pull-request-template-deployment.md
 **作用**: 部署相关 PR 的模板
 - 标准化 PR 描述格式
 - 确保必要信息完整
