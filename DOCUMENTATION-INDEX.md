@@ -1,18 +1,21 @@
 # 📚 EVCS Manager 文档导航
 
 > **最后更新**: 2025-10-20  
-> **项目阶段**: P4 Week 1 - 质量提升
+> **项目阶段**: P4 Week 1 - 质量提升  
+> **文档状态**: ✅ 已整理优化（2025-10-20）
 
 ---
 
-## 🚀 快速开始
+## 🚀 快速开始（根目录）
 
 | 文档 | 描述 | 适用对象 |
 |------|------|---------|
 | [README.md](README.md) | 项目概览、技术栈、快速启动 | 所有人 ⭐ |
-| [NEXT-STEPS-QUICK-GUIDE.md](NEXT-STEPS-QUICK-GUIDE.md) | 12周行动计划快速指南 | 开发者 ⭐ |
+| [DOCKER-DEPLOYMENT.md](DOCKER-DEPLOYMENT.md) | Docker 快速部署指南 | 开发者/运维 ⭐ |
+| [TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md) | 测试环境 5分钟快速启动 | 开发者 ⭐ |
+| [NEXT-STEPS-QUICK-GUIDE.md](NEXT-STEPS-QUICK-GUIDE.md) | 12周行动计划（P4阶段） | 项目经理 ⭐ |
 | [NEXT-STEP-PROGRESS.md](NEXT-STEP-PROGRESS.md) | 当前进度报告（每日更新） | 项目经理/开发者 ⭐ |
-| [TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md) | 测试环境快速启动 | 开发者 |
+| [README-TENANT-ISOLATION.md](README-TENANT-ISOLATION.md) | 多租户隔离技术说明 | 架构师/开发者 |
 
 ---
 
@@ -21,14 +24,10 @@
 ### 进度跟踪
 - [docs/PROGRESS.md](docs/PROGRESS.md) - 项目进度和里程碑
 - [docs/CHANGELOG.md](docs/CHANGELOG.md) - 版本变更日志
-- [GIT-COMMIT-SUMMARY.md](GIT-COMMIT-SUMMARY.md) - Git 提交总结
 
 ### 规划文档
 - [docs/ROADMAP.md](docs/ROADMAP.md) - 项目路线图（P0-P4+）
-- [docs/NEXT-STEP-PLAN.md](docs/NEXT-STEP-PLAN.md) - 详细12周计划
 - [docs/DEVELOPMENT-PLAN.md](docs/DEVELOPMENT-PLAN.md) - 开发计划详情
-- [docs/P3阶段规划总览.md](docs/P3阶段规划总览.md) - P3阶段规划（已完成）
-- [docs/下一步计划速览.md](docs/下一步计划速览.md) - 下一步行动速览
 
 ---
 
@@ -49,11 +48,10 @@
 ## 🚢 部署与运维
 
 ### 部署文档
-- [DOCKER-DEPLOYMENT.md](DOCKER-DEPLOYMENT.md) - Docker 部署指南 ⭐
-- [docs/deployment/DOCKER-DEPLOYMENT-STATUS.md](docs/deployment/DOCKER-DEPLOYMENT-STATUS.md) - Docker 部署验证报告
-- [docs/deployment/DEPLOYMENT-TESTING-SUMMARY.md](docs/deployment/DEPLOYMENT-TESTING-SUMMARY.md) - 部署测试总结
-- [docs/deployment/DEPLOYMENT-TEST-REPORT.md](docs/deployment/DEPLOYMENT-TEST-REPORT.md) - 部署测试详细报告
-- [docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md) - 完整部署指南
+- [DOCKER-DEPLOYMENT.md](DOCKER-DEPLOYMENT.md) - Docker 快速部署（⭐ 根目录）
+- [TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md) - 测试环境 5分钟启动（⭐ 根目录）
+- [docs/deployment/DEPLOYMENT-GUIDE.md](docs/deployment/DEPLOYMENT-GUIDE.md) - 完整部署指南（含 K8s）
+- [docs/deployment/TEST-ENVIRONMENT-GUIDE.md](docs/deployment/TEST-ENVIRONMENT-GUIDE.md) - 测试环境详细指南
 
 ### 运维手册
 - [docs/OPERATIONS-MANUAL.md](docs/OPERATIONS-MANUAL.md) - 运维手册
@@ -65,10 +63,9 @@
 ## 🧪 测试文档
 
 ### 测试指南
-- [TEST-FRAMEWORK-SUMMARY.md](TEST-FRAMEWORK-SUMMARY.md) - 测试框架总结 ⭐
-- [TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md) - 测试环境快速启动 ⭐
-- [docs/TESTING-QUICKSTART.md](docs/TESTING-QUICKSTART.md) - 测试快速入门
-- [docs/TEST-ENVIRONMENT-GUIDE.md](docs/TEST-ENVIRONMENT-GUIDE.md) - 测试环境详细指南
+- [TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md) - 测试环境快速启动（⭐ 根目录）
+- [docs/testing/TESTING-FRAMEWORK-GUIDE.md](docs/testing/TESTING-FRAMEWORK-GUIDE.md) - 测试框架完整指南 ⭐ **（新合并）**
+- [docs/testing/TESTING-GUIDE.md](docs/testing/TESTING-GUIDE.md) - 测试最佳实践
 
 ### 测试报告
 - [docs/testing/TEST-COVERAGE-REPORT.md](docs/testing/TEST-COVERAGE-REPORT.md) - 测试覆盖率报告
