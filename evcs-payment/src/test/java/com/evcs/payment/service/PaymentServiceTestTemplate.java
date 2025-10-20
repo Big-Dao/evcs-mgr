@@ -14,6 +14,7 @@ import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 
@@ -23,6 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 支付服务测试
  */
 @SpringBootTest(classes = PaymentServiceApplication.class)
+@ActiveProfiles("test")
 @DisplayName("支付服务测试")
 class PaymentServiceTestTemplate extends BaseServiceTest {
 

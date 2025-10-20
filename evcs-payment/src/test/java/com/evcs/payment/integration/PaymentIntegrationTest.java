@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -32,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 5. 幂等性保证
  */
 @SpringBootTest(classes = PaymentServiceApplication.class)
+@ActiveProfiles("test")
 @DisplayName("支付服务集成测试")
 class PaymentIntegrationTest extends BaseIntegrationTest {
 

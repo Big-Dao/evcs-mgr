@@ -84,7 +84,7 @@ class OrderServiceTest extends BaseServiceTest {
         // Stub mapper.updateById to avoid Missing Mapped Statement issues in test environment
         org.mockito.Mockito.doReturn(1)
             .when(chargingOrderMapper)
-            .updateById(org.mockito.ArgumentMatchers.any());
+            .updateById(org.mockito.ArgumentMatchers.<com.evcs.order.entity.ChargingOrder>any());
     }
 
     @Test

@@ -34,10 +34,8 @@ CREATE TABLE IF NOT EXISTS charging_station (
     city VARCHAR(20),
     district VARCHAR(20),
     status INTEGER DEFAULT 1,
-    total_chargers INTEGER DEFAULT 0,
-    available_chargers INTEGER DEFAULT 0,
-    charging_chargers INTEGER DEFAULT 0,
-    fault_chargers INTEGER DEFAULT 0,
+    -- 统计字段已移除 (total_chargers, available_chargers, charging_chargers, fault_chargers)
+    -- 这些字段通过 StationMapper 的 JOIN 查询实时计算
     operator_id BIGINT,
     operator_name VARCHAR(100),
     station_type INTEGER DEFAULT 1,
@@ -123,10 +121,12 @@ CREATE INDEX IF NOT EXISTS idx_charger_code ON charger(charger_code);
 CREATE INDEX IF NOT EXISTS idx_charger_station ON charger(station_id, status, enabled, deleted);
 CREATE INDEX IF NOT EXISTS idx_charger_tenant ON charger(tenant_id, status, deleted);
 
--- Insert or update default tenant for testing (using MERGE to avoid duplicate key errors)
-MERGE INTO sys_tenant KEY(id)
-VALUES (1, 'SYSTEM', '系统租户', 1, 1, 999999, 999999, 999999, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 0, 1);
+-- Insert default tenant for testing (use INSERT ... ON CONFLICT for H2 compatibility)
+INSERT INTO sys_tenant (id, tenant_code, tenant_name, tenant_type, status, max_users, max_stations, max_chargers, tenant_id, create_time, update_time, create_by, update_by, deleted, version)
+VALUES (1, 'SYSTEM', '系统租户', 1, 1, 999999, 999999, 999999, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 0, 1)
+ON CONFLICT (id) DO NOTHING;
 
--- Insert or update additional test tenant
-MERGE INTO sys_tenant KEY(id)
-VALUES (2, 'TENANT_002', '测试租户2', 2, 1, 100, 50, 200, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 0, 1);
+-- Insert additional test tenant
+INSERT INTO sys_tenant (id, tenant_code, tenant_name, tenant_type, status, max_users, max_stations, max_chargers, tenant_id, create_time, update_time, create_by, update_by, deleted, version)
+VALUES (2, 'TENANT_002', '测试租户2', 2, 1, 100, 50, 200, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 0, 1)
+ON CONFLICT (id) DO NOTHING;
