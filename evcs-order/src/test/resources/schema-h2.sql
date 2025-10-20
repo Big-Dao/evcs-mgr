@@ -1,6 +1,12 @@
 -- Charging Order schema for H2 test database
 
-CREATE TABLE IF NOT EXISTS charging_order (
+-- Drop tables to ensure clean state
+DROP TABLE IF EXISTS billing_rate;
+DROP TABLE IF EXISTS billing_plan_segment;
+DROP TABLE IF EXISTS billing_plan;
+DROP TABLE IF EXISTS charging_order;
+
+CREATE TABLE charging_order (
     id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
     station_id BIGINT,
@@ -24,7 +30,7 @@ CREATE TABLE IF NOT EXISTS charging_order (
     version INTEGER DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS billing_plan (
+CREATE TABLE billing_plan (
     id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
     station_id BIGINT,
@@ -43,7 +49,7 @@ CREATE TABLE IF NOT EXISTS billing_plan (
     version INTEGER DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS billing_plan_segment (
+CREATE TABLE billing_plan_segment (
     id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
     plan_id BIGINT NOT NULL,
@@ -57,7 +63,7 @@ CREATE TABLE IF NOT EXISTS billing_plan_segment (
     version INTEGER DEFAULT 0
 );
 
-CREATE TABLE IF NOT EXISTS billing_rate (
+CREATE TABLE billing_rate (
     id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
     station_id BIGINT,
