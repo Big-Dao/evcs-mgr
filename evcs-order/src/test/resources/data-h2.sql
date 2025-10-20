@@ -1,5 +1,10 @@
 -- Test data for H2 database
 
+-- Clean existing data to avoid duplicate key violations
+DELETE FROM billing_rate;
+DELETE FROM billing_plan_segment;
+DELETE FROM billing_plan;
+
 -- Insert test billing plans - Split into individual statements
 INSERT INTO billing_plan (id, tenant_id, station_id, name, code, status, is_default, priority, create_time, update_time, create_by, update_by, deleted, version)
 VALUES (100, 1, NULL, 'Default Plan', 'DEFAULT', 1, 1, 10, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 1, 1, 0, 1);
