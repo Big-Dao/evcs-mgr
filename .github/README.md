@@ -12,7 +12,7 @@ Custom instructions for GitHub Copilot coding agent. These instructions help Cop
 - Code quality standards
 - Common pitfalls to avoid
 
-**Last updated**: 2025-10-14
+**Last updated**: 2025-10-20
 
 ### pull_request_template_deployment.md
 Template for deployment-related pull requests.

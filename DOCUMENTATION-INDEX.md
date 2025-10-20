@@ -81,16 +81,24 @@
 
 ### 开发指南
 - [docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) - 开发者指南 ⭐
-- [.github/copilot-instructions.md](.github/copilot-instructions.md) - GitHub Copilot 使用指南
 - [docs/COPILOT-INSTRUCTIONS-SETUP.md](docs/COPILOT-INSTRUCTIONS-SETUP.md) - Copilot 配置说明
 
-### 模块指南
+### AI 辅助开发 🤖
+- [.github/copilot-instructions.md](.github/copilot-instructions.md) - GitHub Copilot 项目指令 ⭐
+- [.github/README.md](.github/README.md) - .github 目录说明
+- [.github/MAINTENANCE.md](.github/MAINTENANCE.md) - .github 维护指南
+
+### 模块开发规范
 - [.github/instructions/common.instructions.md](.github/instructions/common.instructions.md) - evcs-common 模块规范
 - [.github/instructions/station.instructions.md](.github/instructions/station.instructions.md) - evcs-station 模块规范
 - [.github/instructions/test.instructions.md](.github/instructions/test.instructions.md) - 测试编写规范
 
 ### 问题修复
 - [docs/development/IDE-FIX-GUIDE.md](docs/development/IDE-FIX-GUIDE.md) - IDE 错误修复指南
+
+### CI/CD
+- [.github/workflows/build.yml](.github/workflows/build.yml) - 构建流水线
+- [.github/workflows/test-environment.yml](.github/workflows/test-environment.yml) - 测试环境部署
 
 ---
 
