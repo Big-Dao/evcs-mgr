@@ -1,18 +1,22 @@
 spring:
   application:
     name: evcs-protocol-test
-  
+
+  # 禁用Config Server导入（覆盖主配置）
+  config:
+    import: "optional:"
+
   # 禁用RabbitMQ自动配置（测试环境）
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
-  
+
   # 测试数据源配置
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:testdb
     username: sa
-    password: 
+    password:
 
 logging:
   level:

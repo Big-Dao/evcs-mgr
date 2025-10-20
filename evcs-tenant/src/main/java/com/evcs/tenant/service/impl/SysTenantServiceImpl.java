@@ -13,7 +13,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.tenant.entity.SysTenant;
-import com.evcs.tenant.SysTenantMapper;
+import com.evcs.tenant.mapper.SysTenantMapper;
 import com.evcs.tenant.service.ISysTenantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -95,10 +95,9 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
 
     /**
      * 根据ID查询租户详情
-     * 数据权限：检查是否有权限访问该租户
+     * 注意：此方法不做数据权限检查，调用方需自行验证权限
      */
     @Override
-    @DataScope
     public SysTenant getTenantById(Long tenantId) {
         return this.getById(tenantId);
     }
@@ -141,11 +140,10 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
 
     /**
      * 更新租户信息
-     * 数据权限：只能更新有权限的租户
+     * 注意：此方法不做数据权限检查，调用方需自行验证权限
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @DataScope
     public boolean updateTenant(SysTenant tenant) {
         // 检查租户是否存在
         SysTenant existTenant = this.getById(tenant.getTenantId());
@@ -174,11 +172,10 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
 
     /**
      * 删除租户
-     * 数据权限：只能删除有权限的租户
+     * 注意：此方法不做数据权限检查，调用方需自行验证权限
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
-    @DataScope
     public boolean deleteTenant(Long tenantId) {
         // 检查是否有子租户
         long childCount = this.count(new QueryWrapper<SysTenant>()
@@ -316,7 +313,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
     @Override
     public boolean changeStatus(Long tenantId, Integer status) {
         SysTenant tenant = new SysTenant();
-        tenant.setId(tenantId);
+        tenant.setTenantId(tenantId);
         tenant.setStatus(status);
         tenant.setUpdateTime(LocalDateTime.now());
         tenant.setUpdateBy(TenantContext.getCurrentUserId());

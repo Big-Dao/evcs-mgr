@@ -3,8 +3,14 @@ spring:
   application:
     name: evcs-order-test
 
+  # 禁用Config Server导入（覆盖主配置）
+  config:
+    import: "optional:"
+
   main:
     allow-bean-definition-overriding: true
+  flyway:
+    enabled: false
 
   # 禁用RabbitMQ for tests
   rabbitmq:
@@ -15,9 +21,12 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
       - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration
 
   cloud:
     discovery:
@@ -32,12 +41,13 @@ spring:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:order_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH
     username: sa
-    password: 
+    password:
 
   sql:
     init:
       mode: always
       schema-locations: classpath:schema-h2.sql
+      data-locations: classpath:data-h2.sql
 
 eureka:
   client:
@@ -48,6 +58,8 @@ mybatis-plus:
   configuration:
     log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
     map-underscore-to-camel-case: true
+  type-aliases-package: com.evcs.order.entity
+  mapper-locations: classpath*:mapper/**/*.xml
   global-config:
     db-config:
       logic-delete-field: deleted
@@ -59,6 +71,9 @@ logging:
   level:
     com.evcs.order: debug
     org.springframework.test: warn
+    com.baomidou.mybatisplus: debug
+    org.apache.ibatis: debug
+    org.mybatis: debug
 
 # 多租户配置
 evcs:

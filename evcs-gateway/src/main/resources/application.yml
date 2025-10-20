@@ -4,9 +4,7 @@ spring:
   main:
     web-application-type: reactive
   config:
-    import: 
-      - "configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
-      - "optional:classpath:application-routes.yml"
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
   cloud:
     config:
       profile: local

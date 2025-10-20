@@ -4,6 +4,7 @@ import com.evcs.order.listener.BillingPlanCacheInvalidationListener;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.listener.ChannelTopic;
@@ -21,6 +22,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  */
 @Slf4j
 @Configuration
+@Profile("!test")  // 测试环境排除此配置
 public class RedisConfig {
     
     private static final String INVALIDATE_TOPIC = "billing:plan:update";

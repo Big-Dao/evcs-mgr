@@ -1,5 +1,7 @@
 package com.evcs.tenant.entity;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.evcs.common.entity.BaseEntity;
 import lombok.Data;
@@ -12,6 +14,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @TableName("sys_tenant")
 public class SysTenant extends BaseEntity {
+    @TableId(value = "id", type = IdType.AUTO)
     private Long tenantId;
     private String tenantCode;
     private String tenantName;

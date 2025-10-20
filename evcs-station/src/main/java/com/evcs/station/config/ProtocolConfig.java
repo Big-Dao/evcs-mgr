@@ -9,7 +9,16 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * 协议配置类
- * 使用Optional处理evcs-protocol模块的依赖，避免在模块不可用时出现编译错误
+ *
+ * 注意：Protocol服务相关的配置已临时禁用
+ * - evcs-protocol模块的依赖在Day 1被改为Optional以解决编译错误
+ * - 相关的MQ消费者（ChargerEventConsumer等）已被暂时禁用
+ * - 计划在Week 9（协议完善阶段）重新启用并重构
+ *
+ * 当前状态：
+ * - 协议事件流暂时断开
+ * - 系统在standalone模式下运行
+ * - 不影响基本的CRUD测试
  */
 @Slf4j
 @Configuration
@@ -23,16 +32,10 @@ public class ProtocolConfig {
 
     @PostConstruct
     public void init() {
-        // Protocol event listener functionality disabled temporarily
-        // Will be re-enabled in Week 9 (Protocol Enhancement phase)
-        if (ocppService != null || cloudService != null) {
-            log.info(
-                "Protocol services available, but event listener disabled for now"
-            );
-        } else {
-            log.info(
-                "Protocol services not available, running in standalone mode"
-            );
-        }
+        log.info(
+            "ProtocolConfig initialized - Protocol services temporarily disabled"
+        );
+        log.info("Running in standalone mode (no protocol event processing)");
+        log.info("Scheduled for re-enablement in Week 9");
     }
 }
