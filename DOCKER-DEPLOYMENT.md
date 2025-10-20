@@ -1,5 +1,9 @@
 # EVCS Manager Docker 部署指南
 
+> **最后更新**: 2025-10-20  
+> **维护者**: EVCS DevOps Team  
+> **状态**: 已发布
+
 ## 目录结构
 
 ```
