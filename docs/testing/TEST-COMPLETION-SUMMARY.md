@@ -351,3 +351,4 @@ public class XxxTest extends BaseServiceTest {
 **测试通过率**: 53.7% (22/41)  
 **估算覆盖率**: 35-40%  
 **完成度**: 约 70-75% (考虑目标是 50%)
+

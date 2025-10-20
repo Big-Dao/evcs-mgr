@@ -84,3 +84,4 @@ Invoke-Item evcs-tenant\build\reports\jacoco\index.html
 ---
 
 **目标**: 今天完成 evcs-tenant 测试，覆盖率提升到 35%
+

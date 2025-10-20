@@ -240,3 +240,4 @@ docker exec -it evcs-redis-test redis-cli -a test_redis_123
 ```bash
 ./scripts/start-test.sh && ./scripts/health-check.sh && ./scripts/smoke-test.sh
 ```
+

@@ -250,3 +250,4 @@
 - 或者直接按 Phase 1 对 `evcs-order`、`evcs-station` 的 executor 注册 `TenantContextTaskDecorator` 并增加必要的并发集成测试。  
 
 请回复你希望我下一步执行的具体项（例如：“开始审计清单” 或 “直接在 evcs-order 部署 TaskDecorator”）。谢谢。
+

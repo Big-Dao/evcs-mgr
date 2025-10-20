@@ -27,7 +27,7 @@
 - 适合：项目规划和进度跟踪
 
 ### 4. 详细分析
-👉 **[ERROR_ANALYSIS.md](./ERROR_ANALYSIS.md)** 📖
+👉 **[ERROR-ANALYSIS.md](./ERROR-ANALYSIS.md)** 📖
 - 完整的英文错误分析报告
 - 每个问题的深入分析
 - 详细的代码示例
@@ -42,7 +42,7 @@
 
 #### 🔧 **开发者** - 需要修复问题
 1. 先看 [快速修复指南](./快速修复指南.md) 了解如何修复
-2. 遇到复杂问题时参考 [ERROR_ANALYSIS.md](./ERROR_ANALYSIS.md)
+2. 遇到复杂问题时参考 [ERROR-ANALYSIS.md](./ERROR-ANALYSIS.md)
 3. 使用 [错误分类图表](./错误分类图表.md) 跟踪进度
 
 #### 👔 **项目经理** - 需要了解整体情况
@@ -51,13 +51,13 @@
 3. 根据优先级安排修复计划
 
 #### 🏗️ **架构师** - 需要深入理解
-1. 阅读 [ERROR_ANALYSIS.md](./ERROR_ANALYSIS.md) 理解问题根源
+1. 阅读 [ERROR-ANALYSIS.md](./ERROR-ANALYSIS.md) 理解问题根源
 2. 参考 [错误分析总结](./错误分析总结.md) 了解影响范围
 3. 制定长期优化方案
 
 #### 🧪 **测试工程师** - 需要验证修复
 1. 查看 [快速修复指南](./快速修复指南.md) 的验证部分
-2. 参考 [ERROR_ANALYSIS.md](./ERROR_ANALYSIS.md) 了解测试重点
+2. 参考 [ERROR-ANALYSIS.md](./ERROR-ANALYSIS.md) 了解测试重点
 3. 关注安全和性能相关问题
 
 ---
@@ -243,10 +243,11 @@ git commit -m "refactor: [QUA-02] 完善ReconcileResult封装"
 | [快速修复指南](./快速修复指南.md) | 8KB | 开发者 | 10分钟 |
 | [错误分析总结](./错误分析总结.md) | 4KB | 管理者 | 5分钟 |
 | [错误分类图表](./错误分类图表.md) | 3KB | 规划者 | 5分钟 |
-| [ERROR_ANALYSIS.md](./ERROR_ANALYSIS.md) | 17KB | 专家 | 30分钟 |
+| [ERROR-ANALYSIS.md](./ERROR-ANALYSIS.md) | 17KB | 专家 | 30分钟 |
 
 **总阅读时间**: 约50分钟（完整阅读所有文档）
 
 ---
 
 *祝你修复顺利！如有疑问，请查看相应的详细文档。* 🚀
+

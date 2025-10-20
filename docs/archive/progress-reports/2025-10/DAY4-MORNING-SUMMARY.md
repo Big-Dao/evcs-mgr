@@ -198,3 +198,4 @@ class ChargingOrderMapperTest { ... }
 **时间投入**: 约 3 小时
 **状态**: Day 4 上午 ✅ 完成（带已知限制）
 **下一步**: Day 4 下午 - PaymentServiceTest 设计
+

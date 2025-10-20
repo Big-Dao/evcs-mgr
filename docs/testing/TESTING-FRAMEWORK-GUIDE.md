@@ -866,3 +866,4 @@ jacocoTestCoverageVerification {
 **维护者**: EVCS Team  
 **最后更新**: 2025-10-20  
 **版本**: v2.0 (合并版)
+

@@ -299,3 +299,4 @@ open {module}/build/reports/tests/test/index.html
 
 *报告生成时间: 2025-10-12*
 *测试环境: Java 21, Spring Boot 3.2.2, Gradle 8.5*
+
