@@ -6,7 +6,7 @@
 
 **当前阶段**: ✅ P3 完成，进入 P4 质量提升阶段  
 **最近更新**: 2025-10-20  
-**下一步计划**: 📋 [12周行动计划](NEXT-STEPS-QUICK-GUIDE.md) | [详细计划](docs/NEXT-STEP-PLAN.md)
+**下一步计划**: 📋 [12周行动计划](NEXT-STEPS-QUICK-GUIDE.md) | [当前进度](NEXT-STEP-PROGRESS.md)
 
 ### 最新完成（2025-10-20）
 - ✅ **Docker 部署完成**: 13个服务全部容器化，健康检查通过
@@ -47,7 +47,7 @@
 - 🔌 **Week 9-10**: 协议与集成（OCPP完善 + 支付扩展）
 - 🚀 **Week 11-12**: 运维优化与生产上线
 
-**立即查看**: [📋 快速指南](NEXT-STEPS-QUICK-GUIDE.md) | [📖 详细计划](docs/NEXT-STEP-PLAN.md) | [路线图](docs/ROADMAP.md) | [进度追踪](docs/PROGRESS.md)
+**立即查看**: [📋 快速指南](NEXT-STEPS-QUICK-GUIDE.md) | [� 当前进度](NEXT-STEP-PROGRESS.md) | [路线图](docs/ROADMAP.md) | [历史进度](docs/PROGRESS.md)
 
 ---
 
@@ -134,20 +134,24 @@ evcs-mgr
 ### 环境要求
 
 - Java 21+
-- Docker & Docker Compose
-- Gradle 8.5+
+- PostgreSQL 15+ (或使用 Docker)
+- Redis 7+ (或使用 Docker)
+- RabbitMQ 3.12+ (或使用 Docker)
+- Docker & Docker Compose (推荐)
+- Gradle 8.5+ (项目自带 wrapper)
 
 ### 本地开发
 
 1. **克隆项目**
 ```bash
-git clone <repository-url>
+git clone https://github.com/Big-Dao/evcs-mgr.git
 cd evcs-mgr
 ```
 
-2. **启动基础服务**
+2. **启动基础设施服务**
 ```bash
-docker-compose up -d postgres redis rabbitmq
+# 仅启动数据库、Redis、RabbitMQ
+docker-compose -f docker-compose.local.yml up -d
 ```
 
 3. **构建项目**
@@ -157,26 +161,38 @@ docker-compose up -d postgres redis rabbitmq
 
 4. **运行服务**
 ```bash
+# 启动配置中心（可选）
+./gradlew :evcs-config:bootRun
+
+# 启动注册中心
+./gradlew :evcs-eureka:bootRun
+
 # 启动认证服务
 ./gradlew :evcs-auth:bootRun
 
 # 启动网关服务
 ./gradlew :evcs-gateway:bootRun
+
+# 启动业务服务（按需）
+./gradlew :evcs-tenant:bootRun
+./gradlew :evcs-station:bootRun
 ```
 
-### Docker部署
+### Docker 完整部署
 
-1. **完整环境启动**
+1. **完整环境启动**（包含所有服务）
 ```bash
 docker-compose up -d
 ```
 
 2. **访问服务**
 - API网关：http://localhost:8080
+- 租户服务：http://localhost:8081
+- 充电站服务：http://localhost:8082
 - API文档：http://localhost:8080/doc.html
-- 数据库：localhost:5432
+- PostgreSQL：localhost:5432 (用户: evcs_user / 密码: evcs_password)
 - Redis：localhost:6379
-- RabbitMQ管理界面：http://localhost:15672
+- RabbitMQ管理界面：http://localhost:15672 (用户: guest / 密码: guest)
 
 ### 测试环境部署
 
@@ -210,7 +226,7 @@ docker-compose up -d
 - RabbitMQ管理：http://localhost:15672
 
 **快速开始**: [测试环境5分钟快速部署](TEST-ENVIRONMENT-QUICKSTART.md)  
-**详细文档**: [测试环境完整部署指南](docs/TEST-ENVIRONMENT-GUIDE.md)
+**Docker部署**: [Docker完整部署指南](DOCKER-DEPLOYMENT.md)
 
 ## 🔧 配置说明
 
@@ -253,11 +269,11 @@ JWT Token配置：
   - Exception handling and error responses
   - Thread-safe context management
 
-### Security Test Results
-- ✅ Zero tenant data leaks in 10,000 concurrent operations
-- ✅ Path normalization prevents whitelist bypass attacks
-- ✅ Proper exception handling prevents null context operations
-- See [Week 1 Security Hardening Report](docs/WEEK1-SECURITY-HARDENING.md) for details
+### 安全测试成果
+- ✅ 10,000次并发操作零租户数据泄露
+- ✅ 路径规范化防止白名单绕过攻击
+- ✅ 异常处理防止空上下文操作
+- 详见：[Week 1 安全加固报告](docs/archive/completed-weeks/Week1-Security-Hardening.md)
 
 ## 📈 监控告警
 
@@ -315,10 +331,9 @@ JWT Token配置：
 - **集成测试**: BaseIntegrationTest - 完整上下文测试
 
 **测试文档**：
-- 📖 [测试覆盖率报告](TEST-COVERAGE-REPORT.md)
-- 📖 [测试改进总结](docs/TESTING-IMPROVEMENTS.md)  
-- 📖 [测试指南](docs/TESTING-GUIDE.md)
-- 📖 [测试框架说明](TEST-FRAMEWORK-SUMMARY.md)
+- 📖 [测试框架指南](docs/testing/TESTING-FRAMEWORK-GUIDE.md)
+- 📖 [测试指南](docs/testing/TESTING-GUIDE.md)
+- 📖 [测试改进总结](docs/testing/TESTING-IMPROVEMENTS.md)
 
 ### 运行测试
 ```bash
@@ -351,18 +366,23 @@ JWT Token配置：
 
 ## 🛠️ 部署指南
 
+### 快速部署
+- **Docker 部署**：[DOCKER-DEPLOYMENT.md](DOCKER-DEPLOYMENT.md) ⭐
+- **测试环境快速部署**：[TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md) ⭐
+
 ### 生产环境部署
-1. 数据库配置
-2. Redis集群配置
-3. 消息队列配置
-4. 负载均衡配置
-5. 监控告警配置
+详见：[部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)
+1. 数据库配置与优化
+2. Redis 集群配置
+3. RabbitMQ 集群配置
+4. 负载均衡配置（Nginx/HAProxy）
+5. 监控告警配置（Prometheus + Grafana）
 
 ### 扩容指南
 - 水平扩展微服务实例
-- 数据库读写分离
-- 缓存集群部署
-- CDN静态资源加速
+- 数据库主从复制与读写分离
+- Redis Sentinel/Cluster 部署
+- CDN 静态资源加速
 
 ## 📞 技术支持
 
@@ -377,22 +397,33 @@ JWT Token配置：
 
 ## 📚 项目文档
 
+**完整文档导航**：[📚 DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) ⭐
+
+### 快速开始
+- **下一步计划（快速指南）**：[NEXT-STEPS-QUICK-GUIDE.md](NEXT-STEPS-QUICK-GUIDE.md) ⭐ 🆕
+- **当前进度报告**：[NEXT-STEP-PROGRESS.md](NEXT-STEP-PROGRESS.md) 🆕
+- **Docker 部署**：[DOCKER-DEPLOYMENT.md](DOCKER-DEPLOYMENT.md) ⭐
+- **测试环境快速部署**：[TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md) ⭐
+- **多租户隔离详解**：[README-TENANT-ISOLATION.md](README-TENANT-ISOLATION.md)
+
 ### 规划与进度
-- **下一步计划（快速指南）**：[NEXT-STEPS-QUICK-GUIDE.md](NEXT-STEPS-QUICK-GUIDE.md) ⭐️ 🆕
-- **下一步计划（详细版）**：[docs/NEXT-STEP-PLAN.md](docs/NEXT-STEP-PLAN.md) 🆕
 - 路线图与计划：[docs/ROADMAP.md](docs/ROADMAP.md)
-- 进度与里程碑：[docs/PROGRESS.md](docs/PROGRESS.md)
+- 历史进度与里程碑：[docs/PROGRESS.md](docs/PROGRESS.md)
 - 变更日志：[docs/CHANGELOG.md](docs/CHANGELOG.md)
 
 ### 技术文档
+- 技术架构设计：[docs/TECHNICAL-DESIGN.md](docs/TECHNICAL-DESIGN.md)
+- API 接口文档：[docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md)
+- **开发者指南**：[docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) ⭐
+- **测试框架指南**：[docs/testing/TESTING-FRAMEWORK-GUIDE.md](docs/testing/TESTING-FRAMEWORK-GUIDE.md) ⭐
 - 产品需求（PRD）：[docs/PRODUCT-REQUIREMENTS.md](docs/PRODUCT-REQUIREMENTS.md)
-- 技术方案：[docs/TECHNICAL-DESIGN.md](docs/TECHNICAL-DESIGN.md)
-- 多租户隔离详解：[README-TENANT-ISOLATION.md](README-TENANT-ISOLATION.md)
-- API文档：[docs/API-DOCUMENTATION.md](docs/API-DOCUMENTATION.md)
-- **开发者指南**：[docs/DEVELOPER-GUIDE.md](docs/DEVELOPER-GUIDE.md) ⭐️
-- **测试指南**：[docs/TESTING-GUIDE.md](docs/TESTING-GUIDE.md) ⭐️
 
-### 运维文档
-- 部署指南：[docs/DEPLOYMENT-GUIDE.md](docs/DEPLOYMENT-GUIDE.md)
+### 部署与运维
+- 部署指南：[docs/deployment/DEPLOYMENT-GUIDE.md](docs/deployment/DEPLOYMENT-GUIDE.md)
 - 运维手册：[docs/OPERATIONS-MANUAL.md](docs/OPERATIONS-MANUAL.md)
-- 测试环境快速部署：[TEST-ENVIRONMENT-QUICKSTART.md](TEST-ENVIRONMENT-QUICKSTART.md)
+- 监控指南：[docs/MONITORING-GUIDE.md](docs/MONITORING-GUIDE.md)
+
+### 协议文档
+- 协议事件模型：[docs/协议事件模型说明.md](docs/协议事件模型说明.md)
+- 协议对接指南：[docs/协议对接指南.md](docs/协议对接指南.md)
+- 协议故障排查：[docs/协议故障排查手册.md](docs/协议故障排查手册.md)
