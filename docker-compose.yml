@@ -1,5 +1,9 @@
 x-java-env: &java-env
-  JAVA_OPTS: "-Xms256m -Xmx512m -Dspring.config.import=optional:configserver:http://config-server:8888"
+  JAVA_OPTS: >
+    -Xms256m -Xmx512m
+    -Dspring.config.import=optional:configserver:http://config-server:8888
+    -XX:StartFlightRecording=dumponexit=true,filename=/app/logs/flight.jfr
+    -XX:FlightRecorderOptions=stackdepth=128
   SPRING_PROFILES_ACTIVE: "local"
   CONFIG_SERVER_URL: "http://config-server:8888"
   SPRING_CLOUD_CONFIG_PROFILE: "local"

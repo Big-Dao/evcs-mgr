@@ -1,0 +1,53 @@
+# JVM Performance Monitoring Configuration
+# 性能监控配置 - 适用于所有微服务
+
+# Spring Boot Actuator 配置
+management:
+  metrics:
+    # 启用 JVM metrics
+    enable:
+      jvm: true
+      process: true
+      system: true
+      hikaricp: true
+      logback: true
+    # Prometheus 导出配置
+    export:
+      prometheus:
+        enabled: true
+        step: 1m
+        descriptions: true
+    # 标签配置
+    tags:
+      application: ${spring.application.name}
+      environment: ${spring.profiles.active:default}
+    # 分布配置（用于直方图）
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+      percentiles:
+        http.server.requests: 0.5, 0.9, 0.95, 0.99
+  endpoints:
+    web:
+      exposure:
+        # 暴露所有监控端点
+        include: health,info,metrics,prometheus,env,beans,conditions
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+    metrics:
+      enabled: true
+    prometheus:
+      enabled: true
+
+# Logging 配置（用于 GC 日志）
+logging:
+  level:
+    root: INFO
+    com.evcs: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
