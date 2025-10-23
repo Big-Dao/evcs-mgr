@@ -9,12 +9,23 @@
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-**当前阶段**: ✅ P3 完成，进入 P4 质量提升阶段  
-**最近更新**: 2025-10-20  
+**当前阶段**: ✅ P3 完成，进入 P4 性能优化阶段  
+**最近更新**: 2025-10-23  
 **测试状态**: 96% 通过率 (151/157) | [详细报告](TEST-COVERAGE-REPORT.md)  
-**下一步计划**: 📋 [12周行动计划](NEXT-STEPS-QUICKSTART.md) | [当前进度](NEXT-STEP-PROGRESS-REPORT.md)
+**下一步计划**: 📋 [12周行动计划](NEXT-STEPS-QUICKSTART.md) | [性能优化计划](docs/PERFORMANCE-OPTIMIZATION-PLAN.md)
 
-### 最新完成（2025-10-20）
+### 最新完成（2025-10-23）
+- ✅ **GraalVM CE 迁移评估完成**: 决策不迁移，继续使用 OpenJDK 21
+  - ROI 分析：投入 3-4 周 vs 收益 $70/年，不划算
+  - 技术风险：MyBatis Plus 动态代理兼容性差
+  - 详见：[GraalVM 评估报告](docs/GRAALVM-MIGRATION-EVALUATION.md)
+- ✅ **P4 Week 2-4 性能优化计划制定**: 高 ROI 优化方案
+  - JVM 参数调优（GC 暂停时间 <100ms）
+  - 数据库连接池优化（避免连接泄漏）
+  - Redis 集群化实施（99.9%+ 可用性）
+  - 详见：[性能优化计划](docs/PERFORMANCE-OPTIMIZATION-PLAN.md)
+
+### 历史完成（2025-10-20）
 - ✅ **测试覆盖率大幅提升**: 从 ~30% 提升至 96%
   - evcs-integration: 18/18 通过 (100%)
   - evcs-station: 25/26 通过 (96%)
@@ -45,18 +56,15 @@
   - M7: 监控体系建设 ✅
   - M8: 文档体系完善 ✅
 
-### 当前任务（P4 Week 1）
-- ✅ **测试覆盖率大幅提升**: 96% 通过率已达成！
-  - evcs-common: 40/40 (100%)
-  - evcs-integration: 18/18 (100%)
-  - evcs-station: 25/26 (96%) - 1个 WebSocket 测试待修复
-  - evcs-order: 15/20 (100%) - 5个需要 RabbitMQ 环境
-  - evcs-payment: 12/12 (100%)
-  - evcs-tenant: 41/41 (100%)
-- 📋 **下一步**: 修复 evcs-station WebSocket 测试，启用 RabbitMQ 测试
+### 当前任务（P4 Week 2-4: 性能优化）
+- 🚀 **JVM 参数调优**（Week 2）: G1GC vs ZGC 性能测试，目标 GC 暂停时间 <100ms
+- 🔧 **数据库连接池优化**（Week 2）: Hikari 配置调优，监控连接使用率 60-80%
+- ⚡ **Redis 集群化**（Week 3）: Sentinel 高可用架构，实现 99.9%+ 可用性
+- � **性能压测**（Week 4）: 建立性能基线（订单创建 >= 500 TPS，P99 < 200ms）
 
 ### 下一步计划（P4 - 12周计划）
-- 🧪 **Week 1-4**: 质量提升（✅ 测试覆盖率96%已达成、待完善性能测试）
+- 🚀 **Week 1**: 质量提升 ✅ 测试覆盖率96%已达成
+- ⚡ **Week 2-4**: 性能优化（JVM调优、连接池、Redis集群）
 - 🎨 **Week 5-8**: 前端开发（管理后台 + 用户端小程序）
 - 🔌 **Week 9-10**: 协议与集成（OCPP完善 + 支付扩展）
 - 🚀 **Week 11-12**: 运维优化与生产上线
