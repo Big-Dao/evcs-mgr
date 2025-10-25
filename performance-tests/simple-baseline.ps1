@@ -17,7 +17,11 @@ Write-Host "并发数: $Concurrency`n"
 $results = @()
 
 foreach ($service in $services) {
-    Write-Host "测试 $($service.Name)..." -NoNewline
+    Write-Host "`n========================================" -ForegroundColor Cyan
+    Write-Host "测试服务: $($service.Name)" -ForegroundColor Yellow
+    Write-Host "目标URL: $($service.Url)" -ForegroundColor Gray
+    Write-Host "========================================" -ForegroundColor Cyan
+    
     $startTime = Get-Date
     
     # 使用并行批次执行
@@ -26,8 +30,19 @@ foreach ($service in $services) {
     $failCount = 0
     $responseTimes = @()
     
+    Write-Host "将执行 $batches 个批次，每批 $Concurrency 并发..." -ForegroundColor Gray
+    
     for ($batch = 0; $batch -lt $batches; $batch++) {
         $batchSize = [math]::Min($Concurrency, $Requests - ($batch * $Concurrency))
+        $completed = $batch * $Concurrency
+        $progress = [math]::Round(($completed / $Requests) * 100, 1)
+        
+        # 显示批次进度
+        Write-Host "`n[批次 $($batch+1)/$batches] " -NoNewline -ForegroundColor Cyan
+        Write-Host "已完成: $completed/$Requests ($progress%) " -NoNewline -ForegroundColor White
+        Write-Host "执行中..." -ForegroundColor Yellow
+        
+        $batchStart = Get-Date
         
         $jobs = 1..$batchSize | ForEach-Object {
             Start-Job -ScriptBlock {
@@ -50,21 +65,49 @@ foreach ($service in $services) {
             } -ArgumentList $service.Url
         }
         
-        $jobResults = $jobs | Wait-Job | Receive-Job
+        # 等待作业完成并显示心跳
+        $waitStart = Get-Date
+        $lastHeartbeat = Get-Date
+        while ($jobs | Where-Object { $_.State -eq 'Running' }) {
+            Start-Sleep -Milliseconds 100
+            $now = Get-Date
+            if (($now - $lastHeartbeat).TotalSeconds -ge 2) {
+                $elapsed = [math]::Round(($now - $waitStart).TotalSeconds, 1)
+                Write-Host "  ⏱ 等待响应... ${elapsed}s" -ForegroundColor DarkGray
+                $lastHeartbeat = $now
+            }
+        }
+        
+        $jobResults = $jobs | Receive-Job
         $jobs | Remove-Job
+        
+        $batchDuration = [math]::Round(((Get-Date) - $batchStart).TotalSeconds, 2)
+        $batchSuccess = 0
+        $batchFail = 0
         
         foreach ($result in $jobResults) {
             if ($result.Success) {
                 $successCount++
+                $batchSuccess++
                 $responseTimes += $result.ResponseTime
             } else {
                 $failCount++
+                $batchFail++
             }
         }
+        
+        # 显示批次结果
+        Write-Host "  └─ 完成: $batchSuccess/$batchSize " -NoNewline -ForegroundColor Green
+        if ($batchFail -gt 0) {
+            Write-Host "错误: $batchFail " -NoNewline -ForegroundColor Red
+        }
+        Write-Host "耗时: ${batchDuration}s" -ForegroundColor Gray
     }
     
     $endTime = Get-Date
     $totalTime = ($endTime - $startTime).TotalSeconds
+    
+    Write-Host "`n✓ $($service.Name) 测试完成！总耗时: $([math]::Round($totalTime, 2))s" -ForegroundColor Green
     
     # 计算指标
     $tps = [math]::Round($successCount / $totalTime, 2)
@@ -80,7 +123,7 @@ foreach ($service in $services) {
         $p50 = $p90 = $p99 = $avg = 0
     }
     
-    Write-Host " 完成 ✓" -ForegroundColor Green
+    Write-Host "  📊 TPS: $tps | 平均响应: ${avg}ms | 错误率: $errorRate%" -ForegroundColor Cyan
     
     $results += [PSCustomObject]@{
         Service = $service.Name
