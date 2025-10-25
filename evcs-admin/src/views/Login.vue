@@ -46,6 +46,7 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { login } from '../api/auth'
 
 const router = useRouter()
 const loginFormRef = ref<FormInstance>()
@@ -53,7 +54,8 @@ const loading = ref(false)
 
 const loginForm = reactive({
   username: 'admin',
-  password: 'admin123'
+  password: 'admin123',
+  tenantId: 1 // 默认租户ID
 })
 
 const rules: FormRules = {
@@ -64,16 +66,35 @@ const rules: FormRules = {
 const handleLogin = async () => {
   if (!loginFormRef.value) return
   
-  await loginFormRef.value.validate((valid) => {
+  await loginFormRef.value.validate(async (valid) => {
     if (valid) {
       loading.value = true
-      // Simulate login
-      setTimeout(() => {
-        localStorage.setItem('token', 'mock-token-' + Date.now())
-        ElMessage.success('登录成功')
-        router.push('/')
+      try {
+        // 调用真实登录API
+        const response = await login({
+          username: loginForm.username,
+          password: loginForm.password,
+          tenantId: loginForm.tenantId
+        })
+        
+        // 保存token和用户信息
+        if (response.data && response.data.token) {
+          localStorage.setItem('token', response.data.token)
+          localStorage.setItem('userId', String(response.data.userId))
+          localStorage.setItem('tenantId', String(response.data.tenantId))
+          localStorage.setItem('username', response.data.username)
+          
+          ElMessage.success('登录成功')
+          router.push('/')
+        } else {
+          ElMessage.error('登录失败：未获取到token')
+        }
+      } catch (error: any) {
+        console.error('登录失败:', error)
+        ElMessage.error(error.message || '登录失败，请检查用户名和密码')
+      } finally {
         loading.value = false
-      }, 500)
+      }
     }
   })
 }
