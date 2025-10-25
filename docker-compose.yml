@@ -2,7 +2,7 @@ x-java-env: &java-env
   JAVA_OPTS: >
     -Xms512m -Xmx512m
     -XX:+UseG1GC
-    -XX:MaxGCPauseMillis=75
+    -XX:MaxGCPauseMillis=100
     -XX:+ParallelRefProcEnabled
     -Dspring.config.import=optional:configserver:http://config-server:8888
     -XX:StartFlightRecording=dumponexit=true,filename=/tmp/flight.jfr

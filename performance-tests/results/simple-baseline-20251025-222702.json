@@ -1,0 +1,38 @@
+[
+  {
+    "Service": "Order",
+    "TotalRequests": 500,
+    "Success": 500,
+    "Errors": 0,
+    "ErrorRate": "0%",
+    "TPS": 3.56,
+    "AvgResponseTime": "265.79ms",
+    "P50": "264.11ms",
+    "P90": "278.81ms",
+    "P99": "314.77ms"
+  },
+  {
+    "Service": "Station",
+    "TotalRequests": 500,
+    "Success": 500,
+    "Errors": 0,
+    "ErrorRate": "0%",
+    "TPS": 1.14,
+    "AvgResponseTime": "837.87ms",
+    "P50": "269.83ms",
+    "P90": "294.18ms",
+    "P99": "419.34ms"
+  },
+  {
+    "Service": "Gateway",
+    "TotalRequests": 500,
+    "Success": 500,
+    "Errors": 0,
+    "ErrorRate": "0%",
+    "TPS": 3.5,
+    "AvgResponseTime": "265.84ms",
+    "P50": "263.97ms",
+    "P90": "280.03ms",
+    "P99": "307.2ms"
+  }
+]
