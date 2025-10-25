@@ -40,6 +40,10 @@ CREATE TABLE IF NOT EXISTS billing_plan_segment (
 );
 
 CREATE INDEX IF NOT EXISTS idx_bps_plan ON billing_plan_segment(plan_id);
+-- If the table existed before this migration and did not have the 'segment_index' column,
+-- ensure the column exists before attempting to create a composite index that references it.
+ALTER TABLE billing_plan_segment ADD COLUMN IF NOT EXISTS segment_index INTEGER;
+
 CREATE INDEX IF NOT EXISTS idx_bps_plan_idx ON billing_plan_segment(plan_id, segment_index);
 
 CREATE TABLE IF NOT EXISTS charging_order (
