@@ -19,9 +19,20 @@ spring:
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
       pool-name: HikariCP-Station-Docker
-      minimum-idle: 5
-      maximum-pool-size: 20
-      connection-timeout: 30000
+      minimum-idle: 10
+      maximum-pool-size: 30
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 600000
+      leak-detection-threshold: 60000
+  
+  # JPA配置（启用SQL日志）
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_sql_comments: true
 
   # Redis配置
   data:
@@ -58,6 +69,9 @@ logging:
     root: INFO
     com.evcs.station: DEBUG
     com.evcs.common.tenant: DEBUG
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+    com.zaxxer.hikari: DEBUG
 
 # Actuator配置
 management:

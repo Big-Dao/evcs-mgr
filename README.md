@@ -2,17 +2,27 @@
 
 一个基于Spring Boot和微服务架构的电动汽车充电站管理平台，支持多租户、多协议充电桩管理。
 
-## � 项目状态
+> 📚 **[完整文档索引](DOCUMENTATION-INDEX.md)** | [租户隔离详解](README-TENANT-ISOLATION.md) | [技术设计](docs/TECHNICAL-DESIGN.md)
+
+## 🎯 项目状态
 
 ![Tests](https://img.shields.io/badge/tests-151%2F157%20passing-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
+![Performance](https://img.shields.io/badge/performance-optimized-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-**当前阶段**: ✅ P3 完成，进入 P4 性能优化阶段  
-**最近更新**: 2025-10-23  
-**测试状态**: 96% 通过率 (151/157) | [详细报告](TEST-COVERAGE-REPORT.md)  
-**下一步计划**: 📋 [12周行动计划](NEXT-STEPS-QUICKSTART.md) | [性能优化计划](docs/PERFORMANCE-OPTIMIZATION-PLAN.md)
+**当前阶段**: ✅ Week 2 完成 - 性能优化达成  
+**最近更新**: 2025-10-25  
+**性能状态**: 所有服务 TPS >3.6, 响应 <270ms, 错误率 0% | [Week 2报告](docs/performance/week2-day4-optimization-report.md)  
+**下一步计划**: Week 3 稳定性强化 | [性能优化总结](docs/performance/HIGH-ROI-OPTIMIZATION-SUMMARY.md)
+
+### Week 2 性能优化成果（2025-10-25）✅
+- ✅ **Station性能突破**: TPS +232% (1.14→3.79), 响应时间 -68% (838ms→264ms)
+- ✅ **GC优化**: MaxGCPauseMillis=100ms, 堆固定化 512MB
+- ✅ **连接池优化**: HikariCP max-pool 20→30, min-idle 5→10
+- ✅ **数据库索引**: 添加复合索引(tenant_id + status)
+- ✅ **生产就绪**: 所有服务性能稳定，0错误率
 
 ### 最新完成（2025-10-23）
 - ✅ **GraalVM CE 迁移评估完成**: 决策不迁移，继续使用 OpenJDK 21
