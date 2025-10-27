@@ -15,8 +15,8 @@
         <el-form-item label="用户名">
           <el-input v-model="searchForm.username" placeholder="请输入用户名" clearable />
         </el-form-item>
-        <el-form-item label="手机号">
-          <el-input v-model="searchForm.phone" placeholder="请输入手机号" clearable />
+        <el-form-item label="真实姓名">
+          <el-input v-model="searchForm.realName" placeholder="请输入真实姓名" clearable />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">查询</el-button>
@@ -24,19 +24,12 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="tableData" style="width: 100%">
-        <el-table-column prop="userId" label="用户ID" width="80" />
+      <el-table :data="tableData" v-loading="loading" style="width: 100%">
+        <el-table-column prop="id" label="用户ID" width="80" />
         <el-table-column prop="username" label="用户名" />
         <el-table-column prop="realName" label="真实姓名" />
         <el-table-column prop="phone" label="手机号" width="120" />
         <el-table-column prop="email" label="邮箱" />
-        <el-table-column prop="roles" label="角色" width="150">
-          <template #default="{ row }">
-            <el-tag v-for="role in row.roles" :key="role" size="small" style="margin-right: 5px;">
-              {{ role }}
-            </el-tag>
-          </template>
-        </el-table-column>
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="row.status === 1 ? 'success' : 'danger'" size="small">
@@ -69,93 +62,152 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getUserList, deleteUser, resetUserPassword } from '@/api/user'
+import type { User, UserQueryParams } from '@/api/user'
 
 const router = useRouter()
+const loading = ref(false)
 
-const searchForm = reactive({
+const searchForm = reactive<UserQueryParams>({
   username: '',
-  phone: ''
+  realName: '',
+  current: 1,
+  size: 10
 })
 
 const pagination = reactive({
   currentPage: 1,
   pageSize: 10,
-  total: 50
+  total: 0
 })
 
-const tableData = ref([
-  {
-    userId: 1,
-    username: 'admin',
-    realName: '管理员',
-    phone: '13800138000',
-    email: 'admin@example.com',
-    roles: ['管理员'],
-    status: 1
-  },
-  {
-    userId: 2,
-    username: 'operator',
-    realName: '运营人员',
-    phone: '13800138001',
-    email: 'operator@example.com',
-    roles: ['运营', '客服'],
-    status: 1
+const tableData = ref<User[]>([])
+
+// 加载用户列表
+const loadUserList = async () => {
+  loading.value = true
+  try {
+    const params: UserQueryParams = {
+      username: searchForm.username,
+      realName: searchForm.realName,
+      current: pagination.currentPage,
+      size: pagination.pageSize
+    }
+    const response = await getUserList(params)
+    if (response.data) {
+      tableData.value = response.data.records || []
+      pagination.total = response.data.total || 0
+    }
+  } catch (error) {
+    console.error('加载用户列表失败:', error)
+    ElMessage.warning('加载用户列表失败，显示模拟数据')
+    // Fallback to mock data
+    tableData.value = [
+      {
+        id: 1,
+        username: 'admin',
+        realName: '管理员',
+        phone: '13800138000',
+        email: 'admin@example.com',
+        status: 1,
+        userType: 1,
+        tenantId: 1
+      },
+      {
+        id: 2,
+        username: 'operator',
+        realName: '运营人员',
+        phone: '13800138001',
+        email: 'operator@example.com',
+        status: 1,
+        userType: 2,
+        tenantId: 1
+      }
+    ] as User[]
+    pagination.total = 2
+  } finally {
+    loading.value = false
   }
-])
+}
 
 const handleSearch = () => {
   pagination.currentPage = 1
-  ElMessage.success('查询成功')
+  loadUserList()
 }
 
 const handleReset = () => {
   searchForm.username = ''
-  searchForm.phone = ''
+  searchForm.realName = ''
+  loadUserList()
 }
 
 const handleAdd = () => {
   ElMessage.info('新增用户功能')
 }
 
-const handleView = (row: any) => {
-  router.push(`/users/${row.userId}`)
+const handleView = (row: User) => {
+  router.push(`/users/${row.id}`)
 }
 
-const handleEdit = (row: any) => {
+const handleEdit = (row: User) => {
   ElMessage.info('编辑用户: ' + row.username)
 }
 
-const handleResetPassword = (_row: any) => {
-  ElMessageBox.confirm('确定要重置该用户密码吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    ElMessage.success('密码重置成功，新密码为: 123456')
-  })
+const handleResetPassword = async (row: User) => {
+  try {
+    await ElMessageBox.confirm('确定要重置该用户密码吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const newPassword = '123456' // 默认密码
+    await resetUserPassword(row.id, newPassword)
+    ElMessage.success(`密码重置成功，新密码为: ${newPassword}`)
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('重置密码失败:', error)
+      ElMessage.error('重置密码失败')
+    }
+  }
 }
 
-const handleDelete = (_row: any) => {
-  ElMessageBox.confirm('确定要删除该用户吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
+const handleDelete = async (row: User) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该用户吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    await deleteUser(row.id)
     ElMessage.success('删除成功')
-  })
+    loadUserList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }
 }
 
 const handleSizeChange = (size: number) => {
   pagination.pageSize = size
+  loadUserList()
 }
 
 const handleCurrentChange = (page: number) => {
   pagination.currentPage = page
+  loadUserList()
 }
+
+// 页面加载时获取数据
+onMounted(() => {
+  loadUserList()
+})
 </script>
 
 <style scoped>
