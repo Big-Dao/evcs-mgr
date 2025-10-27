@@ -13,7 +13,7 @@
 
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="充电桩编号">
-          <el-input v-model="searchForm.code" placeholder="请输入充电桩编号" clearable />
+          <el-input v-model="searchForm.chargerCode" placeholder="请输入充电桩编号" clearable />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.status" placeholder="请选择" clearable>
@@ -29,10 +29,10 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="tableData" style="width: 100%">
-        <el-table-column prop="chargerId" label="桩ID" width="80" />
+      <el-table :data="tableData" v-loading="loading" style="width: 100%">
+        <el-table-column prop="id" label="桩ID" width="80" />
         <el-table-column prop="chargerCode" label="桩编号" width="120" />
-        <el-table-column prop="stationName" label="所属充电站" />
+        <el-table-column prop="stationId" label="充电站ID" width="100" />
         <el-table-column prop="chargerType" label="桩类型" width="100">
           <template #default="{ row }">
             <el-tag size="small">{{ row.chargerType }}</el-tag>
@@ -75,55 +75,80 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getChargerList, deleteCharger } from '@/api/charger'
+import type { Charger, ChargerQueryParams } from '@/api/charger'
 
 const router = useRouter()
+const loading = ref(false)
 
-const searchForm = reactive({
-  code: '',
-  status: ''
+const searchForm = reactive<ChargerQueryParams>({
+  chargerCode: '',
+  status: undefined,
+  current: 1,
+  size: 10
 })
 
 const pagination = reactive({
   currentPage: 1,
   pageSize: 10,
-  total: 256
+  total: 0
 })
 
-const tableData = ref([
-  {
-    chargerId: 1,
-    chargerCode: 'CH001',
-    stationName: '市中心充电站',
-    chargerType: 'DC快充',
-    power: 120,
-    voltage: 380,
-    current: 250,
-    status: 1
-  },
-  {
-    chargerId: 2,
-    chargerCode: 'CH002',
-    stationName: '市中心充电站',
-    chargerType: 'AC慢充',
-    power: 7,
-    voltage: 220,
-    current: 32,
-    status: 2
-  },
-  {
-    chargerId: 3,
-    chargerCode: 'CH003',
-    stationName: '高新区充电站',
-    chargerType: 'DC快充',
-    power: 60,
-    voltage: 380,
-    current: 125,
-    status: 3
+const tableData = ref<Charger[]>([])
+
+// 加载充电桩列表
+const loadChargerList = async () => {
+  loading.value = true
+  try {
+    const params: ChargerQueryParams = {
+      chargerCode: searchForm.chargerCode,
+      status: searchForm.status,
+      current: pagination.currentPage,
+      size: pagination.pageSize
+    }
+    const response = await getChargerList(params)
+    if (response.data) {
+      tableData.value = response.data.records || []
+      pagination.total = response.data.total || 0
+    }
+  } catch (error) {
+    console.error('加载充电桩列表失败:', error)
+    ElMessage.warning('加载充电桩列表失败，显示模拟数据')
+    // Fallback to mock data
+    tableData.value = [
+      {
+        id: 1,
+        chargerCode: 'CH001',
+        stationId: 1,
+        chargerType: 'DC',
+        power: 120,
+        voltage: 380,
+        current: 250,
+        status: 1,
+        connectorType: 'GB/T',
+        tenantId: 1
+      },
+      {
+        id: 2,
+        chargerCode: 'CH002',
+        stationId: 1,
+        chargerType: 'AC',
+        power: 7,
+        voltage: 220,
+        current: 32,
+        status: 2,
+        connectorType: 'GB/T',
+        tenantId: 1
+      }
+    ] as Charger[]
+    pagination.total = 2
+  } finally {
+    loading.value = false
   }
-])
+}
 
 const getStatusType = (status: number) => {
   const typeMap: Record<number, string> = {
@@ -157,43 +182,60 @@ const getStatusIcon = (status: number) => {
 
 const handleSearch = () => {
   pagination.currentPage = 1
-  ElMessage.success('查询成功')
+  loadChargerList()
 }
 
 const handleReset = () => {
-  searchForm.code = ''
-  searchForm.status = ''
+  searchForm.chargerCode = ''
+  searchForm.status = undefined
+  loadChargerList()
 }
 
 const handleAdd = () => {
   ElMessage.info('新增充电桩功能')
 }
 
-const handleView = (row: any) => {
-  router.push(`/chargers/${row.chargerId}`)
+const handleView = (row: Charger) => {
+  router.push(`/chargers/${row.id}`)
 }
 
-const handleEdit = (row: any) => {
+const handleEdit = (row: Charger) => {
   ElMessage.info('编辑充电桩: ' + row.chargerCode)
 }
 
-const handleDelete = (_row: any) => {
-  ElMessageBox.confirm('确定要删除该充电桩吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
+const handleDelete = async (row: Charger) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该充电桩吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    await deleteCharger(row.id)
     ElMessage.success('删除成功')
-  })
+    loadChargerList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }
 }
 
 const handleSizeChange = (size: number) => {
   pagination.pageSize = size
+  loadChargerList()
 }
 
 const handleCurrentChange = (page: number) => {
   pagination.currentPage = page
+  loadChargerList()
 }
+
+// 页面加载时获取数据
+onMounted(() => {
+  loadChargerList()
+})
 </script>
 
 <style scoped>
