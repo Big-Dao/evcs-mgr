@@ -6,7 +6,7 @@
           <div class="stat-content">
             <el-icon class="stat-icon" style="color: #409eff;"><OfficeBuilding /></el-icon>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.tenants }}</div>
+              <div class="stat-value">{{ stats.tenantCount }}</div>
               <div class="stat-label">租户总数</div>
             </div>
           </div>
@@ -17,7 +17,7 @@
           <div class="stat-content">
             <el-icon class="stat-icon" style="color: #67c23a;"><Location /></el-icon>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.stations }}</div>
+              <div class="stat-value">{{ stats.stationCount }}</div>
               <div class="stat-label">充电站数量</div>
             </div>
           </div>
@@ -28,7 +28,7 @@
           <div class="stat-content">
             <el-icon class="stat-icon" style="color: #e6a23c;"><Monitor /></el-icon>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.chargers }}</div>
+              <div class="stat-value">{{ stats.chargerCount }}</div>
               <div class="stat-label">充电桩数量</div>
             </div>
           </div>
@@ -39,7 +39,7 @@
           <div class="stat-content">
             <el-icon class="stat-icon" style="color: #f56c6c;"><Document /></el-icon>
             <div class="stat-info">
-              <div class="stat-value">{{ stats.orders }}</div>
+              <div class="stat-value">{{ stats.todayOrderCount }}</div>
               <div class="stat-label">今日订单</div>
             </div>
           </div>
@@ -87,21 +87,65 @@
 </template>
 
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, ref, onMounted } from 'vue'
+import { getDashboardStats, getRecentOrders, type DashboardStats, type RecentOrder } from '@/api/dashboard'
 
-const stats = reactive({
-  tenants: 12,
-  stations: 48,
-  chargers: 256,
-  orders: 89
+const loading = ref(false)
+
+const stats = reactive<DashboardStats>({
+  tenantCount: 0,
+  userCount: 0,
+  stationCount: 0,
+  chargerCount: 0,
+  todayOrderCount: 0,
+  todayChargingAmount: 0,
+  todayRevenue: 0
 })
 
-const recentOrders = reactive([
-  { orderId: 'ORD001', stationName: '市中心站', amount: 45.80, status: '已完成' },
-  { orderId: 'ORD002', stationName: '高新区站', amount: 32.50, status: '充电中' },
-  { orderId: 'ORD003', stationName: '机场站', amount: 67.20, status: '已完成' },
-  { orderId: 'ORD004', stationName: '火车站', amount: 28.90, status: '已完成' }
-])
+const recentOrders = ref<RecentOrder[]>([])
+
+// 加载统计数据
+const loadStats = async () => {
+  loading.value = true
+  try {
+    const response = await getDashboardStats()
+    if (response.data) {
+      Object.assign(stats, response.data)
+    }
+  } catch (error: any) {
+    console.error('加载统计数据失败:', error)
+    // API不存在时使用mock数据
+    stats.tenantCount = 12
+    stats.stationCount = 48
+    stats.chargerCount = 256
+    stats.todayOrderCount = 89
+  } finally {
+    loading.value = false
+  }
+}
+
+// 加载最近订单
+const loadRecentOrders = async () => {
+  try {
+    const response = await getRecentOrders(5)
+    if (response.data) {
+      recentOrders.value = response.data
+    }
+  } catch (error: any) {
+    console.error('加载最近订单失败:', error)
+    // API不存在时使用mock数据
+    recentOrders.value = [
+      { orderId: 'ORD001', stationName: '市中心站', chargerCode: 'CH001', userName: '张三', amount: 45.80, status: '已完成', createTime: '2025-10-27 10:30:00' },
+      { orderId: 'ORD002', stationName: '高新区站', chargerCode: 'CH002', userName: '李四', amount: 32.50, status: '充电中', createTime: '2025-10-27 11:15:00' },
+      { orderId: 'ORD003', stationName: '机场站', chargerCode: 'CH003', userName: '王五', amount: 67.20, status: '已完成', createTime: '2025-10-27 12:00:00' }
+    ]
+  }
+}
+
+onMounted(() => {
+  loadStats()
+  loadRecentOrders()
+})
 </script>
 
 <style scoped>
