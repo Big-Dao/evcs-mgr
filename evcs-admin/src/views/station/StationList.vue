@@ -23,7 +23,7 @@
 
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="充电站名称">
-          <el-input v-model="searchForm.name" placeholder="请输入充电站名称" clearable />
+          <el-input v-model="searchForm.stationName" placeholder="请输入充电站名称" clearable />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.status" placeholder="请选择" clearable>
@@ -39,12 +39,12 @@
       </el-form>
 
       <!-- List View -->
-      <el-table v-if="viewMode === 'list'" :data="tableData" style="width: 100%">
-        <el-table-column prop="stationId" label="站点ID" width="80" />
+      <el-table v-if="viewMode === 'list'" :data="tableData" v-loading="loading" style="width: 100%">
+        <el-table-column prop="id" label="站点ID" width="80" />
         <el-table-column prop="stationCode" label="站点编码" width="120" />
         <el-table-column prop="stationName" label="站点名称" />
         <el-table-column prop="address" label="地址" />
-        <el-table-column prop="chargerCount" label="充电桩数" width="100" />
+        <el-table-column prop="totalChargers" label="充电桩数" width="100" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" size="small">
@@ -62,8 +62,8 @@
       </el-table>
 
       <!-- Card View -->
-      <el-row v-else :gutter="20">
-        <el-col v-for="station in tableData" :key="station.stationId" :span="8" style="margin-bottom: 20px;">
+      <el-row v-else :gutter="20" v-loading="loading">
+        <el-col v-for="station in tableData" :key="station.id" :span="8" style="margin-bottom: 20px;">
           <el-card class="station-card" shadow="hover">
             <template #header>
               <div class="station-card-header">
@@ -75,7 +75,7 @@
             </template>
             <div class="station-info">
               <p><el-icon><LocationInformation /></el-icon> {{ station.address }}</p>
-              <p><el-icon><Monitor /></el-icon> 充电桩: {{ station.chargerCount }} 个</p>
+              <p><el-icon><Monitor /></el-icon> 充电桩: {{ station.totalChargers || 0 }} 个</p>
               <p><el-icon><Odometer /></el-icon> 编码: {{ station.stationCode }}</p>
             </div>
             <div class="station-actions">
@@ -101,51 +101,80 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getStationList, deleteStation } from '@/api/station'
+import type { Station, StationQueryParams } from '@/api/station'
 
 const router = useRouter()
+const loading = ref(false)
 
 const viewMode = ref('list')
 
-const searchForm = reactive({
-  name: '',
-  status: ''
+const searchForm = reactive<StationQueryParams>({
+  stationName: '',
+  status: undefined,
+  current: 1,
+  size: 10
 })
 
 const pagination = reactive({
   currentPage: 1,
   pageSize: 10,
-  total: 48
+  total: 0
 })
 
-const tableData = ref([
-  {
-    stationId: 1,
-    stationCode: 'ST001',
-    stationName: '市中心充电站',
-    address: '市中心区人民路123号',
-    chargerCount: 12,
-    status: 1
-  },
-  {
-    stationId: 2,
-    stationCode: 'ST002',
-    stationName: '高新区充电站',
-    address: '高新区科技大道456号',
-    chargerCount: 8,
-    status: 1
-  },
-  {
-    stationId: 3,
-    stationCode: 'ST003',
-    stationName: '机场充电站',
-    address: '机场路789号',
-    chargerCount: 16,
-    status: 2
+const tableData = ref<Station[]>([])
+
+// 加载充电站列表
+const loadStationList = async () => {
+  loading.value = true
+  try {
+    const params: StationQueryParams = {
+      stationName: searchForm.stationName,
+      status: searchForm.status,
+      current: pagination.currentPage,
+      size: pagination.pageSize
+    }
+    const response = await getStationList(params)
+    if (response.data) {
+      tableData.value = response.data.records || []
+      pagination.total = response.data.total || 0
+    }
+  } catch (error) {
+    console.error('加载充电站列表失败:', error)
+    ElMessage.warning('加载充电站列表失败，显示模拟数据')
+    // Fallback to mock data
+    tableData.value = [
+      {
+        id: 1,
+        stationCode: 'ST001',
+        stationName: '市中心充电站',
+        province: '浙江省',
+        city: '杭州市',
+        district: '西湖区',
+        address: '市中心区人民路123号',
+        status: 1,
+        tenantId: 1
+      },
+      {
+        id: 2,
+        stationCode: 'ST002',
+        stationName: '高新区充电站',
+        province: '浙江省',
+        city: '杭州市',
+        district: '滨江区',
+        address: '高新区科技大道456号',
+        status: 1,
+        tenantId: 1
+      }
+    ] as Station[]
+    pagination.total = 2
+  } finally {
+    loading.value = false
   }
-])
+}
 
 const getStatusType = (status: number) => {
   const typeMap: Record<number, string> = {
@@ -167,43 +196,60 @@ const getStatusText = (status: number) => {
 
 const handleSearch = () => {
   pagination.currentPage = 1
-  ElMessage.success('查询成功')
+  loadStationList()
 }
 
 const handleReset = () => {
-  searchForm.name = ''
-  searchForm.status = ''
+  searchForm.stationName = ''
+  searchForm.status = undefined
+  loadStationList()
 }
 
 const handleAdd = () => {
   ElMessage.info('新增充电站功能')
 }
 
-const handleView = (row: any) => {
-  router.push(`/stations/${row.stationId}`)
+const handleView = (row: Station) => {
+  router.push(`/stations/${row.id}`)
 }
 
-const handleEdit = (row: any) => {
+const handleEdit = (row: Station) => {
   ElMessage.info('编辑充电站: ' + row.stationName)
 }
 
-const handleDelete = (_row: any) => {
-  ElMessageBox.confirm('确定要删除该充电站吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
+const handleDelete = async (row: Station) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该充电站吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    await deleteStation(row.id)
     ElMessage.success('删除成功')
-  })
+    loadStationList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }
 }
 
 const handleSizeChange = (size: number) => {
   pagination.pageSize = size
+  loadStationList()
 }
 
 const handleCurrentChange = (page: number) => {
   pagination.currentPage = page
+  loadStationList()
 }
+
+// 页面加载时获取数据
+onMounted(() => {
+  loadStationList()
+})
 </script>
 
 <style scoped>
