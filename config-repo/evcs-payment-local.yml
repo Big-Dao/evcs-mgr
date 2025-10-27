@@ -9,12 +9,17 @@ spring:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:evcs}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
     username: ${DB_USER:postgres}
     password: ${DB_PASSWORD:postgres}
+    type: com.zaxxer.hikari.HikariDataSource
     hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      connection-timeout: 30000
-      idle-timeout: 600000
-      max-lifetime: 1800000
+      pool-name: HikariCP-Payment
+      minimum-idle: 10
+      maximum-pool-size: 30
+      auto-commit: true
+      idle-timeout: 300000
+      max-lifetime: 600000
+      connection-timeout: 20000
+      connection-test-query: SELECT 1
+      leak-detection-threshold: 60000
 
 mybatis-plus:
   mapper-locations: classpath*:/mapper/**/*.xml
