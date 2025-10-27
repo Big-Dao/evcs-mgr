@@ -28,8 +28,8 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="tableData" style="width: 100%">
-        <el-table-column prop="tenantId" label="租户ID" width="80" />
+      <el-table :data="tableData" v-loading="loading" style="width: 100%">
+        <el-table-column prop="id" label="租户ID" width="80" />
         <el-table-column prop="tenantCode" label="租户编码" width="120" />
         <el-table-column prop="tenantName" label="租户名称" />
         <el-table-column prop="tenantType" label="租户类型" width="100">
@@ -111,59 +111,84 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { getTenantList, createTenant, updateTenant, deleteTenant } from '@/api/tenant'
+import type { Tenant, TenantQueryParams } from '@/api/tenant'
 
 const router = useRouter()
+const loading = ref(false)
 
-const searchForm = reactive({
+const searchForm = reactive<TenantQueryParams>({
   name: '',
-  type: ''
+  type: '',
+  status: undefined,
+  current: 1,
+  size: 10
 })
 
 const pagination = reactive({
   currentPage: 1,
   pageSize: 10,
-  total: 100
+  total: 0
 })
 
-const tableData = ref([
-  {
-    tenantId: 1,
-    tenantCode: 'T001',
-    tenantName: '总部',
-    tenantType: 'PLATFORM',
-    contactName: '张三',
-    contactPhone: '13800138000',
-    status: 1
-  },
-  {
-    tenantId: 2,
-    tenantCode: 'T002',
-    tenantName: '华东运营商',
-    tenantType: 'OPERATOR',
-    contactName: '李四',
-    contactPhone: '13800138001',
-    status: 1
-  },
-  {
-    tenantId: 3,
-    tenantCode: 'T003',
-    tenantName: '市中心站',
-    tenantType: 'STATION',
-    contactName: '王五',
-    contactPhone: '13800138002',
-    status: 1
+const tableData = ref<Tenant[]>([])
+
+// 加载租户列表
+const loadTenantList = async () => {
+  loading.value = true
+  try {
+    const params: TenantQueryParams = {
+      name: searchForm.name,
+      type: searchForm.type,
+      status: searchForm.status,
+      current: pagination.currentPage,
+      size: pagination.pageSize
+    }
+    const response = await getTenantList(params)
+    if (response.data) {
+      tableData.value = response.data.records || []
+      pagination.total = response.data.total || 0
+    }
+  } catch (error) {
+    console.error('加载租户列表失败:', error)
+    ElMessage.warning('加载租户列表失败，显示模拟数据')
+    // Fallback to mock data
+    tableData.value = [
+      {
+        id: 1,
+        tenantCode: 'T001',
+        tenantName: '总部',
+        tenantType: 'PLATFORM',
+        contactName: '张三',
+        contactPhone: '13800138000',
+        status: 1
+      },
+      {
+        id: 2,
+        tenantCode: 'T002',
+        tenantName: '华东运营商',
+        tenantType: 'OPERATOR',
+        contactName: '李四',
+        contactPhone: '13800138001',
+        status: 1
+      }
+    ] as Tenant[]
+    pagination.total = 2
+  } finally {
+    loading.value = false
   }
-])
+}
 
 const dialogVisible = ref(false)
 const dialogTitle = ref('新增租户')
 const formRef = ref<FormInstance>()
 
 const formData = reactive({
+  id: undefined as number | undefined,
   tenantCode: '',
   tenantName: '',
   tenantType: '',
@@ -198,56 +223,95 @@ const getTenantTypeTag = (type: string) => {
 
 const handleSearch = () => {
   pagination.currentPage = 1
-  ElMessage.success('查询成功')
+  loadTenantList()
 }
 
 const handleReset = () => {
   searchForm.name = ''
   searchForm.type = ''
+  searchForm.status = undefined
+  loadTenantList()
 }
 
 const handleAdd = () => {
   dialogTitle.value = '新增租户'
+  // Reset form data
+  formData.id = undefined
+  formData.tenantCode = ''
+  formData.tenantName = ''
+  formData.tenantType = ''
+  formData.contactName = ''
+  formData.contactPhone = ''
+  formData.status = 1
   dialogVisible.value = true
 }
 
-const handleView = (row: any) => {
-  router.push(`/tenants/${row.tenantId}`)
+const handleView = (row: Tenant) => {
+  router.push(`/tenants/${row.id}`)
 }
 
-const handleEdit = (row: any) => {
+const handleEdit = (row: Tenant) => {
   dialogTitle.value = '编辑租户'
   Object.assign(formData, row)
   dialogVisible.value = true
 }
 
-const handleDelete = (_row: any) => {
-  ElMessageBox.confirm('确定要删除该租户吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
+const handleDelete = async (row: Tenant) => {
+  try {
+    await ElMessageBox.confirm('确定要删除该租户吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    await deleteTenant(row.id)
     ElMessage.success('删除成功')
-  })
+    loadTenantList()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }
 }
 
 const handleSubmit = async () => {
   if (!formRef.value) return
-  await formRef.value.validate((valid) => {
-    if (valid) {
-      ElMessage.success('保存成功')
-      dialogVisible.value = false
+  
+  try {
+    const valid = await formRef.value.validate()
+    if (!valid) return
+    
+    if (formData.id) {
+      await updateTenant(formData.id, formData)
+      ElMessage.success('更新成功')
+    } else {
+      await createTenant(formData)
+      ElMessage.success('创建成功')
     }
-  })
+    
+    dialogVisible.value = false
+    loadTenantList()
+  } catch (error) {
+    console.error('保存失败:', error)
+    ElMessage.error('保存失败')
+  }
 }
 
 const handleSizeChange = (size: number) => {
   pagination.pageSize = size
+  loadTenantList()
 }
 
 const handleCurrentChange = (page: number) => {
   pagination.currentPage = page
+  loadTenantList()
 }
+
+// 页面加载时获取数据
+onMounted(() => {
+  loadTenantList()
+})
 </script>
 
 <style scoped>
