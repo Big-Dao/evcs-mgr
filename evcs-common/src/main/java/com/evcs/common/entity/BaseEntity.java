@@ -13,6 +13,7 @@ public class BaseEntity {
     
     /**
      * 主键ID
+     * 注意：子类可以通过 @TableId 注解的 value 属性指定不同的数据库列名
      */
     @TableId(type = IdType.AUTO)
     private Long id;

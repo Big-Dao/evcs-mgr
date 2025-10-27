@@ -110,7 +110,7 @@ public class ChargerController {
     @PreAuthorize("hasPermission('charger:edit')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> updateCharger(@Parameter(description = "充电桩信息") @RequestBody @Valid Charger charger) {
-        if (charger.getChargerId() == null) {
+        if (charger.getId() == null) {
             return Result.fail("充电桩ID不能为空");
         }
         

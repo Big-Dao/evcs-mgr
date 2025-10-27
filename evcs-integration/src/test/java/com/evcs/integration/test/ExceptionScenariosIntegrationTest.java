@@ -115,12 +115,12 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
 
         // 3. 尝试删除有充电桩的充电站（应该失败或需要先删除充电桩）
         // 注意：具体行为取决于业务逻辑实现
-        // 如果实现了级联删除，则会成功；如果没有，则会抛出异常
+        // 如果实现了级联删除,则会成功;如果没有,则会抛出异常
         try {
             boolean deleted = stationService.deleteStation(station.getStationId());
             if (deleted) {
-                // 如果删除成功，验证充电桩也被删除了（级联删除）
-                Charger deletedCharger = chargerService.getById(charger.getChargerId());
+                // 如果删除成功,验证充电桩也被删除了(级联删除)
+                Charger deletedCharger = chargerService.getById(charger.getId());
                 assertNull(deletedCharger, "充电桩应该被级联删除");
             }
         } catch (Exception e) {

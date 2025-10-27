@@ -46,18 +46,31 @@ public interface StationMapper extends BaseMapper<Station> {
      * 根据位置查询附近充电站
      */
     @Select("""
-        SELECT station_id, tenant_id, station_code, station_name, address,
-               latitude, longitude, status, province, city, district,
-               total_chargers, available_chargers, charging_chargers, fault_chargers,
-               create_time, update_time, create_by, update_by, deleted,
-               (6371 * acos(cos(radians(#{latitude})) * cos(radians(latitude)) * 
-                cos(radians(longitude) - radians(#{longitude})) + 
-                sin(radians(#{latitude})) * sin(radians(latitude)))) AS distance
-        FROM charging_station 
-        WHERE deleted = 0 AND status = 1
-          AND (6371 * acos(cos(radians(#{latitude})) * cos(radians(latitude)) * 
-                cos(radians(longitude) - radians(#{longitude})) + 
-                sin(radians(#{latitude})) * sin(radians(latitude)))) <= #{radius}
+        SELECT s.station_id, s.tenant_id, s.station_code, s.station_name, s.address,
+               s.latitude, s.longitude, s.status, s.province, s.city, s.district,
+               COALESCE(stats.total_chargers, 0) as total_chargers,
+               COALESCE(stats.available_chargers, 0) as available_chargers,
+               COALESCE(stats.charging_chargers, 0) as charging_chargers,
+               COALESCE(stats.fault_chargers, 0) as fault_chargers,
+               s.create_time, s.update_time, s.create_by, s.update_by, s.deleted,
+               (6371 * acos(cos(radians(#{latitude})) * cos(radians(s.latitude)) * 
+                cos(radians(s.longitude) - radians(#{longitude})) + 
+                sin(radians(#{latitude})) * sin(radians(s.latitude)))) AS distance
+        FROM charging_station s
+        LEFT JOIN (
+            SELECT station_id,
+                   COUNT(*) as total_chargers,
+                   SUM(CASE WHEN status = 1 THEN 1 ELSE 0 END) as available_chargers,
+                   SUM(CASE WHEN status = 2 THEN 1 ELSE 0 END) as charging_chargers,
+                   SUM(CASE WHEN status = 3 OR status = 0 THEN 1 ELSE 0 END) as fault_chargers
+            FROM charger
+            WHERE deleted = 0
+            GROUP BY station_id
+        ) stats ON s.station_id = stats.station_id
+        WHERE s.deleted = 0 AND s.status = 1
+          AND (6371 * acos(cos(radians(#{latitude})) * cos(radians(s.latitude)) * 
+                cos(radians(s.longitude) - radians(#{longitude})) + 
+                sin(radians(#{latitude})) * sin(radians(s.latitude)))) <= #{radius}
         ORDER BY distance
         LIMIT #{limit}
         """)

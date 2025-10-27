@@ -58,7 +58,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         
         boolean charger1Saved = chargerService.saveCharger(charger1);
         assertTrue(charger1Saved, "充电桩1应该保存成功");
-        assertNotNull(charger1.getChargerId(), "充电桩1 ID应该被生成");
+        assertNotNull(charger1.getId(), "充电桩1 ID应该被生成");
         assertEquals(DEFAULT_TENANT_ID, charger1.getTenantId(), "充电桩1应该属于默认租户");
 
         // 3. 添加第二个充电桩
@@ -79,11 +79,11 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         assertEquals(station.getStationCode(), retrievedStation.getStationCode());
 
         // 5. 验证充电桩属于该充电站
-        Charger retrievedCharger1 = chargerService.getById(charger1.getChargerId());
+        Charger retrievedCharger1 = chargerService.getById(charger1.getId());
         assertNotNull(retrievedCharger1, "应该能查询到充电桩1");
         assertEquals(station.getStationId(), retrievedCharger1.getStationId(), "充电桩1应该属于创建的充电站");
 
-        Charger retrievedCharger2 = chargerService.getById(charger2.getChargerId());
+        Charger retrievedCharger2 = chargerService.getById(charger2.getId());
         assertNotNull(retrievedCharger2, "应该能查询到充电桩2");
         assertEquals(station.getStationId(), retrievedCharger2.getStationId(), "充电桩2应该属于创建的充电站");
     }
@@ -147,16 +147,16 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         charger.setRatedPower(new BigDecimal("120.0"));
         
         chargerService.saveCharger(charger);
-        assertNotNull(charger.getChargerId());
+        assertNotNull(charger.getId());
 
         // 3. 模拟充电流程：空闲 -> 充电中
-        Charger updateCharger = chargerService.getById(charger.getChargerId());
+        Charger updateCharger = chargerService.getById(charger.getId());
         updateCharger.setStatus(2); // 充电中
         boolean updated = chargerService.updateCharger(updateCharger);
         assertTrue(updated, "充电桩状态应该更新为充电中");
 
         // 4. 验证状态
-        Charger chargingCharger = chargerService.getById(charger.getChargerId());
+        Charger chargingCharger = chargerService.getById(charger.getId());
         assertEquals(2, chargingCharger.getStatus(), "充电桩应该处于充电中状态");
 
         // 5. 充电完成：充电中 -> 空闲
@@ -165,7 +165,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         assertTrue(updated, "充电桩状态应该恢复为空闲");
 
         // 6. 最终验证
-        Charger finalCharger = chargerService.getById(charger.getChargerId());
+        Charger finalCharger = chargerService.getById(charger.getId());
         assertEquals(1, finalCharger.getStatus(), "充电桩应该恢复空闲状态");
     }
 
@@ -194,9 +194,9 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         charger.setRatedPower(new BigDecimal("60.0"));
         
         chargerService.saveCharger(charger);
-        Long chargerId = charger.getChargerId();
+        Long chargerId = charger.getId();
 
-        // 3. 首先删除充电桩（实际业务中应先删除充电桩再删除充电站）
+        // 3. 首先删除充电桩(实际业务中应先删除充电桩再删除充电站)
         boolean chargerDeleted = chargerService.deleteCharger(chargerId);
         assertTrue(chargerDeleted, "充电桩应该删除成功");
 

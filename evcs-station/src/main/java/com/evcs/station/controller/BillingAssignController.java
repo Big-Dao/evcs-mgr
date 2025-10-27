@@ -21,7 +21,7 @@ public class BillingAssignController {
     @DataScope
     public Result<Boolean> assignPlan(@PathVariable Long chargerId, @RequestParam Long planId) {
         Charger patch = new Charger();
-        patch.setChargerId(chargerId);
+        patch.setId(chargerId);
         patch.setBillingPlanId(planId);
         return Result.success(chargerService.updateById(patch));
     }
@@ -35,7 +35,7 @@ public class BillingAssignController {
         boolean allOk = true;
         for (Charger c : chargers) {
             Charger patch = new Charger();
-            patch.setChargerId(c.getChargerId());
+            patch.setId(c.getId());
             patch.setBillingPlanId(planId);
             boolean ok = chargerService.updateById(patch);
             if (!ok) allOk = false;
@@ -52,7 +52,7 @@ public class BillingAssignController {
         boolean allOk = true;
         for (Long id : chargerIds) {
             Charger patch = new Charger();
-            patch.setChargerId(id);
+            patch.setId(id);
             patch.setBillingPlanId(planId);
             boolean ok = chargerService.updateById(patch);
             if (!ok) allOk = false;

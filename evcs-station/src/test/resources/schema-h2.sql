@@ -121,12 +121,12 @@ CREATE INDEX IF NOT EXISTS idx_charger_code ON charger(charger_code);
 CREATE INDEX IF NOT EXISTS idx_charger_station ON charger(station_id, status, enabled, deleted);
 CREATE INDEX IF NOT EXISTS idx_charger_tenant ON charger(tenant_id, status, deleted);
 
--- Insert default tenant for testing (use INSERT ... ON CONFLICT for H2 compatibility)
-INSERT INTO sys_tenant (id, tenant_code, tenant_name, tenant_type, status, max_users, max_stations, max_chargers, tenant_id, create_time, update_time, create_by, update_by, deleted, version)
-VALUES (1, 'SYSTEM', '系统租户', 1, 1, 999999, 999999, 999999, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 0, 1)
-ON CONFLICT (id) DO NOTHING;
+-- Insert default tenant for testing (use MERGE for H2 compatibility)
+MERGE INTO sys_tenant (id, tenant_code, tenant_name, tenant_type, status, max_users, max_stations, max_chargers, tenant_id, create_time, update_time, create_by, update_by, deleted, version)
+KEY (id)
+VALUES (1, 'SYSTEM', '系统租户', 1, 1, 999999, 999999, 999999, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 0, 1);
 
 -- Insert additional test tenant
-INSERT INTO sys_tenant (id, tenant_code, tenant_name, tenant_type, status, max_users, max_stations, max_chargers, tenant_id, create_time, update_time, create_by, update_by, deleted, version)
-VALUES (2, 'TENANT_002', '测试租户2', 2, 1, 100, 50, 200, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 0, 1)
-ON CONFLICT (id) DO NOTHING;
+MERGE INTO sys_tenant (id, tenant_code, tenant_name, tenant_type, status, max_users, max_stations, max_chargers, tenant_id, create_time, update_time, create_by, update_by, deleted, version)
+KEY (id)
+VALUES (2, 'TENANT_002', '测试租户2', 2, 1, 100, 50, 200, 2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 0, 1);

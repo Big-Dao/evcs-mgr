@@ -3,25 +3,27 @@ package com.evcs.station.entity;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.evcs.common.entity.BaseEntity;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import com.evcs.common.entity.BaseEntity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
  * 充电桩实体
+ * 继承 BaseEntity 使用 id 字段作为主键，映射到数据库的 charger_id 列
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("charger")
+@TableName(value = "charger")
 public class Charger extends BaseEntity {
+
     /**
-     * 主键ID
+     * 覆盖父类的 @TableId 以指定数据库列名
      */
     @TableId(value = "charger_id", type = IdType.AUTO)
-    private Long chargerId;
+    private Long id;
 
     /**
      * 充电桩编码

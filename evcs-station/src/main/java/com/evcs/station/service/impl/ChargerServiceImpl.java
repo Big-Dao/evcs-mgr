@@ -162,7 +162,7 @@ public class ChargerServiceImpl
     @DataScope
     public boolean updateCharger(Charger charger) {
         // 检查充电桩是否存在
-        Charger existCharger = this.getById(charger.getChargerId());
+        Charger existCharger = this.getById(charger.getId());
         if (existCharger == null) {
             throw new RuntimeException("充电桩不存在");
         }
@@ -172,7 +172,7 @@ public class ChargerServiceImpl
             StrUtil.isNotBlank(charger.getChargerCode()) &&
             checkChargerCodeExists(
                 charger.getChargerCode(),
-                charger.getChargerId()
+                charger.getId()
             )
         ) {
             throw new RuntimeException("充电桩编码已存在");
@@ -458,7 +458,7 @@ public class ChargerServiceImpl
     @DataScope
     public boolean changeStatus(Long chargerId, Integer enabled) {
         Charger charger = new Charger();
-        charger.setChargerId(chargerId);
+        charger.setId(chargerId);
         charger.setEnabled(enabled);
         charger.setUpdateTime(LocalDateTime.now());
         charger.setUpdateBy(TenantContext.getCurrentUserId());
@@ -474,7 +474,7 @@ public class ChargerServiceImpl
     @DataScope
     public boolean resetCharger(Long chargerId) {
         Charger charger = new Charger();
-        charger.setChargerId(chargerId);
+        charger.setId(chargerId);
         charger.setStatus(1); // 设为空闲
         charger.setCurrentSessionId(null);
         charger.setCurrentUserId(null);

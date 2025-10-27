@@ -345,7 +345,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
         wrapper.eq("tenant_code", tenantCode);
         
         if (excludeId != null) {
-            wrapper.ne("tenant_id", excludeId);
+            wrapper.ne("id", excludeId);
         }
         
         return this.count(wrapper) > 0;

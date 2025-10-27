@@ -63,7 +63,7 @@ class ChargerServiceTest extends BaseServiceTest {
 
         // Assert
         assertTrue(result);
-        assertNotNull(charger.getChargerId());
+        assertNotNull(charger.getId());
         assertEquals(DEFAULT_TENANT_ID, charger.getTenantId());
     }
 
@@ -128,7 +128,7 @@ class ChargerServiceTest extends BaseServiceTest {
 
         // Assert
         assertTrue(result);
-        Charger updated = chargerService.getById(charger.getChargerId());
+        Charger updated = chargerService.getById(charger.getId());
         assertEquals("更新后的充电桩名称", updated.getChargerName());
         assertEquals(0, new java.math.BigDecimal("150.0").compareTo(updated.getRatedPower()));
     }
@@ -148,19 +148,19 @@ class ChargerServiceTest extends BaseServiceTest {
         chargerService.saveCharger(charger);
 
         // Act - 停用
-        boolean result = chargerService.changeStatus(charger.getChargerId(), 0);
+        boolean result = chargerService.changeStatus(charger.getId(), 0);
 
         // Assert
         assertTrue(result);
-        Charger updated = chargerService.getById(charger.getChargerId());
+        Charger updated = chargerService.getById(charger.getId());
         assertEquals(0, updated.getEnabled());
 
         // Act - 启用
-        result = chargerService.changeStatus(charger.getChargerId(), 1);
+        result = chargerService.changeStatus(charger.getId(), 1);
 
         // Assert
         assertTrue(result);
-        updated = chargerService.getById(charger.getChargerId());
+        updated = chargerService.getById(charger.getId());
         assertEquals(1, updated.getEnabled());
     }
 
@@ -177,7 +177,7 @@ class ChargerServiceTest extends BaseServiceTest {
         charger.setStatus(1);
         charger.setSupportedProtocols("[\"OCPP1.6\"]");
         chargerService.saveCharger(charger);
-        Long chargerId = charger.getChargerId();
+        Long chargerId = charger.getId();
 
         // Act
         boolean result = chargerService.deleteCharger(chargerId);
@@ -212,7 +212,7 @@ class ChargerServiceTest extends BaseServiceTest {
         assertFalse(notExists, "编码应该不存在");
 
         // Act & Assert - 排除自己
-        boolean excludeSelf = chargerService.checkChargerCodeExists(testCode, charger.getChargerId());
+        boolean excludeSelf = chargerService.checkChargerCodeExists(testCode, charger.getId());
         assertFalse(excludeSelf, "排除自己后应该不存在");
     }
 
@@ -244,15 +244,15 @@ class ChargerServiceTest extends BaseServiceTest {
         // Arrange - 创建多个充电桩
         Charger charger1 = createTestCharger("CHARGER1");
         Charger charger2 = createTestCharger("CHARGER2");
-        List<Long> chargerIds = List.of(charger1.getChargerId(), charger2.getChargerId());
+        List<Long> chargerIds = List.of(charger1.getId(), charger2.getId());
 
         // Act
         boolean result = chargerService.batchUpdateStatus(chargerIds, 0);
 
         // Assert
         assertTrue(result);
-        assertEquals(0, chargerService.getById(charger1.getChargerId()).getStatus());
-        assertEquals(0, chargerService.getById(charger2.getChargerId()).getStatus());
+        assertEquals(0, chargerService.getById(charger1.getId()).getStatus());
+        assertEquals(0, chargerService.getById(charger2.getId()).getStatus());
     }
 
     private Charger createTestCharger(String codePrefix) {
