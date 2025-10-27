@@ -47,6 +47,7 @@ import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { login } from '../api/auth'
+import type { LoginResponse } from '../api/auth'
 
 const router = useRouter()
 const loginFormRef = ref<FormInstance>()
@@ -54,7 +55,7 @@ const loading = ref(false)
 
 const loginForm = reactive({
   username: 'admin',
-  password: 'admin123',
+  password: 'password',
   tenantId: 1 // 默认租户ID
 })
 
@@ -77,21 +78,57 @@ const handleLogin = async () => {
           tenantId: loginForm.tenantId
         })
         
+        const payload: LoginResponse | undefined = response?.data
+
         // 保存token和用户信息
-        if (response.data && response.data.token) {
-          localStorage.setItem('token', response.data.token)
-          localStorage.setItem('userId', String(response.data.userId))
-          localStorage.setItem('tenantId', String(response.data.tenantId))
-          localStorage.setItem('username', response.data.username)
-          
-          ElMessage.success('登录成功')
+        if (payload?.accessToken) {
+          localStorage.setItem('token', payload.accessToken)
+          localStorage.setItem('tokenType', payload.tokenType ?? 'Bearer')
+
+          if (payload.refreshToken) {
+            localStorage.setItem('refreshToken', payload.refreshToken)
+          } else {
+            localStorage.removeItem('refreshToken')
+          }
+
+          if (typeof payload.expiresIn === 'number') {
+            localStorage.setItem('tokenExpiresIn', String(payload.expiresIn))
+          } else {
+            localStorage.removeItem('tokenExpiresIn')
+          }
+
+          const user = payload.user
+          if (user && user.id !== undefined && user.id !== null) {
+            localStorage.setItem('userId', String(user.id))
+          } else {
+            localStorage.removeItem('userId')
+          }
+
+          const tenantId = user?.tenantId ?? loginForm.tenantId
+          if (tenantId !== undefined && tenantId !== null) {
+            localStorage.setItem('tenantId', String(tenantId))
+          } else {
+            localStorage.removeItem('tenantId')
+          }
+
+          const username = user?.username ?? loginForm.username
+          localStorage.setItem('username', username)
+
+          if (user?.realName) {
+            localStorage.setItem('realName', user.realName)
+          } else {
+            localStorage.removeItem('realName')
+          }
+
+          ElMessage.success(response?.message ?? '登录成功')
           router.push('/')
         } else {
           ElMessage.error('登录失败：未获取到token')
         }
       } catch (error: any) {
         console.error('登录失败:', error)
-        ElMessage.error(error.message || '登录失败，请检查用户名和密码')
+        const message = error?.response?.data?.message || error?.message || '登录失败，请检查用户名和密码'
+        ElMessage.error(message)
       } finally {
         loading.value = false
       }

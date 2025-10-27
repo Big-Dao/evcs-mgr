@@ -31,6 +31,8 @@ public class JwtAuthGlobalFilter implements GlobalFilter, Ordered {
     private static final Set<String> WHITELIST = Set.of(
             "/auth/login",
             "/auth/refresh",
+            "/api/auth/login",
+            "/api/auth/refresh",
             "/doc.html",
             "/webjars/",
             "/v3/api-docs",

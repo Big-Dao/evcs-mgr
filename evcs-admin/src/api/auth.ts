@@ -6,19 +6,33 @@ export interface LoginRequest {
   tenantId?: number
 }
 
-export interface LoginResponse {
-  token: string
-  userId: number
+export interface LoginUserInfo {
+  id: number
   username: string
-  realName: string
-  tenantId: number
+  realName?: string
+  phone?: string
+  email?: string
+  avatar?: string
+  gender?: number
+  tenantId?: number
+  tenantName?: string
+  roles?: string[]
+  permissions?: string[]
+}
+
+export interface LoginResponse {
+  accessToken: string
+  refreshToken?: string
+  tokenType?: string
+  expiresIn?: number
+  user?: LoginUserInfo
 }
 
 /**
  * 用户登录
  */
 export function login(data: LoginRequest) {
-  return request({
+  return request<LoginResponse>({
     url: '/auth/login',
     method: 'post',
     data
@@ -29,7 +43,7 @@ export function login(data: LoginRequest) {
  * 用户注销
  */
 export function logout() {
-  return request({
+  return request<void>({
     url: '/auth/logout',
     method: 'post'
   })
@@ -39,8 +53,8 @@ export function logout() {
  * 获取用户信息
  */
 export function getUserInfo() {
-  return request({
-    url: '/auth/user/info',
+  return request<LoginUserInfo>({
+    url: '/auth/userinfo',
     method: 'get'
   })
 }

@@ -312,7 +312,7 @@ docker-compose up -d
 （待后端提供）
 ```
 用户名: admin
-密码: admin123
+密码: password
 ```
 
 ---

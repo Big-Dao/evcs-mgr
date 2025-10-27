@@ -131,6 +131,8 @@ services:
       SPRING_DATA_REDIS_HOST: "redis"
       SPRING_DATA_REDIS_PORT: "6379"
       TZ: Asia/Shanghai
+    volumes:
+      - ./config-repo:/config-repo:ro
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:8888/actuator/health"]
       interval: 10s
@@ -165,6 +167,7 @@ services:
       context: .
       dockerfile: evcs-auth/Dockerfile
     container_name: evcs-auth
+    hostname: evcs-auth
     restart: unless-stopped
     ports:
       - "8081:8081"

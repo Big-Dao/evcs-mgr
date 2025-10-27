@@ -39,45 +39,62 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public LoginResponse login(LoginRequest request) {
-        // 查找用户
-        User user = findByUsernameAndTenantId(request.getUsername(), request.getTenantId());
-        if (user == null) {
-            throw new BusinessException(ResultCode.USER_NOT_FOUND);
+        log.info("登录请求 - 用户名: {}, 租户ID: {}", request.getUsername(), request.getTenantId());
+        
+        // 校验租户ID
+        if (request.getTenantId() == null) {
+            throw new BusinessException(ResultCode.PARAM_NULL, "租户ID不能为空");
         }
         
-        // 检查用户状态
-        if (user.getStatus() == 0) {
-            throw new BusinessException(ResultCode.USER_DISABLED);
-        }
-        
-        // 验证密码
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new BusinessException(ResultCode.USER_PASSWORD_ERROR);
-        }
-        
-        // 设置租户上下文（用于后续操作）
-        TenantContext.setTenantId(user.getTenantId());
-        TenantContext.setUserId(user.getId());
-        
-        // 生成Token
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getTenantId());
-        
-        // 更新最后登录信息
-        user.setLastLoginTime(LocalDateTime.now());
-        userMapper.updateById(user);
-        
-        // 构建响应
-        LoginResponse response = new LoginResponse();
-        response.setAccessToken(token);
-        response.setTokenType("Bearer");
-        response.setExpiresIn(7200L); // 2小时
-        
-        LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();
-        userInfo.setId(user.getId());
-        userInfo.setUsername(user.getUsername());
-        userInfo.setRealName(user.getRealName());
-        userInfo.setPhone(user.getPhone());
-        userInfo.setEmail(user.getEmail());
+        // 登录前临时设置租户上下文，以便查询用户
+        try {
+            TenantContext.setTenantId(request.getTenantId());
+            log.info("已设置租户上下文 - 租户ID: {}", TenantContext.getTenantId());
+            
+            // 查找用户
+            User user = findByUsernameAndTenantId(request.getUsername(), request.getTenantId());
+            if (user == null) {
+                throw new BusinessException(ResultCode.USER_NOT_FOUND);
+            }
+            
+            // 检查用户状态
+            if (user.getStatus() == 0) {
+                throw new BusinessException(ResultCode.USER_DISABLED);
+            }
+            
+            // 验证密码
+            log.debug("密码验证 - 输入密码: {}", request.getPassword());
+            log.debug("密码验证 - 数据库哈希长度: {}", user.getPassword() != null ? user.getPassword().length() : "null");
+            log.debug("密码验证 - 数据库哈希前20字符: {}", user.getPassword() != null ? user.getPassword().substring(0, Math.min(20, user.getPassword().length())) : "null");
+            boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
+            log.debug("密码验证结果: {}", matches);
+            if (!matches) {
+                throw new BusinessException(ResultCode.USER_PASSWORD_ERROR);
+            }
+            
+            // 重新设置租户上下文（使用实际用户的租户ID）
+            TenantContext.setTenantId(user.getTenantId());
+            TenantContext.setUserId(user.getId());
+            
+            // 生成Token
+            String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getTenantId());
+            
+            // 更新最后登录信息
+            user.setLastLoginTime(LocalDateTime.now());
+            userMapper.updateById(user);
+            
+            // 构建响应
+            LoginResponse response = new LoginResponse();
+            response.setAccessToken(token);
+            response.setTokenType("Bearer");
+            response.setExpiresIn(7200L); // 2小时
+            
+            LoginResponse.UserInfo userInfo = new LoginResponse.UserInfo();
+            userInfo.setId(user.getId());
+            userInfo.setUsername(user.getUsername());
+            userInfo.setRealName(user.getRealName());
+            userInfo.setPhone(user.getPhone());
+            userInfo.setEmail(user.getEmail());
         userInfo.setAvatar(user.getAvatar());
         userInfo.setGender(user.getGender());
         userInfo.setTenantId(user.getTenantId());
@@ -85,6 +102,10 @@ public class UserServiceImpl implements UserService {
         response.setUser(userInfo);
         
         return response;
+        } finally {
+            // 清理租户上下文
+            TenantContext.clear();
+        }
     }
     
     @Override

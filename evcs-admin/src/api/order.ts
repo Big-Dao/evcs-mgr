@@ -1,4 +1,5 @@
 import request from '../utils/request'
+import type { PageResult } from './types'
 
 /**
  * 订单相关接口
@@ -65,7 +66,7 @@ export interface OrderStatistics {
  * 获取订单列表
  */
 export function getOrderList(params: OrderQueryParams) {
-  return request({
+  return request<PageResult<Order>>({
     url: '/order/list',
     method: 'get',
     params
@@ -76,7 +77,7 @@ export function getOrderList(params: OrderQueryParams) {
  * 获取订单详情
  */
 export function getOrderDetail(id: number) {
-  return request({
+  return request<OrderDetail>({
     url: `/order/${id}`,
     method: 'get'
   })
@@ -86,7 +87,7 @@ export function getOrderDetail(id: number) {
  * 取消订单
  */
 export function cancelOrder(id: number, reason?: string) {
-  return request({
+  return request<void>({
     url: `/order/${id}/cancel`,
     method: 'post',
     data: { reason }
@@ -97,7 +98,7 @@ export function cancelOrder(id: number, reason?: string) {
  * 获取订单统计
  */
 export function getOrderStatistics(startDate?: string, endDate?: string) {
-  return request({
+  return request<OrderStatistics>({
     url: '/order/statistics',
     method: 'get',
     params: { startDate, endDate }
@@ -108,7 +109,7 @@ export function getOrderStatistics(startDate?: string, endDate?: string) {
  * 导出订单数据
  */
 export function exportOrders(params: OrderQueryParams) {
-  return request({
+  return request<Blob>({
     url: '/order/export',
     method: 'get',
     params,

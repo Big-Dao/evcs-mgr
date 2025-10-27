@@ -180,7 +180,7 @@ VALUES (1, 'SYSTEM', '系统租户', 1, 1, 999999, 999999, 999999, 1);
 
 -- 插入默认系统管理员用户
 INSERT INTO sys_user (id, username, password, real_name, user_type, status, tenant_id) 
-VALUES (1, 'admin', '$2a$10$7JB720yubVSeLVa5fCJ8v.7lGjWNaDgGKDTpKUdZ5JN6XL4HY5sdi', '系统管理员', 0, 1, 1);
+VALUES (1, 'admin', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', '系统管理员', 0, 1, 1);
 
 -- 插入默认角色
 INSERT INTO sys_role (id, role_code, role_name, status, tenant_id) 

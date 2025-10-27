@@ -14,7 +14,7 @@ public class BaseEntity {
     /**
      * 主键ID
      */
-    @TableField(exist = false)
+    @TableId(type = IdType.AUTO)
     private Long id;
     
     /**

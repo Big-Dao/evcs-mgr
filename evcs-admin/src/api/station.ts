@@ -1,4 +1,5 @@
 import request from '../utils/request'
+import type { PageResult } from './types'
 
 /**
  * 充电站相关接口
@@ -54,7 +55,7 @@ export interface StationForm {
  * 获取充电站列表
  */
 export function getStationList(params: StationQueryParams) {
-  return request({
+  return request<PageResult<Station>>({
     url: '/station/list',
     method: 'get',
     params
@@ -65,7 +66,7 @@ export function getStationList(params: StationQueryParams) {
  * 获取充电站详情
  */
 export function getStationDetail(id: number) {
-  return request({
+  return request<Station>({
     url: `/station/${id}`,
     method: 'get'
   })
@@ -75,7 +76,7 @@ export function getStationDetail(id: number) {
  * 新增充电站
  */
 export function createStation(data: StationForm) {
-  return request({
+  return request<void>({
     url: '/station',
     method: 'post',
     data
@@ -86,7 +87,7 @@ export function createStation(data: StationForm) {
  * 更新充电站
  */
 export function updateStation(id: number, data: StationForm) {
-  return request({
+  return request<void>({
     url: `/station/${id}`,
     method: 'put',
     data
@@ -97,7 +98,7 @@ export function updateStation(id: number, data: StationForm) {
  * 删除充电站
  */
 export function deleteStation(id: number) {
-  return request({
+  return request<void>({
     url: `/station/${id}`,
     method: 'delete'
   })

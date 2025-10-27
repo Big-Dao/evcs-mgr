@@ -1,4 +1,5 @@
 import request from '../utils/request'
+import type { PageResult } from './types'
 
 /**
  * 租户相关接口
@@ -46,7 +47,7 @@ export interface TenantForm {
  * 获取租户列表
  */
 export function getTenantList(params: TenantQueryParams) {
-  return request({
+  return request<PageResult<Tenant>>({
     url: '/tenant/list',
     method: 'get',
     params
@@ -57,7 +58,7 @@ export function getTenantList(params: TenantQueryParams) {
  * 获取租户详情
  */
 export function getTenantDetail(id: number) {
-  return request({
+  return request<Tenant>({
     url: `/tenant/${id}`,
     method: 'get'
   })
@@ -67,7 +68,7 @@ export function getTenantDetail(id: number) {
  * 新增租户
  */
 export function createTenant(data: TenantForm) {
-  return request({
+  return request<void>({
     url: '/tenant',
     method: 'post',
     data
@@ -78,7 +79,7 @@ export function createTenant(data: TenantForm) {
  * 更新租户
  */
 export function updateTenant(id: number, data: TenantForm) {
-  return request({
+  return request<void>({
     url: `/tenant/${id}`,
     method: 'put',
     data
@@ -89,7 +90,7 @@ export function updateTenant(id: number, data: TenantForm) {
  * 删除租户
  */
 export function deleteTenant(id: number) {
-  return request({
+  return request<void>({
     url: `/tenant/${id}`,
     method: 'delete'
   })

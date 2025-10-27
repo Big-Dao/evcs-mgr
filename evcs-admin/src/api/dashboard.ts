@@ -38,7 +38,7 @@ export interface RecentOrder {
  * 获取Dashboard统计数据
  */
 export function getDashboardStats() {
-  return request({
+  return request<DashboardStats>({
     url: '/dashboard/statistics',
     method: 'get'
   })
@@ -48,7 +48,7 @@ export function getDashboardStats() {
  * 获取充电桩状态统计
  */
 export function getChargerStatusStats() {
-  return request({
+  return request<ChargerStatusStats>({
     url: '/dashboard/charger-status',
     method: 'get'
   })
@@ -58,7 +58,7 @@ export function getChargerStatusStats() {
  * 获取最近订单列表
  */
 export function getRecentOrders(limit: number = 10) {
-  return request({
+  return request<RecentOrder[]>({
     url: '/dashboard/recent-orders',
     method: 'get',
     params: { limit }
@@ -69,7 +69,7 @@ export function getRecentOrders(limit: number = 10) {
  * 获取充电量趋势（按日期）
  */
 export function getChargingTrend(days: number = 7) {
-  return request({
+  return request<Array<{ date: string; value: number }>>({
     url: '/dashboard/charging-trend',
     method: 'get',
     params: { days }
@@ -80,7 +80,7 @@ export function getChargingTrend(days: number = 7) {
  * 获取收入趋势（按日期）
  */
 export function getRevenueTrend(days: number = 7) {
-  return request({
+  return request<Array<{ date: string; value: number }>>({
     url: '/dashboard/revenue-trend',
     method: 'get',
     params: { days }

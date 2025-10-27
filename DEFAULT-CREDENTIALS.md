@@ -4,7 +4,7 @@
 
 ### 管理员账号 ✅
 - **用户名**: `admin`
-- **密码**: `admin123`
+- **密码**: `password`
 - **租户ID**: `1`
 - **状态**: 激活
 
@@ -20,16 +20,16 @@
 2. 访问 http://localhost:3000
 
 3. 使用以下凭证登录：
-   - 用户名: `admin`
-   - 密码: `admin123`
-   - 租户ID: `1` (已预填)
+  - 用户名: `admin`
+  - 密码: `password`
+  - 租户ID: `1` (已预填)
 
 ### API 测试
 ```powershell
 # 测试登录接口
 curl -X POST http://localhost:8080/api/auth/login `
   -H "Content-Type: application/json" `
-  -d '{"username":"admin","password":"admin123","tenantId":1}'
+  -d '{"username":"admin","password":"password","tenantId":1}'
 ```
 
 ## 前端更新说明
@@ -54,15 +54,15 @@ curl -X POST http://localhost:8080/api/auth/login `
 ```
 
 ## 密码信息
-- 存储哈希: `$2a$10$7JB720yubVSeLVa5fCJ8v.7lGjWNaDgGKDTpKUdZ5JN6XL4HY5sdi`
+- 存储哈希: `$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG`
 - 算法: BCrypt
 - 强度: 10 rounds
-- 明文密码: `admin123`
+- 明文密码: `password`
 
 ## 重置密码（如需要）
 ```sql
--- 将密码重置为 admin123
+-- 将密码重置为 password
 UPDATE sys_user 
-SET password = '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z2EXvY7BPnhUP1yq3qkQgdXC'
+SET password = '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG'
 WHERE username = 'admin';
 ```

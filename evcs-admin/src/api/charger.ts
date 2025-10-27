@@ -1,4 +1,5 @@
 import request from '../utils/request'
+import type { PageResult } from './types'
 
 /**
  * 充电桩相关接口
@@ -48,7 +49,7 @@ export interface ChargerForm {
  * 获取充电桩列表
  */
 export function getChargerList(params: ChargerQueryParams) {
-  return request({
+  return request<PageResult<Charger>>({
     url: '/charger/list',
     method: 'get',
     params
@@ -59,7 +60,7 @@ export function getChargerList(params: ChargerQueryParams) {
  * 获取充电桩详情
  */
 export function getChargerDetail(id: number) {
-  return request({
+  return request<Charger>({
     url: `/charger/${id}`,
     method: 'get'
   })
@@ -69,7 +70,7 @@ export function getChargerDetail(id: number) {
  * 新增充电桩
  */
 export function createCharger(data: ChargerForm) {
-  return request({
+  return request<void>({
     url: '/charger',
     method: 'post',
     data
@@ -80,7 +81,7 @@ export function createCharger(data: ChargerForm) {
  * 更新充电桩
  */
 export function updateCharger(id: number, data: ChargerForm) {
-  return request({
+  return request<void>({
     url: `/charger/${id}`,
     method: 'put',
     data
@@ -91,7 +92,7 @@ export function updateCharger(id: number, data: ChargerForm) {
  * 删除充电桩
  */
 export function deleteCharger(id: number) {
-  return request({
+  return request<void>({
     url: `/charger/${id}`,
     method: 'delete'
   })

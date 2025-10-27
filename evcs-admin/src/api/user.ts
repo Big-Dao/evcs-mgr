@@ -1,4 +1,5 @@
 import request from '../utils/request'
+import type { PageResult } from './types'
 
 /**
  * 用户相关接口
@@ -45,7 +46,7 @@ export interface UserForm {
  * 获取用户列表
  */
 export function getUserList(params: UserQueryParams) {
-  return request({
+  return request<PageResult<User>>({
     url: '/user/list',
     method: 'get',
     params
@@ -56,7 +57,7 @@ export function getUserList(params: UserQueryParams) {
  * 获取用户详情
  */
 export function getUserDetail(id: number) {
-  return request({
+  return request<User>({
     url: `/user/${id}`,
     method: 'get'
   })
@@ -66,7 +67,7 @@ export function getUserDetail(id: number) {
  * 新增用户
  */
 export function createUser(data: UserForm) {
-  return request({
+  return request<void>({
     url: '/user',
     method: 'post',
     data
@@ -77,7 +78,7 @@ export function createUser(data: UserForm) {
  * 更新用户
  */
 export function updateUser(id: number, data: UserForm) {
-  return request({
+  return request<void>({
     url: `/user/${id}`,
     method: 'put',
     data
@@ -88,7 +89,7 @@ export function updateUser(id: number, data: UserForm) {
  * 删除用户
  */
 export function deleteUser(id: number) {
-  return request({
+  return request<void>({
     url: `/user/${id}`,
     method: 'delete'
   })
@@ -98,7 +99,7 @@ export function deleteUser(id: number) {
  * 重置用户密码
  */
 export function resetUserPassword(id: number, newPassword: string) {
-  return request({
+  return request<void>({
     url: `/user/${id}/reset-password`,
     method: 'post',
     data: { newPassword }
@@ -109,7 +110,7 @@ export function resetUserPassword(id: number, newPassword: string) {
  * 获取用户角色列表
  */
 export function getUserRoles(userId: number) {
-  return request({
+  return request<string[]>({
     url: `/user/${userId}/roles`,
     method: 'get'
   })
@@ -119,7 +120,7 @@ export function getUserRoles(userId: number) {
  * 分配用户角色
  */
 export function assignUserRoles(userId: number, roleIds: number[]) {
-  return request({
+  return request<void>({
     url: `/user/${userId}/roles`,
     method: 'post',
     data: { roleIds }

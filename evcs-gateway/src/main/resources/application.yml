@@ -8,3 +8,12 @@ spring:
   cloud:
     config:
       profile: local
+    gateway:
+      routes:
+        # Dashboard统计路由
+        - id: dashboard-service
+          uri: lb://evcs-tenant
+          predicates:
+            - Path=/dashboard/**
+          filters:
+            - StripPrefix=1

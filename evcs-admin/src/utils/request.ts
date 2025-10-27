@@ -1,5 +1,14 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios'
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
+
+export interface ApiResponse<T = unknown> {
+  code?: number
+  message?: string
+  data?: T
+  success?: boolean
+  timestamp?: string
+  traceId?: string
+}
 
 // Create axios instance
 const service: AxiosInstance = axios.create({
@@ -25,23 +34,23 @@ service.interceptors.request.use(
 
 // Response interceptor
 service.interceptors.response.use(
-  (response: AxiosResponse) => {
+  (response: AxiosResponse<ApiResponse>) => {
     const res = response.data
-    
-    // 后端返回格式: { success: boolean, message: string, data: any }
-    if (res.success === false) {
+
+    // 后端返回格式: { code: number, success?: boolean, message?: string, data: any }
+    if (res.success === false || (res.success === undefined && res.code && res.code !== 200)) {
       ElMessage.error(res.message || 'Error')
-      
+
       // 401: 未授权
       if (response.status === 401) {
         localStorage.removeItem('token')
         window.location.href = '/login'
       }
-      
+
       return Promise.reject(new Error(res.message || 'Error'))
     }
-    
-    return res
+
+    return response
   },
   (error) => {
     console.error('Response error:', error)
@@ -74,4 +83,10 @@ service.interceptors.response.use(
   }
 )
 
-export default service
+const request = async <T = unknown>(config: AxiosRequestConfig): Promise<ApiResponse<T>> => {
+  const response = await service.request<ApiResponse<T>>(config)
+  return response.data
+}
+
+export default request
+export { service }
