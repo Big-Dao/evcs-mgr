@@ -1,5 +1,34 @@
 # 变更日志
 
+## [未发布] - 2025-10-28
+
+### 重构 (Refactored)
+- **Charger 实体重构**: 修复 MyBatis Plus 重复 @TableId 问题 (3cb3a30)
+  - 重构 Charger 实体继承 BaseEntity，使用 `@TableId(value="charger_id")` 映射主键
+  - 统一使用 `getId()`/`setId()` 替代 `getChargerId()`/`setChargerId()`
+  - 影响文件: Charger.java, ChargerServiceImpl.java, ChargerController.java, BillingAssignController.java 及所有测试
+
+### 修复 (Fixed)
+- **H2 数据库兼容性**: 修复测试环境 SQL 语法问题
+  - fix: 将 PostgreSQL 的 `INSERT...ON CONFLICT` 改为 H2 的 `MERGE INTO` 语法
+  - fix: StationMapper.selectNearbyStations 使用子查询统计充电桩数量字段
+- **租户编码检查逻辑**: 修复 SysTenantServiceImpl.checkTenantCodeExists 使用错误的主键字段
+  - fix: 将 `tenant_id` 改为正确的主键 `id`
+
+### 测试 (Testing)
+- ✅ 所有模块测试通过 (97 个任务)
+  - evcs-auth: 6 tests passed
+  - evcs-common: 28 tests passed
+  - evcs-gateway: 13 tests passed
+  - evcs-integration: 18 tests passed
+  - evcs-order: 17 tests passed
+  - evcs-payment: 12 tests passed
+  - evcs-protocol: 5 tests passed
+  - evcs-station: 27 tests passed
+  - evcs-tenant: 42 tests passed
+
+---
+
 ## [P4 Week 1] - 2025-10-20
 
 ### 新增 (Added)

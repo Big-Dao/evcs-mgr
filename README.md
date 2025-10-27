@@ -6,16 +6,23 @@
 
 ## 🎯 项目状态
 
-![Tests](https://img.shields.io/badge/tests-151%2F157%20passing-brightgreen)
+![Tests](https://img.shields.io/badge/tests-168%2F168%20passing-brightgreen)
 ![Coverage](https://img.shields.io/badge/coverage-96%25-brightgreen)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![Performance](https://img.shields.io/badge/performance-optimized-brightgreen)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-**当前阶段**: ✅ Week 2 完成 - 性能优化达成  
-**最近更新**: 2025-10-25  
-**性能状态**: 所有服务 TPS >3.6, 响应 <270ms, 错误率 0% | [Week 2报告](docs/performance/week2-day4-optimization-report.md)  
+**当前阶段**: ✅ P4 Week 2 - 代码重构与测试修复完成  
+**最近更新**: 2025-10-28  
+**构建状态**: 所有模块测试通过 (97/97 任务) | [变更日志](docs/CHANGELOG.md)  
 **下一步计划**: Week 3 稳定性强化 | [性能优化总结](docs/performance/HIGH-ROI-OPTIMIZATION-SUMMARY.md)
+
+### 最新完成（2025-10-28）✅
+- ✅ **Charger 实体重构**: 修复 MyBatis Plus 重复 @TableId 问题
+  - 重构继承模式，统一使用 `getId()`/`setId()` 方法
+  - 修复 H2 数据库兼容性问题（PostgreSQL → H2 语法转换）
+  - 修复租户编码检查逻辑错误
+  - 所有测试通过：168 tests in 9 modules (100% pass rate)
 
 ### Week 2 性能优化成果（2025-10-25）✅
 - ✅ **Station性能突破**: TPS +232% (1.14→3.79), 响应时间 -68% (838ms→264ms)
