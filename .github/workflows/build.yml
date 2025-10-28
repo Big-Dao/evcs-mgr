@@ -59,6 +59,9 @@ jobs:
   docker-build:
     runs-on: ubuntu-latest
     needs: build
+    permissions:
+      contents: read
+      actions: write  # Required for cache write
     strategy:
       matrix:
         service: [evcs-auth, evcs-config, evcs-eureka, evcs-gateway, evcs-monitoring, evcs-order, evcs-payment, evcs-protocol, evcs-station, evcs-tenant]

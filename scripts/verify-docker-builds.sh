@@ -30,16 +30,16 @@ for SERVICE in "${SERVICES[@]}"; do
     echo -e "${YELLOW}Testing: ${SERVICE}${NC}"
     echo "Building Docker image for ${SERVICE}..."
     
-    if docker build -t ${SERVICE}:test -f ${SERVICE}/Dockerfile . 2>&1 | tee /tmp/${SERVICE}-build.log; then
+    if docker build -t "${SERVICE}:test" -f "${SERVICE}/Dockerfile" . 2>&1 | tee "/tmp/${SERVICE}-build.log"; then
         echo -e "${GREEN}✓ ${SERVICE} build successful${NC}"
         
         # Get image size
-        IMAGE_SIZE=$(docker images ${SERVICE}:test --format "{{.Size}}")
+        IMAGE_SIZE=$(docker images "${SERVICE}:test" --format "{{.Size}}")
         echo -e "${GREEN}  Image size: ${IMAGE_SIZE}${NC}"
         
         # Analyze image layers
         echo "  Analyzing image layers..."
-        docker history ${SERVICE}:test --no-trunc --format "table {{.Size}}\t{{.CreatedBy}}" | head -10
+        docker history "${SERVICE}:test" --no-trunc --format "table {{.Size}}\t{{.CreatedBy}}" | head -10
         
     else
         echo -e "${RED}✗ ${SERVICE} build failed${NC}"
