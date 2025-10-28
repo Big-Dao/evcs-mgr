@@ -81,6 +81,18 @@ public class TenantController {
     }
     
     /**
+     * 查询租户列表（不分页）
+     */
+    @Operation(summary = "查询租户列表", description = "查询租户列表（不分页）")
+    @GetMapping("/list")
+    @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
+              description = "只能查询本租户及下级租户")
+    public Result<List<SysTenant>> listTenants(SysTenant query) {
+        List<SysTenant> list = tenantService.queryTenantList(query);
+        return Result.success("查询成功", list);
+    }
+    
+    /**
      * 分页查询租户
      */
     @Operation(summary = "分页查询租户", description = "分页查询租户列表")

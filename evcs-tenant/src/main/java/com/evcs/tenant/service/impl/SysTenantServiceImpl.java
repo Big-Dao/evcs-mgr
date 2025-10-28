@@ -42,6 +42,25 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
     @Override
     @DataScope
     public IPage<SysTenant> queryTenantPage(Page<SysTenant> page, SysTenant tenant) {
+        QueryWrapper<SysTenant> wrapper = buildTenantQueryWrapper(tenant);
+        return this.page(page, wrapper);
+    }
+
+    /**
+     * 查询租户列表（不分页）
+     * 数据权限：ALL - 查看所有租户，CHILDREN - 查看子租户，SELF - 查看自己
+     */
+    @Override
+    @DataScope
+    public List<SysTenant> queryTenantList(SysTenant tenant) {
+        QueryWrapper<SysTenant> wrapper = buildTenantQueryWrapper(tenant);
+        return this.list(wrapper);
+    }
+    
+    /**
+     * 构建租户查询条件
+     */
+    private QueryWrapper<SysTenant> buildTenantQueryWrapper(SysTenant tenant) {
         QueryWrapper<SysTenant> wrapper = new QueryWrapper<>();
         
         // 根据租户名称查询
@@ -62,7 +81,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
         // 排序
         wrapper.orderByAsc("tenant_id");
         
-        return this.page(page, wrapper);
+        return wrapper;
     }
 
     /**

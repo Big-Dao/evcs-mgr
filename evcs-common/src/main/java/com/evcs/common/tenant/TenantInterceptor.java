@@ -26,44 +26,68 @@ public class TenantInterceptor implements HandlerInterceptor {
                            @NonNull Object handler) {
         
         try {
-            // 从请求头中获取Token
-            String token = extractToken(request);
-            if (token != null && jwtUtil.verifyToken(token)) {
-                // 从Token中提取租户信息
-                Long tenantId = jwtUtil.getTenantId(token);
-                Long userId = jwtUtil.getUserId(token);
-                
-                if (tenantId != null) {
-                    // 设置租户上下文
-                    TenantContext.setTenantId(tenantId);
-                    TenantContext.setUserId(userId);
-                    
-                    // 从数据库获取租户类型和祖级路径信息
-                    // 实际应用中，建议使用Redis缓存租户信息以提高性能
-                    // 示例：
-                    // String cacheKey = "tenant:info:" + tenantId;
-                    // TenantInfo tenantInfo = redisTemplate.opsForValue().get(cacheKey);
-                    // if (tenantInfo == null) {
-                    //     tenantInfo = tenantService.getTenantInfo(tenantId);
-                    //     redisTemplate.opsForValue().set(cacheKey, tenantInfo, 1, TimeUnit.HOURS);
-                    // }
-                    // TenantContext.setTenantType(tenantInfo.getTenantType());
-                    // TenantContext.setTenantAncestors(tenantInfo.getAncestors());
-                    
-                    log.debug("设置租户上下文成功 - {}", TenantContext.getContextInfo());
+            Long tenantId = null;
+            Long userId = null;
+            
+            // 优先从 Gateway 转发的 Header 中获取租户信息（已通过 Gateway JWT 验证）
+            String tenantIdHeader = request.getHeader("X-Tenant-Id");
+            String userIdHeader = request.getHeader("X-User-Id");
+            
+            if (tenantIdHeader != null && !tenantIdHeader.isEmpty()) {
+                try {
+                    tenantId = Long.parseLong(tenantIdHeader);
+                    if (userIdHeader != null && !userIdHeader.isEmpty()) {
+                        userId = Long.parseLong(userIdHeader);
+                    }
+                    log.debug("从 Gateway Header 获取租户信息 - tenantId: {}, userId: {}", tenantId, userId);
+                } catch (NumberFormatException e) {
+                    log.warn("无效的 Header 租户信息: X-Tenant-Id={}, X-User-Id={}", tenantIdHeader, userIdHeader);
                 }
-            } else {
-                // 对于不需要认证的请求（如登录接口），检查请求参数中是否有租户ID
+            }
+            
+            // 如果 Header 中没有，尝试从 JWT Token 中提取（直接访问服务的场景）
+            if (tenantId == null) {
+                String token = extractToken(request);
+                if (token != null && jwtUtil.verifyToken(token)) {
+                    tenantId = jwtUtil.getTenantId(token);
+                    userId = jwtUtil.getUserId(token);
+                    log.debug("从 JWT Token 提取租户信息 - tenantId: {}, userId: {}", tenantId, userId);
+                }
+            }
+            
+            // 如果还是没有，检查请求参数（用于登录等公开接口）
+            if (tenantId == null) {
                 String tenantIdParam = request.getParameter("tenantId");
                 if (tenantIdParam != null) {
                     try {
-                        Long tenantId = Long.parseLong(tenantIdParam);
-                        TenantContext.setTenantId(tenantId);
-                        log.debug("从请求参数设置租户ID: {}", tenantId);
+                        tenantId = Long.parseLong(tenantIdParam);
+                        log.debug("从请求参数获取租户ID: {}", tenantId);
                     } catch (NumberFormatException e) {
                         log.warn("无效的租户ID参数: {}", tenantIdParam);
                     }
                 }
+            }
+            
+            // 设置租户上下文
+            if (tenantId != null) {
+                TenantContext.setTenantId(tenantId);
+                if (userId != null) {
+                    TenantContext.setUserId(userId);
+                }
+                
+                // 从数据库获取租户类型和祖级路径信息
+                // 实际应用中，建议使用Redis缓存租户信息以提高性能
+                // 示例：
+                // String cacheKey = "tenant:info:" + tenantId;
+                // TenantInfo tenantInfo = redisTemplate.opsForValue().get(cacheKey);
+                // if (tenantInfo == null) {
+                //     tenantInfo = tenantService.getTenantInfo(tenantId);
+                //     redisTemplate.opsForValue().set(cacheKey, tenantInfo, 1, TimeUnit.HOURS);
+                // }
+                // TenantContext.setTenantType(tenantInfo.getTenantType());
+                // TenantContext.setTenantAncestors(tenantInfo.getAncestors());
+                
+                log.debug("设置租户上下文成功 - {}", TenantContext.getContextInfo());
             }
             
             return true;

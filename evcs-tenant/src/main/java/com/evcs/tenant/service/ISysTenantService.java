@@ -9,6 +9,7 @@ import java.util.List;
 
 public interface ISysTenantService extends IService<SysTenant> {
     IPage<SysTenant> queryTenantPage(Page<SysTenant> page, SysTenant tenant);
+    List<SysTenant> queryTenantList(SysTenant tenant);
     List<Tree<Long>> getTenantTree();
     SysTenant getTenantById(Long tenantId);
     boolean saveTenant(SysTenant tenant);
