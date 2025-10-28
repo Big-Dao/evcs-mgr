@@ -16,6 +16,7 @@ import com.evcs.station.event.ChargingStartEvent;
 import com.evcs.station.event.ChargingStopEvent;
 import com.evcs.station.mapper.ChargerMapper;
 import com.evcs.station.mapper.StationMapper;
+import com.evcs.station.metrics.StationMetrics;
 import com.evcs.station.service.IChargerService;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -48,6 +49,9 @@ public class ChargerServiceImpl
 
     @Autowired
     private StationMapper stationMapper;
+    
+    @Autowired
+    private StationMetrics stationMetrics;
 
     /**
      * 分页查询充电桩列表
@@ -212,9 +216,43 @@ public class ChargerServiceImpl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateStatus(Long chargerId, Integer status) {
-        return (
-            baseMapper.updateStatus(chargerId, status, LocalDateTime.now()) > 0
-        );
+        try {
+            Charger charger = this.getById(chargerId);
+            Integer oldStatus = charger != null ? charger.getStatus() : null;
+            
+            boolean result = (
+                baseMapper.updateStatus(chargerId, status, LocalDateTime.now()) > 0
+            );
+            
+            if (result && charger != null) {
+                // 记录状态变更
+                if (status == 0) { // 离线
+                    stationMetrics.recordChargerOffline(chargerId);
+                } else if (oldStatus != null && oldStatus == 0 && status > 0) { // 从离线变为其他状态
+                    stationMetrics.recordChargerOnline(chargerId);
+                }
+                
+                if (status == 2) { // 开始充电
+                    stationMetrics.recordChargerStartCharging();
+                } else if (oldStatus != null && oldStatus == 2 && status != 2) { // 停止充电
+                    stationMetrics.recordChargerStopCharging();
+                }
+                
+                if (status == 3) { // 故障
+                    stationMetrics.recordChargerFaulted();
+                } else if (oldStatus != null && oldStatus == 3 && status != 3) { // 故障恢复
+                    stationMetrics.recordChargerFaultRecovered();
+                }
+                
+                log.info("Charger status updated: chargerId={}, oldStatus={}, newStatus={}", 
+                    chargerId, oldStatus, status);
+            }
+            
+            return result;
+        } catch (Exception e) {
+            log.error("Error updating charger status: chargerId={}, status={}", chargerId, status, e);
+            throw e;
+        }
     }
 
     /**

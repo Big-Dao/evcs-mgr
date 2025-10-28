@@ -1,0 +1,283 @@
+{
+  "dashboard": {
+    "title": "EVCS Business Metrics Dashboard",
+    "tags": ["evcs", "business", "metrics"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 0,
+    "refresh": "30s",
+    "panels": [
+      {
+        "title": "订单创建成功率",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(evcs_order_created_total[5m])) / (sum(rate(evcs_order_created_total[5m])) + sum(rate(evcs_order_created_failure_total[5m]))) * 100",
+            "legendFormat": "成功率 (%)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 90, "color": "yellow"},
+                {"value": 95, "color": "green"}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "title": "充电桩在线率",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "evcs_charger_online / evcs_charger_total * 100",
+            "legendFormat": "在线率 (%)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 80, "color": "yellow"},
+                {"value": 95, "color": "green"}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "title": "支付成功率",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(evcs_payment_success_total[5m])) / sum(rate(evcs_payment_request_total[5m])) * 100",
+            "legendFormat": "成功率 (%)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 95, "color": "yellow"},
+                {"value": 99, "color": "green"}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "title": "计费准确率",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(evcs_order_billing_success_total[5m])) / (sum(rate(evcs_order_billing_success_total[5m])) + sum(rate(evcs_order_billing_failure_total[5m]))) * 100",
+            "legendFormat": "准确率 (%)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 99, "color": "yellow"},
+                {"value": 99.9, "color": "green"}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "title": "订单创建趋势",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(evcs_order_created_total[1m])",
+            "legendFormat": "成功"
+          },
+          {
+            "expr": "rate(evcs_order_created_failure_total[1m])",
+            "legendFormat": "失败"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "订单/秒"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "title": "订单创建响应时间",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(evcs_order_creation_duration_bucket[5m])) by (le))",
+            "legendFormat": "P99"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(evcs_order_creation_duration_bucket[5m])) by (le))",
+            "legendFormat": "P95"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(evcs_order_creation_duration_bucket[5m])) by (le))",
+            "legendFormat": "P50"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "响应时间"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "title": "当前活跃订单数",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "evcs_order_active_current",
+            "legendFormat": "活跃订单"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "订单数"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "title": "充电桩状态分布",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "evcs_charger_online",
+            "legendFormat": "在线"
+          },
+          {
+            "expr": "evcs_charger_offline",
+            "legendFormat": "离线"
+          },
+          {
+            "expr": "evcs_charger_charging",
+            "legendFormat": "充电中"
+          },
+          {
+            "expr": "evcs_charger_faulted",
+            "legendFormat": "故障"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "充电桩数"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "title": "支付渠道成功率对比",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum by (channel) (rate(evcs_payment_channel_success_total[5m])) / (sum by (channel) (rate(evcs_payment_channel_success_total[5m])) + sum by (channel) (rate(evcs_payment_channel_failure_total[5m]))) * 100",
+            "legendFormat": "{{channel}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "成功率 (%)"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "title": "支付处理时间",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(evcs_payment_process_duration_bucket[5m])) by (le))",
+            "legendFormat": "P99"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(evcs_payment_process_duration_bucket[5m])) by (le))",
+            "legendFormat": "P95"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(evcs_payment_process_duration_bucket[5m])) by (le))",
+            "legendFormat": "P50"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "响应时间"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      },
+      {
+        "title": "心跳接收率",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(rate(evcs_charger_heartbeat_received_total[5m])) / (sum(rate(evcs_charger_heartbeat_received_total[5m])) + sum(rate(evcs_charger_heartbeat_missed_total[5m]))) * 100",
+            "legendFormat": "接收率 (%)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 90, "color": "yellow"},
+                {"value": 95, "color": "green"}
+              ]
+            }
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 32}
+      },
+      {
+        "title": "支付金额统计",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "evcs_payment_amount_total / 100",
+            "legendFormat": "总支付金额 (元)"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyCNY",
+            "decimals": 2
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 32}
+      },
+      {
+        "title": "充电站操作统计",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(evcs_station_created_total[5m])",
+            "legendFormat": "创建"
+          },
+          {
+            "expr": "rate(evcs_station_updated_total[5m])",
+            "legendFormat": "更新"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "操作/秒"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 32}
+      }
+    ]
+  }
+}

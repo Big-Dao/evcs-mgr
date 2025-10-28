@@ -114,8 +114,15 @@
 
 - [docs/OPERATIONS-MANUAL.md](docs/OPERATIONS-MANUAL.md) - 运维手册
 
-### 协议对接- [docs/MONITORING-GUIDE.md](docs/MONITORING-GUIDE.md) - 监控指南
+### 监控体系
 
+- [docs/MONITORING-GUIDE.md](docs/MONITORING-GUIDE.md) - 监控指南
+- [docs/BUSINESS-METRICS.md](docs/BUSINESS-METRICS.md) - **业务监控指标** ⭐ **（新增 2025-10-28）**
+- [docs/monitoring/business-metrics-implementation-summary.md](docs/monitoring/business-metrics-implementation-summary.md) - 业务监控实施总结
+- [monitoring/grafana/dashboards/business-metrics.json](monitoring/grafana/dashboards/business-metrics.json) - Grafana Dashboard 配置
+- [scripts/verify-business-metrics.ps1](scripts/verify-business-metrics.ps1) - 监控指标验证脚本
+
+### 协议对接
 - [docs/协议故障排查手册.md](docs/协议故障排查手册.md) - 协议故障排查
 
 | 文档 | 说明 | 位置 |
@@ -186,9 +193,12 @@ evcs-mgr/- [.github/instructions/station.instructions.md](.github/instructions/s
 
 ├── docker-compose.yml                 # Docker编排配置
 
-├── docker-compose.yml.backup-day1     # Day 1配置备份### 问题修复
+├── docker-compose.yml.backup-day1     # Day 1配置备份
 
-│- [docs/development/IDE-FIX-GUIDE.md](docs/development/IDE-FIX-GUIDE.md) - IDE 错误修复指南
+### 问题修复
+
+- [docs/development/IDE-FIX-GUIDE.md](docs/development/IDE-FIX-GUIDE.md) - IDE 错误修复指南
+- [docs/development/DOCKER-BUILD-FIX.md](docs/development/DOCKER-BUILD-FIX.md) - Docker 构建依赖修复 ⭐
 
 ├── docs/                              # 文档目录
 

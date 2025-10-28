@@ -1,4 +1,5 @@
 plugins {
+    id 'java-library'
     id 'org.springframework.boot'
     id 'io.spring.dependency-management'
     id 'com.palantir.docker'
@@ -6,12 +7,14 @@ plugins {
 
 description = 'OCPP and Cloud Fast Charging Protocol Service'
 
-bootJar {
-    archiveClassifier = 'boot'
+// 配置 jar 任务以支持其他模块依赖
+jar {
+    enabled = true
+    archiveClassifier = ''
 }
 
-tasks.named('jar') {
-    enabled = true
+bootJar {
+    archiveClassifier = 'boot'
 }
 
 dependencies {

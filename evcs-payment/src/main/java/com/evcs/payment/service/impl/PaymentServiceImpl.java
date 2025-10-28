@@ -12,6 +12,7 @@ import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.mapper.PaymentOrderMapper;
+import com.evcs.payment.metrics.PaymentMetrics;
 import com.evcs.payment.service.IPaymentService;
 import com.evcs.payment.service.channel.AlipayChannelService;
 import com.evcs.payment.service.channel.IPaymentChannel;
@@ -33,54 +34,75 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
 
     private final AlipayChannelService alipayChannelService;
     private final WechatPayChannelService wechatPayChannelService;
+    private final PaymentMetrics paymentMetrics;
 
     @Override
     @DataScope
     @Transactional(rollbackFor = Exception.class)
     public PaymentResponse createPayment(PaymentRequest request) {
+        paymentMetrics.recordPaymentRequest();
+        
         log.info("创建支付订单: orderId={}, amount={}, method={}", 
             request.getOrderId(), request.getAmount(), request.getPaymentMethod());
 
-        // 幂等性检查：如果使用相同的幂等键，返回原订单
-        if (request.getIdempotentKey() != null) {
-            PaymentOrder existingOrder = baseMapper.selectOne(
-                new LambdaQueryWrapper<PaymentOrder>()
-                    .eq(PaymentOrder::getIdempotentKey, request.getIdempotentKey())
-                    .eq(PaymentOrder::getTenantId, TenantContext.getCurrentTenantId())
-            );
-            if (existingOrder != null) {
-                log.info("幂等键已存在，返回原订单: tradeNo={}", existingOrder.getTradeNo());
-                return buildPaymentResponse(existingOrder);
+        io.micrometer.core.instrument.Timer.Sample sample = 
+            io.micrometer.core.instrument.Timer.start();
+        
+        try {
+            // 幂等性检查：如果使用相同的幂等键，返回原订单
+            if (request.getIdempotentKey() != null) {
+                PaymentOrder existingOrder = baseMapper.selectOne(
+                    new LambdaQueryWrapper<PaymentOrder>()
+                        .eq(PaymentOrder::getIdempotentKey, request.getIdempotentKey())
+                        .eq(PaymentOrder::getTenantId, TenantContext.getCurrentTenantId())
+                );
+                if (existingOrder != null) {
+                    log.info("幂等键已存在，返回原订单: tradeNo={}", existingOrder.getTradeNo());
+                    return buildPaymentResponse(existingOrder);
+                }
             }
+
+            // 选择支付渠道
+            IPaymentChannel channel = selectChannel(request.getPaymentMethod());
+
+            // 调用支付渠道创建支付
+            PaymentResponse channelResponse = channel.createPayment(request);
+
+            // 保存支付订单
+            PaymentOrder paymentOrder = new PaymentOrder();
+            paymentOrder.setTenantId(TenantContext.getCurrentTenantId());
+            paymentOrder.setOrderId(request.getOrderId());
+            paymentOrder.setTradeNo(channelResponse.getTradeNo());
+            paymentOrder.setPaymentMethod(request.getPaymentMethod().getCode());
+            paymentOrder.setAmount(request.getAmount());
+            paymentOrder.setStatusEnum(PaymentStatus.PENDING);
+            paymentOrder.setIdempotentKey(request.getIdempotentKey());
+            paymentOrder.setDescription(request.getDescription());
+            paymentOrder.setPayParams(channelResponse.getPayParams());
+            paymentOrder.setPayUrl(channelResponse.getPayUrl());
+            paymentOrder.setCreateBy(TenantContext.getCurrentUserId());
+
+            baseMapper.insert(paymentOrder);
+
+            channelResponse.setPaymentId(paymentOrder.getId());
+            
+            // 记录监控指标
+            String channelName = request.getPaymentMethod().name().toLowerCase();
+            Long amountInCents = request.getAmount().multiply(new java.math.BigDecimal("100")).longValue();
+            paymentMetrics.recordPaymentSuccess(channelName, amountInCents);
+            
+            log.info("支付订单创建成功: paymentId={}, tradeNo={}", 
+                paymentOrder.getId(), channelResponse.getTradeNo());
+            
+            return channelResponse;
+        } catch (Exception e) {
+            String channelName = request.getPaymentMethod().name().toLowerCase();
+            paymentMetrics.recordPaymentFailure(channelName);
+            log.error("创建支付订单失败: orderId={}", request.getOrderId(), e);
+            throw e;
+        } finally {
+            sample.stop(paymentMetrics.getPaymentProcessTimer());
         }
-
-        // 选择支付渠道
-        IPaymentChannel channel = selectChannel(request.getPaymentMethod());
-
-        // 调用支付渠道创建支付
-        PaymentResponse channelResponse = channel.createPayment(request);
-
-        // 保存支付订单
-        PaymentOrder paymentOrder = new PaymentOrder();
-        paymentOrder.setTenantId(TenantContext.getCurrentTenantId());
-        paymentOrder.setOrderId(request.getOrderId());
-        paymentOrder.setTradeNo(channelResponse.getTradeNo());
-        paymentOrder.setPaymentMethod(request.getPaymentMethod().getCode());
-        paymentOrder.setAmount(request.getAmount());
-        paymentOrder.setStatusEnum(PaymentStatus.PENDING);
-        paymentOrder.setIdempotentKey(request.getIdempotentKey());
-        paymentOrder.setDescription(request.getDescription());
-        paymentOrder.setPayParams(channelResponse.getPayParams());
-        paymentOrder.setPayUrl(channelResponse.getPayUrl());
-        paymentOrder.setCreateBy(TenantContext.getCurrentUserId());
-
-        baseMapper.insert(paymentOrder);
-
-        channelResponse.setPaymentId(paymentOrder.getId());
-        log.info("支付订单创建成功: paymentId={}, tradeNo={}", 
-            paymentOrder.getId(), paymentOrder.getTradeNo());
-
-        return channelResponse;
     }
 
     @Override

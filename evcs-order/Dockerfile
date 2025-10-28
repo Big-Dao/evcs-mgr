@@ -2,6 +2,9 @@ FROM gradle:8.5-jdk21-alpine AS build
 WORKDIR /workspace
 COPY . .
 RUN chmod +x gradlew && sed -i 's/\r$//' gradlew
+# Build dependencies first (evcs-common and evcs-protocol)
+RUN ./gradlew :evcs-common:jar :evcs-protocol:jar --no-daemon
+# Then build the order service
 RUN ./gradlew :evcs-order:bootJar --no-daemon
 
 FROM eclipse-temurin:21-jre-alpine

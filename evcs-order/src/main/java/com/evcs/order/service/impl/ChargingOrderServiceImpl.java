@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import java.math.RoundingMode;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.order.service.IBillingService;
+import com.evcs.order.metrics.OrderMetrics;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
@@ -28,58 +29,122 @@ import lombok.extern.slf4j.Slf4j;
 public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, ChargingOrder> implements IChargingOrderService {
     private final IBillingService billingService;
     private final MeterRegistry meterRegistry;
+    private final OrderMetrics orderMetrics;
 
     @Override
     @DataScope
     public boolean createOrderOnStart(Long stationId, Long chargerId, String sessionId, Long userId, Long billingPlanId) {
-        // 幂等：同一租户+sessionId 已存在则直接返回成功
-        // MyBatis Plus自动添加tenant_id过滤
-        ChargingOrder exist = this.getOne(new QueryWrapper<ChargingOrder>()
-                .eq("session_id", sessionId)
-                .orderByDesc("id").last("limit 1"));
-        if (exist != null) {
-            return true;
-        }
-        ChargingOrder order = new ChargingOrder();
-        order.setTenantId(TenantContext.getCurrentTenantId());
-        order.setStationId(stationId);
-        order.setChargerId(chargerId);
-        meterRegistry.counter("evcs.order.created.attempt").increment();
+        // 记录订单创建时间
+        Timer.Sample sample = Timer.start(meterRegistry);
+        
+        try {
+            // 幂等：同一租户+sessionId 已存在则直接返回成功
+            // MyBatis Plus自动添加tenant_id过滤
+            ChargingOrder exist = this.getOne(new QueryWrapper<ChargingOrder>()
+                    .eq("session_id", sessionId)
+                    .orderByDesc("id").last("limit 1"));
+            if (exist != null) {
+                orderMetrics.recordOrderStarted();
+                return true;
+            }
+            
+            ChargingOrder order = new ChargingOrder();
+            order.setTenantId(TenantContext.getCurrentTenantId());
+            order.setStationId(stationId);
+            order.setChargerId(chargerId);
+            meterRegistry.counter("evcs.order.created.attempt").increment();
 
-        order.setSessionId(sessionId);
-        order.setUserId(userId);
-        order.setStartTime(LocalDateTime.now());
-        order.setStatus(0); // INIT/CHARGING
-        order.setBillingPlanId(billingPlanId);
-        order.setAmount(BigDecimal.ZERO);
-        order.setVersion(0);
-        return this.save(order);
+            order.setSessionId(sessionId);
+            order.setUserId(userId);
+            order.setStartTime(LocalDateTime.now());
+            order.setStatus(0); // INIT/CHARGING
+            order.setBillingPlanId(billingPlanId);
+            order.setAmount(BigDecimal.ZERO);
+            order.setVersion(0);
+            
+            boolean result = this.save(order);
+            
+            if (result) {
+                orderMetrics.recordOrderCreated();
+                orderMetrics.recordOrderStarted();
+                log.info("Order created successfully: sessionId={}, orderId={}", sessionId, order.getId());
+            } else {
+                orderMetrics.recordOrderCreatedFailure();
+                log.error("Failed to create order: sessionId={}", sessionId);
+            }
+            
+            return result;
+        } catch (Exception e) {
+            orderMetrics.recordOrderCreatedFailure();
+            log.error("Error creating order: sessionId={}", sessionId, e);
+            throw e;
+        } finally {
+            sample.stop(orderMetrics.getOrderCreationTimer());
+        }
     }
 
     @Override
     @DataScope
     public boolean completeOrderOnStop(String sessionId, Double energy, Long duration) {
-        // MyBatis Plus自动添加tenant_id过滤
-        ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
-                .eq("session_id", sessionId)
-                .orderByDesc("id").last("limit 1"));
-        if (order == null) {
-            return false;
-        }
-        // 幂等：已完成直接返回
-        if (order.getStatus() != null && order.getStatus() == 1) {
-            return true;
-        }
-        order.setEndTime(LocalDateTime.now());
-        meterRegistry.counter("evcs.order.completed").increment();
+        try {
+            // MyBatis Plus自动添加tenant_id过滤
+            ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
+                    .eq("session_id", sessionId)
+                    .orderByDesc("id").last("limit 1"));
+            if (order == null) {
+                orderMetrics.recordOrderStoppedFailure();
+                log.error("Order not found for sessionId: {}", sessionId);
+                return false;
+            }
+            // 幂等：已完成直接返回
+            if (order.getStatus() != null && order.getStatus() == 1) {
+                orderMetrics.recordOrderStopped();
+                return true;
+            }
+            
+            order.setEndTime(LocalDateTime.now());
+            meterRegistry.counter("evcs.order.completed").increment();
 
-        order.setEnergy(energy);
-        order.setDuration(duration);
-        order.setStatus(1); // COMPLETED
-        // 计费：按配置/计划进行
-        BigDecimal amount = billingService.calculateAmount(order.getStartTime(), order.getEndTime(), energy, order.getStationId(), order.getChargerId(), order.getBillingPlanId());
-        order.setAmount(amount);
-        return this.updateById(order);
+            order.setEnergy(energy);
+            order.setDuration(duration);
+            order.setStatus(1); // COMPLETED
+            
+            // 计费：按配置/计划进行
+            try {
+                BigDecimal amount = billingService.calculateAmount(
+                    order.getStartTime(), 
+                    order.getEndTime(), 
+                    energy, 
+                    order.getStationId(), 
+                    order.getChargerId(), 
+                    order.getBillingPlanId()
+                );
+                order.setAmount(amount);
+                orderMetrics.recordBillingSuccess();
+            } catch (Exception e) {
+                orderMetrics.recordBillingFailure();
+                log.error("Billing calculation failed for sessionId: {}", sessionId, e);
+                // 继续完成订单，但计费失败
+                order.setAmount(BigDecimal.ZERO);
+            }
+            
+            boolean result = this.updateById(order);
+            
+            if (result) {
+                orderMetrics.recordOrderStopped();
+                log.info("Order completed successfully: sessionId={}, orderId={}, amount={}", 
+                    sessionId, order.getId(), order.getAmount());
+            } else {
+                orderMetrics.recordOrderStoppedFailure();
+                log.error("Failed to complete order: sessionId={}", sessionId);
+            }
+            
+            return result;
+        } catch (Exception e) {
+            orderMetrics.recordOrderStoppedFailure();
+            log.error("Error completing order: sessionId={}", sessionId, e);
+            throw e;
+        }
     }
 
     @Override

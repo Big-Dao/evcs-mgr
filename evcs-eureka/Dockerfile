@@ -2,6 +2,7 @@ FROM gradle:8.5-jdk21-alpine AS build
 WORKDIR /workspace
 COPY . .
 RUN chmod +x gradlew && sed -i 's/\r$//' gradlew
+# Build Eureka service (no dependencies on evcs modules)
 RUN ./gradlew :evcs-eureka:bootJar --no-daemon
 
 FROM eclipse-temurin:21-jre-alpine

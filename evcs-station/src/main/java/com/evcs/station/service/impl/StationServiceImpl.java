@@ -12,6 +12,7 @@ import com.evcs.station.entity.Charger;
 import com.evcs.station.entity.Station;
 import com.evcs.station.mapper.ChargerMapper;
 import com.evcs.station.mapper.StationMapper;
+import com.evcs.station.metrics.StationMetrics;
 import com.evcs.station.service.IStationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +32,7 @@ import java.util.List;
 public class StationServiceImpl extends ServiceImpl<StationMapper, Station> implements IStationService {
     
     private final ChargerMapper chargerMapper;
+    private final StationMetrics stationMetrics;
 
     @Override
     @DataScope
@@ -127,7 +129,15 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station> impl
             station.setAvailableChargers(0);
         }
         
-        return this.save(station);
+        boolean result = this.save(station);
+        
+        if (result) {
+            stationMetrics.recordStationCreated();
+            log.info("Station created successfully: stationId={}, stationCode={}", 
+                station.getStationId(), station.getStationCode());
+        }
+        
+        return result;
     }
 
     /**
@@ -157,7 +167,14 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station> impl
         // 不允许修改租户ID
         station.setTenantId(null);
         
-        return this.updateById(station);
+        boolean result = this.updateById(station);
+        
+        if (result) {
+            stationMetrics.recordStationUpdated();
+            log.info("Station updated successfully: stationId={}", station.getStationId());
+        }
+        
+        return result;
     }
 
     /**
