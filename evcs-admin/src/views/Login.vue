@@ -127,8 +127,7 @@ const handleLogin = async () => {
         }
       } catch (error: any) {
         console.error('登录失败:', error)
-        const message = error?.response?.data?.message || error?.message || '登录失败，请检查用户名和密码'
-        ElMessage.error(message)
+        // 错误消息已由 request.ts 拦截器统一处理，这里不再重复显示
       } finally {
         loading.value = false
       }

@@ -57,6 +57,8 @@ service.interceptors.response.use(
     
     if (error.response) {
       const status = error.response.status
+      const message = error.response.data?.message || error.message || '网络错误'
+      
       switch (status) {
         case 401:
           ElMessage.error('未授权，请重新登录')
@@ -70,10 +72,11 @@ service.interceptors.response.use(
           ElMessage.error('请求地址不存在')
           break
         case 500:
-          ElMessage.error('服务器错误')
+          // 显示后端返回的具体错误消息
+          ElMessage.error(message)
           break
         default:
-          ElMessage.error(error.response.data?.message || error.message || '网络错误')
+          ElMessage.error(message)
       }
     } else {
       ElMessage.error('网络错误，请检查后端服务')

@@ -7,7 +7,10 @@ plugins {
 description = 'API Gateway Service'
 
 dependencies {
-    implementation project(':evcs-common')
+    implementation(project(':evcs-common')) {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+    }
     implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
