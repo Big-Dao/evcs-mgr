@@ -342,6 +342,7 @@ volumes:
   postgres_data:
   redis_data:
   rabbitmq_data:
+  gradle_cache:  # Shared Gradle cache for faster builds
 
 networks:
   evcs-network:
