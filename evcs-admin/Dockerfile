@@ -25,15 +25,6 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy built assets from build stage
 COPY --from=build /app/dist .
 
-# Create non-root user for nginx
-RUN addgroup -g 101 -S nginx-group && \
-    adduser -S -D -H -u 101 -h /var/cache/nginx -s /sbin/nologin -G nginx-group -g nginx-group nginx-user && \
-    chown -R nginx-user:nginx-group /usr/share/nginx/html /var/cache/nginx /var/log/nginx && \
-    chmod -R 755 /usr/share/nginx/html
-
-# Use non-root user
-USER nginx-user
-
 # Expose port
 EXPOSE 80
 
