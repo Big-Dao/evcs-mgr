@@ -1,0 +1,55 @@
+# Docker环境配置
+spring:
+  application:
+    name: evcs-gateway
+  
+  # 禁用Spring Cloud配置中心
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: true
+      
+  # Redis配置
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:redis}
+      port: ${SPRING_REDIS_PORT:6379}
+      password: ${SPRING_REDIS_PASSWORD:}
+
+  # 禁用数据源自动配置
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerAutoConfiguration
+      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
+
+# 服务端口
+server:
+  port: 8080
+
+# Eureka客户端配置
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.evcs.gateway: DEBUG
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,gateway
+  endpoint:
+    health:
+      show-details: always

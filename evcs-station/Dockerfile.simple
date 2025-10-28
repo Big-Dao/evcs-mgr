@@ -1,10 +1,11 @@
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-RUN apk add --no-cache curl wget
-COPY build/libs/evcs-station-*-boot.jar app.jar
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN apk add --no-cache curl && rm -rf /var/cache/apk/*
+COPY build/libs/evcs-station-1.0.0-boot.jar app.jar
+RUN addgroup -S spring && adduser -S spring -G spring && chown spring:spring app.jar
 USER spring:spring
-ENV JAVA_OPTS=""
+ENV JAVA_OPTS="-Xms512m -Xmx512m -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 EXPOSE 8082
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 CMD wget --no-verbose --tries=1 --spider http://localhost:8082/actuator/health || exit 1
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -Djava.security.egd=file:/dev/./urandom -jar app.jar"]
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl --fail http://localhost:8082/actuator/health || exit 1
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

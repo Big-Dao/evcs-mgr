@@ -1,0 +1,140 @@
+version: '3.8'
+
+# 使用本地构建镜像的部署配置
+# 镜像: evcs-*:latest
+
+x-java-env: &java-env
+  SPRING_PROFILES_ACTIVE: local
+  EUREKA_SERVER_URL: http://eureka:8761/eureka/
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_NAME: evcs_mgr
+  DB_USER: postgres
+  DB_PASSWORD: postgres
+  SPRING_DATA_REDIS_HOST: redis
+  SPRING_DATA_REDIS_PORT: 6379
+  SPRING_RABBITMQ_HOST: rabbitmq
+  SPRING_RABBITMQ_PORT: 5672
+  SPRING_RABBITMQ_USERNAME: guest
+  SPRING_RABBITMQ_PASSWORD: guest
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: evcs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evcs_mgr
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./sql/charging_station_tables.sql:/docker-entrypoint-initdb.d/02-station.sql
+      - ./sql/evcs_order_tables.sql:/docker-entrypoint-initdb.d/03-order.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - evcs-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: evcs-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - evcs-network
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: evcs-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - evcs-network
+
+  config:
+    image: evcs-config:latest
+    container_name: evcs-config
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    environment:
+      <<: *java-env
+    networks:
+      - evcs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  gateway:
+    image: evcs-gateway:latest
+    container_name: evcs-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *java-env
+    networks:
+      - evcs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  auth:
+    image: evcs-auth:latest
+    container_name: evcs-auth
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      <<: *java-env
+    networks:
+      - evcs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+volumes:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+
+networks:
+  evcs-network:
+    driver: bridge

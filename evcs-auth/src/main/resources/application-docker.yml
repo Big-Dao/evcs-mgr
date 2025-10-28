@@ -1,0 +1,79 @@
+# Docker环境配置
+spring:
+  application:
+    name: evcs-auth
+  
+  # 禁用Spring Cloud配置中心
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: true
+  
+  # 数据源配置
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/evcs_mgr}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      pool-name: HikariCP-Auth-Docker
+      minimum-idle: 5
+      maximum-pool-size: 20
+      connection-timeout: 20000
+      idle-timeout: 300000
+      max-lifetime: 600000
+
+  # Redis配置
+  data:
+    redis:
+      host: ${SPRING_REDIS_HOST:redis}
+      port: ${SPRING_REDIS_PORT:6379}
+      password: ${SPRING_REDIS_PASSWORD:}
+
+# 服务端口
+server:
+  port: 8081
+
+# Eureka客户端配置
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+# MyBatis Plus配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.evcs.auth: DEBUG
+
+# Actuator配置
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET:evcs-secret-key-change-in-production}
+  expiration: 86400000

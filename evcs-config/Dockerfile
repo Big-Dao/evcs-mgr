@@ -18,9 +18,10 @@ COPY gradle ./gradle
 # Copy only necessary source files
 COPY evcs-common ./evcs-common
 COPY evcs-config ./evcs-config
-COPY config-repo ./config-repo
-# Build only this module (using gradle command from base image)
-RUN gradle :evcs-config:bootJar --no-daemon --parallel
+# Build dependencies first (evcs-common)
+RUN gradle :evcs-common:jar --no-daemon
+# Then build the config service
+RUN gradle :evcs-config:bootJar --no-daemon
 
 # Stage 3: Runtime image
 FROM eclipse-temurin:21-jre-alpine
@@ -30,10 +31,9 @@ RUN apk add --no-cache curl && \
     rm -rf /var/cache/apk/*
 # Copy only the built jar
 COPY --from=build /workspace/evcs-config/build/libs/*.jar app.jar
-COPY --from=build /workspace/config-repo /config-repo
 # Create non-root user
 RUN addgroup -S spring && adduser -S spring -G spring && \
-    chown -R spring:spring /app /config-repo
+    chown -R spring:spring /app
 USER spring:spring
 # Optimize JVM for container environment
 ENV JAVA_OPTS="-XX:+UseContainerSupport \
@@ -43,7 +43,6 @@ ENV JAVA_OPTS="-XX:+UseContainerSupport \
     -XX:+OptimizeStringConcat \
     -Djava.security.egd=file:/dev/./urandom"
 ENV SPRING_PROFILES_ACTIVE=local
-ENV SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS=file:/config-repo
 EXPOSE 8888
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
     CMD curl --fail http://localhost:8888/actuator/health || exit 1

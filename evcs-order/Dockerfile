@@ -17,9 +17,12 @@ COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
 # Copy only necessary source files
 COPY evcs-common ./evcs-common
+COPY evcs-protocol ./evcs-protocol
 COPY evcs-order ./evcs-order
-# Build only this module (using gradle command from base image)
-RUN gradle :evcs-order:bootJar --no-daemon --parallel
+# Build dependencies first (evcs-common and evcs-protocol)
+RUN gradle :evcs-common:jar :evcs-protocol:jar --no-daemon
+# Then build the order service
+RUN gradle :evcs-order:bootJar --no-daemon
 
 # Stage 3: Runtime image
 FROM eclipse-temurin:21-jre-alpine
