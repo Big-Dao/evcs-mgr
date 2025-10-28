@@ -4,7 +4,7 @@ version: '3.8'
 # 镜像: evcs-*:latest
 
 x-java-env: &java-env
-  SPRING_PROFILES_ACTIVE: local
+  SPRING_PROFILES_ACTIVE: docker
   EUREKA_SERVER_URL: http://eureka:8761/eureka/
   DB_HOST: postgres
   DB_PORT: 5432
@@ -79,6 +79,29 @@ services:
     networks:
       - evcs-network
 
+  eureka:
+    image: evcs-eureka:latest
+    container_name: evcs-eureka
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - evcs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
   config:
     image: evcs-config:latest
     container_name: evcs-config
@@ -87,6 +110,12 @@ services:
       - "8888:8888"
     environment:
       <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - evcs-network
     depends_on:
@@ -104,6 +133,12 @@ services:
       - "8080:8080"
     environment:
       <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - evcs-network
     depends_on:
@@ -121,6 +156,150 @@ services:
       - "8081:8081"
     environment:
       <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - evcs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  tenant:
+    image: evcs-tenant:latest
+    container_name: evcs-tenant
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - evcs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  station:
+    image: evcs-station:latest
+    container_name: evcs-station
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - evcs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  order:
+    image: evcs-order:latest
+    container_name: evcs-order
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - evcs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  payment:
+    image: evcs-payment:latest
+    container_name: evcs-payment
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    environment:
+      <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - evcs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  protocol:
+    image: evcs-protocol:latest
+    container_name: evcs-protocol
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    environment:
+      <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - evcs-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+  monitoring:
+    image: evcs-monitoring:latest
+    container_name: evcs-monitoring
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    environment:
+      <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:9090/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - evcs-network
     depends_on:

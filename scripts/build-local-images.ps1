@@ -270,6 +270,12 @@ services:
       - "$($result.Port):$($result.Port)"
     environment:
       <<: *java-env
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:$($result.Port)/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - evcs-network
     depends_on:
