@@ -55,7 +55,7 @@ jobs:
         sudo rm -rf /usr/share/dotnet
         sudo rm -rf /opt/ghc
         sudo rm -rf "/usr/local/share/boost"
-        sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        # Do NOT remove $AGENT_TOOLSDIRECTORY: it contains hosted tool cache items (including Java) used by the runner
         echo "Disk space after cleanup:"
         df -h
 
@@ -119,7 +119,7 @@ jobs:
         echo "=== Container Status ==="
         docker compose -f docker-compose.test.yml ps
         echo "=== Container Resource Usage ==="
-        docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}"
+        docker stats --no-stream --format "table {{.Container}}	{{.CPUPerc}}	{{.MemUsage}}"
 
     - name: Run smoke tests
       if: github.event.inputs.skip_tests != 'true'
