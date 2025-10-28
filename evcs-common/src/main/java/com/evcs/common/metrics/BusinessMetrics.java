@@ -51,6 +51,17 @@ public abstract class BusinessMetrics {
                     .description(description)
                     .tags(tags)
                     .register(meterRegistry);
+        } catch (IllegalArgumentException e) {
+            // 如果 Prometheus CollectorRegistry 中已存在，尝试再次查找
+            if (e.getMessage() != null && e.getMessage().contains("already in use")) {
+                log.warn("Counter {} already registered in Prometheus, attempting to find existing", name);
+                Counter existing = meterRegistry.find(name).tags(tags).counter();
+                if (existing != null) {
+                    return existing;
+                }
+            }
+            log.error("Failed to create counter: {}", name, e);
+            throw e;
         } catch (Exception e) {
             log.error("Failed to create counter: {}", name, e);
             throw e;

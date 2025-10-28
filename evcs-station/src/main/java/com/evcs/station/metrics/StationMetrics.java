@@ -52,63 +52,68 @@ public class StationMetrics extends BusinessMetrics {
 
     @Override
     protected void registerMetrics() {
-        // 充电桩数量指标
-        createGauge(
-            "evcs.charger.total",
-            "Total number of chargers",
-            totalChargersCount
-        );
-        
-        createGauge(
-            "evcs.charger.online",
-            "Number of online chargers",
-            onlineChargersCount
-        );
-        
-        createGauge(
-            "evcs.charger.offline",
-            "Number of offline chargers",
-            offlineChargersCount
-        );
-        
-        createGauge(
-            "evcs.charger.charging",
-            "Number of chargers currently charging",
-            chargingChargersCount
-        );
-        
-        createGauge(
-            "evcs.charger.faulted",
-            "Number of faulted chargers",
-            faultedChargersCount
-        );
-        
-        // 充电桩状态变更计数器
-        chargerOnlineCounter = createCounter(
-            "evcs.charger.online.total",
-            "Total number of charger online events"
-        );
-        
-        chargerOfflineCounter = createCounter(
-            "evcs.charger.offline.total",
-            "Total number of charger offline events"
-        );
-        
-        chargerStatusChangeCounter = createCounter(
-            "evcs.charger.status.change.total",
-            "Total number of charger status changes"
-        );
-        
-        // 心跳计数器
-        heartbeatReceivedCounter = createCounter(
-            "evcs.charger.heartbeat.received.total",
-            "Total number of heartbeats received from chargers"
-        );
-        
-        heartbeatMissedCounter = createCounter(
-            "evcs.charger.heartbeat.missed.total",
-            "Total number of missed heartbeats from chargers"
-        );
+        try {
+            // 充电桩数量指标
+            createGauge(
+                "evcs.charger.total",
+                "Total number of chargers",
+                totalChargersCount
+            );
+            
+            createGauge(
+                "evcs.charger.online",
+                "Number of online chargers",
+                onlineChargersCount
+            );
+            
+            createGauge(
+                "evcs.charger.offline",
+                "Number of offline chargers",
+                offlineChargersCount
+            );
+            
+            createGauge(
+                "evcs.charger.charging",
+                "Number of chargers currently charging",
+                chargingChargersCount
+            );
+            
+            createGauge(
+                "evcs.charger.faulted",
+                "Number of faulted chargers",
+                faultedChargersCount
+            );
+            
+            // 充电桩状态变更计数器
+            chargerOnlineCounter = createCounter(
+                "evcs.charger.online.total",
+                "Total number of charger online events"
+            );
+            
+            chargerOfflineCounter = createCounter(
+                "evcs.charger.offline.total",
+                "Total number of charger offline events"
+            );
+            
+            chargerStatusChangeCounter = createCounter(
+                "evcs.charger.status.change.total",
+                "Total number of charger status changes"
+            );
+            
+            // 心跳计数器
+            heartbeatReceivedCounter = createCounter(
+                "evcs.charger.heartbeat.received.total",
+                "Total number of heartbeats received from chargers"
+            );
+            
+            heartbeatMissedCounter = createCounter(
+                "evcs.charger.heartbeat.missed.total",
+                "Total number of missed heartbeats from chargers"
+            );
+        } catch (Exception e) {
+            log.error("Failed to register some metrics (likely duplicate registration), continuing startup", e);
+            // 不抛出异常，允许服务继续启动
+        }
         
         // 充电站操作计数器
         stationCreatedCounter = createCounter(

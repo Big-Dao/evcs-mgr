@@ -1,17 +1,11 @@
 # Docker环境配置
 spring:
   application:
-    name: evcs-order
+    name: evcs-monitoring
   
   # 禁用配置导入 - 使用空字符串覆盖父级配置
   config:
     import: ""
-  
-  # Flyway 数据库迁移配置
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    baseline-version: 0
   
   # 禁用Spring Cloud服务发现和配置中心
   cloud:
@@ -28,15 +22,14 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:postgres}
     type: com.zaxxer.hikari.HikariDataSource
     hikari:
-      pool-name: HikariCP-Order-Docker
-      minimum-idle: 10
-      maximum-pool-size: 30
+      pool-name: HikariCP-Monitoring-Docker
+      minimum-idle: 5
+      maximum-pool-size: 20
       connection-timeout: 20000
       idle-timeout: 300000
       max-lifetime: 600000
-      leak-detection-threshold: 60000
-  
-  # JPA配置（启用SQL日志）
+
+  # JPA配置
   jpa:
     show-sql: true
     properties:
@@ -60,7 +53,7 @@ spring:
 
 # 服务端口
 server:
-  port: 8084
+  port: 9090
 
 # MyBatis Plus配置
 mybatis-plus:
@@ -77,7 +70,7 @@ mybatis-plus:
 logging:
   level:
     root: INFO
-    com.evcs.order: DEBUG
+    com.evcs.monitoring: DEBUG
     com.evcs.common.tenant: DEBUG
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
@@ -88,10 +81,14 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics
+        include: health,info,metrics,prometheus
   endpoint:
     health:
       show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
 
 # 多租户配置
 evcs:

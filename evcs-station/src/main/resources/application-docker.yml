@@ -3,6 +3,16 @@ spring:
   application:
     name: evcs-station
   
+  # 禁用配置导入 - 使用空字符串覆盖父级配置
+  config:
+    import: ""
+  
+  # Flyway 数据库迁移配置
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 0
+  
   # 禁用Spring Cloud服务发现和配置中心
   cloud:
     config:

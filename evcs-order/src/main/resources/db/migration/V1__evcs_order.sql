@@ -1,13 +1,16 @@
 -- EVCS Order Service - V1 Migration
--- Ensure charger has billing_plan_id for plan assignment
+-- 注意：charger 表由 evcs-station 服务管理，此处只添加外键列（如果表已存在）
 DO $$
 BEGIN
-    IF NOT EXISTS (
-        SELECT 1 FROM information_schema.columns 
-        WHERE table_name='charger' AND column_name='billing_plan_id'
-    ) THEN
-        ALTER TABLE charger ADD COLUMN billing_plan_id BIGINT;
-        CREATE INDEX IF NOT EXISTS idx_charger_billing_plan ON charger(billing_plan_id);
+    -- 只有当 charger 表存在时才添加 billing_plan_id 列
+    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='charger') THEN
+        IF NOT EXISTS (
+            SELECT 1 FROM information_schema.columns 
+            WHERE table_name='charger' AND column_name='billing_plan_id'
+        ) THEN
+            ALTER TABLE charger ADD COLUMN billing_plan_id BIGINT;
+            CREATE INDEX IF NOT EXISTS idx_charger_billing_plan ON charger(billing_plan_id);
+        END IF;
     END IF;
 END $$;
 

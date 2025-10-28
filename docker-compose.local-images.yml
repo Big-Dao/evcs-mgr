@@ -202,6 +202,7 @@ services:
       - "8082:8082"
     environment:
       <<: *java-env
+      SPRING_CONFIG_IMPORT: ""
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8082/actuator/health"]
       interval: 30s
@@ -225,6 +226,7 @@ services:
       - "8084:8084"
     environment:
       <<: *java-env
+      SPRING_CONFIG_IMPORT: ""
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8084/actuator/health"]
       interval: 30s
