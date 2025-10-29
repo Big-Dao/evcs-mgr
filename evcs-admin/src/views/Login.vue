@@ -25,6 +25,15 @@
             @keyup.enter="handleLogin"
           />
         </el-form-item>
+        <el-form-item prop="tenantId">
+          <el-input
+            v-model.number="loginForm.tenantId"
+            placeholder="租户ID (默认为1)"
+            prefix-icon="Key"
+            size="large"
+            @keyup.enter="handleLogin"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button
             type="primary"
@@ -61,7 +70,11 @@ const loginForm = reactive({
 
 const rules: FormRules = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+  tenantId: [
+    { required: true, message: '请输入租户ID', trigger: 'blur' },
+    { type: 'number', message: '租户ID必须为数字', trigger: 'blur' }
+  ]
 }
 
 const handleLogin = async () => {
