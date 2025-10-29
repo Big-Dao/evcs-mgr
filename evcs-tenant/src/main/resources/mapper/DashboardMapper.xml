@@ -42,42 +42,42 @@
         FROM charging_order
         WHERE deleted = 0
         AND tenant_id = #{tenantId}
-        AND create_time BETWEEN #{startTime} AND #{endTime}
+        AND start_time BETWEEN #{startTime} AND #{endTime}
     </select>
     
     <!-- 统计今日充电量 -->
     <select id="sumTodayChargingAmount" resultType="java.math.BigDecimal">
-        SELECT COALESCE(SUM(charging_amount), 0)
+        SELECT COALESCE(SUM(energy), 0)
         FROM charging_order
         WHERE deleted = 0
         AND tenant_id = #{tenantId}
-        AND create_time BETWEEN #{startTime} AND #{endTime}
-        AND status IN ('COMPLETED', 'PAID')
+        AND start_time BETWEEN #{startTime} AND #{endTime}
+        AND status IN (1, 11)
     </select>
     
     <!-- 统计今日收入 -->
     <select id="sumTodayRevenue" resultType="java.math.BigDecimal">
-        SELECT COALESCE(SUM(total_amount), 0)
+        SELECT COALESCE(SUM(amount), 0)
         FROM charging_order
         WHERE deleted = 0
         AND tenant_id = #{tenantId}
-        AND create_time BETWEEN #{startTime} AND #{endTime}
-        AND status IN ('COMPLETED', 'PAID')
+        AND start_time BETWEEN #{startTime} AND #{endTime}
+        AND status IN (1, 11)
     </select>
     
     <!-- 获取最近订单列表 -->
     <select id="getRecentOrders" resultType="java.util.HashMap">
         SELECT 
-            co.order_no,
-            cs.name AS station_name,
-            c.code AS charger_code,
+            co.session_id AS order_no,
+            cs.station_name AS station_name,
+            c.charger_code AS charger_code,
             su.username AS user_name,
-            co.total_amount,
+            co.amount AS total_amount,
             co.status,
             co.create_time
         FROM charging_order co
-        LEFT JOIN charging_station cs ON co.station_id = cs.id
-        LEFT JOIN charger c ON co.charger_id = c.id
+        LEFT JOIN charging_station cs ON co.station_id = cs.station_id
+        LEFT JOIN charger c ON co.charger_id = c.charger_id
         LEFT JOIN sys_user su ON co.user_id = su.id
         WHERE co.deleted = 0
         AND co.tenant_id = #{tenantId}
