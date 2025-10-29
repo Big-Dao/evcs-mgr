@@ -80,3 +80,8 @@ evcs:
       - sys_role
       - sys_permission
     default-tenant-id: 1
+
+# JWT配置
+jwt:
+  secret: ${JWT_SECRET:evcs-secret-key-change-in-production}
+  expire: 7200

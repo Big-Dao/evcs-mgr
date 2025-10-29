@@ -6,6 +6,8 @@ version: '3.8'
 x-java-env: &java-env
   SPRING_PROFILES_ACTIVE: docker
   EUREKA_SERVER_URL: http://eureka:8761/eureka/
+  JWT_SECRET: evcs-secret-key-change-in-production
+  jwt.secret: evcs-secret-key-change-in-production
   DB_HOST: postgres
   DB_PORT: 5432
   DB_NAME: evcs_mgr
