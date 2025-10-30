@@ -76,4 +76,22 @@ public interface DashboardMapper {
             @Param("tenantId") Long tenantId,
             @Param("limit") Integer limit
     );
+    
+    /**
+     * 获取充电站订单排名（Top N）
+     */
+    @InterceptorIgnore(tenantLine = "1")
+    List<Map<String, Object>> getStationRanking(
+            @Param("tenantId") Long tenantId,
+            @Param("limit") Integer limit
+    );
+    
+    /**
+     * 获取充电桩利用率排名（Top N）
+     */
+    @InterceptorIgnore(tenantLine = "1")
+    List<Map<String, Object>> getChargerUtilization(
+            @Param("tenantId") Long tenantId,
+            @Param("limit") Integer limit
+    );
 }

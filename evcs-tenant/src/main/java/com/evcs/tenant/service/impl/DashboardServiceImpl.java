@@ -2,8 +2,10 @@ package com.evcs.tenant.service.impl;
 
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.tenant.CustomTenantLineHandler;
+import com.evcs.tenant.dto.ChargerUtilizationDTO;
 import com.evcs.tenant.dto.DashboardStatsDTO;
 import com.evcs.tenant.dto.RecentOrderDTO;
+import com.evcs.tenant.dto.StationRankingDTO;
 import com.evcs.tenant.mapper.DashboardMapper;
 import com.evcs.tenant.mapper.SysTenantMapper;
 import com.evcs.tenant.entity.SysTenant;
@@ -151,6 +153,88 @@ public class DashboardServiceImpl implements IDashboardService {
             }
         } catch (Exception e) {
             log.error("查询最近订单失败", e);
+            return new ArrayList<>();
+        }
+    }
+    
+    @Override
+    public List<StationRankingDTO> getStationRanking() {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        log.info("查询租户 {} 的充电站排名（Top 5）", tenantId);
+        
+        boolean isPlatform = isPlatformTenant(tenantId);
+        
+        try {
+            if (isPlatform) {
+                CustomTenantLineHandler.disableTenantFilter();
+            }
+            
+            try {
+                List<Map<String, Object>> rankings = dashboardMapper.getStationRanking(tenantId, 5);
+                List<StationRankingDTO> result = new ArrayList<>();
+                
+                // 找到最大订单数用于计算百分比
+                Integer maxOrders = 0;
+                if (!rankings.isEmpty()) {
+                    Object firstCount = rankings.get(0).get("order_count");
+                    maxOrders = firstCount != null ? ((Number) firstCount).intValue() : 0;
+                }
+                
+                for (Map<String, Object> ranking : rankings) {
+                    StationRankingDTO dto = new StationRankingDTO();
+                    dto.setId(((Number) ranking.get("id")).longValue());
+                    dto.setName(String.valueOf(ranking.get("station_name")));
+                    Integer orders = ((Number) ranking.get("order_count")).intValue();
+                    dto.setOrders(orders);
+                    dto.setPercentage(maxOrders > 0 ? (orders * 100 / maxOrders) : 0);
+                    result.add(dto);
+                }
+                
+                return result;
+            } finally {
+                if (isPlatform) {
+                    CustomTenantLineHandler.enableTenantFilter();
+                }
+            }
+        } catch (Exception e) {
+            log.error("查询充电站排名失败", e);
+            return new ArrayList<>();
+        }
+    }
+    
+    @Override
+    public List<ChargerUtilizationDTO> getChargerUtilization() {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        log.info("查询租户 {} 的充电桩利用率（Top 5）", tenantId);
+        
+        boolean isPlatform = isPlatformTenant(tenantId);
+        
+        try {
+            if (isPlatform) {
+                CustomTenantLineHandler.disableTenantFilter();
+            }
+            
+            try {
+                List<Map<String, Object>> utilizations = dashboardMapper.getChargerUtilization(tenantId, 5);
+                List<ChargerUtilizationDTO> result = new ArrayList<>();
+                
+                for (Map<String, Object> util : utilizations) {
+                    ChargerUtilizationDTO dto = new ChargerUtilizationDTO();
+                    dto.setId(((Number) util.get("id")).longValue());
+                    dto.setCode(String.valueOf(util.get("charger_code")));
+                    Object utilizationObj = util.get("utilization");
+                    dto.setUtilization(utilizationObj != null ? ((Number) utilizationObj).intValue() : 0);
+                    result.add(dto);
+                }
+                
+                return result;
+            } finally {
+                if (isPlatform) {
+                    CustomTenantLineHandler.enableTenantFilter();
+                }
+            }
+        } catch (Exception e) {
+            log.error("查询充电桩利用率失败", e);
             return new ArrayList<>();
         }
     }

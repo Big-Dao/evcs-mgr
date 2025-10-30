@@ -49,4 +49,26 @@ public class DashboardController {
         List<RecentOrderDTO> orders = dashboardService.getRecentOrders(limit);
         return Result.success(orders);
     }
+    
+    /**
+     * 获取充电站订单排名（Top 5）
+     */
+    @Operation(summary = "获取充电站排名", description = "获取充电站订单数量排名Top 5")
+    @GetMapping("/station-ranking")
+    @DataScope(value = DataScope.DataScopeType.TENANT,
+              description = "仅查看当前租户充电站")
+    public Result<List<com.evcs.tenant.dto.StationRankingDTO>> getStationRanking() {
+        return Result.success(dashboardService.getStationRanking());
+    }
+    
+    /**
+     * 获取充电桩利用率排名（Top 5）
+     */
+    @Operation(summary = "获取充电桩利用率", description = "获取充电桩利用率排名Top 5")
+    @GetMapping("/charger-utilization")
+    @DataScope(value = DataScope.DataScopeType.TENANT,
+              description = "仅查看当前租户充电桩")
+    public Result<List<com.evcs.tenant.dto.ChargerUtilizationDTO>> getChargerUtilization() {
+        return Result.success(dashboardService.getChargerUtilization());
+    }
 }
