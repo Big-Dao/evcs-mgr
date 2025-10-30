@@ -144,6 +144,27 @@ yarn.lock
 *.temp
 *.cache
 
+# Test files and tokens
+test-*.py
+test-*.ps1
+test-*.json
+test-*.txt
+token.txt
+*.token
+dy
+
+# Temporary SQL files in root
+fix-password.sql
+reset-admin-password.sql
+update-password.sql
+test-spring-password.sql
+
+# Temporary Java files in root
+GeneratePassword.java
+
+# Build artifacts that shouldn't be in source
+BOOT-INF/
+
 # Spring Boot
 spring-shell.log
 
