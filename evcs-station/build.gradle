@@ -24,9 +24,10 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // Security annotations only - auto-configuration disabled in main class
+    implementation 'org.springframework.security:spring-security-core'
     
     // Database and ORM
     implementation "org.postgresql:postgresql:${postgresqlVersion}"

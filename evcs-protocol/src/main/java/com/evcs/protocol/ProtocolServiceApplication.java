@@ -2,9 +2,13 @@ package com.evcs.protocol;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 
-@SpringBootApplication(scanBasePackages = "com.evcs")
+@SpringBootApplication(
+    scanBasePackages = "com.evcs",
+    exclude = {SecurityAutoConfiguration.class}
+)
 @EnableDiscoveryClient
 public class ProtocolServiceApplication {
 

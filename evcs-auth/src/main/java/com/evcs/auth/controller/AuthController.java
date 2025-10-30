@@ -15,7 +15,7 @@ import jakarta.validation.Valid;
 
 /**
  * 认证控制器
- * 注意：Gateway配置了StripPrefix=1，会将/auth/login转发为/login到本服务
+ * 注意：Gateway配置了StripPrefix=2，会将/api/auth/login转发为/login到本服务
  */
 @Slf4j
 @Tag(name = "认证管理", description = "用户登录、注销等认证相关接口")

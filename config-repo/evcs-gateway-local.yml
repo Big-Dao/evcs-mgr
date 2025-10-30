@@ -16,36 +16,85 @@ spring:
       default-filters:
         - DedupeResponseHeader=X-Request-Id RETAIN_UNIQUE
       routes:
-        - id: evcs-auth
-          uri: lb://evcs-auth
-          predicates:
-            - Path=/auth/**
-          filters:
-            - StripPrefix=1
+        # 认证服务路由（前端使用/api/auth/**）
         - id: evcs-auth-api
           uri: lb://evcs-auth
           predicates:
             - Path=/api/auth/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2  # 去掉/api/auth，转发到auth服务的/login等
+        
+        # 租户/Dashboard服务路由
         - id: evcs-dashboard
           uri: lb://evcs-tenant
           predicates:
             - Path=/api/dashboard/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=1  # 去掉/api，转发到tenant服务的/dashboard/**
+        
+        # 租户管理路由
+        - id: evcs-tenant
+          uri: lb://evcs-tenant
+          predicates:
+            - Path=/api/tenant/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到tenant服务的/tenant/**
+        
+        # 用户管理路由（属于auth服务）
+        - id: evcs-user
+          uri: lb://evcs-auth
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到auth服务的/user/**
+        
+        # 角色管理路由（属于auth服务）
+        - id: evcs-role
+          uri: lb://evcs-auth
+          predicates:
+            - Path=/api/role/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到auth服务的/role/**
+        
+        # 菜单管理路由（属于auth服务）
+        - id: evcs-menu
+          uri: lb://evcs-auth
+          predicates:
+            - Path=/api/menu/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到auth服务的/menu/**
+        
+        # 站点服务路由
         - id: evcs-station
           uri: lb://evcs-station
           predicates:
             - Path=/api/station/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到station服务的/station/**
+        
+        # 充电桩路由（属于station服务）
+        - id: evcs-charger
+          uri: lb://evcs-station
+          predicates:
+            - Path=/api/charger/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到station服务的/charger/**
+        
+        # 订单服务路由
         - id: evcs-order
           uri: lb://evcs-order
           predicates:
-            - Path=/api/orders/**
+            - Path=/api/order/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到order服务的/order/**
+        
+        # 支付服务路由
         - id: evcs-payment
           uri: lb://evcs-payment
           predicates:
-            - Path=/api/payments/**
+            - Path=/api/payment/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到payment服务的/payments/**
     loadbalancer:
       retry:
         enabled: true

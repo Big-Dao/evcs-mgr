@@ -25,7 +25,7 @@ import java.util.List;
 @Slf4j
 @Tag(name = "充电站管理", description = "充电站CRUD操作和查询")
 @RestController
-@RequestMapping({"/station", "/api/stations"})
+@RequestMapping("/station")
 @RequiredArgsConstructor
 @Validated
 public class StationController {
