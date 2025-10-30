@@ -221,13 +221,30 @@ const rules: FormRules = {
   planType: [{ required: true, message: '请选择计费类型', trigger: 'change' }]
 }
 
-const stations = ref([
-  { id: 1, name: '市中心充电站' },
-  { id: 2, name: '高新区充电站' },
-  { id: 3, name: '机场充电站' },
-  { id: 4, name: '商业区充电站' },
-  { id: 5, name: '工业园充电站' }
-])
+const stations = ref<any[]>([])
+
+// 加载充电站列表
+const loadStations = async () => {
+  try {
+    const { getStationList } = await import('@/api/station')
+    const response = await getStationList({ current: 1, size: 100 })
+    if (response.code === 200 && response.data) {
+      const records = (response.data as any).records || response.data
+      stations.value = Array.isArray(records) ? records.map((s: any) => ({
+        id: s.id,
+        name: s.stationName
+      })) : []
+    }
+  } catch (error) {
+    console.error('加载充电站列表失败:', error)
+  }
+}
+
+// 在组件挂载时加载充电站列表
+import { onMounted } from 'vue'
+onMounted(() => {
+  loadStations()
+})
 
 let segmentIdCounter = 1
 

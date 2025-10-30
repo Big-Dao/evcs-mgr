@@ -119,61 +119,100 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { getStationDetail } from '@/api/station'
+import { getChargerList } from '@/api/charger'
 
 const router = useRouter()
+const route = useRoute()
+const loading = ref(false)
 
 const detail = ref({
-  stationId: 1,
-  stationCode: 'ST001',
-  stationName: '市中心充电站',
-  tenantName: '华东运营商',
-  address: '市中心区人民路123号',
-  contactName: '张三',
-  contactPhone: '13800138000',
-  longitude: '120.123456',
-  latitude: '30.123456',
+  stationId: 0,
+  stationCode: '',
+  stationName: '',
+  tenantName: '',
+  address: '',
+  contactName: '',
+  contactPhone: '',
+  longitude: '',
+  latitude: '',
   serviceTime: '00:00-24:00',
-  paymentMethods: ['微信支付', '支付宝', '银联卡'],
-  facilities: ['WiFi', '休息区', '便利店', '洗手间'],
+  paymentMethods: [] as string[],
+  facilities: [] as string[],
   status: 1,
-  chargerCount: 12,
-  onlineCount: 11,
-  todayOrders: 68,
-  todayRevenue: 5680.50
+  chargerCount: 0,
+  onlineCount: 0,
+  todayOrders: 0,
+  todayRevenue: 0
 })
 
-const chargers = ref([
-  {
-    chargerCode: 'CH001',
-    chargerType: 'DC快充',
-    power: 120,
-    voltage: 380,
-    current: 250,
-    status: 1,
-    lastHeartbeat: '2024-10-12 10:30:00'
-  },
-  {
-    chargerCode: 'CH002',
-    chargerType: 'AC慢充',
-    power: 7,
-    voltage: 220,
-    current: 32,
-    status: 2,
-    lastHeartbeat: '2024-10-12 10:29:55'
-  },
-  {
-    chargerCode: 'CH003',
-    chargerType: 'DC快充',
-    power: 60,
-    voltage: 380,
-    current: 125,
-    status: 1,
-    lastHeartbeat: '2024-10-12 10:30:02'
+const chargers = ref<any[]>([])
+
+// 加载充电站详情
+const loadStationDetail = async () => {
+  try {
+    loading.value = true
+    const stationId = Number(route.params.id || route.query.id)
+    if (!stationId) {
+      ElMessage.error('充电站ID不能为空')
+      return
+    }
+
+    const response = await getStationDetail(stationId)
+    if (response.code === 200 && response.data) {
+      const data: any = response.data
+      detail.value = {
+        stationId: data.id || stationId,
+        stationCode: data.stationCode || '',
+        stationName: data.stationName || '',
+        tenantName: data.tenantName || '',
+        address: `${data.province || ''}${data.city || ''}${data.district || ''}${data.address || ''}`,
+        contactName: data.contactName || '',
+        contactPhone: data.contactPhone || '',
+        longitude: data.longitude?.toString() || '',
+        latitude: data.latitude?.toString() || '',
+        serviceTime: '00:00-24:00',
+        paymentMethods: ['微信支付', '支付宝', '银联卡'],
+        facilities: ['WiFi', '休息区'],
+        status: data.status || 1,
+        chargerCount: data.totalChargers || 0,
+        onlineCount: data.availableChargers || 0,
+        todayOrders: 0,
+        todayRevenue: 0
+      }
+
+      // 加载充电桩列表
+      await loadChargers(stationId)
+    } else {
+      ElMessage.error(response.message || '加载充电站详情失败')
+    }
+  } catch (error) {
+    console.error('加载充电站详情失败:', error)
+    ElMessage.error('加载充电站详情失败')
+  } finally {
+    loading.value = false
   }
-])
+}
+
+// 加载充电桩列表
+const loadChargers = async (stationId: number) => {
+  try {
+    const response = await getChargerList({ stationId, current: 1, size: 100 })
+    if (response.code === 200 && response.data) {
+      const records = (response.data as any).records || response.data
+      chargers.value = Array.isArray(records) ? records : []
+    }
+  } catch (error) {
+    console.error('加载充电桩列表失败:', error)
+  }
+}
+
+onMounted(() => {
+  loadStationDetail()
+})
 
 const getStatusType = (status: number) => {
   const typeMap: Record<number, string> = {

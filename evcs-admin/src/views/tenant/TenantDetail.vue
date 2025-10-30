@@ -92,58 +92,107 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { getTenantDetail, getTenantTree } from '@/api/tenant'
 
 const router = useRouter()
+const route = useRoute()
+const loading = ref(false)
 
 const detail = ref({
-  tenantId: 1,
-  tenantCode: 'T001',
-  tenantName: '总部',
-  tenantType: 'PLATFORM',
-  contactName: '张三',
-  contactPhone: '13800138000',
-  contactEmail: 'zhangsan@example.com',
+  tenantId: 0,
+  tenantCode: '',
+  tenantName: '',
+  tenantType: 1,
+  contactName: '',
+  contactPhone: '',
+  contactEmail: '',
   status: 1,
-  createTime: '2024-01-01 10:00:00',
-  updateTime: '2024-10-11 15:30:00',
-  stationCount: 45,
-  chargerCount: 256,
-  userCount: 128,
-  orderCount: 15680
+  createTime: '',
+  updateTime: '',
+  stationCount: 0,
+  chargerCount: 0,
+  userCount: 0,
+  orderCount: 0
 })
 
-const subTenants = ref([
-  {
-    tenantCode: 'T002',
-    tenantName: '华东运营商',
-    tenantType: 'OPERATOR',
-    status: 1
-  },
-  {
-    tenantCode: 'T003',
-    tenantName: '华南运营商',
-    tenantType: 'OPERATOR',
-    status: 1
-  }
-])
+const subTenants = ref<any[]>([])
 
-const getTenantTypeName = (type: string) => {
-  const typeMap: Record<string, string> = {
-    PLATFORM: '平台方',
-    OPERATOR: '运营商',
-    STATION: '站点方'
+// 加载租户详情
+const loadTenantDetail = async () => {
+  try {
+    loading.value = true
+    const tenantId = Number(route.params.id || route.query.id)
+    if (!tenantId) {
+      ElMessage.error('租户ID不能为空')
+      return
+    }
+
+    const response = await getTenantDetail(tenantId)
+    if (response.code === 200 && response.data) {
+      const data: any = response.data
+      detail.value = {
+        tenantId: data.tenantId || data.id,
+        tenantCode: data.tenantCode || '',
+        tenantName: data.tenantName || '',
+        tenantType: data.tenantType || 1,
+        contactName: data.contactPerson || data.contactName || '',
+        contactPhone: data.contactPhone || '',
+        contactEmail: data.contactEmail || '',
+        status: data.status || 1,
+        createTime: data.createTime || '',
+        updateTime: data.updateTime || '',
+        stationCount: data.stationCount || 0,
+        chargerCount: data.chargerCount || 0,
+        userCount: data.userCount || 0,
+        orderCount: data.orderCount || 0
+      }
+      
+      // 加载子租户
+      await loadSubTenants(tenantId)
+    } else {
+      ElMessage.error(response.message || '加载租户详情失败')
+    }
+  } catch (error) {
+    console.error('加载租户详情失败:', error)
+    ElMessage.error('加载租户详情失败')
+  } finally {
+    loading.value = false
   }
-  return typeMap[type] || type
 }
 
-const getTenantTypeTag = (type: string) => {
-  const tagMap: Record<string, string> = {
-    PLATFORM: 'danger',
-    OPERATOR: 'warning',
-    STATION: 'success'
+// 加载子租户列表
+const loadSubTenants = async (parentId: number) => {
+  try {
+    const response = await getTenantTree()
+    if (response.code === 200 && response.data) {
+      // 过滤出当前租户的直接子租户
+      const tenants = Array.isArray(response.data) ? response.data : []
+      subTenants.value = tenants.filter((t: any) => t.parentId === parentId)
+    }
+  } catch (error) {
+    console.error('加载子租户失败:', error)
+  }
+}
+
+onMounted(() => {
+  loadTenantDetail()
+})
+
+const getTenantTypeName = (type: number) => {
+  const typeMap: Record<number, string> = {
+    1: '平台方',
+    2: '运营商'
+  }
+  return typeMap[type] || '未知'
+}
+
+const getTenantTypeTag = (type: number) => {
+  const tagMap: Record<number, string> = {
+    1: 'danger',
+    2: 'warning'
   }
   return tagMap[type] || ''
 }
