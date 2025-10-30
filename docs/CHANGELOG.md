@@ -1,6 +1,30 @@
 # 变更日志
 
-## [未发布] - 2025-10-28
+## [未发布] - 2025-10-30
+
+### 文档 (Documentation)
+- **文档审查与修复**: 全面审查并修复文档冲突、错误和过时内容 (042d08b)
+  - refactor: 完全重写 DOCUMENTATION-INDEX.md - 去除所有重复内容，统一格式
+  - fix: 修复 README.md 中错误的文件路径引用（README-TENANT-ISOLATION.md）
+  - feat: 补充 TECHNICAL-DESIGN.md 认证架构详细描述（Gateway JWT 验证流程）
+  - feat: 更新 DEVELOPER-GUIDE.md 添加 Spring Cloud Config 规范引用
+  - feat: 更新 OPERATIONS-MANUAL.md 添加配置管理详细指导
+  - docs: 创建 DOCUMENTATION-REVIEW-REPORT.md 完整审查报告
+  - 影响: +1046/-131 行，文档质量从混乱/过时提升到清晰/准确
+
+### 配置 (Configuration)
+- **Spring Cloud Config 规范化**: 完成配置管理标准化 (5a35fb9)
+  - feat: 创建 application-local.yml 全局配置（JWT、Eureka、Actuator）
+  - refactor: 所有服务配置移除重复的 JWT、Eureka 配置
+  - feat: 创建 SPRING-CLOUD-CONFIG-CONVENTIONS.md 完整规范文档（1605行）
+  - fix: 修复 Gateway 路由配置（orders→order, payments→payment）
+  - refactor: 所有非 Auth 服务排除 SecurityAutoConfiguration
+  - fix: Station 服务依赖调整（仅保留 spring-security-core）
+  - 影响: 16 files changed, 1956 insertions(+), 180 deletions(-)
+
+---
+
+## [P4 Week 2] - 2025-10-28
 
 ### 重构 (Refactored)
 - **Charger 实体重构**: 修复 MyBatis Plus 重复 @TableId 问题 (3cb3a30)
