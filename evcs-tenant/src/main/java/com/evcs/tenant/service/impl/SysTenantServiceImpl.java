@@ -36,6 +36,16 @@ import java.util.stream.Collectors;
 public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant> implements ISysTenantService {
 
     /**
+     * 租户类型：平台租户
+     */
+    private static final Integer TENANT_TYPE_PLATFORM = 1;
+    
+    /**
+     * 租户类型：运营商租户
+     */
+    private static final Integer TENANT_TYPE_OPERATOR = 2;
+
+    /**
      * 分页查询租户列表
      * 数据权限：ALL - 查看所有租户，CHILDREN - 查看子租户，SELF - 查看自己
      */
@@ -48,12 +58,47 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
 
     /**
      * 查询租户列表（不分页）
-     * 数据权限：ALL - 查看所有租户，CHILDREN - 查看子租户，SELF - 查看自己
+     * 数据权限：
+     * - 平台租户(tenant_type=1): 可以查看自己及所有子租户
+     * - 运营商租户(tenant_type=2): 只能查看自己
      */
     @Override
     @DataScope
     public List<SysTenant> queryTenantList(SysTenant tenant) {
+        Long currentTenantId = TenantContext.getCurrentTenantId();
+        
+        // 查询当前租户信息，判断租户类型
+        SysTenant currentTenant = this.getById(currentTenantId);
+        if (currentTenant == null) {
+            log.warn("当前租户不存在: {}", currentTenantId);
+            return List.of();
+        }
+        
         QueryWrapper<SysTenant> wrapper = buildTenantQueryWrapper(tenant);
+        
+        // 根据租户类型应用不同的过滤逻辑
+        // 特殊处理：系统租户(SYSTEM)只能看到自己
+        if ("SYSTEM".equals(currentTenant.getTenantCode())) {
+            wrapper.eq("tenant_id", currentTenantId);
+            log.debug("系统租户 {} 查询租户列表，仅返回自身", currentTenantId);
+        } else if (TENANT_TYPE_OPERATOR.equals(currentTenant.getTenantType())) {
+            // 运营商租户：只能看到自己
+            wrapper.eq("tenant_id", currentTenantId);
+            log.debug("运营商租户 {} 查询租户列表，仅返回自身", currentTenantId);
+        } else if (TENANT_TYPE_PLATFORM.equals(currentTenant.getTenantType())) {
+            // 平台租户：可以看到自己及所有子租户
+            // 使用 ancestors 字段查询：包含当前租户ID的都是子租户
+            wrapper.and(w -> w.eq("tenant_id", currentTenantId)
+                            .or()
+                            .like("ancestors", currentTenantId.toString()));
+            log.debug("平台租户 {} 查询租户列表，包含所有子租户", currentTenantId);
+        } else {
+            // 其他未知类型：默认只看自己
+            wrapper.eq("tenant_id", currentTenantId);
+            log.debug("租户 {} (type={}) 查询租户列表，仅返回自身", 
+                     currentTenantId, currentTenant.getTenantType());
+        }
+        
         return this.list(wrapper);
     }
     

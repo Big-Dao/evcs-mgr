@@ -17,7 +17,11 @@
         FROM sys_user
         WHERE deleted = 0
         AND status = 1
-        AND tenant_id = #{tenantId}
+        AND tenant_id IN (
+            SELECT id FROM sys_tenant 
+            WHERE deleted = 0 
+            AND (id = #{tenantId} OR parent_id = #{tenantId} OR ancestors LIKE CONCAT(#{tenantId}, ',%') OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+        )
     </select>
     
     <!-- 统计充电站数量 -->
@@ -25,7 +29,11 @@
         SELECT COUNT(*)
         FROM charging_station
         WHERE deleted = 0
-        AND tenant_id = #{tenantId}
+        AND tenant_id IN (
+            SELECT id FROM sys_tenant 
+            WHERE deleted = 0 
+            AND (id = #{tenantId} OR parent_id = #{tenantId} OR ancestors LIKE CONCAT(#{tenantId}, ',%') OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+        )
     </select>
     
     <!-- 统计充电桩数量 -->
@@ -33,7 +41,11 @@
         SELECT COUNT(*)
         FROM charger
         WHERE deleted = 0
-        AND tenant_id = #{tenantId}
+        AND tenant_id IN (
+            SELECT id FROM sys_tenant 
+            WHERE deleted = 0 
+            AND (id = #{tenantId} OR parent_id = #{tenantId} OR ancestors LIKE CONCAT(#{tenantId}, ',%') OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+        )
     </select>
     
     <!-- 统计今日订单数 -->
@@ -41,7 +53,11 @@
         SELECT COUNT(*)
         FROM charging_order
         WHERE deleted = 0
-        AND tenant_id = #{tenantId}
+        AND tenant_id IN (
+            SELECT id FROM sys_tenant 
+            WHERE deleted = 0 
+            AND (id = #{tenantId} OR parent_id = #{tenantId} OR ancestors LIKE CONCAT(#{tenantId}, ',%') OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+        )
         AND start_time BETWEEN #{startTime} AND #{endTime}
     </select>
     
@@ -50,7 +66,11 @@
         SELECT COALESCE(SUM(energy), 0)
         FROM charging_order
         WHERE deleted = 0
-        AND tenant_id = #{tenantId}
+        AND tenant_id IN (
+            SELECT id FROM sys_tenant 
+            WHERE deleted = 0 
+            AND (id = #{tenantId} OR parent_id = #{tenantId} OR ancestors LIKE CONCAT(#{tenantId}, ',%') OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+        )
         AND start_time BETWEEN #{startTime} AND #{endTime}
         AND status IN (1, 11)
     </select>
@@ -60,7 +80,11 @@
         SELECT COALESCE(SUM(amount), 0)
         FROM charging_order
         WHERE deleted = 0
-        AND tenant_id = #{tenantId}
+        AND tenant_id IN (
+            SELECT id FROM sys_tenant 
+            WHERE deleted = 0 
+            AND (id = #{tenantId} OR parent_id = #{tenantId} OR ancestors LIKE CONCAT(#{tenantId}, ',%') OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+        )
         AND start_time BETWEEN #{startTime} AND #{endTime}
         AND status IN (1, 11)
     </select>
@@ -80,7 +104,11 @@
         LEFT JOIN charger c ON co.charger_id = c.charger_id
         LEFT JOIN sys_user su ON co.user_id = su.id
         WHERE co.deleted = 0
-        AND co.tenant_id = #{tenantId}
+        AND co.tenant_id IN (
+            SELECT id FROM sys_tenant 
+            WHERE deleted = 0 
+            AND (id = #{tenantId} OR parent_id = #{tenantId} OR ancestors LIKE CONCAT(#{tenantId}, ',%') OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+        )
         ORDER BY co.create_time DESC
         LIMIT #{limit}
     </select>

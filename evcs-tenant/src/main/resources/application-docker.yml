@@ -39,7 +39,7 @@ spring:
 
 # 服务端口
 server:
-  port: 8083
+  port: 8086
 
 # MyBatis Plus配置
 mybatis-plus:

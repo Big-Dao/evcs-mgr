@@ -19,6 +19,37 @@ import net.sf.jsqlparser.schema.Column;
 public class CustomTenantLineHandler implements TenantLineHandler {
     
     /**
+     * 线程本地变量：用于临时禁用租户拦截器
+     * 当设置为 true 时，租户拦截器将跳过所有表的租户过滤
+     */
+    private static final ThreadLocal<Boolean> IGNORE_TENANT_FILTER = new ThreadLocal<>();
+    
+    /**
+     * 禁用租户拦截器
+     * 在需要跨租户查询（如父子租户聚合）时调用
+     */
+    public static void disableTenantFilter() {
+        IGNORE_TENANT_FILTER.set(true);
+        log.debug("已禁用租户拦截器");
+    }
+    
+    /**
+     * 启用租户拦截器（恢复默认行为）
+     */
+    public static void enableTenantFilter() {
+        IGNORE_TENANT_FILTER.remove();
+        log.debug("已启用租户拦截器");
+    }
+    
+    /**
+     * 检查是否禁用了租户拦截器
+     */
+    public static boolean isTenantFilterDisabled() {
+        Boolean disabled = IGNORE_TENANT_FILTER.get();
+        return disabled != null && disabled;
+    }
+    
+    /**
      * 不需要进行租户隔离的表名列表
      */
     private static final List<String> IGNORE_TABLES = Arrays.asList(
@@ -69,6 +100,12 @@ public class CustomTenantLineHandler implements TenantLineHandler {
      */
     @Override
     public boolean ignoreTable(String tableName) {
+        // 检查是否全局禁用了租户拦截器
+        if (isTenantFilterDisabled()) {
+            log.debug("租户拦截器已禁用，跳过表 {} 的租户过滤", tableName);
+            return true;
+        }
+        
         // 检查表名是否在忽略列表中
         for (String ignoreTable : IGNORE_TABLES) {
             if (tableName.equals(ignoreTable) || 

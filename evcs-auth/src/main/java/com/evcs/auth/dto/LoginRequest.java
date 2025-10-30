@@ -28,6 +28,11 @@ public class LoginRequest {
     private Long tenantId;
     
     /**
+     * 租户编码（可选，与tenantId二选一）
+     */
+    private String tenantCode;
+    
+    /**
      * 验证码
      */
     private String captcha;

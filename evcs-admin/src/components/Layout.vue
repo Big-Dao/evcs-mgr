@@ -101,7 +101,7 @@ const handleLogout = () => {
 }
 
 .el-aside {
-  background-color: #304156;
+  background-color: #2c3e50;
   color: #fff;
 }
 
@@ -112,23 +112,150 @@ const handleLogout = () => {
   height: 60px;
   font-size: 20px;
   font-weight: bold;
-  color: #fff;
+  color: #ffffff;
   gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .sidebar-menu {
   border-right: none;
-  background-color: #304156;
+  background-color: #2c3e50;
 }
 
+/* 默认状态 - 未选中，未悬停 */
 .sidebar-menu :deep(.el-menu-item) {
-  color: #bfcbd9;
+  color: #b8c7ce;
+  font-weight: 400;
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
 }
 
-.sidebar-menu :deep(.el-menu-item:hover),
+/* 悬停状态 - 鼠标划过但未选中 */
+.sidebar-menu :deep(.el-menu-item:hover) {
+  background-color: #34495e !important;
+  color: #ffffff;
+  border-left: 3px solid #409eff;
+}
+
+/* 选中状态 - 当前页面 */
 .sidebar-menu :deep(.el-menu-item.is-active) {
-  background-color: #263445 !important;
-  color: #409eff;
+  background-color: #409eff !important;
+  color: #ffffff;
+  font-weight: 600;
+  border-left: 3px solid #66b1ff;
+}
+
+/* 选中且悬停状态 */
+.sidebar-menu :deep(.el-menu-item.is-active:hover) {
+  background-color: #66b1ff !important;
+  color: #ffffff;
+  border-left: 3px solid #a0cfff;
+}
+
+/* 菜单项图标样式 */
+.sidebar-menu :deep(.el-menu-item .el-icon) {
+  color: inherit;
+  transition: all 0.3s ease;
+}
+
+/* ========== 子菜单样式 ========== */
+
+/* 子菜单标题 - 默认状态 */
+.sidebar-menu :deep(.el-sub-menu__title) {
+  color: #b8c7ce;
+  font-weight: 400;
+  transition: all 0.3s ease;
+  border-left: 3px solid transparent;
+}
+
+/* 子菜单标题 - 悬停状态 */
+.sidebar-menu :deep(.el-sub-menu__title:hover) {
+  background-color: #34495e !important;
+  color: #ffffff;
+  border-left: 3px solid #409eff;
+}
+
+/* 子菜单标题图标 */
+.sidebar-menu :deep(.el-sub-menu__title .el-icon) {
+  color: inherit;
+}
+
+/* ========== 内嵌子菜单（展开式）========== */
+
+/* 子菜单容器背景 */
+.sidebar-menu :deep(.el-sub-menu .el-menu) {
+  background-color: #344A5F !important;
+}
+
+/* 内嵌子菜单项 - 默认状态 */
+.sidebar-menu :deep(.el-sub-menu .el-menu .el-menu-item) {
+  background-color: #344A5F !important;
+  color: #c8d1d9 !important;
+  font-weight: 400;
+  border-left: 3px solid transparent;
+  padding-left: 50px !important;
+  min-width: auto !important;
+}
+
+/* 内嵌子菜单项 - 悬停状态 */
+.sidebar-menu :deep(.el-sub-menu .el-menu .el-menu-item:hover) {
+  background-color: #2d3e50 !important;
+  color: #ffffff !important;
+  border-left: 3px solid #409eff;
+}
+
+/* 内嵌子菜单项 - 选中状态 */
+.sidebar-menu :deep(.el-sub-menu .el-menu .el-menu-item.is-active) {
+  background-color: #409eff !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  border-left: 3px solid #66b1ff;
+}
+
+/* 内嵌子菜单项 - 选中且悬停 */
+.sidebar-menu :deep(.el-sub-menu .el-menu .el-menu-item.is-active:hover) {
+  background-color: #66b1ff !important;
+  color: #ffffff !important;
+  border-left: 3px solid #a0cfff;
+}
+
+/* ========== 弹出式子菜单（备用）========== */
+
+/* 子菜单弹出层背景 */
+.sidebar-menu :deep(.el-menu--popup) {
+  background-color: #23313f !important;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 子菜单项 - 默认状态 */
+.sidebar-menu :deep(.el-menu--popup .el-menu-item) {
+  background-color: #23313f !important;
+  color: #c8d1d9 !important;
+  font-weight: 400;
+  border-left: 3px solid transparent;
+  padding-left: 40px !important;
+}
+
+/* 子菜单项 - 悬停状态 */
+.sidebar-menu :deep(.el-menu--popup .el-menu-item:hover) {
+  background-color: #2d3e50 !important;
+  color: #ffffff !important;
+  border-left: 3px solid #3498db;
+}
+
+/* 子菜单项 - 选中状态 */
+.sidebar-menu :deep(.el-menu--popup .el-menu-item.is-active) {
+  background-color: #1a252f !important;
+  color: #3498db !important;
+  font-weight: 600;
+  border-left: 3px solid #3498db;
+}
+
+/* 子菜单项 - 选中且悬停 */
+.sidebar-menu :deep(.el-menu--popup .el-menu-item.is-active:hover) {
+  background-color: #1a252f !important;
+  color: #5dade2 !important;
+  border-left: 3px solid #5dade2;
 }
 
 .el-header {

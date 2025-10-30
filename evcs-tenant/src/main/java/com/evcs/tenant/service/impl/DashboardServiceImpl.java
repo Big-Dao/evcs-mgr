@@ -1,9 +1,12 @@
 package com.evcs.tenant.service.impl;
 
 import com.evcs.common.tenant.TenantContext;
+import com.evcs.common.tenant.CustomTenantLineHandler;
 import com.evcs.tenant.dto.DashboardStatsDTO;
 import com.evcs.tenant.dto.RecentOrderDTO;
 import com.evcs.tenant.mapper.DashboardMapper;
+import com.evcs.tenant.mapper.SysTenantMapper;
+import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.service.IDashboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,6 +30,20 @@ import java.util.Map;
 public class DashboardServiceImpl implements IDashboardService {
     
     private final DashboardMapper dashboardMapper;
+    private final SysTenantMapper sysTenantMapper;
+    
+    /**
+     * 平台类型租户
+     */
+    private static final Integer TENANT_TYPE_PLATFORM = 1;
+    
+    /**
+     * 检查当前租户是否为平台类型
+     */
+    private boolean isPlatformTenant(Long tenantId) {
+        SysTenant tenant = sysTenantMapper.selectById(tenantId);
+        return tenant != null && TENANT_TYPE_PLATFORM.equals(tenant.getTenantType());
+    }
     
     @Override
     public DashboardStatsDTO getDashboardStats() {
@@ -37,26 +54,44 @@ public class DashboardServiceImpl implements IDashboardService {
         LocalDateTime todayStart = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
         LocalDateTime todayEnd = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
         
+        // 判断是否为平台类型租户
+        boolean isPlatform = isPlatformTenant(tenantId);
+        log.info("租户 {} 类型: {}", tenantId, isPlatform ? "平台" : "运营商");
+        
         try {
-            // 查询各项统计数据
-            Long tenantCount = dashboardMapper.countTenants(tenantId);
-            Long userCount = dashboardMapper.countUsers(tenantId);
-            Long stationCount = dashboardMapper.countStations(tenantId);
-            Long chargerCount = dashboardMapper.countChargers(tenantId);
-            Long todayOrderCount = dashboardMapper.countTodayOrders(tenantId, todayStart, todayEnd);
-            BigDecimal todayChargingAmount = dashboardMapper.sumTodayChargingAmount(tenantId, todayStart, todayEnd);
-            BigDecimal todayRevenue = dashboardMapper.sumTodayRevenue(tenantId, todayStart, todayEnd);
+            // 只有平台类型租户才禁用租户拦截器，以支持父子租户聚合查询
+            if (isPlatform) {
+                CustomTenantLineHandler.disableTenantFilter();
+                log.info("平台租户 {} - 已禁用租户拦截器，启用父子租户聚合查询", tenantId);
+            }
             
-            // 构建返回结果
-            return DashboardStatsDTO.builder()
-                    .tenantCount(tenantCount != null ? tenantCount : 0L)
-                    .userCount(userCount != null ? userCount : 0L)
-                    .stationCount(stationCount != null ? stationCount : 0L)
-                    .chargerCount(chargerCount != null ? chargerCount : 0L)
-                    .todayOrderCount(todayOrderCount != null ? todayOrderCount : 0L)
-                    .todayChargingAmount(todayChargingAmount != null ? todayChargingAmount : BigDecimal.ZERO)
-                    .todayRevenue(todayRevenue != null ? todayRevenue : BigDecimal.ZERO)
-                    .build();
+            try {
+                // 查询各项统计数据
+                Long tenantCount = dashboardMapper.countTenants(tenantId);
+                Long userCount = dashboardMapper.countUsers(tenantId);
+                Long stationCount = dashboardMapper.countStations(tenantId);
+                Long chargerCount = dashboardMapper.countChargers(tenantId);
+                Long todayOrderCount = dashboardMapper.countTodayOrders(tenantId, todayStart, todayEnd);
+                BigDecimal todayChargingAmount = dashboardMapper.sumTodayChargingAmount(tenantId, todayStart, todayEnd);
+                BigDecimal todayRevenue = dashboardMapper.sumTodayRevenue(tenantId, todayStart, todayEnd);
+                
+                // 构建返回结果
+                return DashboardStatsDTO.builder()
+                        .tenantCount(tenantCount != null ? tenantCount : 0L)
+                        .userCount(userCount != null ? userCount : 0L)
+                        .stationCount(stationCount != null ? stationCount : 0L)
+                        .chargerCount(chargerCount != null ? chargerCount : 0L)
+                        .todayOrderCount(todayOrderCount != null ? todayOrderCount : 0L)
+                        .todayChargingAmount(todayChargingAmount != null ? todayChargingAmount : BigDecimal.ZERO)
+                        .todayRevenue(todayRevenue != null ? todayRevenue : BigDecimal.ZERO)
+                        .build();
+            } finally {
+                // 无论成功或失败，都要恢复租户拦截器
+                if (isPlatform) {
+                    CustomTenantLineHandler.enableTenantFilter();
+                    log.info("平台租户 {} - 已恢复租户拦截器", tenantId);
+                }
+            }
         } catch (Exception e) {
             log.error("查询Dashboard统计数据失败", e);
             // 返回默认值，避免前端报错
@@ -77,26 +112,43 @@ public class DashboardServiceImpl implements IDashboardService {
         Long tenantId = TenantContext.getCurrentTenantId();
         log.info("查询租户 {} 的最近 {} 条订单", tenantId, limit);
         
+        // 判断是否为平台类型租户
+        boolean isPlatform = isPlatformTenant(tenantId);
+        
         try {
-            List<Map<String, Object>> orders = dashboardMapper.getRecentOrders(tenantId, limit);
-            List<RecentOrderDTO> result = new ArrayList<>();
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            
-            for (Map<String, Object> order : orders) {
-                RecentOrderDTO dto = RecentOrderDTO.builder()
-                        .orderId(String.valueOf(order.get("order_no")))
-                        .stationName(String.valueOf(order.get("station_name")))
-                        .chargerCode(String.valueOf(order.get("charger_code")))
-                        .userName(String.valueOf(order.get("user_name")))
-                        .amount((BigDecimal) order.get("total_amount"))
-                        .status(convertOrderStatus(String.valueOf(order.get("status"))))
-                        .createTime(order.get("create_time") != null ? 
-                                    ((LocalDateTime) order.get("create_time")).format(formatter) : "")
-                        .build();
-                result.add(dto);
+            // 只有平台类型租户才禁用租户拦截器，以支持父子租户聚合查询
+            if (isPlatform) {
+                CustomTenantLineHandler.disableTenantFilter();
+                log.info("平台租户 {} - 已禁用租户拦截器，启用父子租户聚合查询", tenantId);
             }
             
-            return result;
+            try {
+                List<Map<String, Object>> orders = dashboardMapper.getRecentOrders(tenantId, limit);
+                List<RecentOrderDTO> result = new ArrayList<>();
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                
+                for (Map<String, Object> order : orders) {
+                    RecentOrderDTO dto = RecentOrderDTO.builder()
+                            .orderId(String.valueOf(order.get("order_no")))
+                            .stationName(String.valueOf(order.get("station_name")))
+                            .chargerCode(String.valueOf(order.get("charger_code")))
+                            .userName(String.valueOf(order.get("user_name")))
+                            .amount((BigDecimal) order.get("total_amount"))
+                            .status(convertOrderStatus(String.valueOf(order.get("status"))))
+                            .createTime(order.get("create_time") != null ? 
+                                        ((LocalDateTime) order.get("create_time")).format(formatter) : "")
+                            .build();
+                    result.add(dto);
+                }
+                
+                return result;
+            } finally {
+                // 无论成功或失败，都要恢复租户拦截器
+                if (isPlatform) {
+                    CustomTenantLineHandler.enableTenantFilter();
+                    log.info("平台租户 {} - 已恢复租户拦截器", tenantId);
+                }
+            }
         } catch (Exception e) {
             log.error("查询最近订单失败", e);
             return new ArrayList<>();

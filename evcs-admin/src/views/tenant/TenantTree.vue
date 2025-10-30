@@ -17,14 +17,15 @@
         </div>
       </template>
 
-      <el-tree
-        ref="treeRef"
-        :data="treeData"
-        :props="treeProps"
-        :default-expand-all="expandAll"
-        node-key="id"
-        :expand-on-click-node="false"
-      >
+      <div v-loading="loading">
+        <el-tree
+          ref="treeRef"
+          :data="treeData"
+          :props="treeProps"
+          :default-expand-all="expandAll"
+          node-key="id"
+          :expand-on-click-node="false"
+        >
         <template #default="{ node, data }">
           <div class="tree-node">
             <div class="node-content">
@@ -47,110 +48,103 @@
           </div>
         </template>
       </el-tree>
+      </div>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { getTenantTree } from '@/api/tenant'
 
 const treeRef = ref()
 const expandAll = ref(true)
+const loading = ref(false)
 
 const treeProps = {
   label: 'tenantName',
   children: 'children'
 }
 
-const treeData = ref([
-  {
-    id: 1,
-    tenantCode: 'T001',
-    tenantName: '总部平台',
-    tenantType: 'PLATFORM',
-    status: 1,
-    children: [
-      {
-        id: 2,
-        tenantCode: 'T002',
-        tenantName: '华东运营商',
-        tenantType: 'OPERATOR',
-        status: 1,
-        children: [
-          {
-            id: 4,
-            tenantCode: 'T004',
-            tenantName: '上海充电站',
-            tenantType: 'STATION',
-            status: 1
-          },
-          {
-            id: 5,
-            tenantCode: 'T005',
-            tenantName: '杭州充电站',
-            tenantType: 'STATION',
-            status: 1
-          },
-          {
-            id: 6,
-            tenantCode: 'T006',
-            tenantName: '南京充电站',
-            tenantType: 'STATION',
-            status: 1
-          }
-        ]
-      },
-      {
-        id: 3,
-        tenantCode: 'T003',
-        tenantName: '华南运营商',
-        tenantType: 'OPERATOR',
-        status: 1,
-        children: [
-          {
-            id: 7,
-            tenantCode: 'T007',
-            tenantName: '深圳充电站',
-            tenantType: 'STATION',
-            status: 1
-          },
-          {
-            id: 8,
-            tenantCode: 'T008',
-            tenantName: '广州充电站',
-            tenantType: 'STATION',
-            status: 1
-          }
-        ]
-      }
-    ]
-  }
-])
+const treeData = ref<any[]>([])
 
-const getTenantTypeName = (type: string) => {
-  const typeMap: Record<string, string> = {
-    PLATFORM: '平台方',
-    OPERATOR: '运营商',
-    STATION: '站点方'
+// 加载租户树数据
+const loadTenantTree = async () => {
+  try {
+    loading.value = true
+    const response = await getTenantTree()
+    
+    if (response.code === 200 && response.data) {
+      // 后端返回的是平铺的租户列表，需要构建树形结构
+      const tenants = Array.isArray(response.data) ? response.data : []
+      treeData.value = buildTree(tenants)
+    } else {
+      ElMessage.error(response.message || '加载租户树失败')
+    }
+  } catch (error) {
+    console.error('加载租户树失败:', error)
+    ElMessage.error('加载租户树失败')
+  } finally {
+    loading.value = false
   }
-  return typeMap[type] || type
 }
 
-const getTenantTypeTag = (type: string) => {
-  const tagMap: Record<string, string> = {
-    PLATFORM: 'danger',
-    OPERATOR: 'warning',
-    STATION: 'success'
+// 构建树形结构
+const buildTree = (tenants: any[]) => {
+  if (!tenants || tenants.length === 0) return []
+  
+  // 创建映射表
+  const map = new Map()
+  tenants.forEach(tenant => {
+    map.set(tenant.tenantId, { 
+      ...tenant, 
+      id: tenant.tenantId,
+      children: [] 
+    })
+  })
+  
+  // 构建树形结构
+  const tree: any[] = []
+  tenants.forEach(tenant => {
+    const node = map.get(tenant.tenantId)
+    if (tenant.parentId && map.has(tenant.parentId)) {
+      // 有父节点，添加到父节点的 children
+      const parent = map.get(tenant.parentId)
+      parent.children.push(node)
+    } else {
+      // 没有父节点或父节点不在当前列表中，作为根节点
+      tree.push(node)
+    }
+  })
+  
+  return tree
+}
+
+onMounted(() => {
+  loadTenantTree()
+})
+
+const getTenantTypeName = (type: number) => {
+  const typeMap: Record<number, string> = {
+    1: '平台方',
+    2: '运营商'
+  }
+  return typeMap[type] || '未知'
+}
+
+const getTenantTypeTag = (type: number) => {
+  const tagMap: Record<number, string> = {
+    1: 'danger',
+    2: 'warning'
   }
   return tagMap[type] || ''
 }
 
-const getNodeIcon = (type: string) => {
-  const iconMap: Record<string, string> = {
-    PLATFORM: 'OfficeBuilding',
-    OPERATOR: 'ShoppingCart',
-    STATION: 'Location'
+const getNodeIcon = (type: number) => {
+  const iconMap: Record<number, string> = {
+    1: 'OfficeBuilding',
+    2: 'ShoppingCart'
   }
   return iconMap[type] || 'Folder'
 }

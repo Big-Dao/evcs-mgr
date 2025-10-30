@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.auth.dto.LoginRequest;
 import com.evcs.auth.dto.LoginResponse;
+import com.evcs.auth.entity.Tenant;
 import com.evcs.auth.entity.User;
+import com.evcs.auth.mapper.TenantMapper;
 import com.evcs.auth.mapper.UserMapper;
 import com.evcs.auth.service.UserService;
 import com.evcs.common.exception.BusinessException;
@@ -33,13 +35,28 @@ import java.util.concurrent.TimeUnit;
 public class UserServiceImpl implements UserService {
     
     private final UserMapper userMapper;
+    private final TenantMapper tenantMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final StringRedisTemplate stringRedisTemplate;
     
     @Override
     public LoginResponse login(LoginRequest request) {
-        log.info("登录请求 - 用户名: {}, 租户ID: {}", request.getUsername(), request.getTenantId());
+        log.info("登录请求 - 用户名: {}, 租户ID: {}, 租户编码: {}", 
+                 request.getUsername(), request.getTenantId(), request.getTenantCode());
+        
+        // 如果提供了租户编码但没有租户ID,则通过编码查询租户ID
+        if (request.getTenantId() == null && request.getTenantCode() != null) {
+            LambdaQueryWrapper<Tenant> tenantQuery = new LambdaQueryWrapper<>();
+            tenantQuery.eq(Tenant::getTenantCode, request.getTenantCode())
+                      .eq(Tenant::getStatus, 1); // 只查询启用的租户
+            Tenant tenant = tenantMapper.selectOne(tenantQuery);
+            if (tenant == null) {
+                throw new BusinessException(ResultCode.PARAM_NULL, "租户不存在或已停用");
+            }
+            request.setTenantId(tenant.getTenantId());
+            log.info("通过租户编码 {} 找到租户ID: {}", request.getTenantCode(), request.getTenantId());
+        }
         
         // 校验租户ID
         if (request.getTenantId() == null) {

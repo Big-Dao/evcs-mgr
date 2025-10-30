@@ -128,8 +128,8 @@ public class TenantController {
     public Result<List<SysTenant>> getTenantTree(
             @Parameter(description = "根节点ID，不传则从当前租户开始") 
             @RequestParam(required = false) Long rootId) {
-        List<Long> ids = tenantService.getTenantChildren(rootId);
-        List<SysTenant> tree = tenantService.list(new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<SysTenant>().in("tenant_id", ids));
+        // 使用 queryTenantList 以应用租户隔离过滤
+        List<SysTenant> tree = tenantService.queryTenantList(new SysTenant());
         return Result.success("查询成功", tree);
     }
     
