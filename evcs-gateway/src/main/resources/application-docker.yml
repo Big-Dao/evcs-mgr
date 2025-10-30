@@ -3,10 +3,8 @@ spring:
   application:
     name: evcs-gateway
   
-  # 禁用Spring Cloud配置中心
+  # Config Server 已在 JAVA_OPTS 中配置，这里不需要禁用
   cloud:
-    config:
-      enabled: false
     discovery:
       enabled: true
       

@@ -32,13 +32,15 @@ public class TenantContextFilter extends OncePerRequestFilter {
             if (tenantIdHeader != null) {
                 Long tenantId = Long.parseLong(tenantIdHeader);
                 TenantContext.setCurrentTenantId(tenantId);
-                log.debug("从Header设置租户ID: {}", tenantId);
+                log.info("从Header设置租户ID: {}", tenantId);
+            } else {
+                log.warn("未收到X-Tenant-Id header，请求路径: {}", request.getRequestURI());
             }
             
             if (userIdHeader != null) {
                 Long userId = Long.parseLong(userIdHeader);
                 TenantContext.setCurrentUserId(userId);
-                log.debug("从Header设置用户ID: {}", userId);
+                log.info("从Header设置用户ID: {}", userId);
             }
             
             filterChain.doFilter(request, response);

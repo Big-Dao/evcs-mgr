@@ -51,7 +51,7 @@ try {
 # 4. 测试Dashboard站点排名API
 Write-Host "`n[4/4] 测试Dashboard站点排名API..." -ForegroundColor Yellow
 try {
-    $rankResp = Invoke-RestMethod -Uri http://localhost:8080/dashboard/station-ranking -Method Get -Headers $headers
+    $rankResp = Invoke-RestMethod -Uri http://localhost:8080/api/dashboard/station-ranking -Method Get -Headers $headers
     if ($rankResp.success) {
         Write-Host "✓ 成功! 返回 $($rankResp.data.Count) 个站点:" -ForegroundColor Green
         $rankResp.data | Format-Table -Property stationName,orderCount,percentage -AutoSize
