@@ -171,11 +171,63 @@ dependencies {
     // API文档
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
     
+    // 注意：仅用于 @PreAuthorize 注解，不启用 Security 过滤器
+    implementation 'org.springframework.security:spring-security-core'
+    
     // 测试依赖
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation testFixtures(project(':evcs-common'))
 }
 ```
+
+#### 1.4 配置服务（遵循 [Spring Cloud Config 规范](SPRING-CLOUD-CONFIG-CONVENTIONS.md)）
+
+创建服务配置文件 `config-repo/evcs-new-module-local.yml`:
+
+```yaml
+spring:
+  application:
+    name: evcs-new-module
+  config:
+    import: optional:configserver:http://localhost:8888
+  
+  # 数据库配置（如需要）
+  datasource:
+    url: jdbc:postgresql://localhost:5432/evcs
+    username: evcs_user
+    password: evcs_pass
+    driver-class-name: org.postgresql.Driver
+  
+  # Redis 配置（如需要）
+  redis:
+    host: localhost
+    port: 6379
+    database: 0
+  
+  # RabbitMQ 配置（如需要）
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+
+# 服务端口
+server:
+  port: 8090
+
+# MyBatis Plus 配置（如需要）
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.evcs.newmodule.entity
+  configuration:
+    map-underscore-to-camel-case: true
+```
+
+**⚠️ 重要配置规则**:
+- ❌ **不要**在服务配置中重复定义 JWT 配置（已在 `application-local.yml` 全局配置）
+- ❌ **不要**在服务配置中重复定义 Eureka 配置（已在全局配置）
+- ✅ **仅配置**本服务特定的数据库、Redis、RabbitMQ、业务参数等
+- ✅ 详细规范参考: [SPRING-CLOUD-CONFIG-CONVENTIONS.md](SPRING-CLOUD-CONFIG-CONVENTIONS.md)
 
 ### 2. 创建Application类
 
@@ -184,16 +236,24 @@ package com.evcs.newmodule;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 
 /**
  * 新模块启动类
+ * 
+ * ⚠️ 重要：
+ * 1. 必须排除 SecurityAutoConfiguration（除非是 evcs-auth 服务）
+ * 2. Gateway 负责 JWT 验证，服务层通过 TenantInterceptor 读取租户上下文
+ * 3. 使用 spring-security-core 支持 @PreAuthorize 注解，但不启用过滤器链
  */
-@SpringBootApplication
-@ComponentScan(basePackages = {
-    "com.evcs.common",      // 扫描公共组件
-    "com.evcs.newmodule"    // 扫描本模块
-})
+@SpringBootApplication(
+    scanBasePackages = {
+        "com.evcs.common",      // 扫描公共组件
+        "com.evcs.newmodule"    // 扫描本模块
+    },
+    exclude = {SecurityAutoConfiguration.class}  // ⚠️ 必须排除
+)
 public class NewModuleApplication {
     public static void main(String[] args) {
         SpringApplication.run(NewModuleApplication.class, args);

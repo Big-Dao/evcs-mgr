@@ -14,6 +14,7 @@
 
 ## 目录
 
+- [配置管理](#配置管理)
 - [系统监控](#系统监控)
 - [日志管理](#日志管理)
 - [故障排查](#故障排查)
@@ -21,6 +22,154 @@
 - [性能优化](#性能优化)
 - [安全运维](#安全运维)
 - [应急响应](#应急响应)
+
+---
+
+## 配置管理
+
+### Spring Cloud Config Server
+
+EVCS Manager 使用 Spring Cloud Config Server 统一管理所有微服务配置。
+
+#### 配置文件位置
+
+配置文件存储在 Git 仓库的 `config-repo/` 目录:
+
+| 配置文件类型 | 命名格式 | 说明 | 示例 |
+|------------|---------|------|------|
+| 全局配置 | `application-{profile}.yml` | 所有服务共享的配置 | `application-local.yml` |
+| 服务配置 | `{service-name}-{profile}.yml` | 服务特定配置 | `evcs-station-local.yml` |
+
+#### 配置优先级
+
+配置的加载优先级（从高到低）:
+
+```
+1. 服务特定配置 (evcs-station-local.yml)
+   ↓ 覆盖
+2. 全局配置 (application-local.yml)
+   ↓ 覆盖
+3. 应用默认配置 (application.yml in classpath)
+```
+
+#### 全局配置内容
+
+`application-local.yml` 包含所有服务共享的配置:
+
+```yaml
+# JWT 认证配置（所有服务使用相同密钥）
+jwt:
+  secret: your-secret-key-here-change-in-production
+  expire: 86400
+
+# Eureka 服务注册与发现
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+# Actuator 监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+# 全局日志级别
+logging:
+  level:
+    root: INFO
+    com.evcs: DEBUG
+```
+
+#### 服务配置内容
+
+服务配置文件 **仅包含** 服务特定的配置，**不要重复** 全局配置:
+
+```yaml
+# evcs-station-local.yml
+spring:
+  application:
+    name: evcs-station
+  config:
+    import: optional:configserver:http://localhost:8888
+  
+  # 数据库配置（服务特定）
+  datasource:
+    url: jdbc:postgresql://localhost:5432/evcs
+    username: evcs_user
+    password: evcs_pass
+  
+  # Redis 配置（服务特定）
+  redis:
+    host: localhost
+    port: 6379
+
+server:
+  port: 8082
+
+# MyBatis Plus 配置（服务特定）
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+```
+
+#### 配置修改流程
+
+**开发环境**:
+
+1. 修改 `config-repo/` 下的配置文件
+2. 提交到 Git 仓库（Config Server 监听 Git 变更）
+3. 重启服务加载新配置
+
+**生产环境**:
+
+1. 修改 `config-repo/` 下的配置文件
+2. 提交到 Git 仓库并 PR 审核
+3. 调用服务的 `/actuator/refresh` 端点热更新（需要 `@RefreshScope` 注解）:
+   ```bash
+   curl -X POST http://service:port/actuator/refresh
+   ```
+
+#### 敏感信息管理
+
+**开发环境**:
+- 使用环境变量覆盖敏感配置:
+  ```bash
+  export SPRING_DATASOURCE_PASSWORD=your-password
+  export JWT_SECRET=your-jwt-secret
+  ```
+
+**生产环境**:
+- 使用 HashiCorp Vault 或 Cloud Secret Manager
+- 不要将密码明文提交到 Git
+- 示例配置:
+  ```yaml
+  spring:
+    cloud:
+      config:
+        server:
+          vault:
+            host: vault.example.com
+            port: 8200
+            scheme: https
+            backend: secret
+            profile-separator: '/'
+  ```
+
+#### 配置检查清单
+
+修改配置前，请检查:
+
+- [ ] 是否需要在全局配置 vs 服务配置？
+- [ ] 是否重复定义了全局配置（JWT、Eureka、Actuator）？
+- [ ] 敏感信息是否使用环境变量或 Vault？
+- [ ] 修改后是否需要重启服务还是热更新？
+- [ ] 生产环境修改是否经过 PR 审核？
+
+**详细规范**: 参考 [Spring Cloud Config 规范](SPRING-CLOUD-CONFIG-CONVENTIONS.md)
 
 ---
 

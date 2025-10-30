@@ -2,7 +2,7 @@
 
 一个基于Spring Boot和微服务架构的电动汽车充电站管理平台，支持多租户、多协议充电桩管理。
 
-> 📚 **[完整文档索引](DOCUMENTATION-INDEX.md)** | [租户隔离详解](README-TENANT-ISOLATION.md) | [技术设计](docs/TECHNICAL-DESIGN.md)
+> 📚 **[完整文档索引](DOCUMENTATION-INDEX.md)** | [租户隔离详解](docs/README-TENANT-ISOLATION.md) | [技术设计](docs/TECHNICAL-DESIGN.md)
 
 ## 🎯 项目状态
 

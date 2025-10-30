@@ -5,9 +5,74 @@
 > **状态**: 已发布
 
 ## 1. 架构总览
-- Spring Boot 3.2、Java 21、Gradle 8.5
-- 微服务模块：auth/gateway/common/station/order/payment/protocol/tenant/monitoring
-- 多租户四层隔离：DB 行级 + MyBatis Plus TenantLine + @DataScope + Spring Security
+- **技术栈**: Spring Boot 3.2、Java 21、Gradle 8.5
+- **微服务模块**: auth/gateway/common/station/order/payment/protocol/tenant/monitoring
+- **多租户四层隔离**: 
+  1. **DB 行级**: PostgreSQL `tenant_id` 字段
+  2. **SQL 层**: MyBatis Plus TenantLineInnerInterceptor 自动注入 `WHERE tenant_id = ?`
+  3. **服务层**: `@DataScope` 注解 + DataScopeAspect 切面
+  4. **API 层**: Gateway JWT 验证 + Header 传递租户上下文
+
+### 1.1 认证与授权架构
+
+#### 认证流程
+
+```
+用户请求 → Gateway (JwtAuthGlobalFilter) → 后端服务 (TenantInterceptor) → 业务逻辑
+         ↓ JWT 验证                      ↓ Header 读取
+         ↓ 提取 tenantId/userId          ↓ 设置 TenantContext
+         ↓ 添加 X-Tenant-Id/X-User-Id
+```
+
+**1. API Gateway (evcs-gateway)**:
+- **JwtAuthGlobalFilter**: 验证 Authorization: Bearer {token}
+- 提取 JWT Claims: `tenantId`, `userId`, `username`
+- 添加到请求头:
+  - `X-Tenant-Id`: 租户 ID
+  - `X-User-Id`: 用户 ID
+- 路由到后端服务
+
+**2. 后端服务层**:
+- **TenantInterceptor**: 
+  - 从请求头读取 `X-Tenant-Id`/`X-User-Id`
+  - 设置 `TenantContext` (ThreadLocal)
+  - 优先级: Header → JWT → Request Param
+- **安全配置**:
+  - 所有服务（除 evcs-auth）排除 `SecurityAutoConfiguration`
+  - 使用 `spring-security-core` 支持 `@PreAuthorize` 注解
+  - 不启用 Spring Security 过滤器链
+
+**3. 数据层隔离**:
+- **MyBatis Plus**:
+  - `TenantLineInnerInterceptor`: 自动注入 `WHERE tenant_id = ?`
+  - `CustomTenantLineHandler`: 定义忽略表（IGNORE_TABLES）
+  - `CustomMetaObjectHandler`: 自动填充 `tenant_id`, `created_by`, `updated_by`
+- **基础实体**: 所有实体继承 `BaseEntity`（含 tenant_id、审计字段、软删除）
+
+#### 配置管理架构
+
+详见 [Spring Cloud Config 规范](SPRING-CLOUD-CONFIG-CONVENTIONS.md)
+
+**配置层次**:
+```
+application-{profile}.yml (全局共享)
+  ↓ 覆盖
+{service-name}-{profile}.yml (服务特定)
+  ↓ 覆盖
+application.yml (Classpath 默认)
+```
+
+**全局配置** (`config-repo/application-local.yml`):
+- JWT 配置: `jwt.secret`, `jwt.expire`
+- Eureka Client 配置
+- Actuator & Monitoring 配置
+- 日志配置
+
+**服务配置** (`config-repo/{service}-local.yml`):
+- 数据库连接
+- Redis 配置
+- RabbitMQ 配置
+- 服务特定功能开关
 
 ## 2. 分时电价（TOU）设计
 ### 2.1 数据模型
