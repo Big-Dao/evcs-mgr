@@ -36,7 +36,10 @@ public class SecurityConfig {
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             // 请求授权配置
             .authorizeHttpRequests(auth -> auth
+                // 直接访问auth服务的路径
                 .requestMatchers("/auth/login", "/auth/refresh").permitAll()
+                // Gateway strip prefix后的路径
+                .requestMatchers("/login", "/refresh").permitAll()
                 .requestMatchers("/doc.html", "/webjars/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()

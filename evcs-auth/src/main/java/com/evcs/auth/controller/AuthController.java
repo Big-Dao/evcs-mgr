@@ -7,6 +7,7 @@ import com.evcs.common.result.Result;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
@@ -14,10 +15,11 @@ import jakarta.validation.Valid;
 
 /**
  * 认证控制器
+ * 注意：Gateway配置了StripPrefix=1，会将/auth/login转发为/login到本服务
  */
+@Slf4j
 @Tag(name = "认证管理", description = "用户登录、注销等认证相关接口")
 @RestController
-@RequestMapping("/auth")
 @RequiredArgsConstructor
 public class AuthController {
     
@@ -29,6 +31,8 @@ public class AuthController {
     @Operation(summary = "用户登录", description = "用户名密码登录获取访问令牌")
     @PostMapping("/login")
     public Result<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        log.info("Controller收到登录请求 - username: {}, tenantCode: {}, tenantId: {}", 
+                 request.getUsername(), request.getTenantCode(), request.getTenantId());
         LoginResponse response = userService.login(request);
         return Result.success("登录成功", response);
     }
