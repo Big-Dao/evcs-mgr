@@ -40,6 +40,8 @@ public class SecurityConfig {
                 .requestMatchers("/auth/login", "/auth/refresh").permitAll()
                 // Gateway strip prefix后的路径
                 .requestMatchers("/login", "/refresh").permitAll()
+                // 角色和菜单API（Gateway已验证）
+                .requestMatchers("/role/**", "/menu/**").permitAll()
                 .requestMatchers("/doc.html", "/webjars/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
                 .requestMatchers("/actuator/**").permitAll()
                 .anyRequest().authenticated()

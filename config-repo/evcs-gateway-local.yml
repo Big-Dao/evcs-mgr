@@ -20,6 +20,8 @@ spring:
           uri: lb://evcs-auth
           predicates:
             - Path=/auth/**
+          filters:
+            - StripPrefix=1
         - id: evcs-auth-api
           uri: lb://evcs-auth
           predicates:
