@@ -133,19 +133,21 @@
 ## 后端API需求清单
 
 ### 角色与权限管理
-- [ ] `GET /api/role/list` - 角色列表 (RoleList.vue)
-- [ ] `GET /api/role/{id}` - 角色详情
-- [ ] `GET /api/menu/list` - 菜单权限树 (RoleList.vue)
-- [ ] `GET /api/user/{id}/permissions` - 用户菜单权限 (UserDetail.vue)
+- [x] `GET /api/role/list` - 角色列表 (RoleList.vue) ✅ 已实现
+- [x] `GET /api/role/page` - 分页查询角色 ✅ 已实现
+- [x] `GET /api/role/{id}` - 角色详情 ✅ 已实现
+- [x] `GET /api/menu/list` - 菜单权限树 (RoleList.vue) ✅ 已实现
+- [x] `GET /api/menu/user/{userId}` - 用户菜单权限 ✅ 已实现
+- [ ] `GET /api/user/{id}/permissions` - 用户菜单权限 (UserDetail.vue) ⏳ 待实现
 
 ### 订单统计与详情
-- [ ] `GET /api/dashboard/station-ranking` - 充电站订单排名 (OrderDashboard.vue)
-- [ ] `GET /api/dashboard/charger-utilization` - 充电桩利用率统计 (OrderDashboard.vue)
-- [ ] `GET /api/orders/{id}` - 完整订单详情（需包含时间轴、计费明细、日志） (OrderDetail.vue)
+- [x] `GET /api/dashboard/station-ranking` - 充电站订单排名 (OrderDashboard.vue) ✅ 已实现
+- [x] `GET /api/dashboard/charger-utilization` - 充电桩利用率统计 (OrderDashboard.vue) ✅ 已实现
+- [ ] `GET /api/orders/{id}` - 完整订单详情（需包含时间轴、计费明细、日志） (OrderDetail.vue) ⏳ 待实现
 
 ### 日志与事件
-- [ ] `GET /api/user/{id}/logs` - 用户操作日志 (UserDetail.vue)
-- [ ] `GET /api/charger/{id}/events` - 充电桩状态事件历史 (ChargerDetail.vue)
+- [ ] `GET /api/user/{id}/logs` - 用户操作日志 (UserDetail.vue) ⏳ 待实现
+- [ ] `GET /api/charger/{id}/events` - 充电桩状态事件历史 (ChargerDetail.vue) ⏳ 待实现
 
 ---
 

@@ -183,12 +183,43 @@ INSERT INTO sys_user (id, username, password, real_name, user_type, status, tena
 VALUES (1, 'admin', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', '系统管理员', 0, 1, 1);
 
 -- 插入默认角色
-INSERT INTO sys_role (id, role_code, role_name, status, tenant_id) 
-VALUES (1, 'SUPER_ADMIN', '超级管理员', 1, 1);
+INSERT INTO sys_role (id, role_code, role_name, sort, data_scope, status, tenant_id, remark) 
+VALUES 
+(1, 'SUPER_ADMIN', '超级管理员', 1, 1, 1, 1, '拥有所有权限'),
+(2, 'PLATFORM_ADMIN', '平台管理员', 2, 2, 1, 1, '平台运营管理'),
+(3, 'OPERATOR_ADMIN', '运营商管理员', 3, 3, 1, 1, '运营商管理'),
+(4, 'STATION_MANAGER', '站点管理员', 4, 4, 1, 1, '充电站管理');
 
 -- 关联用户和角色
 INSERT INTO sys_user_role (user_id, role_id, tenant_id) 
 VALUES (1, 1, 1);
+
+-- 插入默认菜单权限
+INSERT INTO sys_permission (id, permission_code, permission_name, parent_id, type, path, component, icon, sort, status, visible, tenant_id, remark)
+VALUES
+-- 一级菜单
+(1, 'dashboard', '仪表盘', NULL, 1, '/dashboard', 'Dashboard', 'DataAnalysis', 1, 1, 1, 1, '数据统计仪表盘'),
+(2, 'tenant', '租户管理', NULL, 1, '/tenant', NULL, 'OfficeBuilding', 2, 1, 1, 1, '租户管理模块'),
+(3, 'user', '用户管理', NULL, 1, '/user', NULL, 'User', 3, 1, 1, 1, '用户管理模块'),
+(4, 'station', '充电站管理', NULL, 1, '/station', NULL, 'Location', 4, 1, 1, 1, '充电站管理模块'),
+(5, 'charger', '充电桩管理', NULL, 1, '/charger', NULL, 'Monitor', 5, 1, 1, 1, '充电桩管理模块'),
+(6, 'order', '订单管理', NULL, 1, '/order', NULL, 'Document', 6, 1, 1, 1, '充电订单管理'),
+(7, 'billing', '计费管理', NULL, 1, '/billing', NULL, 'Money', 7, 1, 1, 1, '计费方案管理'),
+-- 二级菜单 - 租户管理
+(201, 'tenant:list', '租户列表', 2, 1, '/tenant/list', 'TenantList', 'List', 1, 1, 1, 1, '租户列表页面'),
+(202, 'tenant:tree', '租户树形', 2, 1, '/tenant/tree', 'TenantTree', 'Tree', 2, 1, 1, 1, '租户树形结构'),
+-- 二级菜单 - 用户管理
+(301, 'user:list', '用户列表', 3, 1, '/user/list', 'UserList', 'List', 1, 1, 1, 1, '用户列表页面'),
+(302, 'user:role', '角色管理', 3, 1, '/user/role', 'RoleList', 'Avatar', 2, 1, 1, 1, '角色权限管理'),
+-- 二级菜单 - 充电站管理
+(401, 'station:list', '站点列表', 4, 1, '/station/list', 'StationList', 'List', 1, 1, 1, 1, '充电站列表'),
+-- 二级菜单 - 充电桩管理
+(501, 'charger:list', '充电桩列表', 5, 1, '/charger/list', 'ChargerList', 'List', 1, 1, 1, 1, '充电桩列表'),
+-- 二级菜单 - 订单管理
+(601, 'order:list', '订单列表', 6, 1, '/order/list', 'OrderList', 'List', 1, 1, 1, 1, '充电订单列表'),
+(602, 'order:dashboard', '订单统计', 6, 1, '/order/dashboard', 'OrderDashboard', 'DataAnalysis', 2, 1, 1, 1, '订单统计分析'),
+-- 二级菜单 - 计费管理
+(701, 'billing:plan', '计费方案', 7, 1, '/billing/plan', 'BillingPlanList', 'List', 1, 1, 1, 1, '计费方案管理');
 
 COMMENT ON DATABASE postgres IS '充电站管理平台数据库';
 COMMENT ON TABLE sys_tenant IS '租户表';
