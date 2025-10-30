@@ -120,7 +120,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -134,82 +134,49 @@ const searchForm = reactive({
 const pagination = reactive({
   currentPage: 1,
   pageSize: 10,
-  total: 30
+  total: 0
 })
 
-const tableData = ref([
-  {
-    planId: 1,
-    planCode: 'BP001',
-    planName: '标准分时计费方案',
-    planType: 'TOU',
-    segments: 4,
-    stationCount: 12,
-    status: 1
-  },
-  {
-    planId: 2,
-    planCode: 'BP002',
-    planName: '固定计费方案',
-    planType: 'FIXED',
-    segments: 1,
-    stationCount: 5,
-    status: 1
-  }
-])
-
+const tableData = ref<any[]>([])
 const previewVisible = ref(false)
-const previewSegments = ref([
-  {
-    startTime: '00:00',
-    endTime: '08:00',
-    price: 0.5,
-    type: '低谷时段',
-    width: 33.33,
-    color: '#67c23a'
-  },
-  {
-    startTime: '08:00',
-    endTime: '12:00',
-    price: 0.9,
-    type: '高峰时段',
-    width: 16.67,
-    color: '#e6a23c'
-  },
-  {
-    startTime: '12:00',
-    endTime: '18:00',
-    price: 0.7,
-    type: '平时段',
-    width: 25,
-    color: '#409eff'
-  },
-  {
-    startTime: '18:00',
-    endTime: '22:00',
-    price: 1.2,
-    type: '尖峰时段',
-    width: 16.67,
-    color: '#f56c6c'
-  },
-  {
-    startTime: '22:00',
-    endTime: '24:00',
-    price: 0.5,
-    type: '低谷时段',
-    width: 8.33,
-    color: '#67c23a'
+const previewSegments = ref<any[]>([])
+
+const loadBillingPlans = async () => {
+  try {
+    const { getBillingPlanPage } = await import('@/api/billing')
+    const response = await getBillingPlanPage({
+      current: pagination.currentPage,
+      size: pagination.pageSize
+    })
+    
+    if (response.code === 200 && response.data) {
+      const page = response.data
+      tableData.value = (page.records || []).map((plan: any) => ({
+        planId: plan.id,
+        planCode: plan.planCode || `BP${String(plan.id).padStart(3, '0')}`,
+        planName: plan.planName,
+        planType: plan.planType || 'TOU',
+        segments: 0, // TODO: Backend needs to provide segment count
+        stationCount: 0, // TODO: Backend needs to provide station count
+        status: plan.status
+      }))
+      pagination.total = page.total || 0
+    }
+  } catch (error) {
+    console.error('加载计费方案列表失败:', error)
+    ElMessage.error('加载计费方案列表失败')
   }
-])
+}
 
 const handleSearch = () => {
   pagination.currentPage = 1
-  ElMessage.success('查询成功')
+  loadBillingPlans()
 }
 
 const handleReset = () => {
   searchForm.name = ''
   searchForm.type = ''
+  loadBillingPlans()
 }
 
 const handleAdd = () => {
@@ -224,27 +191,92 @@ const handleEdit = (row: any) => {
   router.push(`/billing-plans/${row.planId}/edit`)
 }
 
-const handlePreview = (_row: any) => {
-  previewVisible.value = true
+const handlePreview = async (row: any) => {
+  try {
+    const { getBillingPlanSegments } = await import('@/api/billing')
+    const response = await getBillingPlanSegments(row.planId)
+    
+    if (response.code === 200 && response.data) {
+      const segments = response.data
+      
+      // Convert segments to preview format
+      previewSegments.value = segments.map((seg: any) => {
+        const startHour = parseInt(seg.startTime.split(':')[0])
+        const endHour = parseInt(seg.endTime.split(':')[0])
+        const duration = endHour - startHour
+        const width = (duration / 24) * 100
+        
+        // Determine color based on price
+        const totalPrice = seg.electricityPrice + seg.servicePrice
+        let color = '#409eff' // 平时段
+        let type = '平时段'
+        if (totalPrice >= 1.2) {
+          color = '#f56c6c' // 尖峰时段
+          type = '尖峰时段'
+        } else if (totalPrice >= 0.9) {
+          color = '#e6a23c' // 高峰时段
+          type = '高峰时段'
+        } else if (totalPrice <= 0.6) {
+          color = '#67c23a' // 低谷时段
+          type = '低谷时段'
+        }
+        
+        return {
+          startTime: seg.startTime,
+          endTime: seg.endTime,
+          price: totalPrice,
+          type,
+          width,
+          color
+        }
+      })
+    }
+    
+    previewVisible.value = true
+  } catch (error) {
+    console.error('加载计费方案分段失败:', error)
+    ElMessage.warning('该计费方案暂无分段数据')
+    previewVisible.value = false
+  }
 }
 
-const handleDelete = (_row: any) => {
+const handleDelete = async (row: any) => {
   ElMessageBox.confirm('确定要删除该计费方案吗？', '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    ElMessage.success('删除成功')
+  }).then(async () => {
+    try {
+      const { deleteBillingPlan } = await import('@/api/billing')
+      const response = await deleteBillingPlan(row.planId)
+      if (response.code === 200) {
+        ElMessage.success('删除成功')
+        loadBillingPlans()
+      } else {
+        ElMessage.error(response.message || '删除失败')
+      }
+    } catch (error) {
+      console.error('删除计费方案失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }).catch(() => {
+    // User cancelled
   })
 }
 
 const handleSizeChange = (size: number) => {
   pagination.pageSize = size
+  loadBillingPlans()
 }
 
 const handleCurrentChange = (page: number) => {
   pagination.currentPage = page
+  loadBillingPlans()
 }
+
+onMounted(() => {
+  loadBillingPlans()
+})
 </script>
 
 <style scoped>

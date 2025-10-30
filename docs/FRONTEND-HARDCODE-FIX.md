@@ -27,77 +27,46 @@
 **API**: `/api/station/list`  
 **状态**: 已完成
 
+### ✅ 5. RoleList.vue (部分完成)
+**问题**: 
+- `tenantTree`: 租户树硬编码 ✅ 已修复
+- `tableData`: 角色列表硬编码 ⚠️ 待后端API
+- `menuPermissions`: 菜单权限树硬编码 ⚠️ 待后端API
+
+**已修复**: 使用 `getTenantTree()` API 动态加载租户树，在权限对话框打开时调用  
+**待修复**: 角色列表和菜单权限需要后端API支持
+- `GET /api/role/list` - 角色列表 (不存在)
+- `GET /api/menu/list` - 菜单权限树 (不存在)
+
+### ✅ 6. OrderDashboard.vue (部分完成)
+**问题**:
+- `stats`: Dashboard统计数据硬编码 ✅ 已修复
+- `recentOrders`: 最近订单硬编码 ✅ 已修复
+- `stationRanking`: 充电站排名硬编码 ⚠️ 待后端API
+- `chargerUtilization`: 充电桩利用率硬编码 ⚠️ 待后端API
+
+**已修复**: 
+- 使用 `/api/dashboard/statistics` 加载统计数据
+- 使用 `/api/dashboard/recent-orders` 加载最近订单
+
+**待修复**: 充电站排名和充电桩利用率需要新的后端API
+- `GET /api/dashboard/station-ranking` (不存在)
+- `GET /api/dashboard/charger-utilization` (不存在)
+
+### ✅ 7. BillingPlanList.vue
+**问题**:
+- `tableData`: 计费方案列表硬编码 ✅ 已修复
+- `previewSegments`: 预览时段硬编码 ✅ 已修复
+
+**已修复**:
+- 使用 `/api/billing/plans/page` 分页加载计费方案列表
+- 使用 `/api/billing/plans/{planId}/segments` 加载计费方案分段用于预览
+- 创建了 `src/api/billing.ts` API文件
+- 实现了完整的增删改查功能
+
 ## 待修复
 
-### 🔴 5. RoleList.vue (优先级: 高)
-**问题**: 
-- `tableData`: 角色列表硬编码
-- `menuPermissions`: 菜单权限树硬编码  
-- `tenantTree`: 租户树硬编码
-
-**修复方案**:
-```typescript
-// 需要创建角色管理 API
-import { getRoleList } from '@/api/role'
-import { getMenuList } from '@/api/menu'
-import { getTenantTree } from '@/api/tenant'
-
-const loadRoles = async () => {
-  const response = await getRoleList({ current: 1, size: 10 })
-  if (response.code === 200) {
-    tableData.value = response.data.records || []
-  }
-}
-
-const loadMenuPermissions = async () => {
-  const response = await getMenuList()
-  if (response.code === 200) {
-    menuPermissions.value = response.data || []
-  }
-}
-
-const loadTenantTree = async () => {
-  const response = await getTenantTree()
-  if (response.code === 200) {
-    tenantTree.value = buildTree(response.data)
-  }
-}
-```
-
-**所需后端API**:
-- `GET /api/role/list` - 角色列表
-- `GET /api/menu/list` - 菜单权限树
-- 租户树API已存在
-
-### 🔴 6. OrderDashboard.vue (优先级: 高)
-**问题**:
-- `stationRanking`: 充电站排名硬编码
-- `chargerUtilization`: 充电桩利用率硬编码
-- `recentOrders`: 最近订单硬编码
-
-**修复方案**:
-```typescript
-import { getOrderDashboard } from '@/api/order'
-
-const loadDashboardData = async () => {
-  const response = await getOrderDashboard()
-  if (response.code === 200 && response.data) {
-    stationRanking.value = response.data.stationRanking || []
-    chargerUtilization.value = response.data.chargerUtilization || []
-    recentOrders.value = response.data.recentOrders || []
-  }
-}
-```
-
-**所需后端API**:
-- `GET /api/order/dashboard` - 订单仪表板统计数据
-
-### 🟡 7. BillingPlanList.vue (优先级: 中)
-**问题**:
-- `tableData`: 计费方案列表硬编码
-- `previewSegments`: 预览时段硬编码
-
-**修复方案**:
+### 🟡 8. UserDetail.vue (优先级: 中)
 ```typescript
 import { getBillingPlanList } from '@/api/billing'
 

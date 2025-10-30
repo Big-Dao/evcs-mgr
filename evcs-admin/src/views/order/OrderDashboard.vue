@@ -179,20 +179,22 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { ElMessage } from 'element-plus'
 
 const trendPeriod = ref('week')
 
 const stats = ref({
-  todayOrders: 168,
-  ordersTrend: 12.5,
-  todayRevenue: 25680.50,
-  revenueTrend: 8.3,
-  todayEnergy: 3456.8,
-  energyTrend: 15.2,
-  chargingOrders: 23
+  todayOrders: 0,
+  ordersTrend: 0,
+  todayRevenue: 0,
+  revenueTrend: 0,
+  todayEnergy: 0,
+  energyTrend: 0,
+  chargingOrders: 0
 })
 
+// TODO: Backend API needed - GET /api/dashboard/station-ranking
 const stationRanking = ref([
   { id: 1, name: '市中心充电站', orders: 45, percentage: 100 },
   { id: 2, name: '高新区充电站', orders: 38, percentage: 84 },
@@ -201,6 +203,7 @@ const stationRanking = ref([
   { id: 5, name: '工业园充电站', orders: 25, percentage: 56 }
 ])
 
+// TODO: Backend API needed - GET /api/dashboard/charger-utilization
 const chargerUtilization = ref([
   { id: 1, code: 'CH001', utilization: 92 },
   { id: 2, code: 'CH015', utilization: 88 },
@@ -209,48 +212,63 @@ const chargerUtilization = ref([
   { id: 5, code: 'CH031', utilization: 72 }
 ])
 
-const recentOrders = ref([
-  {
-    id: 1,
-    orderNo: 'ORD20241012001',
-    time: '10:30',
-    status: '充电中',
-    statusType: 'warning',
-    type: 'primary',
-    station: '市中心充电站',
-    charger: 'CH001'
-  },
-  {
-    id: 2,
-    orderNo: 'ORD20241012002',
-    time: '10:28',
-    status: '已完成',
-    statusType: 'success',
-    type: 'success',
-    station: '高新区充电站',
-    charger: 'CH015'
-  },
-  {
-    id: 3,
-    orderNo: 'ORD20241012003',
-    time: '10:25',
-    status: '充电中',
-    statusType: 'warning',
-    type: 'primary',
-    station: '机场充电站',
-    charger: 'CH022'
-  },
-  {
-    id: 4,
-    orderNo: 'ORD20241012004',
-    time: '10:20',
-    status: '已完成',
-    statusType: 'success',
-    type: 'success',
-    station: '市中心充电站',
-    charger: 'CH003'
+const recentOrders = ref<any[]>([])
+
+const loadDashboardData = async () => {
+  try {
+    const { getDashboardStats, getRecentOrders } = await import('@/api/dashboard')
+    
+    // Load dashboard statistics
+    const statsResponse = await getDashboardStats()
+    if (statsResponse.code === 200 && statsResponse.data) {
+      const data = statsResponse.data
+      stats.value = {
+        todayOrders: data.todayOrderCount || 0,
+        ordersTrend: 0, // TODO: Backend needs to provide trend data
+        todayRevenue: data.todayRevenue || 0,
+        revenueTrend: 0, // TODO: Backend needs to provide trend data
+        todayEnergy: data.todayChargingAmount || 0,
+        energyTrend: 0, // TODO: Backend needs to provide trend data
+        chargingOrders: 0 // TODO: Backend needs to provide charging orders count
+      }
+    }
+    
+    // Load recent orders
+    const ordersResponse = await getRecentOrders(10)
+    if (ordersResponse.code === 200 && ordersResponse.data) {
+      recentOrders.value = ordersResponse.data.map((order: any) => {
+        // Map status to display format
+        let statusType = 'info'
+        let timelineType = 'primary'
+        if (order.status === 'CHARGING') {
+          statusType = 'warning'
+          timelineType = 'primary'
+        } else if (order.status === 'COMPLETED') {
+          statusType = 'success'
+          timelineType = 'success'
+        }
+        
+        return {
+          id: order.orderId,
+          orderNo: order.orderId,
+          time: order.createTime ? new Date(order.createTime).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }) : '',
+          status: order.status,
+          statusType,
+          type: timelineType,
+          station: order.stationName || '',
+          charger: order.chargerCode || ''
+        }
+      })
+    }
+  } catch (error) {
+    console.error('加载Dashboard数据失败:', error)
+    ElMessage.error('加载Dashboard数据失败')
   }
-])
+}
+
+onMounted(() => {
+  loadDashboardData()
+})
 
 const getUtilizationColor = (utilization: number) => {
   if (utilization >= 80) return '#67c23a'

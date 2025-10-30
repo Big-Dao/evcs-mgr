@@ -248,20 +248,43 @@ const dataPermissionForm = reactive({
   dataScope: 'TENANT_HIERARCHY'
 })
 
-const tenantTree = ref([
-  {
-    id: 1,
-    tenantName: '总部',
-    children: [
-      { id: 2, tenantName: '华东运营商' },
-      { id: 3, tenantName: '华南运营商' }
-    ]
+const tenantTree = ref<any[]>([])
+
+// 加载租户树
+const loadTenantTree = async () => {
+  try {
+    const { getTenantTree } = await import('@/api/tenant')
+    const response = await getTenantTree()
+    if (response.code === 200 && response.data) {
+      const buildTree = (tenants: any[]) => {
+        if (!tenants || tenants.length === 0) return []
+        const map = new Map()
+        tenants.forEach(t => {
+          map.set(t.tenantId || t.id, { ...t, id: t.tenantId || t.id, children: [] })
+        })
+        const tree: any[] = []
+        tenants.forEach(t => {
+          const node = map.get(t.tenantId || t.id)
+          if (t.parentId && map.has(t.parentId)) {
+            map.get(t.parentId).children.push(node)
+          } else {
+            tree.push(node)
+          }
+        })
+        return tree
+      }
+      const tenants = Array.isArray(response.data) ? response.data : []
+      tenantTree.value = buildTree(tenants)
+    }
+  } catch (error) {
+    console.error('加载租户树失败:', error)
   }
-])
+}
 
 const handleSearch = () => {
   pagination.currentPage = 1
-  ElMessage.success('查询成功')
+  // TODO: 调用角色列表API
+  ElMessage.info('角色查询功能需要后端API支持')
 }
 
 const handleReset = () => {
@@ -292,6 +315,7 @@ const handleDelete = (_row: any) => {
 const handlePermission = (row: any) => {
   ElMessage.info('配置角色权限: ' + row.roleName)
   permissionVisible.value = true
+  loadTenantTree()
 }
 
 const handleSubmit = async () => {
