@@ -77,6 +77,16 @@ management:
       exposure:
         include: health,info,metrics
 
+# Eureka客户端配置
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
 # 多租户配置
 evcs:
   tenant:
