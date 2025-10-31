@@ -64,16 +64,16 @@
 
 ### 已完成里程碑
 - ✅ **P0 & P1**: 核心架构与基础功能（多租户、计费、订单）
-- ✅ **P2 阶段**: 所有核心功能已完成
+- 🟡 **P2 阶段**: 核心功能主要完成（支付渠道仍为模拟实现）
   - 协议调试接口 ✅
-  - 支付渠道集成（支付宝 + 微信）✅
+  - 支付渠道接口搭建（支付宝 + 微信模拟通道）🟡
   - 协议事件流对接（OCPP + 云快充 + RabbitMQ）✅
   - 分布式计费计划缓存广播 ✅
   - 前端管理界面（Vue 3 + Element Plus）✅
-- ✅ **P3 阶段**: 生产就绪准备完成（8个里程碑全部达成）
+ - 🟡 **P3 阶段**: 生产就绪准备进行中（支付集成里程碑收尾中）
   - M1: 环境与安全加固 ✅
   - M2: 协议对接完成 ✅
-  - M3: 支付集成完成 ✅
+  - M3: 支付集成（真实 SDK 接入进行中）🟡
   - M4: 性能优化完成 ✅
   - M5: 前端原型完成 ✅
   - M6: 代码质量提升 ✅
@@ -112,11 +112,19 @@
 - **四层数据隔离**：数据库层、SQL层、服务层、API层全方位数据隔离
 - **微服务设计**：采用Spring Cloud微服务架构，服务解耦，高可扩展
 - **多协议支持**：支持OCPP协议和云快充协议
-- **多支付集成**：集成支付宝、微信支付、网联支付
+- **支付渠道集成进行中**：提供支付宝/微信模拟通道，真实 SDK 与对账接入排期中
 - **实时监控**：完善的监控系统和故障诊断机制
 - **第三方对接**：提供标准API支持第三方平台对接
 - **自动SQL过滤**：基于MyBatis Plus的租户数据自动过滤
 - **声明式权限**：使用AOP注解实现方法级数据权限控制
+
+## ⚠️ 已知限制（P4 Week 2）
+
+- 支付宝/微信通道目前为模拟实现，真实 SDK 接入、验签与渠道对账仍在开发中（`evcs-payment/src/main/java/com/evcs/payment/service/channel`, `evcs-payment/src/main/java/com/evcs/payment/service/impl/ReconciliationServiceImpl.java`)
+- 支付成功回调尚未同步更新订单状态（`evcs-payment/src/main/java/com/evcs/payment/service/impl/PaymentServiceImpl.java:115`）
+- 权限菜单暂未按角色过滤，默认返回全量菜单（`evcs-auth/src/main/java/com/evcs/auth/service/impl/PermissionServiceImpl.java:28`）
+- 计费缓存预热使用静态热点站点列表，后续需接入配置或统计数据（`evcs-order/src/main/java/com/evcs/order/config/CachePreloadRunner.java:34`）
+- 管理后台仪表盘/排行榜页面依赖的后端接口尚未提供（`evcs-admin/src/views/order/OrderDashboard.vue:197`）
 
 ## 🔒 多租户数据隔离架构
 
@@ -407,11 +415,11 @@ JWT Token配置：
 - HTTP RESTful API
 - 兼容主流充电桩厂商
 
-## 💳 支付集成
+## 💳 支付集成（进行中）
 
-- **支付宝**：支持扫码支付、APP支付
-- **微信支付**：支持扫码支付、小程序支付
-- **网联支付**：支持银行卡支付
+- **支付宝**：已提供扫码/APP 模拟通道，真实 SDK 接入与验签开发中
+- **微信支付**：已提供扫码/小程序 模拟通道，平台证书校验与 SDK 接入排期中
+- **对账能力**：系统侧统计已完成，渠道对账单下载与比对实现中
 
 ## 🤝 第三方对接
 
@@ -541,4 +549,3 @@ JWT Token配置：
 - 协议事件模型：[docs/协议事件模型说明.md](docs/协议事件模型说明.md)
 - 协议对接指南：[docs/协议对接指南.md](docs/协议对接指南.md)
 - 协议故障排查：[docs/协议故障排查手册.md](docs/协议故障排查手册.md)
-
