@@ -41,7 +41,13 @@ dependencies {
 
     // Test dependencies
     testImplementation testFixtures(project(':evcs-common'))
-    testImplementation 'it.ozimov:embedded-redis:0.7.3'
+    testImplementation('it.ozimov:embedded-redis:0.7.3') {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
     testImplementation 'org.testcontainers:testcontainers:1.19.0'
     testImplementation 'org.testcontainers:junit-jupiter:1.19.0'
+
+    // Resolve logging conflicts
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'ch.qos.logback:logback-classic'
 }

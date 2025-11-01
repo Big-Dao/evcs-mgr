@@ -2,7 +2,9 @@ package com.evcs.payment.controller;
 
 import com.evcs.payment.dto.CallbackRequest;
 import com.evcs.payment.dto.CallbackResponse;
+import com.evcs.payment.dto.RefundCallbackRequest;
 import com.evcs.payment.service.callback.PaymentCallbackService;
+import com.evcs.payment.service.IRefundCallbackService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,7 @@ import java.util.Map;
 public class PaymentCallbackController {
 
     private final PaymentCallbackService paymentCallbackService;
+    private final IRefundCallbackService refundCallbackService;
 
     /**
      * 支付宝支付回调
@@ -83,8 +86,29 @@ public class PaymentCallbackController {
     @Operation(summary = "支付宝退款回调")
     public ResponseEntity<String> alipayRefundCallback(HttpServletRequest request) {
         log.info("收到支付宝退款回调");
-        // TODO: 实现退款回调处理
-        return ResponseEntity.ok("success");
+
+        try {
+            // 解析回调参数
+            Map<String, String> params = extractRequestParams(request);
+
+            // 解析退款回调请求
+            RefundCallbackRequest refundCallbackRequest = refundCallbackService.parseAlipayRefundCallback(params);
+
+            // 处理退款回调
+            boolean success = refundCallbackService.handleRefundCallback(refundCallbackRequest);
+
+            if (success) {
+                log.info("支付宝退款回调处理成功");
+                return ResponseEntity.ok("success");
+            } else {
+                log.error("支付宝退款回调处理失败");
+                return ResponseEntity.ok("fail");
+            }
+
+        } catch (Exception e) {
+            log.error("处理支付宝退款回调异常", e);
+            return ResponseEntity.ok("fail");
+        }
     }
 
     /**
@@ -140,5 +164,23 @@ public class PaymentCallbackController {
                 channel, callbackRequest.getTradeNo(), callbackRequest.getTradeStatus());
 
         return callbackRequest;
+    }
+
+    /**
+     * 提取请求参数
+     */
+    private Map<String, String> extractRequestParams(HttpServletRequest request) {
+        Map<String, String> params = new HashMap<>();
+
+        // 获取所有请求参数
+        Enumeration<String> parameterNames = request.getParameterNames();
+
+        while (parameterNames.hasMoreElements()) {
+            String paramName = parameterNames.nextElement();
+            String paramValue = request.getParameter(paramName);
+            params.put(paramName, paramValue);
+        }
+
+        return params;
     }
 }
