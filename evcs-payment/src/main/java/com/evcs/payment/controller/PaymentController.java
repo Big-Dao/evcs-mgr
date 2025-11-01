@@ -39,17 +39,17 @@ public class PaymentController {
         return response != null ? Result.success(response) : Result.fail("支付订单不存在");
     }
 
-    @PostMapping("/callback/alipay")
-    @Operation(summary = "支付宝支付回调")
-    public Result<Boolean> alipayCallback(@RequestParam String tradeNo, 
+    @PostMapping("/callback/simple/alipay")
+    @Operation(summary = "支付宝支付回调（简化版）")
+    public Result<Boolean> alipayCallback(@RequestParam String tradeNo,
                                          @RequestParam(defaultValue = "true") boolean success) {
         boolean handled = paymentService.handlePaymentCallback(tradeNo, success);
         return Result.success(handled);
     }
 
-    @PostMapping("/callback/wechat")
-    @Operation(summary = "微信支付回调")
-    public Result<Boolean> wechatCallback(@RequestParam String tradeNo, 
+    @PostMapping("/callback/simple/wechat")
+    @Operation(summary = "微信支付回调（简化版）")
+    public Result<Boolean> wechatCallback(@RequestParam String tradeNo,
                                          @RequestParam(defaultValue = "true") boolean success) {
         boolean handled = paymentService.handlePaymentCallback(tradeNo, success);
         return Result.success(handled);

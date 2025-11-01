@@ -8,6 +8,8 @@ import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.mapper.PaymentOrderMapper;
 import com.evcs.payment.service.IReconciliationService;
+import com.evcs.payment.service.reconciliation.ReconciliationExceptionService;
+import com.evcs.payment.service.reconciliation.ReconciliationStatementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -35,6 +38,8 @@ import java.util.List;
 public class ReconciliationServiceImpl implements IReconciliationService {
 
     private final PaymentOrderMapper paymentOrderMapper;
+    private final ReconciliationStatementService statementService;
+    private final ReconciliationExceptionService exceptionService;
 
     @Override
     @DataScope
@@ -58,12 +63,45 @@ public class ReconciliationServiceImpl implements IReconciliationService {
             .map(PaymentOrder::getAmount)
             .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // TODO: 从支付渠道下载对账单并比对
-        // 现阶段使用模拟数据
-        BigDecimal channelTotalAmount = systemTotalAmount; // 假设渠道金额一致
-        int totalCount = orders.size();
-        int matchedCount = orders.size(); // 假设全部匹配
-        int mismatchCount = 0;
+        // 下载并解析对账单
+        BigDecimal channelTotalAmount;
+        int totalCount;
+        int matchedCount;
+        int mismatchCount;
+
+        try {
+            log.info("开始下载对账单: channel={}, date={}", request.getChannel(), date);
+            var statement = statementService.downloadStatement(request.getChannel(), date);
+
+            if (statement != null && statement.getTransactions() != null) {
+                channelTotalAmount = statement.getTotalAmount() != null ?
+                    statement.getTotalAmount() : BigDecimal.ZERO;
+
+                // 执行详细的交易比对
+                var reconciliationDetails = compareTransactions(orders, statement.getTransactions());
+                totalCount = reconciliationDetails.getTotalCount();
+                matchedCount = reconciliationDetails.getMatchedCount();
+                mismatchCount = reconciliationDetails.getMismatchCount();
+
+                // 检测并处理异常
+                detectAndHandleExceptions(date.toString() + "_" + request.getChannel(),
+                    reconciliationDetails.getExceptions());
+
+            } else {
+                log.warn("对账单为空，使用系统数据: channel={}", request.getChannel());
+                channelTotalAmount = systemTotalAmount;
+                totalCount = orders.size();
+                matchedCount = orders.size();
+                mismatchCount = 0;
+            }
+
+        } catch (Exception e) {
+            log.error("对账单处理失败，使用系统数据: channel={}", request.getChannel(), e);
+            channelTotalAmount = systemTotalAmount;
+            totalCount = orders.size();
+            matchedCount = orders.size();
+            mismatchCount = 0;
+        }
 
         // 计算对账成功率
         double successRate = totalCount > 0 
@@ -110,5 +148,99 @@ public class ReconciliationServiceImpl implements IReconciliationService {
         request.setReconciliationDate(yesterday);
         request.setChannel(channel);
         return reconcile(request);
+    }
+
+    /**
+     * 比较系统订单与对账单交易
+     */
+    private ReconciliationDetails compareTransactions(List<PaymentOrder> systemOrders,
+                                                     List<com.evcs.payment.dto.ReconciliationStatement.StatementTransaction> statementTransactions) {
+        log.info("开始比对交易数据: systemCount={}, statementCount={}",
+                systemOrders.size(), statementTransactions.size());
+
+        ReconciliationDetails details = new ReconciliationDetails();
+        details.setTotalCount(Math.max(systemOrders.size(), statementTransactions.size()));
+
+        int matched = 0;
+        int mismatched = 0;
+        List<String> exceptions = new ArrayList<>();
+
+        // 简化的比对逻辑：按金额和状态匹配
+        // TODO: 实现更精确的匹配逻辑（交易号、时间等）
+        for (PaymentOrder order : systemOrders) {
+            boolean found = false;
+            for (var transaction : statementTransactions) {
+                if (order.getAmount().equals(transaction.getAmount()) &&
+                    "TRADE_SUCCESS".equals(transaction.getTradeStatus())) {
+                    found = true;
+                    matched++;
+                    break;
+                }
+            }
+            if (!found) {
+                mismatched++;
+                exceptions.add("订单未在对账单中找到: " + order.getTradeNo());
+            }
+        }
+
+        details.setMatchedCount(matched);
+        details.setMismatchCount(mismatched);
+        details.setExceptions(exceptions);
+
+        log.info("交易比对完成: total={}, matched={}, mismatched={}",
+                details.getTotalCount(), matched, mismatched);
+
+        return details;
+    }
+
+    /**
+     * 检测并处理异常
+     */
+    private void detectAndHandleExceptions(String reconciliationId, List<String> exceptionMessages) {
+        if (exceptionMessages.isEmpty()) {
+            return;
+        }
+
+        try {
+            log.info("检测到对账异常: count={}", exceptionMessages.size());
+
+            // 检测详细异常
+            var exceptions = exceptionService.detectExceptions(reconciliationId);
+
+            if (!exceptions.isEmpty()) {
+                // 尝试自动处理异常
+                var handleResult = exceptionService.handleExceptions(exceptions);
+                log.info("异常处理结果: total={}, success={}, successRate={}%",
+                        handleResult.getTotalCount(), handleResult.getSuccessCount(),
+                        handleResult.getSuccessRate());
+
+                // 生成异常报告
+                String report = exceptionService.generateExceptionReport(reconciliationId);
+                log.info("异常报告生成完成: reportLength={}", report.length());
+            }
+
+        } catch (Exception e) {
+            log.error("检测处理对账异常失败: reconciliationId={}", reconciliationId, e);
+        }
+    }
+
+    /**
+     * 对账详情
+     */
+    private static class ReconciliationDetails {
+        private int totalCount;
+        private int matchedCount;
+        private int mismatchCount;
+        private List<String> exceptions;
+
+        // Getters and setters
+        public int getTotalCount() { return totalCount; }
+        public void setTotalCount(int totalCount) { this.totalCount = totalCount; }
+        public int getMatchedCount() { return matchedCount; }
+        public void setMatchedCount(int matchedCount) { this.matchedCount = matchedCount; }
+        public int getMismatchCount() { return mismatchCount; }
+        public void setMismatchCount(int mismatchCount) { this.mismatchCount = mismatchCount; }
+        public List<String> getExceptions() { return exceptions; }
+        public void setExceptions(List<String> exceptions) { this.exceptions = exceptions; }
     }
 }

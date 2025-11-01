@@ -218,10 +218,22 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
         );
     }
 
-    /**
-     * 选择支付渠道
-     */
-    private IPaymentChannel selectChannel(PaymentMethod method) {
+    @Override
+    @DataScope
+    public PaymentOrder getByTradeNo(String tradeNo) {
+        return baseMapper.selectOne(
+            new LambdaQueryWrapper<PaymentOrder>()
+                .eq(PaymentOrder::getTradeNo, tradeNo)
+        );
+    }
+
+    @Override
+    public boolean updatePaymentOrder(PaymentOrder paymentOrder) {
+        return baseMapper.updateById(paymentOrder) > 0;
+    }
+
+    @Override
+    public IPaymentChannel selectChannel(PaymentMethod method) {
         if (method.name().startsWith("ALIPAY")) {
             return alipayChannelService;
         } else if (method.name().startsWith("WECHAT")) {
@@ -229,6 +241,13 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
         } else {
             throw new IllegalArgumentException("不支持的支付方式: " + method);
         }
+    }
+
+    /**
+     * 选择支付渠道（私有方法，保持向后兼容）
+     */
+    private IPaymentChannel selectChannelPrivate(PaymentMethod method) {
+        return selectChannel(method);
     }
 
     /**

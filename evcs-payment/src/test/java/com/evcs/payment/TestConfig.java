@@ -21,4 +21,29 @@ public class TestConfig {
     public MeterRegistry meterRegistry() {
         return new SimpleMeterRegistry();
     }
+
+    /**
+     * 提供模拟的支付消息服务用于测试
+     */
+    @Bean
+    @Primary
+    public com.evcs.payment.service.message.PaymentMessageService paymentMessageService() {
+        return new com.evcs.payment.service.message.PaymentMessageService() {
+            @Override
+            public void sendPaymentSuccessMessage(com.evcs.payment.entity.PaymentOrder paymentOrder) {
+                // 测试环境下只记录日志，不发送真实消息
+                System.out.println("测试环境 - 支付成功消息: " + paymentOrder.getOrderId());
+            }
+
+            @Override
+            public void sendPaymentFailureMessage(com.evcs.payment.entity.PaymentOrder paymentOrder) {
+                System.out.println("测试环境 - 支付失败消息: " + paymentOrder.getOrderId());
+            }
+
+            @Override
+            public void sendRefundSuccessMessage(com.evcs.payment.entity.PaymentOrder paymentOrder) {
+                System.out.println("测试环境 - 退款成功消息: " + paymentOrder.getOrderId());
+            }
+        };
+    }
 }
