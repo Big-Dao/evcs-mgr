@@ -27,6 +27,16 @@ import org.springframework.transaction.annotation.Transactional;
  * </pre>
  */
 @ActiveProfiles("test")
+@org.springframework.test.context.TestPropertySource(properties = {
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.sql.init.mode=always",
+        "spring.sql.init.schema-locations=classpath:schema-h2.sql",
+        "spring.datasource.hikari.maximum-pool-size=5",
+        "spring.datasource.hikari.minimum-idle=1"
+})
 @Transactional
 @Rollback
 public abstract class BaseServiceTest {

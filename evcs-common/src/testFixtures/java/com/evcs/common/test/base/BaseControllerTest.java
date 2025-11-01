@@ -10,6 +10,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
@@ -33,7 +36,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
  * </pre>
  */
 @ActiveProfiles("test")
-@AutoConfigureMockMvc
+@org.springframework.test.context.TestPropertySource(properties = {
+        "spring.datasource.driver-class-name=org.h2.Driver",
+        "spring.datasource.url=jdbc:h2:mem:testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1",
+        "spring.datasource.username=sa",
+        "spring.datasource.password=",
+        "spring.sql.init.mode=always",
+        "spring.sql.init.schema-locations=classpath:schema-h2.sql",
+        "spring.datasource.hikari.maximum-pool-size=5",
+        "spring.datasource.hikari.minimum-idle=1"
+})
+@AutoConfigureMockMvc(addFilters = false)
 @Transactional
 public abstract class BaseControllerTest {
 
@@ -60,6 +73,9 @@ public abstract class BaseControllerTest {
     public void setUpTenantContext() {
         TenantContext.setCurrentTenantId(getTestTenantId());
         TenantContext.setCurrentUserId(getTestUserId());
+        var authorities = AuthorityUtils.createAuthorityList("ROLE_TEST");
+        var authentication = new UsernamePasswordAuthenticationToken("test-user", "N/A", authorities);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
     }
 
     /**
@@ -68,6 +84,7 @@ public abstract class BaseControllerTest {
     @AfterEach
     public void tearDownTenantContext() {
         TenantContext.clear();
+        SecurityContextHolder.clearContext();
     }
 
     /**

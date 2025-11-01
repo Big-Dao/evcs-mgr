@@ -24,6 +24,7 @@ class StationControllerTest extends BaseControllerTest {
     @Resource
     private IStationService stationService;
 
+
     @Test
     @DisplayName("查询充电站列表 - 返回成功")
     void testListStations() throws Exception {
@@ -38,8 +39,8 @@ class StationControllerTest extends BaseControllerTest {
         stationService.saveStation(station);
 
         // Act & Assert
-        mockMvc.perform(get("/api/stations")
-                .param("page", "1")
+        mockMvc.perform(get("/station")
+                .param("current", "1")
                 .param("size", "10")
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -61,7 +62,7 @@ class StationControllerTest extends BaseControllerTest {
         stationService.saveStation(station);
 
         // Act & Assert
-        mockMvc.perform(get("/api/stations/" + station.getStationId())
+        mockMvc.perform(get("/station/" + station.getStationId())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200))
@@ -81,7 +82,7 @@ class StationControllerTest extends BaseControllerTest {
         station.setStatus(1);
 
         // Act & Assert
-        mockMvc.perform(post("/api/stations")
+        mockMvc.perform(post("/station")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(toJson(station)))
                 .andExpect(status().isOk())
@@ -106,7 +107,7 @@ class StationControllerTest extends BaseControllerTest {
         station.setAddress("更新后的地址");
 
         // Act & Assert
-        mockMvc.perform(put("/api/stations/" + station.getStationId())
+        mockMvc.perform(put("/station/" + station.getStationId())
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(toJson(station)))
                 .andExpect(status().isOk())
@@ -127,7 +128,7 @@ class StationControllerTest extends BaseControllerTest {
         stationService.saveStation(station);
 
         // Act & Assert
-        mockMvc.perform(delete("/api/stations/" + station.getStationId())
+        mockMvc.perform(delete("/station/" + station.getStationId())
                 .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.code").value(200));

@@ -37,8 +37,8 @@ public class ChargerController {
      * 分页查询充电桩列表
      */
     @Operation(summary = "分页查询充电桩列表", description = "支持按名称、编码、状态、类型查询，返回分页结果")
-    @GetMapping("/page")
-    @PreAuthorize("hasPermission('charger:list')")
+    @GetMapping({"/page", "/list"})
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:list')")
     @DataScope
     public Result<IPage<Charger>> getChargerPage(
             @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
@@ -55,8 +55,8 @@ public class ChargerController {
      * 根据ID查询充电桩详情
      */
     @Operation(summary = "查询充电桩详情", description = "根据充电桩ID查询详细信息")
-    @GetMapping("/{chargerId}")
-    @PreAuthorize("hasPermission('charger:query')")
+    @GetMapping("/{chargerId:\\d+}")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Charger> getChargerById(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId) {
@@ -74,7 +74,7 @@ public class ChargerController {
      */
     @Operation(summary = "查询充电站下的充电桩", description = "根据充电站ID查询所有充电桩")
     @GetMapping("/station/{stationId}")
-    @PreAuthorize("hasPermission('charger:query')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
     public Result<List<Charger>> getChargersByStationId(
             @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId) {
@@ -88,7 +88,7 @@ public class ChargerController {
      */
     @Operation(summary = "新增充电桩", description = "创建新的充电桩")
     @PostMapping
-    @PreAuthorize("hasPermission('charger:add')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:add')")
     public Result<Void> addCharger(@Parameter(description = "充电桩信息") @RequestBody @Valid Charger charger) {
         try {
             boolean success = chargerService.saveCharger(charger);
@@ -107,7 +107,7 @@ public class ChargerController {
      */
     @Operation(summary = "更新充电桩", description = "更新充电桩信息")
     @PutMapping
-    @PreAuthorize("hasPermission('charger:edit')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:edit')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> updateCharger(@Parameter(description = "充电桩信息") @RequestBody @Valid Charger charger) {
         if (charger.getId() == null) {
@@ -131,7 +131,7 @@ public class ChargerController {
      */
     @Operation(summary = "删除充电桩", description = "删除指定充电桩（逻辑删除）")
     @DeleteMapping("/{chargerId}")
-    @PreAuthorize("hasPermission('charger:remove')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:remove')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> deleteCharger(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId) {
@@ -153,7 +153,7 @@ public class ChargerController {
      */
     @Operation(summary = "更新充电桩状态", description = "更新充电桩运行状态")
     @PutMapping("/{chargerId}/status")
-    @PreAuthorize("hasPermission('charger:edit')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:edit')")
     public Result<Void> updateChargerStatus(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
             @Parameter(description = "状态：0离线，1空闲，2充电中，3故障，4维护，5预约中") @RequestParam Integer status) {
@@ -171,7 +171,7 @@ public class ChargerController {
      */
     @Operation(summary = "更新实时数据", description = "更新充电桩实时运行数据")
     @PutMapping("/{chargerId}/realtime")
-    @PreAuthorize("hasPermission('charger:edit')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:edit')")
     public Result<Void> updateRealTimeData(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
             @Parameter(description = "实时功率(kW)") @RequestParam(required = false) Double power,
@@ -192,7 +192,7 @@ public class ChargerController {
      */
     @Operation(summary = "开始充电", description = "开始充电会话")
     @PostMapping("/{chargerId}/start")
-    @PreAuthorize("hasPermission('charger:charge')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:charge')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> startCharging(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
@@ -216,7 +216,7 @@ public class ChargerController {
      */
     @Operation(summary = "结束充电", description = "结束充电会话")
     @PostMapping("/{chargerId}/stop")
-    @PreAuthorize("hasPermission('charger:charge')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:charge')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> stopCharging(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
@@ -236,7 +236,7 @@ public class ChargerController {
      */
     @Operation(summary = "重置充电桩", description = "重置充电桩状态，清除当前会话")
     @PostMapping("/{chargerId}/reset")
-    @PreAuthorize("hasPermission('charger:edit')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:edit')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> resetCharger(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId) {
@@ -254,7 +254,7 @@ public class ChargerController {
      */
     @Operation(summary = "启用停用充电桩", description = "启用或停用指定充电桩")
     @PutMapping("/{chargerId}/enable")
-    @PreAuthorize("hasPermission('charger:edit')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:edit')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> changeChargerStatus(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
@@ -278,7 +278,7 @@ public class ChargerController {
      */
     @Operation(summary = "查询离线充电桩", description = "查询指定时间内未上报心跳的充电桩")
     @GetMapping("/offline")
-    @PreAuthorize("hasPermission('charger:query')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
     public Result<List<Charger>> getOfflineChargers(
             @Parameter(description = "离线时间阈值(分钟)", example = "5") @RequestParam(defaultValue = "5") Integer minutes) {
@@ -292,7 +292,7 @@ public class ChargerController {
      */
     @Operation(summary = "查询故障充电桩", description = "查询当前故障状态的充电桩")
     @GetMapping("/fault")
-    @PreAuthorize("hasPermission('charger:query')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
     public Result<List<Charger>> getFaultChargers() {
         List<Charger> chargers = chargerService.getFaultChargers();
@@ -304,7 +304,7 @@ public class ChargerController {
      */
     @Operation(summary = "统计充电桩状态", description = "统计各状态充电桩数量")
     @GetMapping("/statistics")
-    @PreAuthorize("hasPermission('charger:query')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
     public Result<Map<Integer, Long>> getStatusStatistics() {
         Map<Integer, Long> statistics = chargerService.getStatusStatistics(null);
@@ -316,7 +316,7 @@ public class ChargerController {
      */
     @Operation(summary = "按协议查询充电桩", description = "根据充电协议类型查询充电桩")
     @GetMapping("/protocol/{protocol}")
-    @PreAuthorize("hasPermission('charger:query')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
     public Result<List<Charger>> getChargersByProtocol(
             @Parameter(description = "协议类型", example = "ocpp") @PathVariable String protocol) {
@@ -343,7 +343,7 @@ public class ChargerController {
      */
     @Operation(summary = "批量更新状态", description = "批量更新多个充电桩的状态")
     @PutMapping("/batch-status")
-    @PreAuthorize("hasPermission('charger:edit')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:edit')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> batchUpdateStatus(
             @Parameter(description = "充电桩ID列表") @RequestBody List<Long> chargerIds,

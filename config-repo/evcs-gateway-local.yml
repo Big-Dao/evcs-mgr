@@ -88,6 +88,14 @@ spring:
           filters:
             - StripPrefix=1  # 去掉/api，转发到order服务的/order/**
         
+        # 计费方案路由（属于order服务）
+        - id: evcs-billing
+          uri: lb://evcs-order
+          predicates:
+            - Path=/api/billing/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到order服务的/billing/**
+        
         # 支付服务路由
         - id: evcs-payment
           uri: lb://evcs-payment
