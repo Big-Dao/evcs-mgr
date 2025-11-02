@@ -36,8 +36,8 @@ public class StationController {
      * 分页查询充电站列表
      */
     @Operation(summary = "分页查询充电站列表", description = "支持按名称、编码、状态、地区查询，返回分页结果")
-    @GetMapping({"", "/", "/page"})
-    @PreAuthorize("hasPermission('station:list')")
+    @GetMapping({"", "/", "/page", "/list"})
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:list')")
     @DataScope
     public Result<IPage<Station>> getStationPage(
             @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
@@ -55,7 +55,7 @@ public class StationController {
      */
     @Operation(summary = "查询充电站详情", description = "根据充电站ID查询详细信息，包含充电桩统计")
     @GetMapping("/{stationId}")
-    @PreAuthorize("hasPermission('station:query')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:query')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Station> getStationById(
             @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId) {
@@ -73,7 +73,7 @@ public class StationController {
      */
     @Operation(summary = "新增充电站", description = "创建新的充电站")
     @PostMapping
-    @PreAuthorize("hasPermission('station:add')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:add')")
     public Result<Void> addStation(@Parameter(description = "充电站信息") @RequestBody @Valid Station station) {
         try {
             boolean success = stationService.saveStation(station);
@@ -92,7 +92,7 @@ public class StationController {
      */
     @Operation(summary = "更新充电站", description = "更新充电站信息")
     @PutMapping("/{stationId}")
-    @PreAuthorize("hasPermission('station:edit')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:edit')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> updateStation(
             @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId,
@@ -120,7 +120,7 @@ public class StationController {
      */
     @Operation(summary = "删除充电站", description = "删除指定充电站（逻辑删除）")
     @DeleteMapping("/{stationId}")
-    @PreAuthorize("hasPermission('station:remove')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:remove')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> deleteStation(
             @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId) {
@@ -142,7 +142,7 @@ public class StationController {
      */
     @Operation(summary = "查询附近充电站", description = "根据经纬度查询附近的充电站")
     @GetMapping("/nearby")
-    @PreAuthorize("hasPermission('station:query')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:query')")
     @DataScope
     public Result<List<Station>> getNearbyStations(
             @Parameter(description = "纬度") @RequestParam Double latitude,
@@ -159,7 +159,7 @@ public class StationController {
      */
     @Operation(summary = "启用停用充电站", description = "启用或停用指定充电站")
     @PutMapping("/{stationId}/status")
-    @PreAuthorize("hasPermission('station:edit')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:edit')")
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> changeStationStatus(
             @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId,
@@ -196,7 +196,7 @@ public class StationController {
      */
     @Operation(summary = "统计充电站数量", description = "统计当前租户下的充电站数量")
     @GetMapping("/count")
-    @PreAuthorize("hasPermission('station:query')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:query')")
     @DataScope
     public Result<Long> countStations() {
         Long count = stationService.count();
@@ -208,7 +208,7 @@ public class StationController {
      */
     @Operation(summary = "导入充电站", description = "批量导入充电站数据")
     @PostMapping("/import")
-    @PreAuthorize("hasPermission('station:import')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:import')")
     public Result<Void> importStations(@Parameter(description = "充电站列表") @RequestBody @Valid List<Station> stations) {
         if (stations == null || stations.isEmpty()) {
             return Result.fail("导入数据不能为空");
@@ -232,7 +232,7 @@ public class StationController {
      */
     @Operation(summary = "导出充电站", description = "导出充电站数据")
     @GetMapping("/export")
-    @PreAuthorize("hasPermission('station:export')")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:export')")
     @DataScope
     public Result<List<Station>> exportStations(@Parameter(description = "查询条件") Station queryParam) {
         List<Station> stations = stationService.exportStations(queryParam);

@@ -6,6 +6,7 @@ import com.evcs.payment.dto.PaymentResponse;
 import com.evcs.payment.dto.RefundRequest;
 import com.evcs.payment.dto.RefundResponse;
 import com.evcs.payment.entity.PaymentOrder;
+import com.evcs.payment.enums.PaymentMethod;
 
 /**
  * 支付服务接口
@@ -36,4 +37,19 @@ public interface IPaymentService extends IService<PaymentOrder> {
      * 根据业务订单ID查询支付订单
      */
     PaymentOrder getByOrderId(Long orderId);
+
+    /**
+     * 根据交易流水号查询支付订单
+     */
+    PaymentOrder getByTradeNo(String tradeNo);
+
+    /**
+     * 更新支付订单
+     */
+    boolean updatePaymentOrder(PaymentOrder paymentOrder);
+
+    /**
+     * 选择支付渠道
+     */
+    com.evcs.payment.service.channel.IPaymentChannel selectChannel(PaymentMethod method);
 }

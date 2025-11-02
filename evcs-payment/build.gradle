@@ -20,10 +20,34 @@ dependencies {
     // Database
     implementation "org.postgresql:postgresql:${postgresqlVersion}"
     implementation "com.baomidou:mybatis-plus-spring-boot3-starter:${mybatisPlusVersion}"
+
+    // Redis
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+    // Metrics and Monitoring
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
     
     // API Documentation
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
-    
+
+    // Payment SDKs
+    implementation 'com.alipay.sdk:alipay-sdk-java:4.35.79.ALL'
+    implementation 'com.github.wechatpay-apiv3:wechatpay-java:0.2.12'
+
+    // JSON Processing
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
     // Test dependencies
     testImplementation testFixtures(project(':evcs-common'))
+    testImplementation('it.ozimov:embedded-redis:0.7.3') {
+        exclude group: 'org.slf4j', module: 'slf4j-simple'
+    }
+    testImplementation 'org.testcontainers:testcontainers:1.19.0'
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.0'
+
+    // Resolve logging conflicts
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'ch.qos.logback:logback-classic'
 }

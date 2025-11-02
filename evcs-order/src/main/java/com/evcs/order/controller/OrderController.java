@@ -16,12 +16,12 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "订单管理", description = "充电订单查询接口")
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/order")
 @RequiredArgsConstructor
 public class OrderController {
     private final IChargingOrderService orderService;
 
-    @GetMapping("/page")
+    @GetMapping({"/page", "/list"})
     @Operation(summary = "分页查询订单")
     @DataScope
     public Result<IPage<ChargingOrder>> page(
@@ -62,35 +62,35 @@ public class OrderController {
         return Result.success(orderService.completeOrderOnStop(sessionId, energy, duration));
     }
 
-    @PostMapping("/{orderId}/to-pay")
+    @PostMapping("/{orderId:\\d+}/to-pay")
     @Operation(summary = "订单进入待支付状态")
     @DataScope
     public Result<Boolean> toPay(@PathVariable Long orderId) {
         return Result.success(orderService.markToPay(orderId));
     }
 
-    @PostMapping("/{orderId}/paid")
+    @PostMapping("/{orderId:\\d+}/paid")
     @Operation(summary = "订单支付完成")
     @DataScope
     public Result<Boolean> paid(@PathVariable Long orderId) {
         return Result.success(orderService.markPaid(orderId));
     }
 
-    @PostMapping("/{orderId}/cancel")
+    @PostMapping("/{orderId:\\d+}/cancel")
     @Operation(summary = "取消订单")
     @DataScope
     public Result<Boolean> cancel(@PathVariable Long orderId) {
         return Result.success(orderService.cancelOrder(orderId));
     }
 
-    @PostMapping("/{orderId}/refunding")
+    @PostMapping("/{orderId:\\d+}/refunding")
     @Operation(summary = "订单进入退款中")
     @DataScope
     public Result<Boolean> refunding(@PathVariable Long orderId) {
         return Result.success(orderService.markRefunding(orderId));
     }
 
-    @PostMapping("/{orderId}/refunded")
+    @PostMapping("/{orderId:\\d+}/refunded")
     @Operation(summary = "订单退款完成")
     @DataScope
     public Result<Boolean> refunded(@PathVariable Long orderId) {

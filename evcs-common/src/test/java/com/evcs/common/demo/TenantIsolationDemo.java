@@ -1,4 +1,4 @@
-package com.evcs.demo;
+package com.evcs.common.demo;
 
 /**
  * 多租户隔离效果演示

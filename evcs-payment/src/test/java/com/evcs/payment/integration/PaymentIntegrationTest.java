@@ -3,6 +3,7 @@ package com.evcs.payment.integration;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.test.base.BaseIntegrationTest;
 import com.evcs.payment.PaymentServiceApplication;
+import com.evcs.payment.TestConfig;
 import com.evcs.payment.dto.*;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentMethod;
@@ -18,7 +19,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 5. 幂等性保证
  */
 @SpringBootTest(
-    classes = PaymentServiceApplication.class,
+    classes = {PaymentServiceApplication.class, TestConfig.class},
     properties = {
         "spring.datasource.driver-class-name=org.h2.Driver",
         "spring.datasource.url=jdbc:h2:mem:payment_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH",
@@ -52,7 +52,6 @@ class PaymentIntegrationTest extends BaseIntegrationTest {
     private IReconciliationService reconciliationService;
 
     private static final Long TENANT_1 = 1L;
-    private static final Long TENANT_2 = 2L;
     private static final Long USER_1 = 100L;
 
     @BeforeEach

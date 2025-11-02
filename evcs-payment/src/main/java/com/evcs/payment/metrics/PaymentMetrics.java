@@ -310,7 +310,7 @@ public class PaymentMetrics extends BusinessMetrics {
 
     /**
      * 计算回调处理成功率
-     * 
+     *
      * @return 成功率百分比 (0-100)
      */
     public double getCallbackSuccessRate() {
@@ -320,4 +320,61 @@ public class PaymentMetrics extends BusinessMetrics {
         }
         return (callbackSuccessCounter.count() / total) * 100.0;
     }
+
+    /**
+     * 获取总支付金额
+     *
+     * @return 总支付金额（分）
+     */
+    public AtomicLong getTotalPaymentAmount() {
+        return totalPaymentAmount;
+    }
+
+    /**
+     * 记录自定义指标
+     *
+     * @param metricName 指标名称
+     * @param value 指标值
+     * @param tags 标签
+     */
+    public void recordCustomMetric(String metricName, double value, java.util.Map<String, String> tags) {
+        String[] tagArray = convertMapToTags(tags);
+        Counter counter = counters.computeIfAbsent(metricName + ":" + tags.hashCode(),
+            name -> createCounter(metricName, "Custom payment metric", tagArray));
+        incrementCounter(counter);
+    }
+
+    /**
+     * 记录时间指标
+     *
+     * @param metricName 指标名称
+     * @param durationMs 持续时间（毫秒）
+     * @param tags 标签
+     */
+    public void recordTimer(String metricName, long durationMs, java.util.Map<String, String> tags) {
+        String[] tagArray = convertMapToTags(tags);
+        Timer timer = timers.computeIfAbsent(metricName + ":" + tags.hashCode(),
+            name -> createTimer(metricName, "Payment duration metric", tagArray));
+        timer.record(durationMs, java.util.concurrent.TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * 将Map转换为标签数组
+     *
+     * @param tags 标签Map
+     * @return 标签数组
+     */
+    private String[] convertMapToTags(java.util.Map<String, String> tags) {
+        if (tags == null || tags.isEmpty()) {
+            return new String[0];
+        }
+
+        return tags.entrySet().stream()
+            .flatMap(entry -> java.util.stream.Stream.of(entry.getKey(), entry.getValue()))
+            .toArray(String[]::new);
+    }
+
+    // 缓存计数器和计时器以避免重复创建
+    private final ConcurrentHashMap<String, Counter> counters = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Timer> timers = new ConcurrentHashMap<>();
 }

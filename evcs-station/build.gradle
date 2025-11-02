@@ -26,8 +26,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    // Security annotations only - auto-configuration disabled in main class
-    implementation 'org.springframework.security:spring-security-core'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     
     // Database and ORM
     implementation "org.postgresql:postgresql:${postgresqlVersion}"

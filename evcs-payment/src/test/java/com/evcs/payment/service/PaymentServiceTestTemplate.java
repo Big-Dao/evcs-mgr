@@ -1,8 +1,9 @@
 package com.evcs.payment.service;
 
 import com.evcs.common.test.base.BaseServiceTest;
-import com.evcs.common.test.util.TestDataFactory;
 import com.evcs.payment.PaymentServiceApplication;
+import com.evcs.payment.config.MockPaymentMetricsConfig;
+import com.evcs.payment.config.TestRedisConfig;
 import com.evcs.payment.dto.PaymentRequest;
 import com.evcs.payment.dto.PaymentResponse;
 import com.evcs.payment.dto.RefundRequest;
@@ -15,6 +16,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.ContextConfiguration;
 
 import java.math.BigDecimal;
 
@@ -23,16 +25,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 支付服务测试
  */
-@SpringBootTest(
-    classes = PaymentServiceApplication.class,
-    properties = {
-        "spring.datasource.driver-class-name=org.h2.Driver",
-        "spring.datasource.url=jdbc:h2:mem:payment_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH",
-        "spring.datasource.username=sa",
-        "spring.datasource.password="
-    }
-)
+@SpringBootTest(classes = PaymentServiceApplication.class)
 @ActiveProfiles("test")
+@ContextConfiguration(classes = {TestRedisConfig.class, MockPaymentMetricsConfig.class})
 @DisplayName("支付服务测试")
 class PaymentServiceTestTemplate extends BaseServiceTest {
 
@@ -49,6 +44,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setPaymentMethod(PaymentMethod.ALIPAY_APP);
         request.setUserId(1L);
         request.setDescription("测试支付订单");
+        request.setIdempotentKey("test-idempotent-key-1");
         
         // Act
         PaymentResponse response = paymentService.createPayment(request);
@@ -72,6 +68,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setPaymentMethod(PaymentMethod.WECHAT_NATIVE);
         request.setUserId(1L);
         request.setDescription("微信支付测试");
+        request.setIdempotentKey("test-idempotent-key-2");
         
         // Act
         PaymentResponse response = paymentService.createPayment(request);
@@ -92,6 +89,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setOrderId(3L);
         request.setAmount(new BigDecimal("50.00"));
         request.setPaymentMethod(PaymentMethod.ALIPAY_QR);
+        request.setIdempotentKey("test-idempotent-key-3");
         PaymentResponse createResponse = paymentService.createPayment(request);
         
         // 2. 模拟支付成功
@@ -113,6 +111,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setOrderId(4L);
         request.setAmount(new BigDecimal("150.00"));
         request.setPaymentMethod(PaymentMethod.WECHAT_JSAPI);
+        request.setIdempotentKey("test-idempotent-key-4");
         PaymentResponse response = paymentService.createPayment(request);
         
         // 2. 模拟支付平台回调
@@ -131,12 +130,13 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
     void testPaymentCallback_InvalidSignature() {
         // Note: 实际的签名验证应该在渠道服务中实现
         // 这里只测试回调处理逻辑
-        
+
         // 1. 创建支付订单
         PaymentRequest request = new PaymentRequest();
         request.setOrderId(5L);
         request.setAmount(new BigDecimal("75.00"));
         request.setPaymentMethod(PaymentMethod.ALIPAY_APP);
+        request.setIdempotentKey("test-idempotent-key-5");
         PaymentResponse response = paymentService.createPayment(request);
         
         // 2. 发送失败回调
@@ -156,6 +156,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setOrderId(6L);
         request.setAmount(new BigDecimal("100.00"));
         request.setPaymentMethod(PaymentMethod.ALIPAY_APP);
+        request.setIdempotentKey("test-idempotent-key-6");
         PaymentResponse response = paymentService.createPayment(request);
         paymentService.handlePaymentCallback(response.getTradeNo(), true);
         
@@ -186,6 +187,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setOrderId(7L);
         request.setAmount(new BigDecimal("100.00"));
         request.setPaymentMethod(PaymentMethod.WECHAT_NATIVE);
+        request.setIdempotentKey("test-idempotent-key-7");
         PaymentResponse response = paymentService.createPayment(request);
         paymentService.handlePaymentCallback(response.getTradeNo(), true);
         
@@ -219,6 +221,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setOrderId(8L);
         request.setAmount(new BigDecimal("88.00"));
         request.setPaymentMethod(PaymentMethod.ALIPAY_QR);
+        request.setIdempotentKey("test-idempotent-key-8");
         PaymentResponse response = paymentService.createPayment(request);
         paymentService.handlePaymentCallback(response.getTradeNo(), true);
         
@@ -242,6 +245,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setOrderId(9L);
         request.setAmount(new BigDecimal("66.00"));
         request.setPaymentMethod(PaymentMethod.ALIPAY_APP);
+        request.setIdempotentKey("test-idempotent-key-9");
         PaymentResponse response = paymentService.createPayment(request);
         
         PaymentOrder order = paymentService.getById(response.getPaymentId());
