@@ -56,4 +56,57 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+# Knife4j API文档配置
+springdoc:
+  api-docs:
+    enabled: true
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  info:
+    title: EVCS Manager API
+    description: 电动汽车充电站管理系统 - 认证授权服务
+    version: 2.0.0
+    contact:
+      name: EVCS Manager Team
+      email: support@evcs-manager.com
+    license:
+      name: MIT License
+      url: https://opensource.org/licenses/MIT
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+    enable-version: true
+    enable-reload-cache-parameter: true
+    enable-after-script: true
+    enable-filter-multipart-api-method-type: POST
+    enable-filter-multipart-apis: false
+    enable-request-cache: true
+    enable-host: false
+    enable-host-text: localhost:8081
+    enable-home-custom: false
+    home-custom-path: classpath:markdown/home.md
+    enable-search: true
+    enable-footer: false
+    enable-footer-custom: true
+    footer-custom-content: Copyright © 2025 EVCS Manager
+    enable-dynamic-parameter: false
+    enable-debug: true
+    enable-open-api: true
+    enable-group: true
+  cors: false
+  production: false
+  basic:
+    enable: false
+    username: admin
+    password: 123456
