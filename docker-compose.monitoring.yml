@@ -1,0 +1,221 @@
+version: '3.8'
+
+services:
+  # Redis缓存和会话存储
+  redis:
+    image: redis:7-alpine
+    container_name: evcs-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis_data:/data
+      - ./monitoring/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    ports:
+      - "6379:6379"
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Prometheus监控
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: evcs-prometheus
+    restart: unless-stopped
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - evcs-network
+    depends_on:
+      - evcs-gateway
+    profiles:
+      - monitoring
+
+  # Grafana仪表盘
+  grafana:
+    image: grafana/grafana:latest
+    container_name: evcs-grafana
+    restart: unless-stopped
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3000:3000"
+    networks:
+      - evcs-network
+    depends_on:
+      - prometheus
+    profiles:
+      - monitoring
+
+  # Node Exporter（系统指标）
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: evcs-node-exporter
+    restart: unless-stopped
+    command:
+      - '--path.rootfs=/host'
+    volumes:
+      - '/:/host:ro,rslave'
+    ports:
+      - "9100:9100"
+    networks:
+      - evcs-network
+    profiles:
+      - monitoring
+
+  # Redis Exporter（Redis指标）
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: evcs-redis-exporter
+    restart: unless-stopped
+    environment:
+      - REDIS_ADDR=redis://redis:6379
+    ports:
+      - "9121:9121"
+    networks:
+      - evcs-network
+    depends_on:
+      - redis
+    profiles:
+      - monitoring
+
+  # EVCS网关
+  evcs-gateway:
+    build:
+      context: .
+      dockerfile: evcs-gateway/Dockerfile
+    container_name: evcs-gateway
+    restart: unless-stopped
+    environment:
+      - SPRING_PROFILES_ACTIVE=docker
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
+    ports:
+      - "8080:8080"
+      - "8089:8089"  # OCPP WebSocket端口
+    networks:
+      - evcs-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Elasticsearch（日志存储）
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: evcs-elasticsearch
+    restart: unless-stopped
+    environment:
+      - discovery.type=single-node
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+      - xpack.security.enabled=false
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    networks:
+      - evcs-network
+    profiles:
+      - logging
+
+  # Logstash（日志处理）
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    container_name: evcs-logstash
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/logstash/config/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./monitoring/logstash/pipeline:/usr/share/logstash/pipeline:ro
+      - ./logs:/var/log/evcs:ro
+    ports:
+      - "5044:5044"
+      - "9600:9600"
+    networks:
+      - evcs-network
+    depends_on:
+      - elasticsearch
+    profiles:
+      - logging
+
+  # Kibana（日志可视化）
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    container_name: evcs-kibana
+    restart: unless-stopped
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    networks:
+      - evcs-network
+    depends_on:
+      - elasticsearch
+    profiles:
+      - logging
+
+  # Jaeger（链路追踪）
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: evcs-jaeger
+    restart: unless-stopped
+    environment:
+      - COLLECTOR_ZIPKIN_HOST_PORT=:9411
+    ports:
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+      - "16686:16686"
+      - "14250:14250"
+      - "14268:14268"
+      - "14269:14269"
+      - "9411:9411"
+    networks:
+      - evcs-network
+    profiles:
+      - tracing
+
+volumes:
+  redis_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+  elasticsearch_data:
+    driver: local
+
+networks:
+  evcs-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

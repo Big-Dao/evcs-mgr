@@ -1,0 +1,191 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "EVCS Gateway - 系统监控仪表盘",
+    "tags": ["evcs", "gateway", "monitoring"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "系统健康状态",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "up{job=\"evcs-gateway\"}",
+            "legendFormat": "Gateway状态"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [
+              {"options": {"0": {"text": "DOWN", "color": "red"}}, "type": "value"},
+              {"options": {"1": {"text": "UP", "color": "green"}}, "type": "value"}
+            ]
+          }
+        },
+        "gridPos": {"h": 8, "w": 6, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "HTTP请求总数",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "increase(http_requests_total{job=\"evcs-gateway\"}[5m])",
+            "legendFormat": "请求/5分钟"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 6, "x": 6, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "平均响应时间",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"evcs-gateway\"}[5m]))",
+            "legendFormat": "95%分位数"
+          }
+        ],
+        "unit": "s",
+        "gridPos": {"h": 8, "w": 6, "x": 12, "y": 0}
+      },
+      {
+        "id": 4,
+        "title": "活跃连接数",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "http_active_connections{job=\"evcs-gateway\"}",
+            "legendFormat": "活跃连接"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 6, "x": 18, "y": 0}
+      },
+      {
+        "id": 5,
+        "title": "HTTP请求率",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(http_requests_total{job=\"evcs-gateway\"}[1m])",
+            "legendFormat": "{{method}} {{status}}"
+          }
+        ],
+        "yAxes": [{"label": "请求/秒"}],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "id": 6,
+        "title": "响应时间分布",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(http_request_duration_seconds_bucket{job=\"evcs-gateway\"}[1m]))",
+            "legendFormat": "50%分位数"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"evcs-gateway\"}[1m]))",
+            "legendFormat": "95%分位数"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{job=\"evcs-gateway\"}[1m]))",
+            "legendFormat": "99%分位数"
+          }
+        ],
+        "yAxes": [{"label": "秒"}],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8}
+      },
+      {
+        "id": 7,
+        "title": "安全事件统计",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "increase(security_authentication_success_total{job=\"evcs-gateway\"}[5m])",
+            "legendFormat": "认证成功"
+          },
+          {
+            "expr": "increase(security_authentication_failure_total{job=\"evcs-gateway\"}[5m])",
+            "legendFormat": "认证失败"
+          },
+          {
+            "expr": "increase(security_rate_limit_total{job=\"evcs-gateway\"}[5m])",
+            "legendFormat": "限流触发"
+          },
+          {
+            "expr": "increase(security_suspicious_activity_total{job=\"evcs-gateway\"}[5m])",
+            "legendFormat": "可疑活动"
+          }
+        ],
+        "yAxes": [{"label": "事件数/5分钟"}],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16}
+      },
+      {
+        "id": 8,
+        "title": "熔断器状态",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "system_circuit_breakers_open{job=\"evcs-gateway\"}",
+            "legendFormat": "打开的熔断器"
+          },
+          {
+            "expr": "system_circuit_breakers_total{job=\"evcs-gateway\"}",
+            "legendFormat": "总熔断器数"
+          }
+        ],
+        "yAxes": [{"label": "数量"}],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16}
+      },
+      {
+        "id": 9,
+        "title": "HTTP状态码分布",
+        "type": "piechart",
+        "targets": [
+          {
+            "expr": "sum by (status) (increase(http_requests_total{job=\"evcs-gateway\"}[5m]))",
+            "legendFormat": "{{status}}"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24}
+      },
+      {
+        "id": 10,
+        "title": "JVM内存使用",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "jvm_memory_used_bytes{job=\"evcs-gateway\", area=\"heap\"}",
+            "legendFormat": "堆内存使用"
+          },
+          {
+            "expr": "jvm_memory_max_bytes{job=\"evcs-gateway\", area=\"heap\"}",
+            "legendFormat": "堆内存最大值"
+          }
+        ],
+        "yAxes": [{"label": "字节"}],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24}
+      },
+      {
+        "id": 11,
+        "title": "业务指标",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "business_charger_connections_total{job=\"evcs-gateway\"}",
+            "legendFormat": "充电站连接"
+          },
+          {
+            "expr": "business_charging_sessions_total{job=\"evcs-gateway\"}",
+            "legendFormat": "充电会话"
+          }
+        ],
+        "yAxes": [{"label": "计数"}],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 32}
+      }
+    ],
+    "time": {"from": "now-1h", "to": "now"},
+    "refresh": "30s"
+  }
+}
