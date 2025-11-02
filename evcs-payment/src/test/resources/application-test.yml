@@ -10,15 +10,18 @@ spring:
   main:
     allow-bean-definition-overriding: true
 
-  # 禁用RabbitMQ for tests
+  # 启用RabbitMQ for tests（使用Mock配置）
   rabbitmq:
-    enabled: false
+    host: localhost
+    port: 5673
+    username: guest
+    password: guest
+    virtual-host: /
 
   # 禁用不必要的组件
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
-      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
@@ -100,3 +103,13 @@ evcs:
       - sys_user
       - sys_role
     default-tenant-id: 1
+  payment:
+    message:
+      enabled: true
+    rabbitmq:
+      enabled: true
+      queue:
+        payment-success: mock.payment.success.queue
+        payment-failure: mock.payment.failure.queue
+        refund-success: mock.refund.success.queue
+        payment-dlq: mock.payment.dlq

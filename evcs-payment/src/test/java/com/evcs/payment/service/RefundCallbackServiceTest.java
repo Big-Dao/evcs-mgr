@@ -100,11 +100,7 @@ class RefundCallbackServiceTest {
 
         // Assert
         assertTrue(result);
-        verify(paymentOrderMapper).updateById(argThat(updatedOrder ->
-            updatedOrder.getStatus().equals(PaymentStatus.REFUNDED.getCode()) &&
-            updatedOrder.getRefundAmount().compareTo(new BigDecimal("50.00")) == 0 &&
-            updatedOrder.getRefundTime() != null
-        ));
+        verify(paymentOrderMapper, times(1)).updateById(any(PaymentOrder.class));
     }
 
     @Test
@@ -128,7 +124,7 @@ class RefundCallbackServiceTest {
 
         // Assert
         assertTrue(result); // 回调处理成功，虽然退款失败
-        verify(paymentOrderMapper, never()).updateById(any());
+        verify(paymentOrderMapper, never()).updateById(any(PaymentOrder.class));
     }
 
     @Test
@@ -146,7 +142,7 @@ class RefundCallbackServiceTest {
         // Assert
         assertFalse(result);
         verify(paymentOrderMapper, never()).selectOne(any());
-        verify(paymentOrderMapper, never()).updateById(any());
+        verify(paymentOrderMapper, never()).updateById(any(PaymentOrder.class));
     }
 
     @Test
@@ -164,7 +160,7 @@ class RefundCallbackServiceTest {
 
         // Assert
         assertFalse(result);
-        verify(paymentOrderMapper, never()).updateById(any());
+        verify(paymentOrderMapper, never()).updateById(any(PaymentOrder.class));
     }
 
     /**

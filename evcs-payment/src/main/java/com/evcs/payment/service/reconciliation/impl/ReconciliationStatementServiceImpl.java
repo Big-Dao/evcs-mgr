@@ -1,10 +1,13 @@
 package com.evcs.payment.service.reconciliation.impl;
 
 import com.evcs.payment.dto.ReconciliationStatement;
+import com.evcs.payment.service.reconciliation.AlipayReconciliationService;
 import com.evcs.payment.service.reconciliation.ReconciliationStatementService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import jakarta.annotation.Resource;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -24,6 +27,9 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
     @Value("${evcs.payment.reconciliation.mock.enabled:true}")
     private boolean mockEnabled;
 
+    @Resource
+    private AlipayReconciliationService alipayReconciliationService;
+
     @Override
     public ReconciliationStatement downloadStatement(String channel, LocalDate date) {
         log.info("开始下载对账单: channel={}, date={}", channel, date);
@@ -33,12 +39,17 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
         }
 
         try {
-            // TODO: 实现真实的对账单下载
-            // 支付宝：调用 alipay.data.dataservice.bill.downloadurl.query
-            // 微信支付：调用下载账单API
-
-            log.warn("真实对账单下载功能待实现，返回模拟数据");
-            return createMockStatement(channel, date);
+            // 实现真实的对账单下载
+            switch (channel.toLowerCase()) {
+                case "alipay":
+                    return downloadAlipayStatement(date);
+                case "wechat":
+                    log.warn("微信对账单下载功能待实现，返回模拟数据");
+                    return createMockStatement(channel, date);
+                default:
+                    log.warn("不支持的渠道: {}", channel);
+                    return createMockStatement(channel, date);
+            }
 
         } catch (Exception e) {
             log.error("下载对账单失败: channel={}, date={}", channel, date, e);
@@ -167,5 +178,126 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
         }
 
         return createMockStatement(channel, date);
+    }
+
+    /**
+     * 下载支付宝对账单
+     */
+    private ReconciliationStatement downloadAlipayStatement(LocalDate date) {
+        log.info("开始下载支付宝对账单: date={}", date);
+
+        try {
+            // 1. 下载并解析支付宝对账单
+            List<AlipayReconciliationService.AlipayBillRecord> billRecords =
+                alipayReconciliationService.downloadAndParseBill(date);
+
+            // 2. 转换为对账单对象
+            List<ReconciliationStatement.StatementTransaction> transactions =
+                billRecords.stream()
+                    .map(this::convertAlipayRecord)
+                    .collect(java.util.stream.Collectors.toList());
+
+            // 3. 计算统计信息
+            long totalCount = transactions.size();
+            long successCount = transactions.stream()
+                .filter(t -> "TRADE_SUCCESS".equals(t.getTradeStatus()) || "TRADE_FINISHED".equals(t.getTradeStatus()))
+                .count();
+            long refundCount = transactions.stream()
+                .filter(t -> t.getRefundAmount() != null && t.getRefundAmount().compareTo(java.math.BigDecimal.ZERO) > 0)
+                .count();
+
+            java.math.BigDecimal totalAmount = transactions.stream()
+                .filter(t -> t.getAmount() != null)
+                .map(ReconciliationStatement.StatementTransaction::getAmount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+            java.math.BigDecimal refundAmount = transactions.stream()
+                .filter(t -> t.getRefundAmount() != null)
+                .map(ReconciliationStatement.StatementTransaction::getRefundAmount)
+                .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+
+            log.info("支付宝对账单下载成功: date={}, totalCount={}, successCount={}, totalAmount={}",
+                date, totalCount, successCount, totalAmount);
+
+            return ReconciliationStatement.builder()
+                .statementDate(date)
+                .channel("alipay")
+                .transactions(transactions)
+                .totalCount((int) totalCount)
+                .successCount((int) successCount)
+                .totalAmount(totalAmount)
+                .refundCount((int) refundCount)
+                .refundAmount(refundAmount)
+                .status(ReconciliationStatement.StatementStatus.PARSED)
+                .downloadTime(LocalDateTime.now())
+                .parseTime(LocalDateTime.now())
+                .build();
+
+        } catch (Exception e) {
+            log.error("下载支付宝对账单失败: date={}", date, e);
+            return ReconciliationStatement.builder()
+                .statementDate(date)
+                .channel("alipay")
+                .status(ReconciliationStatement.StatementStatus.PARSE_FAILED)
+                .errorMessage(e.getMessage())
+                .downloadTime(LocalDateTime.now())
+                .build();
+        }
+    }
+
+    /**
+     * 转换支付宝账单记录为对账单交易记录
+     */
+    private ReconciliationStatement.StatementTransaction convertAlipayRecord(
+            AlipayReconciliationService.AlipayBillRecord record) {
+
+        // 转换交易状态
+        String tradeStatus = "UNKNOWN";
+        if ("交易支付成功".equals(record.getBusinessType()) || "交易创建".equals(record.getBusinessType())) {
+            if (record.getFinishTime() != null && !record.getFinishTime().isEmpty()) {
+                tradeStatus = "TRADE_SUCCESS";
+            } else {
+                tradeStatus = "TRADE_PENDING";
+            }
+        } else if ("退款".equals(record.getBusinessType())) {
+            tradeStatus = "TRADE_REFUND";
+        }
+
+        // 转换交易类型
+        String tradeType = "支付";
+        if ("退款".equals(record.getBusinessType())) {
+            tradeType = "退款";
+        }
+
+        return ReconciliationStatement.StatementTransaction.builder()
+            .outTradeNo(record.getOutTradeNo())
+            .tradeNo(record.getTradeNo())
+            .amount(record.getTotalAmount())
+            .tradeStatus(tradeStatus)
+            .tradeTime(parseDateTime(record.getFinishTime()))
+            .tradeType(tradeType)
+            .fee(record.getServiceFee())
+            .refundAmount(record.getRefundAmount())
+            .originalTradeNo(null)
+            .remark(record.getRemark())
+            .build();
+    }
+
+    /**
+     * 解析日期时间字符串
+     */
+    private LocalDateTime parseDateTime(String dateTimeStr) {
+        if (dateTimeStr == null || dateTimeStr.trim().isEmpty()) {
+            return null;
+        }
+
+        try {
+            // 支付宝时间格式: 2024-11-02 18:30:25
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            return LocalDateTime.parse(dateTimeStr.trim(), formatter);
+        } catch (Exception e) {
+            log.warn("解析日期时间失败: {}", dateTimeStr, e);
+            return null;
+        }
     }
 }

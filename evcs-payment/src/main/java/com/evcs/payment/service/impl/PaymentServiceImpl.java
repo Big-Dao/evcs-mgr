@@ -15,6 +15,7 @@ import com.evcs.payment.mapper.PaymentOrderMapper;
 import com.evcs.payment.metrics.PaymentMetrics;
 import com.evcs.payment.service.IPaymentService;
 import com.evcs.payment.service.PaymentIdempotencyService;
+import com.evcs.payment.service.message.PaymentMessageService;
 import com.evcs.payment.service.channel.AlipayChannelService;
 import com.evcs.payment.service.channel.IPaymentChannel;
 import com.evcs.payment.service.channel.WechatPayChannelService;
@@ -38,6 +39,7 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
     private final WechatPayChannelService wechatPayChannelService;
     private final PaymentMetrics paymentMetrics;
     private final PaymentIdempotencyService idempotencyService;
+    private final PaymentMessageService paymentMessageService;
 
     @Override
     @DataScope
@@ -282,6 +284,18 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
                 idempotencyService.cachePaymentResult(paymentOrder.getIdempotentKey(), paymentOrder, 24, java.util.concurrent.TimeUnit.HOURS);
             }
 
+            // 发送消息通知
+            try {
+                if (success) {
+                    paymentMessageService.sendPaymentSuccessMessage(paymentOrder);
+                } else {
+                    paymentMessageService.sendPaymentFailureMessage(paymentOrder);
+                }
+            } catch (Exception e) {
+                log.error("发送支付状态消息失败: tradeNo={}", tradeNo, e);
+                // 不影响主流程
+            }
+
             // 记录指标
             if (success) {
                 paymentMetrics.recordCallbackSuccess();
@@ -339,7 +353,15 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
 
         baseMapper.updateById(paymentOrder);
 
-        log.info("退款成功: paymentId={}, refundNo={}", 
+        // 发送退款成功消息
+        try {
+            paymentMessageService.sendRefundSuccessMessage(paymentOrder);
+        } catch (Exception e) {
+            log.error("发送退款成功消息失败: paymentId={}", request.getPaymentId(), e);
+            // 不影响主流程
+        }
+
+        log.info("退款成功: paymentId={}, refundNo={}",
             request.getPaymentId(), refundResponse.getRefundNo());
 
         return refundResponse;
