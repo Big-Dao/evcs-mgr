@@ -4,6 +4,7 @@ import com.evcs.common.test.base.BaseServiceTest;
 import com.evcs.payment.PaymentServiceApplication;
 import com.evcs.payment.config.MockPaymentMetricsConfig;
 import com.evcs.payment.config.TestRedisConfig;
+import com.evcs.payment.config.MockRabbitMQConfig;
 import com.evcs.payment.dto.PaymentRequest;
 import com.evcs.payment.dto.PaymentResponse;
 import com.evcs.payment.dto.RefundRequest;
@@ -30,9 +31,13 @@ import static org.mockito.Mockito.*;
 /**
  * 支付服务测试
  */
-@SpringBootTest(classes = PaymentServiceApplication.class)
+@SpringBootTest(classes = PaymentServiceApplication.class,
+                webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+                properties = {
+                    "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"
+                })
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {TestRedisConfig.class, MockPaymentMetricsConfig.class})
+@ContextConfiguration(classes = {TestRedisConfig.class, MockPaymentMetricsConfig.class, MockRabbitMQConfig.class})
 @DisplayName("支付服务测试")
 class PaymentServiceTestTemplate extends BaseServiceTest {
 

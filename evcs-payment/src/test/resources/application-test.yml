@@ -10,13 +10,16 @@ spring:
   main:
     allow-bean-definition-overriding: true
 
-  # 启用RabbitMQ for tests（使用Mock配置）
+  # RabbitMQ测试配置（已禁用自动配置）
   rabbitmq:
     host: localhost
-    port: 5673
+    port: 5672
     username: guest
     password: guest
     virtual-host: /
+    # 完全禁用RabbitMQ连接以避免测试失败
+    ssl:
+      enabled: false
 
   # 禁用不必要的组件
   autoconfigure:
@@ -26,6 +29,8 @@ spring:
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+      - org.springframework.amqp.rabbit.annotation.RabbitBootstrapConfiguration
 
   cloud:
     discovery:
@@ -105,9 +110,9 @@ evcs:
     default-tenant-id: 1
   payment:
     message:
-      enabled: true
+      enabled: false  # 禁用消息功能避免RabbitMQ依赖
     rabbitmq:
-      enabled: true
+      enabled: false  # 禁用RabbitMQ功能
       queue:
         payment-success: mock.payment.success.queue
         payment-failure: mock.payment.failure.queue

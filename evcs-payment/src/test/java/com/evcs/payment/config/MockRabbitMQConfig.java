@@ -3,6 +3,7 @@ package com.evcs.payment.config;
 import org.springframework.amqp.core.Queue;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -44,22 +45,33 @@ public class MockRabbitMQConfig {
     }
 
     /**
+     * Mock ConnectionFactory
+     */
+    @Bean
+    @Primary
+    public ConnectionFactory mockConnectionFactory() {
+        CachingConnectionFactory factory = new CachingConnectionFactory();
+        factory.setHost("localhost");
+        factory.setPort(5672);
+        factory.setUsername("guest");
+        factory.setPassword("guest");
+        factory.setVirtualHost("/");
+
+        return factory;
+    }
+
+    /**
      * Mock RabbitTemplate
      */
     @Bean
     @Primary
-    public RabbitTemplate mockRabbitTemplate() {
-        return new MockRabbitTemplate();
-    }
+    public RabbitTemplate mockRabbitTemplate(ConnectionFactory connectionFactory) {
+        RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
 
-    /**
-     * Mock RabbitTemplate实现
-     */
-    public static class MockRabbitTemplate extends RabbitTemplate {
-        @Override
-        public void convertAndSend(String exchange, String routingKey, Object message) {
-            // 在测试环境中，只是打印日志而不真正发送消息
-            System.out.println("Mock RabbitMQ - 发送消息: exchange=" + exchange + ", routingKey=" + routingKey + ", message=" + message);
-        }
+        // Mock基本方法
+        rabbitTemplate.setExchange("mock.exchange");
+        rabbitTemplate.setRoutingKey("mock.routing.key");
+
+        return rabbitTemplate;
     }
 }
