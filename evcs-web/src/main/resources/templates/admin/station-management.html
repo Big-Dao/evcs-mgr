@@ -1,0 +1,1386 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>充电站管理 - EVCS管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" rel="stylesheet">
+    <style>
+        .station-header {
+            background: linear-gradient(135deg, #00c851 0%, #00a152 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .station-card {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            height: 100%;
+        }
+
+        .station-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .station-stats {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .search-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        #stationMap {
+            height: 400px;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+
+        .connector-item {
+            background: #e9ecef;
+            border-radius: 8px;
+            padding: 0.5rem;
+            margin: 0.25rem 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .connector-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 0.5rem;
+        }
+
+        .connector-status.available {
+            background: #28a745;
+        }
+
+        .connector-status.occupied {
+            background: #ffc107;
+        }
+
+        .connector-status.faulted {
+            background: #dc3545;
+        }
+
+        .connector-status.unavailable {
+            background: #6c757d;
+        }
+
+        .station-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 10px;
+            border: 3px solid #e9ecef;
+        }
+
+        .quick-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+        }
+
+        .quick-stat {
+            text-align: center;
+            flex: 1;
+        }
+
+        .performance-chart {
+            height: 100px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="bi bi-ev-station"></i> EVCS管理后台
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/dashboard">
+                            <i class="bi bi-speedometer2"></i> 仪表盘
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-people"></i> 用户管理
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/users">用户管理</a></li>
+                            <li><a class="dropdown-item" href="/admin/roles">角色管理</a></li>
+                            <li><a class="dropdown-item" href="/admin/permissions">权限管理</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/tenants">
+                            <i class="bi bi-building"></i> 租户管理
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle active" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-ev-station"></i> 业务管理
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item active" href="/admin/stations">充电站管理</a></li>
+                            <li><a class="dropdown-item" href="/admin/orders">订单管理</a></li>
+                            <li><a class="dropdown-item" href="/admin/payments">支付管理</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> 管理员
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/profile">个人资料</a></li>
+                            <li><a class="dropdown-item" href="/admin/settings">系统设置</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">退出登录</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 页面头部 -->
+    <div class="station-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-6 fw-bold mb-3">
+                        <i class="bi bi-ev-station"></i> 充电站管理
+                    </h1>
+                    <p class="lead mb-0">管理充电站基础设施，监控充电桩状态和运营数据</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button class="btn btn-light btn-lg" onclick="showAddStationModal()">
+                        <i class="bi bi-plus-circle"></i> 新增充电站
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 搜索和筛选 -->
+        <div class="search-section">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">搜索充电站</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="充电站名称或编码">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">状态</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">全部状态</option>
+                        <option value="ONLINE">在线</option>
+                        <option value="OFFLINE">离线</option>
+                        <option value="MAINTENANCE">维护中</option>
+                        <option value="FAULT">故障</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">运营商</label>
+                    <select class="form-select" id="operatorFilter">
+                        <option value="">全部运营商</option>
+                        <option value="1">智慧充电科技</option>
+                        <option value="2">绿色能源充电站</option>
+                        <option value="3">城市充电网络</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">功率类型</label>
+                    <select class="form-select" id="powerFilter">
+                        <option value="">全部类型</option>
+                        <option value="FAST">快充</option>
+                        <option value="SLOW">慢充</option>
+                        <option value="MIXED">混合</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="btn-group w-100">
+                        <button class="btn btn-primary" onclick="searchStations()">
+                            <i class="bi bi-search"></i> 搜索
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="resetSearch()">
+                            <i class="bi bi-arrow-clockwise"></i> 重置
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计概览 -->
+        <div class="row mb-4">
+            <div class="col-md-2">
+                <div class="station-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-primary" id="totalStations">0</div>
+                        <div class="stat-label">充电站总数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="station-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-success" id="onlineStations">0</div>
+                        <div class="stat-label">在线站点</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="station-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-warning" id="totalConnectors">0</div>
+                        <div class="stat-label">充电桩总数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="station-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-info" id="occupiedConnectors">0</div>
+                        <div class="stat-label">使用中</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="station-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-success" id="availableConnectors">0</div>
+                        <div class="stat-label">空闲</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="station-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-danger" id="faultedConnectors">0</div>
+                        <div class="stat-label">故障</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 地图视图切换 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary active" id="listViewBtn" onclick="showListView()">
+                        <i class="bi bi-list"></i> 列表视图
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="mapViewBtn" onclick="showMapView()">
+                        <i class="bi bi-map"></i> 地图视图
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 列表视图 -->
+        <div id="listView">
+            <div class="row" id="stationList">
+                <!-- 充电站卡片将通过JavaScript动态生成 -->
+            </div>
+        </div>
+
+        <!-- 地图视图 -->
+        <div id="mapView" style="display: none;">
+            <div id="stationMap"></div>
+            <div class="row" id="mapStationList">
+                <!-- 地图侧边栏充电站列表 -->
+            </div>
+        </div>
+
+        <!-- 分页 -->
+        <nav aria-label="充电站列表分页" class="mt-4" id="listPagination">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- 分页按钮将通过JavaScript动态生成 -->
+            </ul>
+        </nav>
+    </div>
+
+    <!-- 新增/编辑充电站模态框 -->
+    <div class="modal fade" id="stationModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="stationModalTitle">新增充电站</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="stationForm">
+                        <input type="hidden" id="stationId">
+
+                        <!-- 基本信息 -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">基本信息</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">充电站名称 <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="stationName" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">充电站编码 <span class="text-danger">*</span></label>
+                                            <input type="text" class="form-control" id="stationCode" required>
+                                            <div class="form-text">充电站的唯一标识码</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">运营商</label>
+                                            <select class="form-select" id="operatorId" required>
+                                                <option value="">请选择运营商</option>
+                                                <option value="1">智慧充电科技</option>
+                                                <option value="2">绿色能源充电站</option>
+                                                <option value="3">城市充电网络</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">功率类型</label>
+                                            <select class="form-select" id="powerType">
+                                                <option value="FAST">快充</option>
+                                                <option value="SLOW">慢充</option>
+                                                <option value="MIXED">混合</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">状态</label>
+                                            <select class="form-select" id="stationStatus">
+                                                <option value="ONLINE">在线</option>
+                                                <option value="OFFLINE">离线</option>
+                                                <option value="MAINTENANCE">维护中</option>
+                                                <option value="FAULT">故障</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">详细地址</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="bi bi-geo-alt"></i></span>
+                                        <input type="text" class="form-control" id="address" placeholder="请输入详细地址">
+                                        <button class="btn btn-outline-secondary" type="button" onclick="searchAddress()">定位</button>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">经度</label>
+                                            <input type="number" class="form-control" id="longitude" step="0.000001" placeholder="116.404">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label class="form-label">纬度</label>
+                                            <input type="number" class="form-control" id="latitude" step="0.000001" placeholder="39.915">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label">充电站描述</label>
+                                    <textarea class="form-control" id="description" rows="3" placeholder="描述充电站的位置、服务等信息"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 运营设置 -->
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">运营设置</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">营业时间</label>
+                                            <input type="text" class="form-control" id="businessHours" placeholder="24小时">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">服务电话</label>
+                                            <input type="tel" class="form-control" id="servicePhone" placeholder="400-123-4567">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="mb-3">
+                                            <label class="form-label">收费标准</label>
+                                            <input type="text" class="form-control" id="pricingInfo" placeholder="1.5元/度">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-12">
+                                        <div class="mb-3">
+                                            <label class="form-label">服务设施</label>
+                                            <div class="row">
+                                                <div class="col-md-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="facilityParking">
+                                                        <label class="form-check-label" for="facilityParking">停车场</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="facilityRestroom">
+                                                        <label class="form-check-label" for="facilityRestroom">洗手间</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="facilityShop">
+                                                        <label class="form-check-label" for="facilityShop">便利店</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="facilityWifi">
+                                                        <label class="form-check-label" for="facilityWifi">WiFi</label>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 充电桩配置 -->
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h6 class="mb-0">充电桩配置</h6>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="addConnector()">
+                                    <i class="bi bi-plus"></i> 添加充电桩
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="connectorList">
+                                    <!-- 充电桩列表将通过JavaScript动态生成 -->
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveStation()">
+                        <i class="bi bi-check-circle"></i> 保存
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 充电站详情模态框 -->
+    <div class="modal fade" id="stationDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">充电站详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="stationDetailContent">
+                    <!-- 充电站详情将通过JavaScript动态生成 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-warning" onclick="editCurrentStation()">
+                        <i class="bi bi-pencil"></i> 编辑
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 模拟充电站数据
+        const mockStations = [
+            {
+                id: 1,
+                name: "北京朝阳公园充电站",
+                code: "BJ001",
+                operatorId: 1,
+                operatorName: "智慧充电科技",
+                status: "ONLINE",
+                powerType: "FAST",
+                address: "北京市朝阳区朝阳公园南路1号",
+                longitude: 116.483,
+                latitude: 39.938,
+                description: "位于朝阳公园附近，交通便利，配套齐全",
+                businessHours: "24小时",
+                servicePhone: "400-123-4567",
+                pricingInfo: "1.5元/度",
+                connectors: [
+                    { id: 1, connectorId: 1, status: "AVAILABLE", power: 60, type: "DC" },
+                    { id: 2, connectorId: 2, status: "OCCUPIED", power: 60, type: "DC" },
+                    { id: 3, connectorId: 3, status: "AVAILABLE", power: 60, type: "DC" },
+                    { id: 4, connectorId: 4, status: "FAULTED", power: 60, type: "DC" }
+                ],
+                facilities: ["parking", "restroom", "shop"],
+                createTime: "2024-01-15",
+                todaySessions: 45,
+                todayRevenue: 1280.50,
+                avgUtilization: 75.5
+            },
+            {
+                id: 2,
+                name: "上海浦东机场充电站",
+                code: "SH001",
+                operatorId: 2,
+                operatorName: "绿色能源充电站",
+                status: "ONLINE",
+                powerType: "MIXED",
+                address: "上海市浦东新区机场路1号",
+                longitude: 121.805,
+                latitude: 31.144,
+                description: "浦东机场内充电站，服务旅客充电需求",
+                businessHours: "24小时",
+                servicePhone: "400-234-5678",
+                pricingInfo: "1.8元/度",
+                connectors: [
+                    { id: 5, connectorId: 1, status: "AVAILABLE", power: 120, type: "DC" },
+                    { id: 6, connectorId: 2, status: "OCCUPIED", power: 120, type: "DC" },
+                    { id: 7, connectorId: 3, status: "AVAILABLE", power: 7, type: "AC" }
+                ],
+                facilities: ["parking", "restroom", "shop", "wifi"],
+                createTime: "2024-02-20",
+                todaySessions: 78,
+                todayRevenue: 2156.80,
+                avgUtilization: 82.3
+            },
+            {
+                id: 3,
+                name: "深圳科技园充电站",
+                code: "SZ001",
+                operatorId: 3,
+                operatorName: "城市充电网络",
+                status: "MAINTENANCE",
+                powerType: "FAST",
+                address: "深圳市南山区科技园南区",
+                longitude: 113.934,
+                latitude: 22.531,
+                description: "科技园内充电站，主要服务园区企业员工",
+                businessHours: "08:00-22:00",
+                servicePhone: "400-345-6789",
+                pricingInfo: "1.3元/度",
+                connectors: [
+                    { id: 8, connectorId: 1, status: "UNAVAILABLE", power: 60, type: "DC" },
+                    { id: 9, connectorId: 2, status: "UNAVAILABLE", power: 60, type: "DC" }
+                ],
+                facilities: ["parking"],
+                createTime: "2024-03-10",
+                todaySessions: 0,
+                todayRevenue: 0,
+                avgUtilization: 0
+            }
+        ];
+
+        let currentStations = [...mockStations];
+        let currentStationDetail = null;
+        let currentPage = 1;
+        const itemsPerPage = 6;
+        let map = null;
+        let markers = [];
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadStations();
+            updateStatistics();
+            initMap();
+        });
+
+        // 初始化地图
+        function initMap() {
+            map = L.map('stationMap').setView([39.915, 116.404], 11);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+        }
+
+        // 加载充电站列表
+        function loadStations() {
+            renderStations();
+            renderPagination();
+        }
+
+        // 渲染充电站卡片
+        function renderStations() {
+            const stationList = document.getElementById('stationList');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const pageStations = currentStations.slice(startIndex, endIndex);
+
+            stationList.innerHTML = pageStations.map(station => `
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card station-card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="me-3">
+                                    <div class="station-image d-flex align-items-center justify-content-center bg-success text-white">
+                                        <i class="bi bi-ev-station fs-4"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="card-title mb-1">${station.name}</h6>
+                                    <small class="text-muted">${station.code} · ${station.operatorName}</small>
+                                </div>
+                                <div>
+                                    ${getStationStatusBadge(station.status)}
+                                </div>
+                            </div>
+
+                            <div class="quick-stats mb-3">
+                                <div class="quick-stat">
+                                    <div class="stat-number text-primary">${station.connectors.length}</div>
+                                    <div class="stat-label small">充电桩</div>
+                                </div>
+                                <div class="quick-stat">
+                                    <div class="stat-number text-success">${station.connectors.filter(c => c.status === 'AVAILABLE').length}</div>
+                                    <div class="stat-label small">空闲</div>
+                                </div>
+                                <div class="quick-stat">
+                                    <div class="stat-number text-warning">${station.connectors.filter(c => c.status === 'OCCUPIED').length}</div>
+                                    <div class="stat-label small">使用中</div>
+                                </div>
+                                <div class="quick-stat">
+                                    <div class="stat-number text-danger">${station.connectors.filter(c => c.status === 'FAULTED').length}</div>
+                                    <div class="stat-label small">故障</div>
+                                </div>
+                            </div>
+
+                            <p class="card-text small text-muted mb-2">
+                                <i class="bi bi-geo-alt"></i> ${station.address}
+                            </p>
+
+                            <div class="mb-3">
+                                <small class="text-muted">功率类型：</small>
+                                <span class="badge bg-info">${getPowerTypeName(station.powerType)}</span>
+                            </div>
+
+                            <div class="performance-chart mb-3">
+                                <small>利用率：${station.avgUtilization}%</small>
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar" style="width: ${station.avgUtilization}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    今日订单：${station.todaySessions} · 收入：¥${station.todayRevenue}
+                                </small>
+                                <div class="btn-group btn-group-sm">
+                                    <button class="btn btn-outline-primary" onclick="showStationDetail(${station.id})" title="查看详情">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button class="btn btn-outline-warning" onclick="editStation(${station.id})" title="编辑">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-outline-danger" onclick="deleteStation(${station.id})" title="删除">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 渲染分页
+        function renderPagination() {
+            const pagination = document.getElementById('pagination');
+            const totalPages = Math.ceil(currentStations.length / itemsPerPage);
+
+            let paginationHTML = '';
+
+            // 上一页
+            paginationHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">上一页</a>
+                </li>
+            `;
+
+            // 页码
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                    </li>
+                `;
+            }
+
+            // 下一页
+            paginationHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">下一页</a>
+                </li>
+            `;
+
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // 切换页面
+        function changePage(page) {
+            const totalPages = Math.ceil(currentStations.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+
+            currentPage = page;
+            renderStations();
+            renderPagination();
+        }
+
+        // 获取充电站状态徽章
+        function getStationStatusBadge(status) {
+            const statusConfig = {
+                ONLINE: { color: 'success', icon: 'circle', text: '在线' },
+                OFFLINE: { color: 'secondary', icon: 'circle-fill', text: '离线' },
+                MAINTENANCE: { color: 'warning', icon: 'tools', text: '维护中' },
+                FAULT: { color: 'danger', icon: 'exclamation-triangle', text: '故障' }
+            };
+
+            const config = statusConfig[status] || statusConfig.OFFLINE;
+            return `<span class="badge bg-${config.color} status-badge">
+                <i class="bi bi-${config.icon}"></i> ${config.text}
+            </span>`;
+        }
+
+        // 获取功率类型名称
+        function getPowerTypeName(type) {
+            const typeNames = {
+                FAST: '快充',
+                SLOW: '慢充',
+                MIXED: '混合'
+            };
+            return typeNames[type] || type;
+        }
+
+        // 获取充电桩状态名称
+        function getConnectorStatusName(status) {
+            const statusNames = {
+                AVAILABLE: '空闲',
+                OCCUPIED: '使用中',
+                FAULTED: '故障',
+                UNAVAILABLE: '不可用'
+            };
+            return statusNames[status] || status;
+        }
+
+        // 更新统计信息
+        function updateStatistics() {
+            const totalStations = currentStations.length;
+            const onlineStations = currentStations.filter(s => s.status === 'ONLINE').length;
+            const allConnectors = currentStations.flatMap(s => s.connectors);
+            const occupiedConnectors = allConnectors.filter(c => c.status === 'OCCUPIED').length;
+            const availableConnectors = allConnectors.filter(c => c.status === 'AVAILABLE').length;
+            const faultedConnectors = allConnectors.filter(c => c.status === 'FAULTED').length;
+
+            document.getElementById('totalStations').textContent = totalStations;
+            document.getElementById('onlineStations').textContent = onlineStations;
+            document.getElementById('totalConnectors').textContent = allConnectors.length;
+            document.getElementById('occupiedConnectors').textContent = occupiedConnectors;
+            document.getElementById('availableConnectors').textContent = availableConnectors;
+            document.getElementById('faultedConnectors').textContent = faultedConnectors;
+        }
+
+        // 搜索充电站
+        function searchStations() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const operator = document.getElementById('operatorFilter').value;
+            const powerType = document.getElementById('powerFilter').value;
+
+            currentStations = mockStations.filter(station => {
+                const matchSearch = !searchTerm ||
+                    station.name.toLowerCase().includes(searchTerm) ||
+                    station.code.toLowerCase().includes(searchTerm) ||
+                    station.address.toLowerCase().includes(searchTerm);
+
+                const matchStatus = !status || station.status === status;
+                const matchOperator = !operator || station.operatorId.toString() === operator;
+                const matchPowerType = !powerType || station.powerType === powerType;
+
+                return matchSearch && matchStatus && matchOperator && matchPowerType;
+            });
+
+            currentPage = 1;
+            loadStations();
+            updateStatistics();
+        }
+
+        // 重置搜索
+        function resetSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('operatorFilter').value = '';
+            document.getElementById('powerFilter').value = '';
+
+            currentStations = [...mockStations];
+            currentPage = 1;
+            loadStations();
+            updateStatistics();
+        }
+
+        // 显示列表视图
+        function showListView() {
+            document.getElementById('listView').style.display = 'block';
+            document.getElementById('mapView').style.display = 'none';
+            document.getElementById('listPagination').style.display = 'block';
+            document.getElementById('listViewBtn').classList.add('active');
+            document.getElementById('mapViewBtn').classList.remove('active');
+        }
+
+        // 显示地图视图
+        function showMapView() {
+            document.getElementById('listView').style.display = 'none';
+            document.getElementById('mapView').style.display = 'block';
+            document.getElementById('listPagination').style.display = 'none';
+            document.getElementById('listViewBtn').classList.remove('active');
+            document.getElementById('mapViewBtn').classList.add('active');
+
+            // 清除现有标记
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+
+            // 添加充电站标记
+            currentStations.forEach(station => {
+                const marker = L.marker([station.latitude, station.longitude])
+                    .addTo(map)
+                    .bindPopup(`
+                        <div style="min-width: 200px;">
+                            <h6>${station.name}</h6>
+                            <p class="mb-1"><small>${station.address}</small></p>
+                            <p class="mb-1"><small>充电桩：${station.connectors.length} · 空闲：${station.connectors.filter(c => c.status === 'AVAILABLE').length}</small></p>
+                            <button class="btn btn-sm btn-primary" onclick="showStationDetail(${station.id})">查看详情</button>
+                        </div>
+                    `);
+                markers.push(marker);
+            });
+
+            // 调整地图视图以显示所有标记
+            if (markers.length > 0) {
+                const group = new L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+
+            // 更新地图侧边栏列表
+            renderMapStationList();
+        }
+
+        // 渲染地图侧边栏充电站列表
+        function renderMapStationList() {
+            const mapStationList = document.getElementById('mapStationList');
+            mapStationList.innerHTML = currentStations.slice(0, 5).map(station => `
+                <div class="col-md-12 mb-2">
+                    <div class="card">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${station.name}</h6>
+                                    <small class="text-muted">${station.address}</small>
+                                </div>
+                                <div>
+                                    ${getStationStatusBadge(station.status)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 显示新增充电站模态框
+        function showAddStationModal() {
+            document.getElementById('stationModalTitle').textContent = '新增充电站';
+            document.getElementById('stationForm').reset();
+            document.getElementById('stationId').value = '';
+            document.getElementById('connectorList').innerHTML = '';
+
+            // 添加默认充电桩
+            addConnector();
+            addConnector();
+
+            const modal = new bootstrap.Modal(document.getElementById('stationModal'));
+            modal.show();
+        }
+
+        // 添加充电桩
+        function addConnector() {
+            const connectorList = document.getElementById('connectorList');
+            const connectorIndex = connectorList.children.length;
+
+            const connectorHTML = `
+                <div class="card mb-2" id="connector-${connectorIndex}">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">充电桩编号</label>
+                                    <input type="number" class="form-control" id="connectorId-${connectorIndex}" value="${connectorIndex + 1}" min="1">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">功率 (kW)</label>
+                                    <input type="number" class="form-control" id="power-${connectorIndex}" value="60" min="1">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">类型</label>
+                                    <select class="form-select" id="type-${connectorIndex}">
+                                        <option value="DC">直流快充</option>
+                                        <option value="AC">交流慢充</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="mb-3">
+                                    <label class="form-label">操作</label>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeConnector(${connectorIndex})">
+                                        <i class="bi bi-trash"></i> 删除
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            connectorList.insertAdjacentHTML('beforeend', connectorHTML);
+        }
+
+        // 删除充电桩
+        function removeConnector(index) {
+            const connector = document.getElementById(`connector-${index}`);
+            if (connector) {
+                connector.remove();
+            }
+        }
+
+        // 编辑充电站
+        function editStation(id) {
+            const station = mockStations.find(s => s.id === id);
+            if (!station) return;
+
+            document.getElementById('stationModalTitle').textContent = '编辑充电站';
+            document.getElementById('stationId').value = station.id;
+            document.getElementById('stationName').value = station.name;
+            document.getElementById('stationCode').value = station.code;
+            document.getElementById('operatorId').value = station.operatorId;
+            document.getElementById('powerType').value = station.powerType;
+            document.getElementById('stationStatus').value = station.status;
+            document.getElementById('address').value = station.address;
+            document.getElementById('longitude').value = station.longitude;
+            document.getElementById('latitude').value = station.latitude;
+            document.getElementById('description').value = station.description;
+            document.getElementById('businessHours').value = station.businessHours;
+            document.getElementById('servicePhone').value = station.servicePhone;
+            document.getElementById('pricingInfo').value = station.pricingInfo;
+
+            // 设置服务设施
+            document.getElementById('facilityParking').checked = station.facilities.includes('parking');
+            document.getElementById('facilityRestroom').checked = station.facilities.includes('restroom');
+            document.getElementById('facilityShop').checked = station.facilities.includes('shop');
+            document.getElementById('facilityWifi').checked = station.facilities.includes('wifi');
+
+            // 设置充电桩
+            document.getElementById('connectorList').innerHTML = '';
+            station.connectors.forEach((connector, index) => {
+                addConnector();
+                document.getElementById(`connectorId-${index}`).value = connector.connectorId;
+                document.getElementById(`power-${index}`).value = connector.power;
+                document.getElementById(`type-${index}`).value = connector.type;
+            });
+
+            const modal = new bootstrap.Modal(document.getElementById('stationModal'));
+            modal.show();
+        }
+
+        // 保存充电站
+        function saveStation() {
+            const stationId = document.getElementById('stationId').value;
+            const stationData = {
+                name: document.getElementById('stationName').value,
+                code: document.getElementById('stationCode').value,
+                operatorId: parseInt(document.getElementById('operatorId').value),
+                powerType: document.getElementById('powerType').value,
+                status: document.getElementById('stationStatus').value,
+                address: document.getElementById('address').value,
+                longitude: parseFloat(document.getElementById('longitude').value),
+                latitude: parseFloat(document.getElementById('latitude').value),
+                description: document.getElementById('description').value,
+                businessHours: document.getElementById('businessHours').value,
+                servicePhone: document.getElementById('servicePhone').value,
+                pricingInfo: document.getElementById('pricingInfo').value,
+                facilities: [],
+                connectors: []
+            };
+
+            // 收集服务设施
+            if (document.getElementById('facilityParking').checked) stationData.facilities.push('parking');
+            if (document.getElementById('facilityRestroom').checked) stationData.facilities.push('restroom');
+            if (document.getElementById('facilityShop').checked) stationData.facilities.push('shop');
+            if (document.getElementById('facilityWifi').checked) stationData.facilities.push('wifi');
+
+            // 收集充电桩信息
+            const connectorCards = document.querySelectorAll('#connectorList .card');
+            connectorCards.forEach((card, index) => {
+                const connectorId = document.getElementById(`connectorId-${index}`)?.value;
+                const power = document.getElementById(`power-${index}`)?.value;
+                const type = document.getElementById(`type-${index}`)?.value;
+
+                if (connectorId && power && type) {
+                    stationData.connectors.push({
+                        connectorId: parseInt(connectorId),
+                        power: parseInt(power),
+                        type: type,
+                        status: 'AVAILABLE'
+                    });
+                }
+            });
+
+            if (!stationData.name || !stationData.code || !stationData.address) {
+                alert('请填写所有必填字段！');
+                return;
+            }
+
+            if (stationData.connectors.length === 0) {
+                alert('请至少添加一个充电桩！');
+                return;
+            }
+
+            if (stationId) {
+                // 编辑现有充电站
+                const index = mockStations.findIndex(s => s.id == stationId);
+                if (index !== -1) {
+                    mockStations[index] = { ...mockStations[index], ...stationData };
+                    alert('充电站信息更新成功！');
+                }
+            } else {
+                // 新增充电站
+                const newStation = {
+                    id: Math.max(...mockStations.map(s => s.id)) + 1,
+                    ...stationData,
+                    operatorName: getOperatorName(stationData.operatorId),
+                    todaySessions: 0,
+                    todayRevenue: 0,
+                    avgUtilization: 0,
+                    createTime: new Date().toISOString().split('T')[0]
+                };
+                mockStations.push(newStation);
+                alert('充电站创建成功！');
+            }
+
+            // 关闭模态框并刷新列表
+            const modal = bootstrap.Modal.getInstance(document.getElementById('stationModal'));
+            modal.hide();
+
+            currentStations = [...mockStations];
+            loadStations();
+            updateStatistics();
+        }
+
+        // 获取运营商名称
+        function getOperatorName(operatorId) {
+            const operators = {
+                1: "智慧充电科技",
+                2: "绿色能源充电站",
+                3: "城市充电网络"
+            };
+            return operators[operatorId] || "未知运营商";
+        }
+
+        // 搜索地址（模拟）
+        function searchAddress() {
+            const address = document.getElementById('address').value;
+            if (address) {
+                // 模拟地址解析
+                document.getElementById('longitude').value = "116.404";
+                document.getElementById('latitude').value = "39.915";
+                alert('地址定位完成！');
+            }
+        }
+
+        // 显示充电站详情
+        function showStationDetail(id) {
+            const station = mockStations.find(s => s.id === id);
+            if (!station) return;
+
+            currentStationDetail = station;
+
+            const detailContent = document.getElementById('stationDetailContent');
+            detailContent.innerHTML = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">基本信息</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>充电站名称：</strong>${station.name}</p>
+                                        <p><strong>充电站编码：</strong>${station.code}</p>
+                                        <p><strong>运营商：</strong>${station.operatorName}</p>
+                                        <p><strong>状态：</strong>${getStationStatusBadge(station.status)}</p>
+                                        <p><strong>功率类型：</strong>${getPowerTypeName(station.powerType)}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>详细地址：</strong>${station.address}</p>
+                                        <p><strong>坐标位置：</strong>${station.longitude}, ${station.latitude}</p>
+                                        <p><strong>营业时间：</strong>${station.businessHours}</p>
+                                        <p><strong>服务电话：</strong>${station.servicePhone}</p>
+                                        <p><strong>收费标准：</strong>${station.pricingInfo}</p>
+                                    </div>
+                                </div>
+                                <p><strong>描述：</strong>${station.description || '暂无描述'}</p>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">充电桩状态</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    ${station.connectors.map(connector => `
+                                        <div class="col-md-6 mb-2">
+                                            <div class="connector-item">
+                                                <div>
+                                                    <span class="connector-status ${connector.status.toLowerCase()}"></span>
+                                                    <strong>充电桩 ${connector.connectorId}</strong>
+                                                    <br>
+                                                    <small class="text-muted">${connector.power}kW ${connector.type === 'DC' ? '直流' : '交流'}</small>
+                                                </div>
+                                                <span class="badge bg-${getStatusColor(connector.status)}">
+                                                    ${getConnectorStatusName(connector.status)}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">运营数据</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row text-center">
+                                    <div class="col-md-3">
+                                        <div class="stat-number text-primary">${station.todaySessions}</div>
+                                        <div class="stat-label">今日订单</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="stat-number text-success">¥${station.todayRevenue}</div>
+                                        <div class="stat-label">今日收入</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="stat-number text-info">${station.avgUtilization}%</div>
+                                        <div class="stat-label">平均利用率</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="stat-number text-warning">${station.connectors.length}</div>
+                                        <div class="stat-label">充电桩总数</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">快速操作</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-primary" onclick="editCurrentStation()">
+                                        <i class="bi bi-pencil"></i> 编辑充电站
+                                    </button>
+                                    <button class="btn btn-info" onclick="viewStationHistory(${station.id})">
+                                        <i class="bi bi-clock-history"></i> 查看历史记录
+                                    </button>
+                                    <button class="btn btn-success" onclick="exportStationReport(${station.id})">
+                                        <i class="bi bi-download"></i> 导出报告
+                                    </button>
+                                    <button class="btn btn-warning" onclick="sendCommand(${station.id})">
+                                        <i class="bi bi-send"></i> 发送指令
+                                    </button>
+                                    <hr>
+                                    <button class="btn btn-outline-danger" onclick="deleteStation(${station.id})">
+                                        <i class="bi bi-trash"></i> 删除充电站
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">服务设施</h6>
+                            </div>
+                            <div class="card-body">
+                                ${station.facilities.map(facility => `
+                                    <div class="alert alert-success py-2 text-center">
+                                        <i class="bi bi-check-circle"></i> ${getFacilityName(facility)}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">系统信息</h6>
+                            </div>
+                            <div class="card-body">
+                                <p><strong>充电站ID：</strong>${station.id}</p>
+                                <p><strong>创建时间：</strong>${station.createTime}</p>
+                                <p><strong>最后更新：</strong>${new Date().toLocaleDateString()}</p>
+                                <p><strong>协议版本：</strong>OCPP 1.6</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const modal = new bootstrap.Modal(document.getElementById('stationDetailModal'));
+            modal.show();
+        }
+
+        // 获取状态颜色
+        function getStatusColor(status) {
+            const colors = {
+                AVAILABLE: 'success',
+                OCCUPIED: 'warning',
+                FAULTED: 'danger',
+                UNAVAILABLE: 'secondary'
+            };
+            return colors[status] || 'secondary';
+        }
+
+        // 获取设施名称
+        function getFacilityName(facility) {
+            const names = {
+                parking: '停车场',
+                restroom: '洗手间',
+                shop: '便利店',
+                wifi: 'WiFi'
+            };
+            return names[facility] || facility;
+        }
+
+        // 编辑当前充电站（从详情页面）
+        function editCurrentStation() {
+            const detailModal = bootstrap.Modal.getInstance(document.getElementById('stationDetailModal'));
+            detailModal.hide();
+            editStation(currentStationDetail.id);
+        }
+
+        // 查看充电站历史记录
+        function viewStationHistory(stationId) {
+            alert(`查看充电站 ${stationId} 的历史记录`);
+        }
+
+        // 导出充电站报告
+        function exportStationReport(stationId) {
+            alert(`导出充电站 ${stationId} 的运营报告`);
+        }
+
+        // 发送指令
+        function sendCommand(stationId) {
+            alert(`向充电站 ${stationId} 发送远程指令`);
+        }
+
+        // 删除充电站
+        function deleteStation(id) {
+            if (!confirm('确定要删除此充电站吗？此操作不可恢复！')) {
+                return;
+            }
+
+            const index = mockStations.findIndex(s => s.id === id);
+            if (index !== -1) {
+                const station = mockStations[index];
+                mockStations.splice(index, 1);
+                currentStations = [...mockStations];
+                loadStations();
+                updateStatistics();
+                alert(`充电站 "${station.name}" 已删除`);
+            }
+        }
+    </script>
+</body>
+</html>

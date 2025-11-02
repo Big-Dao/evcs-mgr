@@ -2,7 +2,10 @@ package com.evcs.protocol.websocket;
 
 import com.evcs.protocol.api.ProtocolEventListener;
 import com.evcs.protocol.dto.ocpp.OCPPMessage;
+import com.evcs.protocol.dto.ocpp.OCPPCallMessage;
+import com.evcs.protocol.dto.ocpp.OCPPCallErrorMessage;
 import com.evcs.protocol.dto.ocpp.OCPPBootNotificationRequest;
+import com.evcs.protocol.dto.ocpp.OCPPMessageParser;
 import com.evcs.protocol.enums.OCPPMessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -25,6 +28,22 @@ public class OCPPMessageProcessor {
 
     private final ProtocolEventListener eventListener;
     private final ObjectMapper objectMapper;
+    private final OCPPMessageParser messageParser;
+
+    /**
+     * 处理OCPP消息（从JSON字符串）
+     */
+    public void processMessage(OCPPWebSocketSession session, String jsonMessage) {
+        log.debug("Processing OCPP message from charger {}: {}", session.getChargerCode(), jsonMessage);
+
+        OCPPMessage message = messageParser.parse(jsonMessage);
+        if (message == null) {
+            log.warn("Failed to parse OCPP message from charger {}: {}", session.getChargerCode(), jsonMessage);
+            return;
+        }
+
+        processMessage(session, message);
+    }
 
     /**
      * 处理OCPP消息
@@ -60,34 +79,42 @@ public class OCPPMessageProcessor {
      * 处理Call消息
      */
     private void processCallMessage(OCPPWebSocketSession session, OCPPMessage message) {
-        String action = extractAction(message);
+        if (!(message instanceof OCPPCallMessage)) {
+            log.warn("Expected CallMessage but got: {}", message.getClass().getSimpleName());
+            return;
+        }
+
+        OCPPCallMessage callMessage = (OCPPCallMessage) message;
+        String action = callMessage.getAction();
+        Map<String, Object> payload = callMessage.getPayload();
+
         log.debug("Processing OCPP Call message from charger {}: action={}", session.getChargerCode(), action);
 
         switch (action) {
             case "BootNotification":
-                processBootNotification(session, message);
+                processBootNotification(session, callMessage, payload);
                 break;
             case "Heartbeat":
-                processHeartbeat(session, message);
+                processHeartbeat(session, callMessage, payload);
                 break;
             case "StatusNotification":
-                processStatusNotification(session, message);
+                processStatusNotification(session, callMessage, payload);
                 break;
             case "Authorize":
-                processAuthorize(session, message);
+                processAuthorize(session, callMessage, payload);
                 break;
             case "StartTransaction":
-                processStartTransaction(session, message);
+                processStartTransaction(session, callMessage, payload);
                 break;
             case "StopTransaction":
-                processStopTransaction(session, message);
+                processStopTransaction(session, callMessage, payload);
                 break;
             case "MeterValues":
-                processMeterValues(session, message);
+                processMeterValues(session, callMessage, payload);
                 break;
             default:
                 log.warn("Unsupported action from charger {}: {}", session.getChargerCode(), action);
-                sendErrorResponse(session, message, "NotSupported", "Action not supported: " + action);
+                sendErrorResponse(session, callMessage, "NotSupported", "Action not supported: " + action);
         }
     }
 
@@ -111,10 +138,8 @@ public class OCPPMessageProcessor {
     /**
      * 处理BootNotification消息
      */
-    private void processBootNotification(OCPPWebSocketSession session, OCPPMessage message) {
+    private void processBootNotification(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
         try {
-            Map<String, Object> payload = extractPayload(message);
-
             // 创建BootNotification请求对象
             OCPPBootNotificationRequest bootRequest = new OCPPBootNotificationRequest();
             bootRequest.setChargePointVendor((String) payload.get("chargePointVendor"));
@@ -157,7 +182,7 @@ public class OCPPMessageProcessor {
     /**
      * 处理Heartbeat消息
      */
-    private void processHeartbeat(OCPPWebSocketSession session, OCPPMessage message) {
+    private void processHeartbeat(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
         log.debug("Received heartbeat from charger: {}", session.getChargerCode());
 
         // 更新心跳信息
@@ -183,9 +208,8 @@ public class OCPPMessageProcessor {
     /**
      * 处理StatusNotification消息
      */
-    private void processStatusNotification(OCPPWebSocketSession session, OCPPMessage message) {
+    private void processStatusNotification(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
         try {
-            Map<String, Object> payload = extractPayload(message);
             Integer connectorId = (Integer) payload.get("connectorId");
             String status = (String) payload.get("status");
             String errorCode = (String) payload.get("errorCode");
@@ -217,9 +241,8 @@ public class OCPPMessageProcessor {
     /**
      * 处理Authorize消息
      */
-    private void processAuthorize(OCPPWebSocketSession session, OCPPMessage message) {
+    private void processAuthorize(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
         try {
-            Map<String, Object> payload = extractPayload(message);
             String idTag = (String) payload.get("idTag");
 
             log.info("Received Authorize from charger {}: idTag={}", session.getChargerCode(), idTag);
@@ -244,9 +267,8 @@ public class OCPPMessageProcessor {
     /**
      * 处理StartTransaction消息
      */
-    private void processStartTransaction(OCPPWebSocketSession session, OCPPMessage message) {
+    private void processStartTransaction(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
         try {
-            Map<String, Object> payload = extractPayload(message);
             Integer connectorId = (Integer) payload.get("connectorId");
             String idTag = (String) payload.get("idTag");
             Integer meterStart = (Integer) payload.get("meterStart");
@@ -287,9 +309,8 @@ public class OCPPMessageProcessor {
     /**
      * 处理StopTransaction消息
      */
-    private void processStopTransaction(OCPPWebSocketSession session, OCPPMessage message) {
+    private void processStopTransaction(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
         try {
-            Map<String, Object> payload = extractPayload(message);
             Integer transactionId = (Integer) payload.get("transactionId");
             String idTag = (String) payload.get("idTag");
             Integer meterStop = (Integer) payload.get("meterStop");
@@ -325,9 +346,8 @@ public class OCPPMessageProcessor {
     /**
      * 处理MeterValues消息
      */
-    private void processMeterValues(OCPPWebSocketSession session, OCPPMessage message) {
+    private void processMeterValues(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
         try {
-            Map<String, Object> payload = extractPayload(message);
             Integer connectorId = (Integer) payload.get("connectorId");
             Integer transactionId = (Integer) payload.get("transactionId");
 
@@ -345,25 +365,6 @@ public class OCPPMessageProcessor {
     }
 
     // ========== 辅助方法 ==========
-
-    /**
-     * 提取动作名称
-     */
-    private String extractAction(OCPPMessage message) {
-        // 这里应该从具体的消息类型中提取action
-        // 暂时返回空字符串
-        return "";
-    }
-
-    /**
-     * 提取载荷
-     */
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> extractPayload(OCPPMessage message) {
-        // 这里应该从具体的消息类型中提取payload
-        // 暂时返回空Map
-        return new HashMap<>();
-    }
 
     /**
      * 解析状态
@@ -394,7 +395,7 @@ public class OCPPMessageProcessor {
      */
     private void sendResponse(OCPPWebSocketSession session, OCPPMessage requestMessage, Map<String, Object> payload) {
         try {
-            String responseMessage = buildJsonMessage(OCPPMessageType.CALL_RESULT, requestMessage.getMessageId(), payload);
+            String responseMessage = messageParser.createCallResultMessage(requestMessage.getMessageId(), payload);
             session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(responseMessage));
         } catch (Exception e) {
             log.error("Error sending response to charger: {}", session.getChargerCode(), e);
@@ -414,7 +415,7 @@ public class OCPPMessageProcessor {
                 session.setHeartbeatInterval(interval);
             }
 
-            String responseMessage = buildJsonMessage(OCPPMessageType.CALL_RESULT, requestMessage.getMessageId(), payload);
+            String responseMessage = messageParser.createCallResultMessage(requestMessage.getMessageId(), payload);
             session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(responseMessage));
 
         } catch (Exception e) {
@@ -427,33 +428,18 @@ public class OCPPMessageProcessor {
      */
     private void sendErrorResponse(OCPPWebSocketSession session, OCPPMessage requestMessage, String errorCode, String errorDescription) {
         try {
-            String errorMessage = buildErrorMessage(requestMessage.getMessageId(), errorCode, errorDescription, null);
+            OCPPErrorCode ocppErrorCode;
+            try {
+                ocppErrorCode = OCPPErrorCode.fromCode(errorCode);
+            } catch (IllegalArgumentException e) {
+                ocppErrorCode = OCPPErrorCode.GENERIC_ERROR;
+            }
+
+            String errorMessage = messageParser.createCallErrorMessage(
+                requestMessage.getMessageId(), ocppErrorCode, errorDescription, null);
             session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(errorMessage));
         } catch (Exception e) {
             log.error("Error sending error response to charger: {}", session.getChargerCode(), e);
         }
-    }
-
-    /**
-     * 构建JSON消息
-     */
-    private String buildJsonMessage(OCPPMessageType messageType, String messageId, Object payload) throws Exception {
-        Object[] messageArray;
-        switch (messageType) {
-            case CALL_RESULT:
-                messageArray = new Object[]{messageType.getTypeId(), messageId, payload};
-                break;
-            default:
-                throw new IllegalArgumentException("Unsupported message type for response: " + messageType);
-        }
-        return objectMapper.writeValueAsString(messageArray);
-    }
-
-    /**
-     * 构建错误消息
-     */
-    private String buildErrorMessage(String messageId, String errorCode, String errorDescription, Map<String, Object> errorDetails) throws Exception {
-        Object[] messageArray = {OCPPMessageType.CALL_ERROR.getTypeId(), messageId, errorCode, errorDescription, errorDetails != null ? errorDetails : new HashMap<>()};
-        return objectMapper.writeValueAsString(messageArray);
     }
 }

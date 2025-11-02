@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>角色管理 - EVCS管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background-color: #343a40;
+            padding-top: 20px;
+            z-index: 1000;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.75);
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin: 5px 10px;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #495057;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .role-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .role-super-admin { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .role-admin { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .role-operator { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .role-user { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+
+        .permission-chip {
+            display: inline-block;
+            padding: 4px 10px;
+            margin: 2px;
+            background-color: #e9ecef;
+            border-radius: 12px;
+            font-size: 12px;
+            color: #495057;
+        }
+        .permission-chip.selected {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .data-scope-badge {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+        }
+        .scope-all { background-color: #28a745; color: white; }
+        .scope-custom { background-color: #ffc107; color: #212529; }
+        .scope-dept { background-color: #17a2b8; color: white; }
+        .scope-dept-sub { background-color: #6f42c1; color: white; }
+        .scope-self { background-color: #fd7e14; color: white; }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <nav class="sidebar">
+        <div class="text-center mb-4">
+            <h5 class="text-white">EVCS 管理系统</h5>
+        </div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="user-management.html">
+                    <i class="bi bi-people-fill me-2"></i>用户管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="#">
+                    <i class="bi bi-shield-fill me-2"></i>角色管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="permission-management.html">
+                    <i class="bi bi-key-fill me-2"></i>权限管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="tenant-management.html">
+                    <i class="bi bi-building me-2"></i>租户管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="station-management.html">
+                    <i class="bi bi-ev-station me-2"></i>充电站管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="order-management.html">
+                    <i class="bi bi-cart-fill me-2"></i>订单管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="payment-management.html">
+                    <i class="bi bi-credit-card-fill me-2"></i>支付管理
+                </a>
+            </li>
+            <li class="nav-item mt-3">
+                <hr class="text-white-50">
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-gear-fill me-2"></i>系统设置
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-bar-chart-fill me-2"></i>数据统计
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-file-text-fill me-2"></i>日志管理
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="main-content">
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>角色管理</h2>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#roleModal">
+                    <i class="bi bi-plus-circle me-1"></i>新增角色
+                </button>
+                <button class="btn btn-outline-secondary ms-2" onclick="exportRoles()">
+                    <i class="bi bi-download me-1"></i>导出数据
+                </button>
+            </div>
+        </div>
+
+        <!-- 统计卡片 -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">总角色数</h5>
+                        <h2 class="text-primary">4</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">活跃角色</h5>
+                        <h2 class="text-success">4</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">系统角色</h5>
+                        <h2 class="text-warning">4</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <h5 class="card-title">自定义角色</h5>
+                        <h2 class="text-info">0</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 搜索和筛选 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" placeholder="搜索角色名称、编码" id="searchInput">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">所有状态</option>
+                            <option value="1">启用</option>
+                            <option value="0">禁用</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="dataScopeFilter">
+                            <option value="">所有数据权限</option>
+                            <option value="1">全部数据</option>
+                            <option value="2">自定义数据</option>
+                            <option value="3">本部门数据</option>
+                            <option value="4">本部门及以下</option>
+                            <option value="5">仅本人数据</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="button" class="btn btn-outline-primary" onclick="searchRoles()">
+                            <i class="bi bi-search me-1"></i>搜索
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary ms-1" onclick="resetFilters()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>重置
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 角色列表 -->
+        <div class="row">
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="role-icon role-super-admin me-3">SA</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title mb-1">超级管理员</h5>
+                                <small class="text-muted">ROLE_SUPER_ADMIN</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="data-scope-badge scope-all">全部数据</span>
+                            </div>
+                        </div>
+                        <p class="card-text text-muted small">拥有系统所有权限，包括用户管理、角色管理、系统配置等。</p>
+                        <div class="mb-2">
+                            <strong>权限：</strong>
+                            <div class="mt-1">
+                                <span class="permission-chip">user:* (用户管理)</span>
+                                <span class="permission-chip">role:* (角色管理)</span>
+                                <span class="permission-chip">permission:* (权限管理)</span>
+                                <span class="permission-chip">station:* (充电站管理)</span>
+                                <span class="permission-chip">order:* (订单管理)</span>
+                                <span class="permission-chip">payment:* (支付管理)</span>
+                                <span class="permission-chip">+8 更多</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-people-fill me-1"></i>2个用户
+                                <i class="bi bi-clock-fill ms-2 me-1"></i>2024-01-01
+                            </small>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editRole(1)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="viewRole(1)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="role-icon role-admin me-3">AD</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title mb-1">管理员</h5>
+                                <small class="text-muted">ROLE_ADMIN</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="data-scope-badge scope-all">全部数据</span>
+                            </div>
+                        </div>
+                        <p class="card-text text-muted small">拥有业务管理权限，包括充电站管理、订单管理、支付管理等。</p>
+                        <div class="mb-2">
+                            <strong>权限：</strong>
+                            <div class="mt-1">
+                                <span class="permission-chip">station:* (充电站管理)</span>
+                                <span class="permission-chip">order:* (订单管理)</span>
+                                <span class="permission-chip">payment:* (支付管理)</span>
+                                <span class="permission-chip">user:view (用户查看)</span>
+                                <span class="permission-chip">+3 更多</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-people-fill me-1"></i>5个用户
+                                <i class="bi bi-clock-fill ms-2 me-1"></i>2024-01-05
+                            </small>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editRole(2)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="viewRole(2)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="role-icon role-operator me-3">OP</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title mb-1">操作员</h5>
+                                <small class="text-muted">ROLE_OPERATOR</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="data-scope-badge scope-dept">本部门数据</span>
+                            </div>
+                        </div>
+                        <p class="card-text text-muted small">拥有日常操作权限，包括充电站监控、订单处理等。</p>
+                        <div class="mb-2">
+                            <strong>权限：</strong>
+                            <div class="mt-1">
+                                <span class="permission-chip">station:view (充电站查看)</span>
+                                <span class="permission-chip">station:control (充电站控制)</span>
+                                <span class="permission-chip">order:view (订单查看)</span>
+                                <span class="permission-chip">order:process (订单处理)</span>
+                                <span class="permission-chip">+2 更多</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-people-fill me-1"></i>12个用户
+                                <i class="bi bi-clock-fill ms-2 me-1"></i>2024-01-10
+                            </small>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editRole(3)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="viewRole(3)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="role-icon role-user me-3">US</div>
+                            <div class="flex-grow-1">
+                                <h5 class="card-title mb-1">普通用户</h5>
+                                <small class="text-muted">ROLE_USER</small>
+                            </div>
+                            <div class="text-end">
+                                <span class="data-scope-badge scope-self">仅本人数据</span>
+                            </div>
+                        </div>
+                        <p class="card-text text-muted small">基本用户权限，可以查看自己的充电记录和订单信息。</p>
+                        <div class="mb-2">
+                            <strong>权限：</strong>
+                            <div class="mt-1">
+                                <span class="permission-chip">station:view (充电站查看)</span>
+                                <span class="permission-chip">order:view (订单查看)</span>
+                                <span class="permission-chip">payment:view (支付查看)</span>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                <i class="bi bi-people-fill me-1"></i>156个用户
+                                <i class="bi bi-clock-fill ms-2 me-1"></i>2024-01-15
+                            </small>
+                            <div>
+                                <button class="btn btn-sm btn-outline-primary me-1" onclick="editRole(4)">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-info" onclick="viewRole(4)">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 角色模态框 -->
+    <div class="modal fade" id="roleModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="roleModalTitle">新增角色</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="roleForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="roleName" class="form-label">角色名称 *</label>
+                                <input type="text" class="form-control" id="roleName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="roleCode" class="form-label">角色编码 *</label>
+                                <input type="text" class="form-control" id="roleCode" placeholder="ROLE_XXX" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="sort" class="form-label">显示顺序</label>
+                                <input type="number" class="form-control" id="sort" value="0">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="dataScope" class="form-label">数据权限范围</label>
+                                <select class="form-select" id="dataScope">
+                                    <option value="1">全部数据权限</option>
+                                    <option value="2">自定义数据权限</option>
+                                    <option value="3">本部门数据权限</option>
+                                    <option value="4">本部门及以下数据权限</option>
+                                    <option value="5">仅本人数据权限</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">状态</label>
+                            <select class="form-select" id="status">
+                                <option value="1">启用</option>
+                                <option value="0">禁用</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">权限分配</label>
+                            <div class="row">
+                                <!-- 用户管理权限 -->
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">用户管理</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="user:view" id="permUserView">
+                                        <label class="form-check-label" for="permUserView">用户查看</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="user:create" id="permUserCreate">
+                                        <label class="form-check-label" for="permUserCreate">用户新增</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="user:update" id="permUserUpdate">
+                                        <label class="form-check-label" for="permUserUpdate">用户编辑</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="user:delete" id="permUserDelete">
+                                        <label class="form-check-label" for="permUserDelete">用户删除</label>
+                                    </div>
+                                </div>
+
+                                <!-- 充电站管理权限 -->
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">充电站管理</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="station:view" id="permStationView">
+                                        <label class="form-check-label" for="permStationView">充电站查看</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="station:create" id="permStationCreate">
+                                        <label class="form-check-label" for="permStationCreate">充电站新增</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="station:update" id="permStationUpdate">
+                                        <label class="form-check-label" for="permStationUpdate">充电站编辑</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="station:delete" id="permStationDelete">
+                                        <label class="form-check-label" for="permStationDelete">充电站删除</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- 订单管理权限 -->
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">订单管理</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="order:view" id="permOrderView">
+                                        <label class="form-check-label" for="permOrderView">订单查看</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="order:create" id="permOrderCreate">
+                                        <label class="form-check-label" for="permOrderCreate">订单创建</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="order:update" id="permOrderUpdate">
+                                        <label class="form-check-label" for="permOrderUpdate">订单编辑</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="order:cancel" id="permOrderCancel">
+                                        <label class="form-check-label" for="permOrderCancel">订单取消</label>
+                                    </div>
+                                </div>
+
+                                <!-- 支付管理权限 -->
+                                <div class="col-md-6">
+                                    <h6 class="text-muted">支付管理</h6>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="payment:view" id="permPaymentView">
+                                        <label class="form-check-label" for="permPaymentView">支付查看</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="payment:create" id="permPaymentCreate">
+                                        <label class="form-check-label" for="permPaymentCreate">支付创建</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="payment:refund" id="permPaymentRefund">
+                                        <label class="form-check-label" for="permPaymentRefund">支付退款</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="remark" class="form-label">备注</label>
+                            <textarea class="form-control" id="remark" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveRole()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 角色详情模态框 -->
+    <div class="modal fade" id="roleDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">角色详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="roleDetailContent">
+                    <!-- 角色详情内容将在这里动态插入 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRoles();
+        });
+
+        // 加载角色列表
+        function loadRoles() {
+            console.log('Loading roles...');
+        }
+
+        // 搜索角色
+        function searchRoles() {
+            const searchInput = document.getElementById('searchInput').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const dataScopeFilter = document.getElementById('dataScopeFilter').value;
+
+            console.log('Searching roles with filters:', {
+                search: searchInput,
+                status: statusFilter,
+                dataScope: dataScopeFilter
+            });
+        }
+
+        // 重置筛选
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('dataScopeFilter').value = '';
+            loadRoles();
+        }
+
+        // 编辑角色
+        function editRole(roleId) {
+            document.getElementById('roleModalTitle').textContent = '编辑角色';
+            // 填充表单数据
+            document.getElementById('roleName').value = '管理员';
+            document.getElementById('roleCode').value = 'ROLE_ADMIN';
+            document.getElementById('sort').value = '2';
+            document.getElementById('dataScope').value = '1';
+            document.getElementById('status').value = '1';
+
+            // 显示模态框
+            const modal = new bootstrap.Modal(document.getElementById('roleModal'));
+            modal.show();
+        }
+
+        // 查看角色详情
+        function viewRole(roleId) {
+            const roleDetails = {
+                name: '管理员',
+                code: 'ROLE_ADMIN',
+                dataScope: 1,
+                dataScopeText: '全部数据权限',
+                permissions: [
+                    'station:* (充电站管理)',
+                    'order:* (订单管理)',
+                    'payment:* (支付管理)',
+                    'user:view (用户查看)'
+                ],
+                userCount: 5,
+                createTime: '2024-01-05 10:00:00'
+            };
+
+            const content = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>角色名称：</strong></td>
+                                <td>${roleDetails.name}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>角色编码：</strong></td>
+                                <td>${roleDetails.code}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>数据权限：</strong></td>
+                                <td><span class="data-scope-badge scope-all">${roleDetails.dataScopeText}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>用户数量：</strong></td>
+                                <td>${roleDetails.userCount}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>权限列表：</strong></p>
+                        <div>
+                            ${roleDetails.permissions.map(perm => `<span class="permission-chip">${perm}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+                <hr>
+                <p><strong>创建时间：</strong> ${roleDetails.createTime}</p>
+            `;
+
+            document.getElementById('roleDetailContent').innerHTML = content;
+            const modal = new bootstrap.Modal(document.getElementById('roleDetailModal'));
+            modal.show();
+        }
+
+        // 保存角色
+        function saveRole() {
+            const formData = {
+                name: document.getElementById('roleName').value,
+                code: document.getElementById('roleCode').value,
+                sort: document.getElementById('sort').value,
+                dataScope: document.getElementById('dataScope').value,
+                status: document.getElementById('status').value,
+                remark: document.getElementById('remark').value
+            };
+
+            console.log('Saving role:', formData);
+            // 实际保存逻辑
+
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('roleModal'));
+            modal.hide();
+        }
+
+        // 导出角色数据
+        function exportRoles() {
+            console.log('Exporting roles...');
+            // 实际导出逻辑
+        }
+    </script>
+</body>
+</html>

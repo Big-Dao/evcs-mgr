@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>订单管理 - EVCS管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .order-header {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+            padding: 2rem 0;
+            margin-bottom: 2rem;
+        }
+
+        .order-card {
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 1rem;
+        }
+
+        .order-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .status-badge {
+            font-size: 0.8rem;
+            padding: 0.4rem 0.8rem;
+        }
+
+        .order-stats {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 0.5rem;
+        }
+
+        .stat-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #495057;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+
+        .search-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .order-timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+
+        .order-timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e9ecef;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -25px;
+            top: 5px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #007bff;
+        }
+
+        .timeline-item.completed::before {
+            background: #28a745;
+        }
+
+        .timeline-item.processing::before {
+            background: #ffc107;
+        }
+
+        .timeline-item.cancelled::before {
+            background: #dc3545;
+        }
+
+        .revenue-trend {
+            height: 80px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid #e9ecef;
+        }
+
+        .payment-method-icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 0.5rem;
+        }
+
+        .charging-info {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .order-amount {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .discount-amount {
+            font-size: 0.9rem;
+            color: #dc3545;
+            text-decoration: line-through;
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/admin/dashboard">
+                <i class="bi bi-ev-station"></i> EVCS管理后台
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/dashboard">
+                            <i class="bi bi-speedometer2"></i> 仪表盘
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-people"></i> 用户管理
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/users">用户管理</a></li>
+                            <li><a class="dropdown-item" href="/admin/roles">角色管理</a></li>
+                            <li><a class="dropdown-item" href="/admin/permissions">权限管理</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/tenants">
+                            <i class="bi bi-building"></i> 租户管理
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle active" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-ev-station"></i> 业务管理
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/stations">充电站管理</a></li>
+                            <li><a class="dropdown-item active" href="/admin/orders">订单管理</a></li>
+                            <li><a class="dropdown-item" href="/admin/payments">支付管理</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> 管理员
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/profile">个人资料</a></li>
+                            <li><a class="dropdown-item" href="/admin/settings">系统设置</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout">退出登录</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 页面头部 -->
+    <div class="order-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-6 fw-bold mb-3">
+                        <i class="bi bi-receipt"></i> 订单管理
+                    </h1>
+                    <p class="lead mb-0">管理充电订单，跟踪交易状态，分析收入数据</p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <button class="btn btn-light btn-lg" onclick="exportOrderData()">
+                        <i class="bi bi-download"></i> 导出数据
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- 搜索和筛选 -->
+        <div class="search-section">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">搜索订单</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" class="form-control" id="searchInput" placeholder="订单号、用户、充电站">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">订单状态</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="">全部状态</option>
+                        <option value="PENDING">待支付</option>
+                        <option value="CHARGING">充电中</option>
+                        <option value="COMPLETED">已完成</option>
+                        <option value="CANCELLED">已取消</option>
+                        <option value="REFUNDED">已退款</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">支付方式</label>
+                    <select class="form-select" id="paymentFilter">
+                        <option value="">全部方式</option>
+                        <option value="ALIPAY">支付宝</option>
+                        <option value="WECHAT">微信支付</option>
+                        <option value="CARD">银行卡</option>
+                        <option value="BALANCE">余额支付</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">时间范围</label>
+                    <select class="form-select" id="timeFilter">
+                        <option value="TODAY">今天</option>
+                        <option value="WEEK">本周</option>
+                        <option value="MONTH">本月</option>
+                        <option value="QUARTER">本季度</option>
+                        <option value="YEAR">本年</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <div class="btn-group w-100">
+                        <button class="btn btn-primary" onclick="searchOrders()">
+                            <i class="bi bi-search"></i> 搜索
+                        </button>
+                        <button class="btn btn-outline-secondary" onclick="resetSearch()">
+                            <i class="bi bi-arrow-clockwise"></i> 重置
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计概览 -->
+        <div class="row mb-4">
+            <div class="col-md-2">
+                <div class="order-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-primary" id="totalOrders">0</div>
+                        <div class="stat-label">总订单数</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="order-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-success" id="completedOrders">0</div>
+                        <div class="stat-label">已完成</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="order-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-warning" id="chargingOrders">0</div>
+                        <div class="stat-label">充电中</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="order-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-info" id="totalRevenue">¥0</div>
+                        <div class="stat-label">总收入</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="order-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-primary" id="avgAmount">¥0</div>
+                        <div class="stat-label">平均金额</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="order-stats">
+                    <div class="stat-item">
+                        <div class="stat-number text-danger" id="refundAmount">¥0</div>
+                        <div class="stat-label">退款金额</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 收入趋势 -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">收入趋势</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="revenue-trend">
+                            <i class="bi bi-graph-up fs-1"></i>
+                            <span class="ms-3">收入趋势图表</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h6 class="mb-0">支付方式分布</h6>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="paymentChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 订单列表 -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">订单列表</h5>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-primary active" onclick="showOrderList('all')">
+                        全部订单
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" onclick="showOrderList('charging')">
+                        充电中
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" onclick="showOrderList('completed')">
+                        已完成
+                    </button>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>订单号</th>
+                                <th>用户</th>
+                                <th>充电站</th>
+                                <th>充电时长</th>
+                                <th>电量</th>
+                                <th>金额</th>
+                                <th>支付方式</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="orderList">
+                            <!-- 订单列表将通过JavaScript动态生成 -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- 分页 -->
+        <nav aria-label="订单列表分页" class="mt-4">
+            <ul class="pagination justify-content-center" id="pagination">
+                <!-- 分页按钮将通过JavaScript动态生成 -->
+            </ul>
+        </nav>
+    </div>
+
+    <!-- 订单详情模态框 -->
+    <div class="modal fade" id="orderDetailModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">订单详情</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="orderDetailContent">
+                    <!-- 订单详情将通过JavaScript动态生成 -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+                    <button type="button" class="btn btn-warning" onclick="refundOrder()">
+                        <i class="bi bi-arrow-counterclockwise"></i> 申请退款
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 退款模态框 -->
+    <div class="modal fade" id="refundModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">申请退款</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="refundForm">
+                        <div class="mb-3">
+                            <label class="form-label">退款金额</label>
+                            <input type="number" class="form-control" id="refundAmount" step="0.01" min="0">
+                            <div class="form-text">最大可退款金额：<span id="maxRefundAmount">¥0</span></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">退款原因</label>
+                            <select class="form-select" id="refundReason">
+                                <option value="">请选择退款原因</option>
+                                <option value="CHARGING_ERROR">充电故障</option>
+                                <option value="SERVICE_ERROR">服务问题</option>
+                                <option value="USER_REQUEST">用户主动申请</option>
+                                <option value="SYSTEM_ERROR">系统错误</option>
+                                <option value="OTHER">其他原因</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">详细说明</label>
+                            <textarea class="form-control" id="refundDescription" rows="3" placeholder="请详细描述退款原因"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-danger" onclick="confirmRefund()">
+                        <i class="bi bi-check-circle"></i> 确认退款
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // 模拟订单数据
+        const mockOrders = [
+            {
+                id: "ORD202411010001",
+                userId: 1001,
+                userName: "张三",
+                userPhone: "138****8001",
+                userAvatar: null,
+                stationId: 1,
+                stationName: "北京朝阳公园充电站",
+                connectorId: 2,
+                status: "COMPLETED",
+                paymentMethod: "ALIPAY",
+                paymentStatus: "PAID",
+                startTime: "2024-11-01 09:15:00",
+                endTime: "2024-11-01 11:30:00",
+                duration: 135, // 分钟
+                startEnergy: 1250, // kWh
+                endEnergy: 1285, // kWh
+                energyConsumed: 35, // kWh
+                unitPrice: 1.5, // 元/kWh
+                serviceFee: 5.0, // 元
+                totalAmount: 57.5,
+                discountAmount: 0,
+                actualAmount: 57.5,
+                refundAmount: 0,
+                createTime: "2024-11-01 09:14:30",
+                payTime: "2024-11-01 09:15:05"
+            },
+            {
+                id: "ORD202411010002",
+                userId: 1002,
+                userName: "李四",
+                userPhone: "139****8002",
+                userAvatar: null,
+                stationId: 2,
+                stationName: "上海浦东机场充电站",
+                connectorId: 1,
+                status: "CHARGING",
+                paymentMethod: "WECHAT",
+                paymentStatus: "PAID",
+                startTime: "2024-11-01 10:30:00",
+                endTime: null,
+                duration: null,
+                startEnergy: 2100,
+                endEnergy: null,
+                energyConsumed: null,
+                unitPrice: 1.8,
+                serviceFee: 8.0,
+                totalAmount: 0,
+                discountAmount: 0,
+                actualAmount: 0,
+                refundAmount: 0,
+                createTime: "2024-11-01 10:29:45",
+                payTime: "2024-11-01 10:30:02"
+            },
+            {
+                id: "ORD202411010003",
+                userId: 1003,
+                userName: "王五",
+                userPhone: "137****8003",
+                userAvatar: null,
+                stationId: 1,
+                stationName: "北京朝阳公园充电站",
+                connectorId: 3,
+                status: "CANCELLED",
+                paymentMethod: "BALANCE",
+                paymentStatus: "REFUNDED",
+                startTime: "2024-11-01 08:45:00",
+                endTime: "2024-11-01 08:52:00",
+                duration: 7,
+                startEnergy: 850,
+                endEnergy: 852,
+                energyConsumed: 2,
+                unitPrice: 1.5,
+                serviceFee: 5.0,
+                totalAmount: 8.0,
+                discountAmount: 0,
+                actualAmount: 8.0,
+                refundAmount: 8.0,
+                createTime: "2024-11-01 08:44:20",
+                payTime: "2024-11-01 08:45:10"
+            }
+        ];
+
+        let currentOrders = [...mockOrders];
+        let currentOrderDetail = null;
+        let currentPage = 1;
+        const itemsPerPage = 10;
+        let currentView = 'all';
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadOrders();
+            updateStatistics();
+            initPaymentChart();
+        });
+
+        // 初始化支付方式图表
+        function initPaymentChart() {
+            const ctx = document.getElementById('paymentChart').getContext('2d');
+            const paymentData = {
+                ALIPAY: currentOrders.filter(o => o.paymentMethod === 'ALIPAY').length,
+                WECHAT: currentOrders.filter(o => o.paymentMethod === 'WECHAT').length,
+                CARD: currentOrders.filter(o => o.paymentMethod === 'CARD').length,
+                BALANCE: currentOrders.filter(o => o.paymentMethod === 'BALANCE').length
+            };
+
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['支付宝', '微信支付', '银行卡', '余额支付'],
+                    datasets: [{
+                        data: Object.values(paymentData),
+                        backgroundColor: [
+                            '#1677ff',
+                            '#52c41a',
+                            '#fa8c16',
+                            '#722ed1'
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // 加载订单列表
+        function loadOrders() {
+            renderOrders();
+            renderPagination();
+        }
+
+        // 渲染订单列表
+        function renderOrders() {
+            const orderList = document.getElementById('orderList');
+            const startIndex = (currentPage - 1) * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+
+            // 根据当前视图筛选订单
+            let filteredOrders = currentOrders;
+            if (currentView === 'charging') {
+                filteredOrders = currentOrders.filter(o => o.status === 'CHARGING');
+            } else if (currentView === 'completed') {
+                filteredOrders = currentOrders.filter(o => o.status === 'COMPLETED');
+            }
+
+            const pageOrders = filteredOrders.slice(startIndex, endIndex);
+
+            orderList.innerHTML = pageOrders.map(order => `
+                <tr>
+                    <td>
+                        <strong>${order.id}</strong>
+                        <br>
+                        <small class="text-muted">${formatDate(order.createTime)}</small>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <div class="me-2">
+                                ${order.userAvatar ?
+                                    `<img src="${order.userAvatar}" alt="${order.userName}" class="user-avatar">` :
+                                    `<div class="user-avatar d-flex align-items-center justify-content-center bg-primary text-white">
+                                        <i class="bi bi-person"></i>
+                                    </div>`
+                                }
+                            </div>
+                            <div>
+                                <div>${order.userName}</div>
+                                <small class="text-muted">${order.userPhone}</small>
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div>${order.stationName}</div>
+                        <small class="text-muted">充电桩 ${order.connectorId}</small>
+                    </td>
+                    <td>
+                        ${order.duration ? formatDuration(order.duration) : '-'}
+                    </td>
+                    <td>
+                        ${order.energyConsumed ? `${order.energyConsumed} kWh` : '-'}
+                    </td>
+                    <td>
+                        <div class="order-amount">¥${order.actualAmount}</div>
+                        ${order.discountAmount > 0 ? `<div class="discount-amount">¥${order.totalAmount}</div>` : ''}
+                    </td>
+                    <td>
+                        ${getPaymentMethodIcon(order.paymentMethod)}
+                        ${getPaymentMethodName(order.paymentMethod)}
+                    </td>
+                    <td>
+                        ${getOrderStatusBadge(order.status)}
+                    </td>
+                    <td>
+                        <small class="text-muted">${formatDate(order.createTime)}</small>
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="showOrderDetail('${order.id}')" title="查看详情">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            ${order.status === 'COMPLETED' && order.refundAmount === 0 ? `
+                                <button class="btn btn-outline-warning" onclick="refundOrderById('${order.id}')" title="申请退款">
+                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                </button>
+                            ` : ''}
+                            <button class="btn btn-outline-info" onclick="downloadInvoice('${order.id}')" title="下载发票">
+                                <i class="bi bi-download"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 渲染分页
+        function renderPagination() {
+            const pagination = document.getElementById('pagination');
+
+            // 根据当前视图计算总页数
+            let filteredOrders = currentOrders;
+            if (currentView === 'charging') {
+                filteredOrders = currentOrders.filter(o => o.status === 'CHARGING');
+            } else if (currentView === 'completed') {
+                filteredOrders = currentOrders.filter(o => o.status === 'COMPLETED');
+            }
+
+            const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+
+            let paginationHTML = '';
+
+            // 上一页
+            paginationHTML += `
+                <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage - 1})">上一页</a>
+                </li>
+            `;
+
+            // 页码
+            for (let i = 1; i <= totalPages; i++) {
+                paginationHTML += `
+                    <li class="page-item ${i === currentPage ? 'active' : ''}">
+                        <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+                    </li>
+                `;
+            }
+
+            // 下一页
+            paginationHTML += `
+                <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${currentPage + 1})">下一页</a>
+                </li>
+            `;
+
+            pagination.innerHTML = paginationHTML;
+        }
+
+        // 切换页面
+        function changePage(page) {
+            let filteredOrders = currentOrders;
+            if (currentView === 'charging') {
+                filteredOrders = currentOrders.filter(o => o.status === 'CHARGING');
+            } else if (currentView === 'completed') {
+                filteredOrders = currentOrders.filter(o => o.status === 'COMPLETED');
+            }
+
+            const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
+            if (page < 1 || page > totalPages) return;
+
+            currentPage = page;
+            renderOrders();
+            renderPagination();
+        }
+
+        // 显示订单列表视图
+        function showOrderList(view) {
+            currentView = view;
+            currentPage = 1;
+
+            // 更新按钮状态
+            document.querySelectorAll('.btn-group .btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            renderOrders();
+            renderPagination();
+        }
+
+        // 获取订单状态徽章
+        function getOrderStatusBadge(status) {
+            const statusConfig = {
+                PENDING: { color: 'warning', icon: 'clock', text: '待支付' },
+                CHARGING: { color: 'info', icon: 'lightning', text: '充电中' },
+                COMPLETED: { color: 'success', icon: 'check-circle', text: '已完成' },
+                CANCELLED: { color: 'danger', icon: 'x-circle', text: '已取消' },
+                REFUNDED: { color: 'secondary', icon: 'arrow-counterclockwise', text: '已退款' }
+            };
+
+            const config = statusConfig[status] || statusConfig.PENDING;
+            return `<span class="badge bg-${config.color} status-badge">
+                <i class="bi bi-${config.icon}"></i> ${config.text}
+            </span>`;
+        }
+
+        // 获取支付方式图标
+        function getPaymentMethodIcon(method) {
+            const icons = {
+                ALIPAY: '<i class="bi bi-alipay text-primary"></i>',
+                WECHAT: '<i class="bi bi-wechat text-success"></i>',
+                CARD: '<i class="bi bi-credit-card text-info"></i>',
+                BALANCE: '<i class="bi bi-wallet text-warning"></i>'
+            };
+            return icons[method] || '';
+        }
+
+        // 获取支付方式名称
+        function getPaymentMethodName(method) {
+            const names = {
+                ALIPAY: '支付宝',
+                WECHAT: '微信支付',
+                CARD: '银行卡',
+                BALANCE: '余额支付'
+            };
+            return names[method] || method;
+        }
+
+        // 格式化日期
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        }
+
+        // 格式化时长
+        function formatDuration(minutes) {
+            const hours = Math.floor(minutes / 60);
+            const mins = minutes % 60;
+            if (hours > 0) {
+                return `${hours}小时${mins}分钟`;
+            }
+            return `${mins}分钟`;
+        }
+
+        // 更新统计信息
+        function updateStatistics() {
+            const totalOrders = currentOrders.length;
+            const completedOrders = currentOrders.filter(o => o.status === 'COMPLETED').length;
+            const chargingOrders = currentOrders.filter(o => o.status === 'CHARGING').length;
+            const totalRevenue = currentOrders.reduce((sum, o) => sum + o.actualAmount, 0);
+            const avgAmount = completedOrders > 0 ? totalRevenue / completedOrders : 0;
+            const refundAmount = currentOrders.reduce((sum, o) => sum + o.refundAmount, 0);
+
+            document.getElementById('totalOrders').textContent = totalOrders;
+            document.getElementById('completedOrders').textContent = completedOrders;
+            document.getElementById('chargingOrders').textContent = chargingOrders;
+            document.getElementById('totalRevenue').textContent = `¥${totalRevenue.toFixed(2)}`;
+            document.getElementById('avgAmount').textContent = `¥${avgAmount.toFixed(2)}`;
+            document.getElementById('refundAmount').textContent = `¥${refundAmount.toFixed(2)}`;
+        }
+
+        // 搜索订单
+        function searchOrders() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const status = document.getElementById('statusFilter').value;
+            const payment = document.getElementById('paymentFilter').value;
+            const time = document.getElementById('timeFilter').value;
+
+            currentOrders = mockOrders.filter(order => {
+                const matchSearch = !searchTerm ||
+                    order.id.toLowerCase().includes(searchTerm) ||
+                    order.userName.toLowerCase().includes(searchTerm) ||
+                    order.stationName.toLowerCase().includes(searchTerm);
+
+                const matchStatus = !status || order.status === status;
+                const matchPayment = !payment || order.paymentMethod === payment;
+
+                // 时间筛选（简化实现）
+                let matchTime = true;
+                if (time === 'TODAY') {
+                    const today = new Date().toDateString();
+                    matchTime = new Date(order.createTime).toDateString() === today;
+                } else if (time === 'WEEK') {
+                    const weekAgo = new Date();
+                    weekAgo.setDate(weekAgo.getDate() - 7);
+                    matchTime = new Date(order.createTime) >= weekAgo;
+                }
+
+                return matchSearch && matchStatus && matchPayment && matchTime;
+            });
+
+            currentPage = 1;
+            loadOrders();
+            updateStatistics();
+        }
+
+        // 重置搜索
+        function resetSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('paymentFilter').value = '';
+            document.getElementById('timeFilter').value = 'TODAY';
+
+            currentOrders = [...mockOrders];
+            currentPage = 1;
+            loadOrders();
+            updateStatistics();
+        }
+
+        // 显示订单详情
+        function showOrderDetail(orderId) {
+            const order = mockOrders.find(o => o.id === orderId);
+            if (!order) return;
+
+            currentOrderDetail = order;
+
+            const detailContent = document.getElementById('orderDetailContent');
+            detailContent.innerHTML = `
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">订单信息</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <p><strong>订单号：</strong>${order.id}</p>
+                                        <p><strong>订单状态：</strong>${getOrderStatusBadge(order.status)}</p>
+                                        <p><strong>支付状态：</strong>${getPaymentStatusBadge(order.paymentStatus)}</p>
+                                        <p><strong>创建时间：</strong>${formatDate(order.createTime)}</p>
+                                        <p><strong>支付时间：</strong>${order.payTime ? formatDate(order.payTime) : '未支付'}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p><strong>充电开始：</strong>${order.startTime ? formatDate(order.startTime) : '-'}</p>
+                                        <p><strong>充电结束：</strong>${order.endTime ? formatDate(order.endTime) : '充电中'}</p>
+                                        <p><strong>充电时长：</strong>${order.duration ? formatDuration(order.duration) : '充电中'}</p>
+                                        <p><strong>消费电量：</strong>${order.energyConsumed ? `${order.energyConsumed} kWh` : '充电中'}</p>
+                                        <p><strong>支付方式：</strong>${getPaymentMethodIcon(order.paymentMethod)} ${getPaymentMethodName(order.paymentMethod)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">用户信息</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        ${order.userAvatar ?
+                                            `<img src="${order.userAvatar}" alt="${order.userName}" class="user-avatar">` :
+                                            `<div class="user-avatar d-flex align-items-center justify-content-center bg-primary text-white">
+                                                <i class="bi bi-person"></i>
+                                            </div>`
+                                        }
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1">${order.userName}</h6>
+                                        <p class="mb-0 text-muted">${order.userPhone}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">充电站信息</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="charging-info">
+                                    <h6 class="text-primary mb-2">
+                                        <i class="bi bi-ev-station"></i> ${order.stationName}
+                                    </h6>
+                                    <p class="mb-1"><strong>充电桩编号：</strong>${order.connectorId}</p>
+                                    <p class="mb-0"><strong>电费单价：</strong>¥${order.unitPrice}/kWh</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="card">
+                            <div class="card-header">
+                                <h6 class="mb-0">费用明细</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>电费：</span>
+                                        <span>¥${order.energyConsumed ? (order.energyConsumed * order.unitPrice).toFixed(2) : '0.00'}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span>服务费：</span>
+                                        <span>¥${order.serviceFee.toFixed(2)}</span>
+                                    </div>
+                                    ${order.discountAmount > 0 ? `
+                                        <div class="d-flex justify-content-between mb-2 text-success">
+                                            <span>优惠金额：</span>
+                                            <span>-¥${order.discountAmount.toFixed(2)}</span>
+                                        </div>
+                                    ` : ''}
+                                    <hr>
+                                    <div class="d-flex justify-content-between">
+                                        <strong>实付金额：</strong>
+                                        <strong class="text-success">¥${order.actualAmount.toFixed(2)}</strong>
+                                    </div>
+                                </div>
+
+                                ${order.refundAmount > 0 ? `
+                                    <div class="alert alert-warning">
+                                        <i class="bi bi-info-circle"></i> 已退款：¥${order.refundAmount.toFixed(2)}
+                                    </div>
+                                ` : ''}
+
+                                <div class="d-grid gap-2">
+                                    ${order.status === 'COMPLETED' && order.refundAmount === 0 ? `
+                                        <button class="btn btn-warning" onclick="refundOrder()">
+                                            <i class="bi bi-arrow-counterclockwise"></i> 申请退款
+                                        </button>
+                                    ` : ''}
+                                    <button class="btn btn-primary" onclick="downloadInvoice('${order.id}')">
+                                        <i class="bi bi-download"></i> 下载发票
+                                    </button>
+                                    <button class="btn btn-info" onclick="printReceipt('${order.id}')">
+                                        <i class="bi bi-printer"></i> 打印小票
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card mt-3">
+                            <div class="card-header">
+                                <h6 class="mb-0">订单时间线</h6>
+                            </div>
+                            <div class="card-body">
+                                <div class="order-timeline">
+                                    <div class="timeline-item completed">
+                                        <div class="fw-bold">订单创建</div>
+                                        <small class="text-muted">${formatDate(order.createTime)}</small>
+                                    </div>
+                                    ${order.payTime ? `
+                                        <div class="timeline-item completed">
+                                            <div class="fw-bold">支付完成</div>
+                                            <small class="text-muted">${formatDate(order.payTime)}</small>
+                                        </div>
+                                    ` : ''}
+                                    ${order.startTime ? `
+                                        <div class="timeline-item completed">
+                                            <div class="fw-bold">开始充电</div>
+                                            <small class="text-muted">${formatDate(order.startTime)}</small>
+                                        </div>
+                                    ` : ''}
+                                    ${order.endTime ? `
+                                        <div class="timeline-item completed">
+                                            <div class="fw-bold">充电结束</div>
+                                            <small class="text-muted">${formatDate(order.endTime)}</small>
+                                        </div>
+                                    ` : ''}
+                                    ${order.status === 'REFUNDED' ? `
+                                        <div class="timeline-item processing">
+                                            <div class="fw-bold">申请退款</div>
+                                            <small class="text-muted">退款处理中</small>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            const modal = new bootstrap.Modal(document.getElementById('orderDetailModal'));
+            modal.show();
+        }
+
+        // 获取支付状态徽章
+        function getPaymentStatusBadge(status) {
+            const statusConfig = {
+                PAID: { color: 'success', text: '已支付' },
+                UNPAID: { color: 'warning', text: '未支付' },
+                REFUNDED: { color: 'info', text: '已退款' },
+                PARTIAL_REFUND: { color: 'secondary', text: '部分退款' }
+            };
+
+            const config = statusConfig[status] || statusConfig.UNPAID;
+            return `<span class="badge bg-${config.color}">${config.text}</span>`;
+        }
+
+        // 申请退款
+        function refundOrder() {
+            const detailModal = bootstrap.Modal.getInstance(document.getElementById('orderDetailModal'));
+            detailModal.hide();
+
+            document.getElementById('refundAmount').max = currentOrderDetail.actualAmount;
+            document.getElementById('refundAmount').value = currentOrderDetail.actualAmount;
+            document.getElementById('maxRefundAmount').textContent = `¥${currentOrderDetail.actualAmount.toFixed(2)}`;
+
+            const refundModal = new bootstrap.Modal(document.getElementById('refundModal'));
+            refundModal.show();
+        }
+
+        // 通过订单ID申请退款
+        function refundOrderById(orderId) {
+            const order = mockOrders.find(o => o.id === orderId);
+            if (order) {
+                currentOrderDetail = order;
+                refundOrder();
+            }
+        }
+
+        // 确认退款
+        function confirmRefund() {
+            const refundAmount = parseFloat(document.getElementById('refundAmount').value);
+            const refundReason = document.getElementById('refundReason').value;
+            const refundDescription = document.getElementById('refundDescription').value;
+
+            if (!refundAmount || refundAmount <= 0) {
+                alert('请输入有效的退款金额！');
+                return;
+            }
+
+            if (!refundReason) {
+                alert('请选择退款原因！');
+                return;
+            }
+
+            if (refundAmount > currentOrderDetail.actualAmount) {
+                alert('退款金额不能超过实付金额！');
+                return;
+            }
+
+            // 更新订单状态
+            const orderIndex = mockOrders.findIndex(o => o.id === currentOrderDetail.id);
+            if (orderIndex !== -1) {
+                mockOrders[orderIndex].refundAmount = refundAmount;
+                mockOrders[orderIndex].status = 'REFUNDED';
+                mockOrders[orderIndex].paymentStatus = 'REFUNDED';
+            }
+
+            // 关闭模态框
+            const refundModal = bootstrap.Modal.getInstance(document.getElementById('refundModal'));
+            refundModal.hide();
+
+            alert(`退款申请已提交！退款金额：¥${refundAmount.toFixed(2)}`);
+
+            // 刷新列表
+            currentOrders = [...mockOrders];
+            loadOrders();
+            updateStatistics();
+        }
+
+        // 下载发票
+        function downloadInvoice(orderId) {
+            alert(`下载订单 ${orderId} 的发票`);
+        }
+
+        // 打印小票
+        function printReceipt(orderId) {
+            alert(`打印订单 ${orderId} 的小票`);
+        }
+
+        // 导出订单数据
+        function exportOrderData() {
+            alert('导出订单数据到Excel文件');
+        }
+    </script>
+</body>
+</html>

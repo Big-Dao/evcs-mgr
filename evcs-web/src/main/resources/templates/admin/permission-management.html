@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>权限管理 - EVCS管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background-color: #343a40;
+            padding-top: 20px;
+            z-index: 1000;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.75);
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin: 5px 10px;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #495057;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+
+        .permission-tree {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+        }
+
+        .permission-item {
+            margin: 5px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            border-left: 4px solid #dee2e6;
+        }
+
+        .permission-item.menu {
+            border-left-color: #007bff;
+        }
+
+        .permission-item.button {
+            border-left-color: #28a745;
+        }
+
+        .permission-item.api {
+            border-left-color: #ffc107;
+        }
+
+        .permission-item.selected {
+            background-color: #e3f2fd;
+            border-left-color: #2196f3;
+        }
+
+        .permission-icon {
+            width: 24px;
+            height: 24px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+            border-radius: 4px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .perm-menu { background-color: #007bff; }
+        .perm-button { background-color: #28a745; }
+        .perm-api { background-color: #ffc107; color: #212529; }
+
+        .permission-actions {
+            float: right;
+        }
+
+        .permission-badges {
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        .badge {
+            font-size: 11px;
+            padding: 3px 6px;
+        }
+
+        .tree-toggle {
+            cursor: pointer;
+            user-select: none;
+            margin-right: 5px;
+        }
+
+        .tree-toggle:hover {
+            color: #007bff;
+        }
+
+        .permission-children {
+            margin-left: 30px;
+            border-left: 1px dashed #dee2e6;
+            padding-left: 15px;
+        }
+
+        .permission-search {
+            position: sticky;
+            top: 0;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .role-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .role-chip {
+            padding: 6px 12px;
+            border-radius: 16px;
+            border: 1px solid #dee2e6;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .role-chip:hover {
+            background: #f8f9fa;
+            border-color: #007bff;
+        }
+
+        .role-chip.selected {
+            background: #007bff;
+            border-color: #007bff;
+            color: white;
+        }
+
+        .batch-actions {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <nav class="sidebar">
+        <div class="text-center mb-4">
+            <h5 class="text-white">EVCS 管理系统</h5>
+        </div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link" href="user-management.html">
+                    <i class="bi bi-people-fill me-2"></i>用户管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="role-management.html">
+                    <i class="bi bi-shield-fill me-2"></i>角色管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link active" href="#">
+                    <i class="bi bi-key-fill me-2"></i>权限管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="tenant-management.html">
+                    <i class="bi bi-building me-2"></i>租户管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="station-management.html">
+                    <i class="bi bi-ev-station me-2"></i>充电站管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="order-management.html">
+                    <i class="bi bi-cart-fill me-2"></i>订单管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="payment-management.html">
+                    <i class="bi bi-credit-card-fill me-2"></i>支付管理
+                </a>
+            </li>
+            <li class="nav-item mt-3">
+                <hr class="text-white-50">
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-gear-fill me-2"></i>系统设置
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-bar-chart-fill me-2"></i>数据统计
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-file-text-fill me-2"></i>日志管理
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="main-content">
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>权限管理</h2>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#permissionModal">
+                    <i class="bi bi-plus-circle me-1"></i>新增权限
+                </button>
+                <button class="btn btn-outline-success ms-2" onclick="expandAll()">
+                    <i class="bi bi-arrows-expand me-1"></i>展开全部
+                </button>
+                <button class="btn btn-outline-secondary ms-1" onclick="collapseAll()">
+                    <i class="bi bi-arrows-collapse me-1"></i>收起全部
+                </button>
+            </div>
+        </div>
+
+        <!-- 批量操作区域 -->
+        <div class="batch-actions" id="batchActions" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>已选择 <span id="selectedCount">0</span> 个权限</strong>
+                </div>
+                <div>
+                    <button class="btn btn-sm btn-primary" onclick="assignToRoles()">
+                        <i class="bi bi-shield-plus me-1"></i>分配给角色
+                    </button>
+                    <button class="btn btn-sm btn-warning" onclick="batchDelete()">
+                        <i class="bi bi-trash me-1"></i>批量删除
+                    </button>
+                    <button class="btn btn-sm btn-secondary" onclick="clearSelection()">
+                        <i class="bi bi-x-circle me-1"></i>清除选择
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 权限树 -->
+        <div class="permission-tree">
+            <!-- 搜索框 -->
+            <div class="permission-search">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="搜索权限..." id="permissionSearch">
+                    <button class="btn btn-outline-secondary" type="button">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+                <div class="form-text mt-2">输入权限名称或编码进行搜索</div>
+            </div>
+
+            <!-- 权限列表 -->
+            <div id="permissionList">
+                <!-- 系统管理权限 -->
+                <div class="permission-item menu">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="tree-toggle" onclick="toggleTree(this)">▼</span>
+                            <span class="permission-icon perm-menu">
+                                <i class="bi bi-gear"></i>
+                            </span>
+                            <strong>系统管理</strong>
+                            <div class="permission-badges">
+                                <span class="badge bg-primary">菜单</span>
+                                <span class="badge bg-secondary">2个子项</span>
+                            </div>
+                        </div>
+                        <div class="permission-actions">
+                            <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 1)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="permission-children" id="system-children">
+                    <!-- 用户管理 -->
+                    <div class="permission-item menu">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="tree-toggle" onclick="toggleTree(this)">▼</span>
+                                <span class="permission-icon perm-menu">
+                                    <i class="bi bi-people"></i>
+                                </span>
+                                <strong>用户管理</strong>
+                                <div class="permission-badges">
+                                    <span class="badge bg-primary">菜单</span>
+                                    <span class="badge bg-secondary">4个子项</span>
+                                </div>
+                            </div>
+                            <div class="permission-actions">
+                                <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 2)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-children" id="user-children">
+                        <div class="permission-item menu">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-menu">
+                                        <i class="bi bi-list-ul"></i>
+                                    </span>
+                                    用户列表
+                                    <div class="permission-badges">
+                                        <span class="badge bg-primary">菜单</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 3)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item button">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-button">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </span>
+                                    新增用户
+                                    <div class="permission-badges">
+                                        <span class="badge bg-success">按钮</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 4)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item button">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-button">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </span>
+                                    编辑用户
+                                    <div class="permission-badges">
+                                        <span class="badge bg-success">按钮</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 5)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item button">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-button">
+                                        <i class="bi bi-trash"></i>
+                                    </span>
+                                    删除用户
+                                    <div class="permission-badges">
+                                        <span class="badge bg-success">按钮</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 6)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item api">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-api">
+                                        <i class="bi bi-cloud-download"></i>
+                                    </span>
+                                    导出用户
+                                    <div class="permission-badges">
+                                        <span class="badge bg-warning">API</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 7)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 角色管理 -->
+                    <div class="permission-item menu">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="tree-toggle" onclick="toggleTree(this)">▼</span>
+                                <span class="permission-icon perm-menu">
+                                    <i class="bi bi-shield"></i>
+                                </span>
+                                <strong>角色管理</strong>
+                                <div class="permission-badges">
+                                    <span class="badge bg-primary">菜单</span>
+                                    <span class="badge bg-secondary">4个子项</span>
+                                </div>
+                            </div>
+                            <div class="permission-actions">
+                                <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 8)">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-children" id="role-children">
+                        <div class="permission-item menu">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-menu">
+                                        <i class="bi bi-list-ul"></i>
+                                    </span>
+                                    角色列表
+                                    <div class="permission-badges">
+                                        <span class="badge bg-primary">菜单</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 9)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item button">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-button">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </span>
+                                    新增角色
+                                    <div class="permission-badges">
+                                        <span class="badge bg-success">按钮</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 10)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item button">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-button">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </span>
+                                    编辑角色
+                                    <div class="permission-badges">
+                                        <span class="badge bg-success">按钮</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 11)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item button">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-button">
+                                        <i class="bi bi-trash"></i>
+                                    </span>
+                                    删除角色
+                                    <div class="permission-badges">
+                                        <span class="badge bg-success">按钮</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 12)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item api">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-api">
+                                        <i class="bi bi-shield-check"></i>
+                                    </span>
+                                    角色权限分配
+                                    <div class="permission-badges">
+                                        <span class="badge bg-warning">API</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 13)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 权限管理 -->
+                    <div class="permission-item menu">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="tree-toggle" onclick="toggleTree(this)">▼</span>
+                                <span class="permission-icon perm-menu">
+                                    <i class="bi bi-key"></i>
+                                </span>
+                                <strong>权限管理</strong>
+                                <div class="permission-badges">
+                                    <span class="badge bg-primary">菜单</span>
+                                    <span class="badge bg-secondary">3个子项</span>
+                                </div>
+                            </div>
+                            <div class="permission-actions">
+                                <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 14)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-children" id="permission-children">
+                        <div class="permission-item menu">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-menu">
+                                        <i class="bi bi-list-ul"></i>
+                                    </span>
+                                    权限列表
+                                    <div class="permission-badges">
+                                        <span class="badge bg-primary">菜单</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 15)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item button">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-button">
+                                        <i class="bi bi-plus-circle"></i>
+                                    </span>
+                                    新增权限
+                                    <div class="permission-badges">
+                                        <span class="badge bg-success">按钮</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 16)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item button">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-button">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </span>
+                                    编辑权限
+                                    <div class="permission-badges">
+                                        <span class="badge bg-success">按钮</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 17)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="permission-item button">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <span class="permission-icon perm-button">
+                                        <i class="bi bi-trash"></i>
+                                    </span>
+                                    删除权限
+                                    <div class="permission-badges">
+                                        <span class="badge bg-success">按钮</span>
+                                    </div>
+                                </div>
+                                <div class="permission-actions">
+                                    <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 18)">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 充电站管理权限 -->
+                <div class="permission-item menu">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="tree-toggle" onclick="toggleTree(this)">▼</span>
+                            <span class="permission-icon perm-menu">
+                                <i class="bi bi-ev-station"></i>
+                            </span>
+                            <strong>充电站管理</strong>
+                            <div class="permission-badges">
+                                <span class="badge bg-primary">菜单</span>
+                                <span class="badge bg-secondary">6个子项</span>
+                            </div>
+                        </div>
+                        <div class="permission-actions">
+                            <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 19)">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="permission-children" id="station-children">
+                    <div class="permission-item menu">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="permission-icon perm-menu">
+                                    <i class="bi bi-list-ul"></i>
+                                </span>
+                                充电站列表
+                                <div class="permission-badges">
+                                    <span class="badge bg-primary">菜单</span>
+                                </div>
+                            </div>
+                            <div class="permission-actions">
+                                <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 20)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-item button">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="permission-icon perm-button">
+                                    <i class="bi bi-plus-circle"></i>
+                                </span>
+                                新增充电站
+                                <div class="permission-badges">
+                                    <span class="badge bg-success">按钮</span>
+                                </div>
+                            </div>
+                            <div class="permission-actions">
+                                <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 21)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-item button">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="permission-icon perm-button">
+                                    <i class="bi bi-pencil-square"></i>
+                                </span>
+                                编辑充电站
+                                <div class="permission-badges">
+                                    <span class="badge bg-success">按钮</span>
+                                </div>
+                            </div>
+                            <div class="permission-actions">
+                                <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 22)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-item button">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="permission-icon perm-button">
+                                    <i class="bi bi-play-circle"></i>
+                                </span>
+                                启动充电站
+                                <div class="permission-badges">
+                                    <span class="badge bg-success">按钮</span>
+                                </div>
+                            </div>
+                            <div class="permission-actions">
+                                <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 23)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-item button">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="permission-icon perm-button">
+                                    <i class="bi bi-stop-circle"></i>
+                                </span>
+                                停止充电站
+                                <div class="permission-badges">
+                                    <span class="badge bg-success">按钮</span>
+                                </div>
+                            </div>
+                            <div class="permission-actions">
+                                <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 24)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-item api">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="permission-icon perm-api">
+                                    <i class="bi bi-lightning-charge"></i>
+                                </span>
+                                远程控制
+                                <div class="permission-badges">
+                                    <span class="badge bg-warning">API</span>
+                                </div>
+                            </div>
+                            <div class="permission-actions">
+                                <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 25)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="permission-item api">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="permission-icon perm-api">
+                                    <i class="bi bi-bar-chart"></i>
+                                </span>
+                                充电站状态
+                                <div class="permission-badges">
+                                    <span class="badge bg-warning">API</span>
+                                </div>
+                            </div>
+                            <div class="permission-actions">
+                                <input type="checkbox" class="form-check-input" onchange="selectPermission(this, 26)">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 权限模态框 -->
+    <div class="modal fade" id="permissionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="permissionModalTitle">新增权限</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="permissionForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="permissionName" class="form-label">权限名称 *</label>
+                                <input type="text" class="form-control" id="permissionName" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="permissionCode" class="form-label">权限编码 *</label>
+                                <input type="text" class="form-control" id="permissionCode" placeholder="module:action" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="parentId" class="form-label">父级权限</label>
+                                <select class="form-select" id="parentId">
+                                    <option value="">无（顶级权限）</option>
+                                    <option value="1">系统管理</option>
+                                    <option value="2">用户管理</option>
+                                    <option value="8">角色管理</option>
+                                    <option value="14">权限管理</option>
+                                    <option value="19">充电站管理</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="type" class="form-label">权限类型 *</label>
+                                <select class="form-select" id="type">
+                                    <option value="1">菜单</option>
+                                    <option value="2">按钮</option>
+                                    <option value="3">接口</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="path" class="form-label">路由路径</label>
+                                <input type="text" class="form-control" id="path" placeholder="/system/users">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="component" class="form-label">组件路径</label>
+                                <input type="text" class="form-control" id="component" placeholder="system/UserManagement.vue">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="icon" class="form-label">图标</label>
+                                <input type="text" class="form-control" id="icon" placeholder="bi-people">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="sort" class="form-label">显示顺序</label>
+                                <input type="number" class="form-control" id="sort" value="0">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">状态</label>
+                            <select class="form-select" id="status">
+                                <option value="1">启用</option>
+                                <option value="0">禁用</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="visible" class="form-label">显示状态</label>
+                            <select class="form-select" id="visible">
+                                <option value="1">显示</option>
+                                <option value="0">隐藏</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="remark" class="form-label">备注</label>
+                            <textarea class="form-control" id="remark" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="savePermission()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分配权限给角色模态框 -->
+    <div class="modal fade" id="assignToRolesModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">分配权限给角色</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <h6>已选择权限：<span id="selectedPermissionsList" class="text-primary"></span></h6>
+                    <hr>
+                    <h6>选择角色：</h6>
+                    <div class="role-selector" id="roleSelector">
+                        <div class="role-chip">
+                            <i class="bi bi-shield me-1"></i>超级管理员
+                        </div>
+                        <div class="role-chip">
+                            <i class="bi bi-person-badge me-1"></i>管理员
+                        </div>
+                        <div class="role-chip">
+                            <i class="bi bi-person me-1"></i>操作员
+                        </div>
+                        <div class="role-chip">
+                            <i class="bi bi-person me-1"></i>普通用户
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="confirmAssign()">确认分配</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedPermissions = new Set();
+        let selectedRoles = new Set();
+
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadPermissions();
+        });
+
+        // 加载权限列表
+        function loadPermissions() {
+            console.log('Loading permissions...');
+        }
+
+        // 展开/收起树节点
+        function toggleTree(element) {
+            const children = element.parentElement.parentElement.querySelector('.permission-children');
+            if (children) {
+                if (children.style.display === 'none') {
+                    children.style.display = 'block';
+                    element.textContent = '▼';
+                } else {
+                    children.style.display = 'none';
+                    element.textContent = '▶';
+                }
+            }
+        }
+
+        // 展开全部
+        function expandAll() {
+            document.querySelectorAll('.tree-toggle').forEach(toggle => {
+                const children = toggle.parentElement.parentElement.querySelector('.permission-children');
+                if (children) {
+                    children.style.display = 'block';
+                    toggle.textContent = '▼';
+                }
+            });
+        }
+
+        // 收起全部
+        function collapseAll() {
+            document.querySelectorAll('.tree-toggle').forEach(toggle => {
+                const children = toggle.parentElement.parentElement.querySelector('.permission-children');
+                if (children) {
+                    children.style.display = 'none';
+                    toggle.textContent = '▶';
+                }
+            });
+        }
+
+        // 选择权限
+        function selectPermission(checkbox, permissionId) {
+            if (checkbox.checked) {
+                selectedPermissions.add(permissionId);
+                checkbox.parentElement.parentElement.classList.add('selected');
+            } else {
+                selectedPermissions.delete(permissionId);
+                checkbox.parentElement.parentElement.classList.remove('selected');
+            }
+            updateBatchActions();
+        }
+
+        // 更新批量操作区域
+        function updateBatchActions() {
+            const batchActions = document.getElementById('batchActions');
+            const selectedCount = document.getElementById('selectedCount');
+
+            if (selectedPermissions.size > 0) {
+                batchActions.style.display = 'block';
+                selectedCount.textContent = selectedPermissions.size;
+            } else {
+                batchActions.style.display = 'none';
+            }
+        }
+
+        // 清除选择
+        function clearSelection() {
+            document.querySelectorAll('input[type="checkbox"]:checked').forEach(checkbox => {
+                checkbox.checked = false;
+                checkbox.parentElement.parentElement.classList.remove('selected');
+            });
+            selectedPermissions.clear();
+            updateBatchActions();
+        }
+
+        // 分配给角色
+        function assignToRoles() {
+            if (selectedPermissions.size === 0) {
+                alert('请先选择权限');
+                return;
+            }
+
+            document.getElementById('selectedPermissionsList').textContent =
+                Array.from(selectedPermissions).join(', ');
+
+            const modal = new bootstrap.Modal(document.getElementById('assignToRolesModal'));
+            modal.show();
+        }
+
+        // 角色选择
+        document.querySelectorAll('#roleSelector .role-chip').forEach(chip => {
+            chip.addEventListener('click', function() {
+                const roleId = this.getAttribute('data-role-id') || (this.textContent.trim());
+                if (selectedRoles.has(roleId)) {
+                    selectedRoles.delete(roleId);
+                    this.classList.remove('selected');
+                } else {
+                    selectedRoles.add(roleId);
+                    this.classList.add('selected');
+                }
+            });
+        });
+
+        // 确认分配
+        function confirmAssign() {
+            console.log('Assigning permissions to roles:', {
+                permissions: Array.from(selectedPermissions),
+                roles: Array.from(selectedRoles)
+            });
+
+            // 实际分配逻辑
+            clearSelection();
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('assignToRolesModal'));
+            modal.hide();
+        }
+
+        // 批量删除
+        function batchDelete() {
+            if (selectedPermissions.size === 0) {
+                alert('请先选择权限');
+                return;
+            }
+
+            if (confirm(`确定要删除选中的 ${selectedPermissions.size} 个权限吗？此操作不可恢复。`)) {
+                console.log('Deleting permissions:', Array.from(selectedPermissions));
+                // 实际删除逻辑
+                clearSelection();
+            }
+        }
+
+        // 保存权限
+        function savePermission() {
+            const formData = {
+                name: document.getElementById('permissionName').value,
+                code: document.getElementById('permissionCode').value,
+                parentId: document.getElementById('parentId').value,
+                type: document.getElementById('type').value,
+                path: document.getElementById('path').value,
+                component: document.getElementById('component').value,
+                icon: document.getElementById('icon').value,
+                sort: document.getElementById('sort').value,
+                status: document.getElementById('status').value,
+                visible: document.getElementById('visible').value,
+                remark: document.getElementById('remark').value
+            };
+
+            console.log('Saving permission:', formData);
+            // 实际保存逻辑
+
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('permissionModal'));
+            modal.hide();
+        }
+
+        // 搜索权限
+        document.getElementById('permissionSearch').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const permissionItems = document.querySelectorAll('.permission-item');
+
+            permissionItems.forEach(item => {
+                const text = item.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -16,6 +16,9 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+
+    // Security dependencies for WebFlux - 简化依赖配置
+    implementation 'org.springframework.boot:spring-boot-starter-security'
     
     // API Documentation
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"

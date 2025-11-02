@@ -11,7 +11,7 @@ import java.util.Map;
  * OCPP BootNotification请求
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = false)
 public class OCPPBootNotificationRequest extends OCPPRequestPayload {
 
     /**

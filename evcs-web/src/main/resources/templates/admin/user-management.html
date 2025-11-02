@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - EVCS管理系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100vh;
+            width: 250px;
+            background-color: #343a40;
+            padding-top: 20px;
+            z-index: 1000;
+        }
+        .sidebar .nav-link {
+            color: rgba(255,255,255,.75);
+            padding: 12px 20px;
+            border-radius: 5px;
+            margin: 5px 10px;
+        }
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: #495057;
+        }
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+        }
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #6c757d;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .status-active { background-color: #d4edda; color: #155724; }
+        .status-inactive { background-color: #f8d7da; color: #721c24; }
+        .action-buttons .btn {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <!-- 侧边栏 -->
+    <nav class="sidebar">
+        <div class="text-center mb-4">
+            <h5 class="text-white">EVCS 管理系统</h5>
+        </div>
+        <ul class="nav flex-column">
+            <li class="nav-item">
+                <a class="nav-link active" href="#">
+                    <i class="bi bi-people-fill me-2"></i>用户管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="role-management.html">
+                    <i class="bi bi-shield-fill me-2"></i>角色管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="permission-management.html">
+                    <i class="bi bi-key-fill me-2"></i>权限管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="tenant-management.html">
+                    <i class="bi bi-building me-2"></i>租户管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="station-management.html">
+                    <i class="bi bi-ev-station me-2"></i>充电站管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="order-management.html">
+                    <i class="bi bi-cart-fill me-2"></i>订单管理
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="payment-management.html">
+                    <i class="bi bi-credit-card-fill me-2"></i>支付管理
+                </a>
+            </li>
+            <li class="nav-item mt-3">
+                <hr class="text-white-50">
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-gear-fill me-2"></i>系统设置
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-bar-chart-fill me-2"></i>数据统计
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="#">
+                    <i class="bi bi-file-text-fill me-2"></i>日志管理
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="main-content">
+        <!-- 页面标题 -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>用户管理</h2>
+            <div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">
+                    <i class="bi bi-plus-circle me-1"></i>新增用户
+                </button>
+                <button class="btn btn-outline-secondary ms-2" onclick="exportUsers()">
+                    <i class="bi bi-download me-1"></i>导出数据
+                </button>
+            </div>
+        </div>
+
+        <!-- 搜索和筛选 -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <form class="row g-3">
+                    <div class="col-md-3">
+                        <input type="text" class="form-control" placeholder="搜索用户名、邮箱" id="searchInput">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="roleFilter">
+                            <option value="">所有角色</option>
+                            <option value="ROLE_SUPER_ADMIN">超级管理员</option>
+                            <option value="ROLE_ADMIN">管理员</option>
+                            <option value="ROLE_OPERATOR">操作员</option>
+                            <option value="ROLE_USER">普通用户</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">所有状态</option>
+                            <option value="1">启用</option>
+                            <option value="0">禁用</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" id="tenantFilter">
+                            <option value="">所有租户</option>
+                            <option value="1">默认租户</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="button" class="btn btn-outline-primary" onclick="searchUsers()">
+                            <i class="bi bi-search me-1"></i>搜索
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary ms-1" onclick="resetFilters()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>重置
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 用户列表 -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <input type="checkbox" class="form-check-input" id="selectAll">
+                                </th>
+                                <th>用户</th>
+                                <th>邮箱</th>
+                                <th>手机号</th>
+                                <th>角色</th>
+                                <th>租户</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>最后登录</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="userTableBody">
+                            <!-- 示例数据 -->
+                            <tr>
+                                <td><input type="checkbox" class="form-check-input"></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar me-2">AD</div>
+                                        <div>
+                                            <div class="fw-bold">admin</div>
+                                            <small class="text-muted">超级管理员</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>admin@example.com</td>
+                                <td>138****1234</td>
+                                <td>
+                                    <span class="badge bg-danger">超级管理员</span>
+                                </td>
+                                <td>默认租户</td>
+                                <td>
+                                    <span class="status-badge status-active">启用</span>
+                                </td>
+                                <td>2024-01-01 10:00:00</td>
+                                <td>2024-11-02 14:30:00</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="editUser(1)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning" onclick="resetPassword(1)">
+                                            <i class="bi bi-key"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(1)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" class="form-check-input"></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar me-2">OP</div>
+                                        <div>
+                                            <div class="fw-bold">operator1</div>
+                                            <small class="text-muted">操作员</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>operator1@example.com</td>
+                                <td>139****5678</td>
+                                <td>
+                                    <span class="badge bg-warning">操作员</span>
+                                </td>
+                                <td>默认租户</td>
+                                <td>
+                                    <span class="status-badge status-active">启用</span>
+                                </td>
+                                <td>2024-01-15 09:30:00</td>
+                                <td>2024-11-02 13:45:00</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="editUser(2)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning" onclick="resetPassword(2)">
+                                            <i class="bi bi-key"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(2)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><input type="checkbox" class="form-check-input"></td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="user-avatar me-2">US</div>
+                                        <div>
+                                            <div class="fw-bold">user1</div>
+                                            <small class="text-muted">普通用户</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>user1@example.com</td>
+                                <td>137****9012</td>
+                                <td>
+                                    <span class="badge bg-info">普通用户</span>
+                                </td>
+                                <td>默认租户</td>
+                                <td>
+                                    <span class="status-badge status-inactive">禁用</span>
+                                </td>
+                                <td>2024-02-01 14:20:00</td>
+                                <td>2024-10-28 16:20:00</td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <button class="btn btn-sm btn-outline-primary" onclick="editUser(3)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-warning" onclick="resetPassword(3)">
+                                            <i class="bi bi-key"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" onclick="deleteUser(3)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- 分页 -->
+                <nav aria-label="Page navigation" class="mt-3">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled">
+                            <a class="page-link" href="#" tabindex="-1">上一页</a>
+                        </li>
+                        <li class="page-item active"><a class="page-link" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link" href="#">3</a></li>
+                        <li class="page-item">
+                            <a class="page-link" href="#">下一页</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </main>
+
+    <!-- 用户模态框 -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="userModalTitle">新增用户</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="username" class="form-label">用户名 *</label>
+                                <input type="text" class="form-control" id="username" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="email" class="form-label">邮箱 *</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="phone" class="form-label">手机号</label>
+                                <input type="tel" class="form-control" id="phone">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="tenantId" class="form-label">租户 *</label>
+                                <select class="form-select" id="tenantId" required>
+                                    <option value="">选择租户</option>
+                                    <option value="1">默认租户</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="password" class="form-label">密码 *</label>
+                                <input type="password" class="form-control" id="password">
+                                <div class="form-text">留空则自动生成随机密码</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="confirmPassword" class="form-label">确认密码</label>
+                                <input type="password" class="form-control" id="confirmPassword">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">角色分配 *</label>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="ROLE_SUPER_ADMIN" id="roleSuperAdmin">
+                                        <label class="form-check-label" for="roleSuperAdmin">
+                                            超级管理员
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="ROLE_ADMIN" id="roleAdmin">
+                                        <label class="form-check-label" for="roleAdmin">
+                                            管理员
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="ROLE_OPERATOR" id="roleOperator">
+                                        <label class="form-check-label" for="roleOperator">
+                                            操作员
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" value="ROLE_USER" id="roleUser">
+                                        <label class="form-check-label" for="roleUser">
+                                            普通用户
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">状态</label>
+                            <select class="form-select" id="status">
+                                <option value="1">启用</option>
+                                <option value="0">禁用</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="remark" class="form-label">备注</label>
+                            <textarea class="form-control" id="remark" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="button" class="btn btn-primary" onclick="saveUser()">保存</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            loadUsers();
+        });
+
+        // 加载用户列表
+        function loadUsers() {
+            // 这里应该调用后端API获取用户列表
+            console.log('Loading users...');
+        }
+
+        // 搜索用户
+        function searchUsers() {
+            const searchInput = document.getElementById('searchInput').value;
+            const roleFilter = document.getElementById('roleFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const tenantFilter = document.getElementById('tenantFilter').value;
+
+            console.log('Searching users with filters:', {
+                search: searchInput,
+                role: roleFilter,
+                status: statusFilter,
+                tenant: tenantFilter
+            });
+            // 实际搜索逻辑
+        }
+
+        // 重置筛选
+        function resetFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('roleFilter').value = '';
+            document.getElementById('statusFilter').value = '';
+            document.getElementById('tenantFilter').value = '';
+            loadUsers();
+        }
+
+        // 编辑用户
+        function editUser(userId) {
+            document.getElementById('userModalTitle').textContent = '编辑用户';
+            // 填充表单数据
+            document.getElementById('username').value = 'operator1';
+            document.getElementById('email').value = 'operator1@example.com';
+            document.getElementById('phone').value = '13956789012';
+            document.getElementById('tenantId').value = '1';
+            document.getElementById('status').value = '1';
+            document.getElementById('remark').value = '操作员账号';
+
+            // 显示模态框
+            const modal = new bootstrap.Modal(document.getElementById('userModal'));
+            modal.show();
+        }
+
+        // 删除用户
+        function deleteUser(userId) {
+            if (confirm('确定要删除该用户吗？此操作不可恢复。')) {
+                console.log('Deleting user:', userId);
+                // 实际删除逻辑
+            }
+        }
+
+        // 重置密码
+        function resetPassword(userId) {
+            if (confirm('确定要重置该用户的密码吗？')) {
+                console.log('Resetting password for user:', userId);
+                // 实际重置密码逻辑
+            }
+        }
+
+        // 保存用户
+        function saveUser() {
+            const formData = {
+                username: document.getElementById('username').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                tenantId: document.getElementById('tenantId').value,
+                password: document.getElementById('password').value,
+                confirmPassword: document.getElementById('confirmPassword').value,
+                status: document.getElementById('status').value,
+                remark: document.getElementById('remark').value
+            };
+
+            console.log('Saving user:', formData);
+            // 实际保存逻辑
+
+            // 关闭模态框
+            const modal = bootstrap.Modal.getInstance(document.getElementById('userModal'));
+            modal.hide();
+        }
+
+        // 导出用户数据
+        function exportUsers() {
+            console.log('Exporting users...');
+            // 实际导出逻辑
+        }
+
+        // 全选功能
+        document.getElementById('selectAll').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('#userTableBody input[type="checkbox"]');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+    </script>
+</body>
+</html>

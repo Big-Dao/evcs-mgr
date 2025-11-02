@@ -19,4 +19,9 @@ public interface IPermissionService extends IService<Permission> {
      * 查询用户的菜单权限
      */
     List<Permission> listUserMenus(Long userId);
+
+    /**
+     * 根据角色ID列表查询权限列表
+     */
+    List<Permission> listByRoleIds(List<Long> roleIds);
 }
