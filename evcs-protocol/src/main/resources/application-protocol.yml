@@ -1,0 +1,73 @@
+# 协议服务配置
+evcs:
+  protocol:
+    enabled: true
+    default-protocol: OCPP
+    ocpp:
+      enabled: true
+      port: 8088
+      heartbeat-interval: 60
+      connection-timeout: 30
+      message-timeout: 10
+      max-connections: 1000
+      version: "1.6"
+    cloud-charge:
+      enabled: true
+      base-url: "https://api.cloudcharge.com"
+      api-version: "3.0"
+      app-id: "${CLOUD_CHARGE_APP_ID:your_app_id}"
+      app-secret: "${CLOUD_CHARGE_APP_SECRET:your_app_secret}"
+      sign-algorithm: "HMAC-SHA256"
+      connection-timeout: 10000
+      read-timeout: 30000
+      vendors:
+        telaidian:
+          name: "特来电"
+          api-url: "https://api.telaidian.com"
+          secret: "${TELAIDIAN_SECRET:your_telaidian_secret}"
+          enabled: true
+        star:
+          name: "星星充电"
+          api-url: "https://api.starcharge.com"
+          secret: "${STAR_CHARGE_SECRET:your_star_charge_secret}"
+          enabled: true
+        cloud-charge:
+          name: "云快充"
+          api-url: "https://api.cloudcharge.com"
+          secret: "${CLOUD_CHARGE_SECRET:your_cloud_charge_secret}"
+          enabled: true
+    connection-pool:
+      max-total: 200
+      max-per-route: 50
+      connect-timeout: 5000
+      connection-request-timeout: 10000
+      socket-timeout: 30000
+      validate-after-inactivity: 2000
+    retry:
+      enabled: true
+      max-attempts: 3
+      delay: 1000
+      multiplier: 2.0
+      max-delay: 10000
+
+# 日志配置
+logging:
+  level:
+    com.evcs.protocol: DEBUG
+    org.springframework.web.client: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level [%X{tenantId}] %logger{36} - %msg%n"
+
+# 监控端点
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    export:
+      prometheus:
+        enabled: true
