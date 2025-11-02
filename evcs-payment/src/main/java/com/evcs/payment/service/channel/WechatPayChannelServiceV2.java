@@ -11,16 +11,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.UUID;
 
 /**
  * 微信支付渠道服务 V2 - 简化版本
  *
- * 基于实际微信支付SDK结构实现的简化版本
- * 先支持基础功能，后续逐步完善
+ * 支持JSAPI支付（小程序/公众号）、Native支付（扫码支付）、查询和退款功能
+ * 当前版本为基础框架，后续可集成完整的微信支付SDK
  */
 @Slf4j
 @Service
