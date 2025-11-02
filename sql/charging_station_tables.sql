@@ -61,6 +61,29 @@ CREATE TABLE IF NOT EXISTS charging_station (
 -- =====================================================
 -- 充电桩表
 -- =====================================================
+
+-- 安全检查：确保 sys_tenant.tenant_id 有 UNIQUE 约束
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 
+        FROM pg_constraint c
+        JOIN pg_class t ON c.conrelid = t.oid
+        JOIN pg_namespace n ON t.relnamespace = n.oid
+        WHERE t.relname = 'sys_tenant'
+          AND n.nspname = 'public'
+          AND (c.contype = 'p' OR (c.contype = 'u' AND EXISTS (
+               SELECT 1 
+               FROM pg_attribute a 
+               WHERE a.attrelid = t.oid 
+                 AND a.attnum = ANY(c.conkey) 
+                 AND a.attname = 'tenant_id'
+          )))
+    ) THEN
+        ALTER TABLE sys_tenant ADD CONSTRAINT unique_sys_tenant_tenant_id UNIQUE (tenant_id);
+    END IF;
+END$$;
+
 CREATE TABLE IF NOT EXISTS charger (
     charger_id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
