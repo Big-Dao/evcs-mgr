@@ -8,6 +8,7 @@ import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.metrics.PaymentMetrics;
 import com.evcs.payment.service.IPaymentService;
+import com.evcs.payment.service.OrderSyncService;
 import com.evcs.payment.service.callback.PaymentCallbackService;
 import com.evcs.payment.service.channel.IPaymentChannel;
 import com.evcs.payment.service.message.PaymentMessageService;
@@ -29,6 +30,7 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
     private final IPaymentService paymentService;
     private final PaymentMetrics paymentMetrics;
     private final PaymentMessageService paymentMessageService;
+    private final OrderSyncService orderSyncService;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -72,8 +74,23 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
                 paymentMetrics.recordCallbackSuccess();
 
                 if (isPaymentSuccess) {
-                    // 7. 发送业务消息通知订单服务
+                    // 7. 同步订单状态到订单服务（新增）
+                    boolean orderSynced = syncOrderStatus(paymentOrder, true);
+
+                    // 8. 发送业务消息通知订单服务（降级处理）
                     sendPaymentSuccessNotification(paymentOrder);
+
+                    if (!orderSynced) {
+                        log.warn("订单状态同步失败，但消息队列通知已发送: orderId={}, tradeNo={}",
+                                paymentOrder.getOrderId(), paymentOrder.getTradeNo());
+                    }
+                } else {
+                    // 支付失败也需要同步订单状态
+                    boolean orderSynced = syncOrderStatus(paymentOrder, false);
+                    if (!orderSynced) {
+                        log.warn("支付失败订单状态同步失败: orderId={}, tradeNo={}",
+                                paymentOrder.getOrderId(), paymentOrder.getTradeNo());
+                    }
                 }
 
                 log.info("支付回调处理成功: channel={}, tradeNo={}, success={}",
@@ -146,6 +163,23 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
             return paymentService.updatePaymentOrder(paymentOrder);
         } catch (Exception e) {
             log.error("更新支付订单状态失败: tradeNo={}", request.getTradeNo(), e);
+            return false;
+        }
+    }
+
+    /**
+     * 同步订单状态到订单服务
+     */
+    private boolean syncOrderStatus(PaymentOrder paymentOrder, boolean isSuccess) {
+        try {
+            if (isSuccess) {
+                return orderSyncService.syncPaymentSuccess(paymentOrder);
+            } else {
+                return orderSyncService.syncPaymentFailure(paymentOrder, "支付失败");
+            }
+        } catch (Exception e) {
+            log.error("同步订单状态异常: paymentOrderId={}, success={}",
+                    paymentOrder.getId(), isSuccess, e);
             return false;
         }
     }

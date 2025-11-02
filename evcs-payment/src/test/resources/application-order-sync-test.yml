@@ -1,0 +1,106 @@
+# 订单同步功能测试配置
+spring:
+  application:
+    name: evcs-payment-order-sync-test
+
+  # 禁用Config Server导入
+  config:
+    import: "optional:"
+
+  main:
+    allow-bean-definition-overriding: true
+
+  # RabbitMQ测试配置（已禁用自动配置）
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+    ssl:
+      enabled: false
+
+  # 禁用不必要的组件
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
+      - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
+      - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration
+      - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
+      - org.springframework.amqp.rabbit.annotation.RabbitBootstrapConfiguration
+
+  cloud:
+    discovery:
+      enabled: false
+    config:
+      enabled: false
+      import-check:
+        enabled: false
+
+  # 使用内存数据库
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:payment_order_sync_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    username: sa
+    password:
+
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-h2.sql
+
+  # Redis测试配置（使用嵌入式Redis）
+  data:
+    redis:
+      host: localhost
+      port: 6370
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+# 多租户配置
+evcs:
+  tenant:
+    enabled: true
+    tenant-id-column: tenant_id
+    ignore-tables:
+      - sys_tenant
+      - sys_user
+      - sys_role
+    default-tenant-id: 1
+
+  # 支付配置（测试环境）
+  payment:
+    message:
+      enabled: false  # 禁用消息功能避免RabbitMQ依赖
+    rabbitmq:
+      enabled: false  # 禁用RabbitMQ功能
+      queue:
+        payment-success: mock.payment.success.queue
+        payment-failure: mock.payment.failure.queue
+        refund-success: mock.refund.success.queue
+        payment-dlq: mock.payment.dlq
+
+    # 订单同步配置
+    order-sync:
+      direct-api-enabled: true
+      order-service-url: http://localhost:8083/api
+      api-timeout-ms: 3000
+      max-retries: 2
+      retry-interval-ms: 500
+      idempotency-check-enabled: true
+      fallback-enabled: true
+      sync-logging-enabled: true
+
+# 日志配置
+logging:
+  level:
+    com.evcs.payment: debug
+    com.evcs.payment.service.OrderSyncService: debug
+    com.evcs.payment.service.callback.PaymentCallbackService: debug
+    org.springframework.test: warn
