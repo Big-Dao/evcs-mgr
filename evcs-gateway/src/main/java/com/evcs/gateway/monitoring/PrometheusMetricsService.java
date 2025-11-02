@@ -6,7 +6,6 @@ import com.evcs.gateway.security.SecurityAuditService;
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -73,10 +72,10 @@ public class PrometheusMetricsService {
                 .tag("application", "evcs-gateway")
                 .register(meterRegistry);
 
-        Gauge.builder("http_active_connections")
+        Gauge.builder("http_active_connections", activeConnections, AtomicLong::get)
                 .description("Number of active HTTP connections")
                 .tag("application", "evcs-gateway")
-                .register(meterRegistry, activeConnections, AtomicLong::get);
+                .register(meterRegistry);
     }
 
     /**
@@ -126,30 +125,30 @@ public class PrometheusMetricsService {
                 .tag("application", "evcs-gateway")
                 .register(meterRegistry);
 
-        Gauge.builder("business_active_chargers")
+        Gauge.builder("business_active_chargers", this, PrometheusMetricsService::getActiveChargerCount)
                 .description("Number of active chargers")
                 .tag("application", "evcs-gateway")
-                .register(meterRegistry, this, PrometheusMetricsService::getActiveChargerCount);
+                .register(meterRegistry);
 
-        Gauge.builder("business_online_chargers")
+        Gauge.builder("business_online_chargers", this, PrometheusMetricsService::getOnlineChargerCount)
                 .description("Number of online chargers")
                 .tag("application", "evcs-gateway")
-                .register(meterRegistry, this, PrometheusMetricsService::getOnlineChargerCount);
+                .register(meterRegistry);
     }
 
     /**
      * 初始化系统指标
      */
     private void initializeSystemMetrics() {
-        Gauge.builder("system_circuit_breakers_open")
+        Gauge.builder("system_circuit_breakers_open", this, PrometheusMetricsService::getOpenCircuitBreakerCount)
                 .description("Number of open circuit breakers")
                 .tag("application", "evcs-gateway")
-                .register(meterRegistry, this, PrometheusMetricsService::getOpenCircuitBreakerCount);
+                .register(meterRegistry);
 
-        Gauge.builder("system_circuit_breakers_total")
+        Gauge.builder("system_circuit_breakers_total", this, PrometheusMetricsService::getTotalCircuitBreakerCount)
                 .description("Total number of circuit breakers")
                 .tag("application", "evcs-gateway")
-                .register(meterRegistry, this, PrometheusMetricsService::getTotalCircuitBreakerCount);
+                .register(meterRegistry);
 
         circuitBreakerTimer = Timer.builder("system_circuit_breaker_response_time_seconds")
                 .description("Circuit breaker response time in seconds")
@@ -290,24 +289,24 @@ public class PrometheusMetricsService {
         try {
             // 收集审计事件统计
             var auditStats = auditService.getAuditStatistics();
-            Gauge.builder("security_audit_events_total")
-                    .description("Total number of security audit events")
-                    .tag("application", "evcs-gateway")
-                    .register(meterRegistry, () -> {
+            Gauge.builder("security_audit_events_total", new Object(), obj -> {
                         try {
                             Object totalEvents = auditStats.get("totalEvents");
                             return totalEvents instanceof Number ? ((Number) totalEvents).doubleValue() : 0.0;
                         } catch (Exception e) {
                             return 0.0;
                         }
-                    });
+                    })
+                    .description("Total number of security audit events")
+                    .tag("application", "evcs-gateway")
+                    .register(meterRegistry);
 
             // 收集限流统计
             var rateLimitStats = rateLimitingService.getStatistics("prometheus-sample", Duration.ofMinutes(1));
-            Gauge.builder("security_rate_limit_requests")
+            Gauge.builder("security_rate_limit_requests", new Object(), obj -> (double) rateLimitStats.getRequestCount())
                     .description("Number of requests in rate limit window")
                     .tag("application", "evcs-gateway")
-                    .register(meterRegistry, () -> (double) rateLimitStats.getRequestCount());
+                    .register(meterRegistry);
 
         } catch (Exception e) {
             log.error("Error collecting custom metrics", e);

@@ -160,8 +160,9 @@ public class EnhancedJwtAuthFilter implements GlobalFilter, Ordered {
         String requestId = request.getHeaders().getFirst("X-Request-Id");
 
         if (requestId == null) {
-            requestId = UUID.randomUUID().toString();
-            exchange.getRequest().mutate().headers(headers -> headers.set("X-Request-Id", requestId));
+            final String newRequestId = UUID.randomUUID().toString();
+            exchange.getRequest().mutate().headers(headers -> headers.set("X-Request-Id", newRequestId));
+            requestId = newRequestId;
         }
 
         return requestId;

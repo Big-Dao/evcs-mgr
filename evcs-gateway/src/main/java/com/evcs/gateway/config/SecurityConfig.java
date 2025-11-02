@@ -95,7 +95,7 @@ public class SecurityConfig {
                         .setFallbackUri("forward:/fallback/charger"))
                     .retry(retryConfig -> retryConfig
                         .setRetries(3)
-                        .setBackoff(Duration.ofMillis(100), Duration.ofSeconds(1)))
+                        .setBackoff(Duration.ofMillis(100), Duration.ofSeconds(1), 2, false))
                 )
                 .uri("lb://evcs-charger")
             )
@@ -109,7 +109,7 @@ public class SecurityConfig {
                         .setFallbackUri("forward:/fallback/user"))
                     .retry(retryConfig -> retryConfig
                         .setRetries(2)
-                        .setBackoff(Duration.ofMillis(50), Duration.ofMillis(500)))
+                        .setBackoff(Duration.ofMillis(50), Duration.ofMillis(500), 1, false))
                 )
                 .uri("lb://evcs-user")
             )
@@ -123,7 +123,7 @@ public class SecurityConfig {
                         .setFallbackUri("forward:/fallback/payment"))
                     .retry(retryConfig -> retryConfig
                         .setRetries(1)
-                        .setBackoff(Duration.ofMillis(100), Duration.ofSeconds(2)))
+                        .setBackoff(Duration.ofMillis(100), Duration.ofSeconds(2), 1, false))
                 )
                 .uri("lb://evcs-payment")
             )

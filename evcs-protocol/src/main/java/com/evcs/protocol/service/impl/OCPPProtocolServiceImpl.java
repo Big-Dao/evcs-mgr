@@ -22,19 +22,86 @@ import java.util.UUID;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class OCPPProtocolServiceImpl extends BaseProtocolService {
 
     private final ProtocolEventPublisher eventPublisher;
     private final OCPPSessionManager sessionManager;
 
-    protected OCPPProtocolServiceImpl(ProtocolProperties protocolProperties) {
+    public OCPPProtocolServiceImpl(ProtocolProperties protocolProperties,
+                                  ProtocolEventPublisher eventPublisher,
+                                  OCPPSessionManager sessionManager) {
         super(protocolProperties);
+        this.eventPublisher = eventPublisher;
+        this.sessionManager = sessionManager;
     }
 
     @Override
     public ProtocolType getSupportedProtocolType() {
         return ProtocolType.OCPP;
+    }
+
+    @Override
+    public ProtocolResponse sendHeartbeat(ProtocolRequest request) {
+        log.info("[OCPP] Sending heartbeat for device: {}", request.getDeviceCode());
+
+        if (!ProtocolType.OCPP.equals(request.getProtocolType())) {
+            return ProtocolResponse.failure("400", "Protocol type mismatch");
+        }
+
+        boolean success = doSendHeartbeat(request);
+        if (success) {
+            return ProtocolResponse.success("Heartbeat sent successfully");
+        } else {
+            return ProtocolResponse.failure("500", "Failed to send heartbeat");
+        }
+    }
+
+    @Override
+    public ProtocolResponse updateStatus(ProtocolRequest request) {
+        log.info("[OCPP] Updating status for device: {}", request.getDeviceCode());
+
+        if (!ProtocolType.OCPP.equals(request.getProtocolType())) {
+            return ProtocolResponse.failure("400", "Protocol type mismatch");
+        }
+
+        boolean success = doUpdateStatus(request);
+        if (success) {
+            return ProtocolResponse.success("Status updated successfully");
+        } else {
+            return ProtocolResponse.failure("500", "Failed to update status");
+        }
+    }
+
+    @Override
+    public ProtocolResponse startCharging(ProtocolRequest request) {
+        log.info("[OCPP] Starting charging for device: {}", request.getDeviceCode());
+
+        if (!ProtocolType.OCPP.equals(request.getProtocolType())) {
+            return ProtocolResponse.failure("400", "Protocol type mismatch");
+        }
+
+        boolean success = doStartCharging(request);
+        if (success) {
+            return ProtocolResponse.success("Charging started successfully");
+        } else {
+            return ProtocolResponse.failure("500", "Failed to start charging");
+        }
+    }
+
+    @Override
+    public ProtocolResponse stopCharging(ProtocolRequest request) {
+        log.info("[OCPP] Stopping charging for device: {}", request.getDeviceCode());
+
+        if (!ProtocolType.OCPP.equals(request.getProtocolType())) {
+            return ProtocolResponse.failure("400", "Protocol type mismatch");
+        }
+
+        boolean success = doStopCharging(request);
+        if (success) {
+            return ProtocolResponse.success("Charging stopped successfully");
+        } else {
+            return ProtocolResponse.failure("500", "Failed to stop charging");
+        }
     }
 
     @Override

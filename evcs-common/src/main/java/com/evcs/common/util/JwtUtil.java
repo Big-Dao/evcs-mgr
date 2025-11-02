@@ -10,7 +10,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 
 /**
  * JWT工具类
@@ -103,6 +105,50 @@ public class JwtUtil {
         } catch (JWTDecodeException e) {
             log.error("检查Token过期失败", e);
             return true;
+        }
+    }
+
+    /**
+     * 刷新Token
+     */
+    public String refreshToken(String token) {
+        try {
+            DecodedJWT jwt = JWT.decode(token);
+            Long userId = jwt.getClaim("userId").asLong();
+            String username = jwt.getClaim("username").asString();
+            Long tenantId = jwt.getClaim("tenantId").asLong();
+
+            return generateToken(userId, username, tenantId);
+        } catch (JWTDecodeException e) {
+            log.error("刷新Token失败", e);
+            return null;
+        }
+    }
+
+    /**
+     * 获取Token过期时间
+     */
+    public Instant getExpiration(String token) {
+        try {
+            DecodedJWT jwt = JWT.decode(token);
+            return jwt.getExpiresAt().toInstant();
+        } catch (JWTDecodeException e) {
+            log.error("获取Token过期时间失败", e);
+            return null;
+        }
+    }
+
+    /**
+     * 获取用户角色
+     */
+    public String getRoles(String token) {
+        try {
+            DecodedJWT jwt = JWT.decode(token);
+            List<String> roles = jwt.getClaim("roles").asList(String.class);
+            return roles != null ? String.join(",", roles) : "";
+        } catch (Exception e) {
+            log.error("获取用户角色失败", e);
+            return "";
         }
     }
 }
