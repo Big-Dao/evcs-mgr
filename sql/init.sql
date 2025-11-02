@@ -31,7 +31,7 @@ CREATE TABLE sys_tenant (
     max_users INTEGER DEFAULT 100,
     max_stations INTEGER DEFAULT 50,
     max_chargers INTEGER DEFAULT 1000,
-    tenant_id BIGINT, -- 自引用租户ID
+    tenant_id BIGINT UNIQUE, -- 自引用租户ID，添加UNIQUE约束以支持外键引用
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     create_by BIGINT,
