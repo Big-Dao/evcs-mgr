@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.station.entity.Station;
+import lombok.Data;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -105,11 +106,36 @@ public interface StationMapper extends BaseMapper<Station> {
                    COUNT(CASE WHEN status = 2 THEN 1 END) as charging_chargers,
                    COUNT(CASE WHEN status = 3 THEN 1 END) as fault_chargers,
                    SUM(rated_power) as total_power
-            FROM charger 
+            FROM charger
             WHERE deleted = 0
             GROUP BY station_id
         ) stats ON s.station_id = stats.station_id
         WHERE s.station_id = #{stationId} AND s.deleted = 0
         """)
     Station selectStationWithStats(@Param("stationId") Long stationId);
+
+    /**
+     * 统计充电桩数据
+     */
+    @Select("""
+        SELECT
+            COUNT(*) as total_chargers,
+            COUNT(CASE WHEN status = 1 THEN 1 END) as available_chargers,
+            COUNT(CASE WHEN status = 2 THEN 1 END) as charging_chargers,
+            COUNT(CASE WHEN status = 3 THEN 1 END) as fault_chargers
+        FROM charger
+        WHERE deleted = 0
+        """)
+    ChargerStatistics selectChargerStatistics();
+
+    /**
+     * 充电桩统计数据
+     */
+    @Data
+    class ChargerStatistics {
+        private Long totalChargers;
+        private Long availableChargers;
+        private Long chargingChargers;
+        private Long faultChargers;
+    }
 }

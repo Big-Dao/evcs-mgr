@@ -8,6 +8,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.exception.TenantContextMissingException;
 import com.evcs.common.tenant.TenantContext;
+import com.evcs.station.controller.StationAnalyticsController;
+import com.evcs.station.controller.StationRealtimeController;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.entity.Station;
 import com.evcs.station.mapper.ChargerMapper;
@@ -311,5 +313,82 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station> impl
         wrapper.orderByDesc("create_time");
         
         return this.list(wrapper);
+    }
+
+    /**
+     * 获取实时统计数据
+     */
+    @Override
+    @DataScope
+    public StationRealtimeController.StationStatistics getRealtimeStatistics() {
+        StationRealtimeController.StationStatistics statistics = new StationRealtimeController.StationStatistics();
+
+        // 统计充电站总数和状态
+        statistics.setTotalStations(this.count());
+        statistics.setOnlineStations(this.count(new QueryWrapper<Station>().eq("status", 1).eq("deleted", 0)));
+        statistics.setOfflineStations(this.count(new QueryWrapper<Station>().eq("status", 0).eq("deleted", 0)));
+
+        // 统计充电桩数据（通过Mapper获取）
+        StationMapper.ChargerStatistics chargerStats = baseMapper.selectChargerStatistics();
+        if (chargerStats != null) {
+            statistics.setTotalChargers(chargerStats.getTotalChargers());
+            statistics.setAvailableChargers(chargerStats.getAvailableChargers());
+            statistics.setChargingChargers(chargerStats.getChargingChargers());
+            statistics.setFaultChargers(chargerStats.getFaultChargers());
+
+            // 计算平均利用率
+            if (chargerStats.getTotalChargers() != null && chargerStats.getTotalChargers() > 0) {
+                double utilizationRate = (double) chargerStats.getChargingChargers() / chargerStats.getTotalChargers() * 100;
+                statistics.setAverageUtilizationRate(Math.round(utilizationRate * 100.0) / 100.0);
+            }
+        }
+
+        return statistics;
+    }
+
+    @Override
+    @DataScope
+    public List<StationAnalyticsController.HeatmapData> getStationHeatmapData(String province, String city) {
+        // Placeholder implementation - would normally aggregate station locations
+        return List.of();
+    }
+
+    @Override
+    @DataScope
+    public StationAnalyticsController.UtilizationStatistics getUtilizationStatistics(
+            LocalDateTime startTime, LocalDateTime endTime, Long stationId) {
+        // Placeholder implementation - would normally calculate from usage data
+        return new StationAnalyticsController.UtilizationStatistics();
+    }
+
+    @Override
+    @DataScope
+    public StationAnalyticsController.RevenueTrend getRevenueTrend(
+            LocalDateTime startTime, LocalDateTime endTime, String granularity, Long stationId) {
+        // Placeholder implementation - would normally calculate from transaction data
+        return new StationAnalyticsController.RevenueTrend();
+    }
+
+    @Override
+    @DataScope
+    public List<StationAnalyticsController.StationRecommendation> getStationRecommendations(Integer limit) {
+        // Placeholder implementation - would normally use ML algorithms
+        return List.of();
+    }
+
+    @Override
+    @DataScope
+    public com.baomidou.mybatisplus.core.metadata.IPage<StationAnalyticsController.StationRanking> getStationRanking(
+            com.baomidou.mybatisplus.extension.plugins.pagination.Page<StationAnalyticsController.StationRanking> page,
+            String sortBy, String timeRange) {
+        // Placeholder implementation - would normally calculate from performance data
+        return new com.baomidou.mybatisplus.extension.plugins.pagination.Page<>(page.getCurrent(), page.getSize());
+    }
+
+    @Override
+    @DataScope
+    public StationAnalyticsController.RegionalAnalysis getRegionalAnalysis(String province, String city) {
+        // Placeholder implementation - would normally analyze market data
+        return new StationAnalyticsController.RegionalAnalysis();
     }
 }

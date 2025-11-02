@@ -3,6 +3,8 @@ package com.evcs.station.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.evcs.station.controller.StationAnalyticsController;
+import com.evcs.station.controller.StationRealtimeController;
 import com.evcs.station.entity.Station;
 
 import java.util.List;
@@ -66,4 +68,43 @@ public interface IStationService extends IService<Station> {
      * 导出充电站数据
      */
     List<Station> exportStations(Station queryParam);
+
+    /**
+     * 获取实时统计数据
+     */
+    StationRealtimeController.StationStatistics getRealtimeStatistics();
+
+    /**
+     * 获取充电站热力图数据
+     */
+    List<StationAnalyticsController.HeatmapData> getStationHeatmapData(String province, String city);
+
+    /**
+     * 获取利用率统计
+     */
+    StationAnalyticsController.UtilizationStatistics getUtilizationStatistics(
+        java.time.LocalDateTime startTime, java.time.LocalDateTime endTime, Long stationId);
+
+    /**
+     * 获取收入趋势
+     */
+    StationAnalyticsController.RevenueTrend getRevenueTrend(
+        java.time.LocalDateTime startTime, java.time.LocalDateTime endTime, String granularity, Long stationId);
+
+    /**
+     * 获取站点推荐
+     */
+    List<StationAnalyticsController.StationRecommendation> getStationRecommendations(Integer limit);
+
+    /**
+     * 获取站点排行
+     */
+    com.baomidou.mybatisplus.core.metadata.IPage<StationAnalyticsController.StationRanking> getStationRanking(
+        com.baomidou.mybatisplus.extension.plugins.pagination.Page<StationAnalyticsController.StationRanking> page,
+        String sortBy, String timeRange);
+
+    /**
+     * 获取区域分析
+     */
+    StationAnalyticsController.RegionalAnalysis getRegionalAnalysis(String province, String city);
 }
