@@ -55,7 +55,7 @@ subprojects {
     mybatisSpringVersion = '3.0.3'  // 保持稳定版本
         fastjson2Version = '2.0.45'
         hutoolVersion = '5.8.25'
-        knife4jVersion = '4.4.0'
+        knife4jVersion = '4.5.0'
         logstashLogbackVersion = '7.4'
         resilience4jVersion = '2.2.0'
     }
