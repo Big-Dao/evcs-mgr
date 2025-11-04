@@ -114,6 +114,12 @@ const routes: RouteRecordRaw[] = [
         name: 'BillingPlanEdit',
         component: () => import('@/views/billing/BillingPlanForm.vue'),
         meta: { title: '编辑计费方案', icon: 'Coin', hidden: true }
+      },
+      {
+        path: 'test',
+        name: 'Test',
+        component: () => import('@/views/Test.vue'),
+        meta: { title: '认证测试', icon: 'Tools' }
       }
     ]
   }
@@ -122,6 +128,25 @@ const routes: RouteRecordRaw[] = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 全局前置守卫
+router.beforeEach((to, from, next) => {
+  console.log('路由跳转:', from.path, '->', to.path)
+
+  // 检查是否需要登录
+  if (to.path !== '/login') {
+    const token = localStorage.getItem('token')
+    console.log('Token检查:', token ? 'exists' : 'not found')
+
+    if (!token) {
+      console.log('未找到token，重定向到登录页')
+      next('/login')
+      return
+    }
+  }
+
+  next()
 })
 
 export default router

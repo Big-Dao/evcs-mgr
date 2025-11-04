@@ -247,7 +247,7 @@ public class MonitoringController implements HealthIndicator {
     /**
      * 获取安全监控指标
      */
-    @GetMapping("/security/metrics")
+    @GetMapping("/gateway/security/metrics")
     public ResponseEntity<Map<String, Object>> getSecurityMetrics() {
         try {
             Map<String, Object> securityMetrics = new HashMap<>();

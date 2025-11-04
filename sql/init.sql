@@ -178,8 +178,8 @@ CREATE TRIGGER update_permission_updated_time BEFORE UPDATE ON sys_permission FO
 INSERT INTO sys_tenant (id, tenant_code, tenant_name, tenant_type, status, max_users, max_stations, max_chargers, tenant_id) 
 VALUES (1, 'SYSTEM', '系统租户', 1, 1, 999999, 999999, 999999, 1);
 
--- 插入默认系统管理员用户
-INSERT INTO sys_user (id, username, password, real_name, user_type, status, tenant_id) 
+-- 插入默认系统管理员用户 (密码: password)
+INSERT INTO sys_user (id, username, password, real_name, user_type, status, tenant_id)
 VALUES (1, 'admin', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', '系统管理员', 0, 1, 1);
 
 -- 插入默认角色

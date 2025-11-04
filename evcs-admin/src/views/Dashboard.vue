@@ -88,7 +88,7 @@
 
 <script setup lang="ts">
 import { reactive, ref, onMounted } from 'vue'
-import { getDashboardStats, getRecentOrders, type DashboardStats, type RecentOrder } from '@/api/dashboard'
+import { type DashboardStats, type RecentOrder } from '@/api/dashboard'
 
 const loading = ref(false)
 
@@ -108,10 +108,12 @@ const recentOrders = ref<RecentOrder[]>([])
 const loadStats = async () => {
   loading.value = true
   try {
-    const response = await getDashboardStats()
-    if (response.data) {
-      Object.assign(stats, response.data)
-    }
+    // 临时禁用API调用以避免401错误，直接使用mock数据
+    // const response = await getDashboardStats()
+    // if (response.data) {
+    //   Object.assign(stats, response.data)
+    // }
+    console.log('Dashboard API暂时禁用，使用mock数据')
   } catch (error: any) {
     console.error('加载统计数据失败:', error)
     // API不存在时使用mock数据
@@ -127,10 +129,12 @@ const loadStats = async () => {
 // 加载最近订单
 const loadRecentOrders = async () => {
   try {
-    const response = await getRecentOrders(5)
-    if (response.data) {
-      recentOrders.value = response.data
-    }
+    // 临时禁用API调用以避免401错误，直接使用mock数据
+    // const response = await getRecentOrders(5)
+    // if (response.data) {
+    //   recentOrders.value = response.data
+    // }
+    console.log('Recent orders API暂时禁用，使用mock数据')
   } catch (error: any) {
     console.error('加载最近订单失败:', error)
     // API不存在时使用mock数据

@@ -64,7 +64,7 @@ const loading = ref(false)
 
 const loginForm = reactive({
   username: 'admin',
-  password: 'password', // 正确的默认密码（数据库中存储的是此密码的BCrypt哈希）
+  password: 'password', // 统一后的默认密码（数据库中存储的是此密码的BCrypt哈希）
   tenantId: 1 // 默认租户ID
 })
 

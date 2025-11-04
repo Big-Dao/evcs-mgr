@@ -20,7 +20,7 @@
 ### 数据库初始化账号
 所有测试账号的密码均为 BCrypt 加密后的 `password`：
 ```
-$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iDTcDXFe
+$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG
 ```
 
 ### 租户信息
@@ -70,8 +70,8 @@ psql -h localhost -U evcs_user -d evcs_db < reset-admin-password.sql
 
 # 或手动更新
 # 密码: password
-UPDATE users 
-SET password = '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iDTcDXFe'
+UPDATE sys_user
+SET password = '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG'
 WHERE username = 'admin' AND tenant_id = 1;
 ```
 
@@ -80,8 +80,8 @@ WHERE username = 'admin' AND tenant_id = 1;
 ### Q: 为什么需要提供租户ID？
 A: 系统支持多租户架构，每个用户必须属于一个租户。租户 ID=1 是默认的系统租户。
 
-### Q: 前端显示的默认密码是 `admin123`，为什么实际是 `password`？
-A: 前端代码中的默认值在开发过程中有过调整，当前数据库中的实际密码是 `password`。建议同步更新前端默认值。
+### Q: 系统默认密码是什么？
+A: 系统默认管理员密码为 `password`。数据库、文档和前端代码均已统一。
 
 ### Q: 登录失败提示"租户ID不能为空"？
 A: 请确保请求中包含 `tenantId` 字段。如果使用租户编码，可以提供 `tenantCode: "DEFAULT"` 代替 `tenantId: 1`。

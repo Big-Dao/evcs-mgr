@@ -1,7 +1,7 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.2.2' apply false
-    id 'io.spring.dependency-management' version '1.1.4' apply false
+    id 'org.springframework.boot' version '3.3.3' apply false
+    id 'io.spring.dependency-management' version '1.1.6' apply false
     id 'com.palantir.docker' version '0.35.0' apply false
     id 'jacoco' // 代码覆盖率
 }
@@ -47,17 +47,17 @@ subprojects {
     
     // 依赖版本管理
     ext {
-        springCloudVersion = '2023.0.0'
+        springCloudVersion = '2023.0.4'
         postgresqlVersion = '42.7.4'  // 升级：安全补丁和性能优化
         redisVersion = '5.0.1'
-        jwtVersion = '4.4.0'
-        mybatisPlusVersion = '3.5.7'  // 渐进升级：3.5.6 → 3.5.7 (更稳定)
-    mybatisSpringVersion = '3.0.3'  // 保持稳定版本
-        fastjson2Version = '2.0.45'
-        hutoolVersion = '5.8.25'
+        jwtVersion = '3.19.2'  // 稳定版本 - 改为3.19.2解决Maven仓库找不到4.4.0的问题
+        mybatisPlusVersion = '3.5.8'  // 安全修复版本
+    mybatisSpringVersion = '3.0.4'  // Spring Boot 3.3.x兼容版本
+        fastjson2Version = '2.0.51'  // 性能优化版本
+        hutoolVersion = '5.8.32'  // 最新稳定版本
         knife4jVersion = '4.5.0'
         logstashLogbackVersion = '7.4'
-        resilience4jVersion = '2.2.0'
+        resilience4jVersion = '2.2.1'  // 性能优化版本
     }
     
     dependencyManagement {

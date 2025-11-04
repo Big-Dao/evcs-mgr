@@ -62,7 +62,7 @@ curl -X POST http://localhost:8080/api/auth/login `
 ## 重置密码（如需要）
 ```sql
 -- 将密码重置为 password
-UPDATE sys_user 
+UPDATE sys_user
 SET password = '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG'
 WHERE username = 'admin';
 ```

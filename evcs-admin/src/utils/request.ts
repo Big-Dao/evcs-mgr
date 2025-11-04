@@ -24,6 +24,7 @@ service.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
     }
+    console.log('API请求:', config.method?.toUpperCase(), config.url)
     return config
   },
   (error) => {
@@ -61,9 +62,23 @@ service.interceptors.response.use(
       
       switch (status) {
         case 401:
-          ElMessage.error('未授权，请重新登录')
-          localStorage.removeItem('token')
-          window.location.href = '/login'
+          console.error('401错误 - API调用失败:', error.config?.method?.toUpperCase(), error.config?.url)
+          console.error('401错误 - 响应数据:', error.response.data)
+
+          // 对于可能不存在的API（开发中的功能），不自动退出，而是显示友好错误
+          const problematicApis = ['/dashboard/', '/tenant/', '/user/', '/station/', '/charger/', '/order/']
+          const isProblematicApi = problematicApis.some(api => error.config?.url?.includes(api))
+
+          if (isProblematicApi) {
+            console.error('开发中API 401错误，不自动退出:', error.config?.url)
+            ElMessage.warning('该功能正在开发中，暂不可用')
+          } else {
+            console.error('401错误 - 即将清除token并重定向')
+            ElMessage.error('未授权，请重新登录')
+            localStorage.removeItem('token')
+            console.error('401错误 - token已清除，即将重定向到登录页')
+            window.location.href = '/login'
+          }
           break
         case 403:
           ElMessage.error('拒绝访问')

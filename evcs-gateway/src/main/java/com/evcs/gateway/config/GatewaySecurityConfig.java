@@ -1,22 +1,16 @@
 package com.evcs.gateway.config;
 
-import com.evcs.gateway.security.RateLimitingFilter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.route.RouteLocator;
 import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.reactive.CorsWebFilter;
-import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.ServerHttpSecurity;
+import org.springframework.security.web.server.SecurityWebFilterChain;
 import reactor.core.publisher.Mono;
-
-import java.time.Duration;
-import java.util.List;
 
 /**
  * 网关安全配置
@@ -24,146 +18,70 @@ import java.util.List;
  */
 @Slf4j
 @Configuration
-@RequiredArgsConstructor
+@EnableWebFluxSecurity
 public class GatewaySecurityConfig {
 
-    private final RateLimitingFilter rateLimitingFilter;
-
-    @Value("${cors.allowed-origins:http://localhost:3000,http://localhost:8080}")
-    private List<String> allowedOrigins;
-
-    @Value("${cors.allowed-methods:GET,POST,PUT,DELETE,OPTIONS}")
-    private List<String> allowedMethods;
-
-    @Value("${cors.allowed-headers:*}")
-    private List<String> allowedHeaders;
-
-    @Value("${cors.allow-credentials:true}")
-    private boolean allowCredentials;
-
-    @Value("${cors.max-age:3600}")
-    private long maxAge;
+    // CORS配置已移至CorsConfig类，避免Bean名称冲突
 
     /**
-     * CORS配置
-     */
-    @Bean
-    public CorsWebFilter corsWebFilter() {
-        CorsConfiguration corsConfig = new CorsConfiguration();
-
-        // 设置允许的源
-        allowedOrigins.forEach(origin -> {
-            if (isValidOrigin(origin)) {
-                corsConfig.addAllowedOrigin(origin);
-                log.debug("Added allowed origin: {}", origin);
-            } else {
-                log.warn("Invalid origin configuration: {}", origin);
-            }
-        });
-
-        // 设置允许的方法
-        allowedMethods.forEach(method -> {
-            try {
-                HttpMethod httpMethod = HttpMethod.valueOf(method.toUpperCase());
-                corsConfig.addAllowedMethod(httpMethod);
-            } catch (Exception e) {
-                log.warn("Invalid HTTP method: {}", method);
-            }
-        });
-
-        // 设置允许的头部
-        if (allowedHeaders.contains("*")) {
-            corsConfig.addAllowedHeader("*");
-        } else {
-            allowedHeaders.forEach(corsConfig::addAllowedHeader);
-        }
-
-        // 其他配置
-        corsConfig.setAllowCredentials(allowCredentials);
-        corsConfig.setMaxAge(maxAge);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", corsConfig);
-
-        log.info("CORS configured with origins: {}, methods: {}, credentials: {}",
-                allowedOrigins, allowedMethods, allowCredentials);
-
-        return new CorsWebFilter(source);
-    }
-
-    /**
-     * 路由配置（包含熔断和重试机制）
+     * 路由配置（简化版，移除熔断器）
      */
     @Bean
     public RouteLocator customRouteLocator(RouteLocatorBuilder builder) {
         return builder.routes()
-            // 充电站服务路由
-            .route("charger-service", r -> r.path("/api/v1/chargers/**")
-                .filters(f -> f
-                    .stripPrefix(2)
-                    .circuitBreaker(config -> config
-                        .setName("charger-service")
-                        .setFallbackUri("forward:/fallback/charger"))
-                    .retry(retryConfig -> retryConfig
-                        .setRetries(3))
-                    .filter(rateLimitingFilter.apply(new RateLimitingFilter.Config()))
-                )
-                .uri("lb://evcs-charger")
+            // 认证服务路由
+            .route("auth-service", r -> r.path("/api/auth/**")
+                .filters(f -> f.stripPrefix(2))
+                .uri("lb://evcs-auth")
             )
 
-            // 用户服务路由
-            .route("user-service", r -> r.path("/api/v1/users/**")
-                .filters(f -> f
-                    .stripPrefix(2)
-                    .circuitBreaker(config -> config
-                        .setName("user-service")
-                        .setFallbackUri("forward:/fallback/user"))
-                    .retry(retryConfig -> retryConfig
-                        .setRetries(2))
-                    .filter(rateLimitingFilter.apply(new RateLimitingFilter.Config()))
-                )
-                .uri("lb://evcs-user")
+            // 租户服务路由
+            .route("tenant-service", r -> r.path("/api/tenant/**")
+                .filters(f -> f.stripPrefix(2))
+                .uri("lb://evcs-tenant")
+            )
+
+            // 充电站服务路由
+            .route("station-service", r -> r.path("/api/station/**")
+                .filters(f -> f.stripPrefix(2))
+                .uri("lb://evcs-station")
+            )
+
+            // 订单服务路由
+            .route("order-service", r -> r.path("/api/order/**")
+                .filters(f -> f.stripPrefix(2))
+                .uri("lb://evcs-order")
             )
 
             // 支付服务路由
-            .route("payment-service", r -> r.path("/api/v1/payments/**")
-                .filters(f -> f
-                    .stripPrefix(2)
-                    .circuitBreaker(config -> config
-                        .setName("payment-service")
-                        .setFallbackUri("forward:/fallback/payment"))
-                    .retry(retryConfig -> retryConfig
-                        .setRetries(1)
-                        .setBackoff(Duration.ofMillis(100), Duration.ofSeconds(2), 2, true))
-                    .filter(rateLimitingFilter.apply(new RateLimitingFilter.Config()))
-                )
+            .route("payment-service", r -> r.path("/api/payment/**")
+                .filters(f -> f.stripPrefix(2))
                 .uri("lb://evcs-payment")
             )
 
             // 协议服务路由
-            .route("protocol-service", r -> r.path("/protocol/**")
-                .filters(f -> f
-                    .circuitBreaker(config -> config
-                        .setName("protocol-service")
-                        .setFallbackUri("forward:/fallback/protocol"))
-                    .filter(rateLimitingFilter.apply(new RateLimitingFilter.Config()))
-                )
+            .route("protocol-service", r -> r.path("/api/protocol/**")
+                .filters(f -> f.stripPrefix(2))
                 .uri("lb://evcs-protocol")
             )
 
-            // 认证服务路由
-            .route("auth-service", r -> r.path("/auth/**")
-                .filters(f -> f
-                    .stripPrefix(1)
-                    .circuitBreaker(config -> config
-                        .setName("auth-service")
-                        .setFallbackUri("forward:/fallback/auth"))
-                    .retry(retryConfig -> retryConfig
-                        .setRetries(2))
-                )
-                .uri("lb://evcs-auth")
+            // Dashboard API路由
+            .route("dashboard-api", r -> r.path("/api/dashboard/**")
+                .filters(f -> f.stripPrefix(2))
+                .uri("lb://evcs-tenant")
             )
 
+            .build();
+    }
+
+    /**
+     * 禁用CSRF保护的Spring Security配置
+     */
+    @Bean
+    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+        return http
+            .csrf(ServerHttpSecurity.CsrfSpec::disable)
+            .authorizeExchange(exchanges -> exchanges.anyExchange().permitAll())
             .build();
     }
 
@@ -226,18 +144,4 @@ public class GatewaySecurityConfig {
         };
     }
 
-    /**
-     * 验证Origin是否有效
-     */
-    private boolean isValidOrigin(String origin) {
-        if (origin == null || origin.trim().isEmpty()) {
-            return false;
-        }
-
-        // 基本格式检查
-        return origin.matches("^https?://[a-zA-Z0-9.-]+(?::\\d+)?(?:/.*)?$") ||
-               origin.equals("localhost") ||
-               origin.startsWith("http://localhost") ||
-               origin.startsWith("https://localhost");
-    }
-}
+  }
