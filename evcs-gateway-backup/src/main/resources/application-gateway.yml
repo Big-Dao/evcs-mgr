@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: evcs-gateway
+  main:
+    web-application-type: reactive
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
+  cloud:
+    config:
+      profile: local
+    gateway:
+      routes:
+        # 租户服务路由
+        - id: tenant-service
+          uri: lb://evcs-tenant
+          predicates:
+            - Path=/tenant/**,/api/tenant/**
+          filters:
+            - StripPrefix=1
+
+        # 认证服务路由
+        - id: auth-service
+          uri: lb://evcs-auth
+          predicates:
+            - Path=/auth/**,/user/**,/role/**,/menu/**,/api/auth/**,/api/user/**,/api/role/**,/api/menu/**
+          filters:
+            - StripPrefix=1
+
+        # 充电站服务路由
+        - id: station-service
+          uri: lb://evcs-station
+          predicates:
+            - Path=/station/**,/charger/**,/api/station/**,/api/charger/**
+          filters:
+            - StripPrefix=1
+
+        # 订单服务路由
+        - id: order-service
+          uri: lb://evcs-order
+          predicates:
+            - Path=/order/**,/billing/**,/api/order/**,/api/billing/**
+          filters:
+            - StripPrefix=1
+
+        # 支付服务路由
+        - id: payment-service
+          uri: lb://evcs-payment
+          predicates:
+            - Path=/payment/**,/api/payment/**
+          filters:
+            - StripPrefix=1
+
+      # 全局CORS配置
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*"
+            allowCredentials: true
+
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

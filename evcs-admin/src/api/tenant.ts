@@ -48,7 +48,7 @@ export interface TenantForm {
  */
 export function getTenantList(params: TenantQueryParams) {
   return request<PageResult<Tenant>>({
-    url: '/tenant/list',
+    url: '/tenant/page',
     method: 'get',
     params
   })

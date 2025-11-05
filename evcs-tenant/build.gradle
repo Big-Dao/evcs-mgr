@@ -19,15 +19,29 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    
+
+    // Add Jakarta Servlet dependency for Spring Boot 3.x compatibility
+    implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+
     // Database
     implementation "org.postgresql:postgresql:${postgresqlVersion}"
-    
+
     // API Documentation
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
-    
+
     // Test dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'com.h2database:h2'
     testImplementation(testFixtures(project(':evcs-common')))
+}
+
+// Force Jakarta Servlet dependency and exclude any javax.servlet
+configurations.all {
+    resolutionStrategy {
+        eachDependency { DependencyResolveDetails details ->
+            if (details.requested.group == 'javax.servlet' && details.requested.name == 'javax.servlet-api') {
+                details.useTarget 'jakarta.servlet:jakarta.servlet-api:6.0.0'
+            }
+        }
+    }
 }

@@ -1,0 +1,37 @@
+plugins {
+    id 'org.springframework.boot'
+    id 'io.spring.dependency-management'
+    id 'com.palantir.docker'
+}
+
+description = 'API Gateway Service'
+
+dependencies {
+    // Include essential common components, but exclude WebFlux-incompatible ones
+    implementation(project(':evcs-common')) {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-web'
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-tomcat'
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-data-redis'
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-aop'
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-actuator'
+        exclude group: 'com.baomidou', module: 'mybatis-plus-boot-starter'
+    }
+
+    implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
+    implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
+    implementation 'org.springframework.cloud:spring-cloud-starter-loadbalancer'
+    implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    implementation 'org.springframework.boot:spring-boot-starter-data-redis-reactive'
+
+    // Security dependencies for WebFlux
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // Actuator for health checks (compatible with WebFlux)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // API Documentation
+    implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
+
+    // Test dependencies
+    testImplementation 'io.projectreactor:reactor-test'
+}

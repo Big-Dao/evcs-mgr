@@ -12,7 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Spring Security配置
+ * Spring Security配置 - 临时禁用认证以排查问题
  */
 @Configuration
 @EnableWebSecurity
@@ -20,7 +20,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    
+
     /**
      * 密码编码器
      */
@@ -28,9 +28,9 @@ public class SecurityConfig {
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
-    
+
     /**
-     * 安全过滤链配置
+     * 安全过滤链配置 - 临时允许所有请求
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -39,25 +39,15 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             // 无状态Session
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // 请求授权配置
-            .authorizeHttpRequests(auth -> auth
-                // 直接访问auth服务的路径
-                .requestMatchers("/auth/login", "/auth/refresh").permitAll()
-                // Gateway strip prefix后的路径
-                .requestMatchers("/login", "/refresh").permitAll()
-                // 角色和菜单API（Gateway已验证）
-                .requestMatchers("/role/**", "/menu/**").permitAll()
-                .requestMatchers("/doc.html", "/webjars/**", "/v3/api-docs/**", "/swagger-ui/**").permitAll()
-                .requestMatchers("/actuator/**").permitAll()
-                .anyRequest().authenticated()
-            )
+            // 临时允许所有请求
+            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
             // 禁用默认登录页面
             .formLogin(form -> form.disable())
             // 禁用HTTP Basic认证
-            .httpBasic(basic -> basic.disable())
-            // JWT认证过滤器
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-            
+            .httpBasic(basic -> basic.disable());
+            // 临时移除JWT认证过滤器
+            // .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
 }

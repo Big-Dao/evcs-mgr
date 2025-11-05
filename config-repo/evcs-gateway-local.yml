@@ -18,7 +18,7 @@ spring:
       routes:
         # 认证服务路由（前端使用/api/auth/**）
         - id: evcs-auth-api
-          uri: lb://evcs-auth
+          uri: http://evcs-auth:8081
           predicates:
             - Path=/api/auth/**
           filters:
@@ -110,7 +110,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+      defaultZone: http://eureka:8761/eureka/
 
 logging:
   level:
