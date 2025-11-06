@@ -8,6 +8,7 @@
 - **项目概述**: [README.md](README.md) ⭐
 - **完整文档索引**: [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) ⭐
 - **产品功能需求**: [产品需求文档](docs/01-core/requirements.md)
+- **微服务详情**: [服务详细参考](SERVICES-REFERENCE.md) ⭐
 
 ### 我要开发...
 - **技术架构**: [架构设计](docs/01-core/architecture.md) ⭐
@@ -47,6 +48,9 @@ docker-compose up -d
 ### Q: 如何了解技术架构？
 **A**: 从 [架构设计](docs/01-core/architecture.md) 开始，然后查看 [数据模型](docs/01-core/data-model.md) 和 [API设计](docs/01-core/api-design.md)。
 
+### Q: 各个微服务分别做什么？
+**A**: 查看 [服务详细参考](SERVICES-REFERENCE.md)，了解每个服务的功能、端口和配置。
+
 ### Q: 编码规范是什么？
 **A**: 查看 [编码规范](docs/02-development/coding-standards.md)，包含完整的Java开发规范。
 
@@ -55,8 +59,9 @@ docker-compose up -d
 ### 🔥 必读文档 (优先级最高)
 1. [README.md](README.md) - 项目概述
 2. [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) - 文档导航
-3. [Docker部署指南](docs/03-deployment/docker-deployment.md) - 部署指南
-4. [架构设计](docs/01-core/architecture.md) - 技术架构
+3. [服务详细参考](SERVICES-REFERENCE.md) - 微服务详解 ⭐
+4. [Docker部署指南](docs/03-deployment/docker-deployment.md) - 部署指南
+5. [架构设计](docs/01-core/architecture.md) - 技术架构
 
 ### 📖 重要文档
 1. [产品需求文档](docs/01-core/requirements.md) - 需求理解
