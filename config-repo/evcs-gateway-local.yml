@@ -18,7 +18,7 @@ spring:
       routes:
         # 认证服务路由（前端使用/api/auth/**）
         - id: evcs-auth-api
-          uri: http://evcs-auth:8081
+          uri: lb://evcs-auth
           predicates:
             - Path=/api/auth/**
           filters:

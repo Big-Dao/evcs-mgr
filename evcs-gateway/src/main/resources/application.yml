@@ -6,118 +6,20 @@ spring:
     name: evcs-gateway
   main:
     web-application-type: reactive
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://config-server:8888}"
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
       - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
       - com.baomidou.mybatisplus.autoconfigure.MybatisPlusAutoConfiguration
 
-  cloud:
-    # 使用Config Server配置
-    gateway:
-      routes:
-        # 认证服务路由 - 直接连接（来自Config Server配置）
-        - id: evcs-auth-api
-          uri: http://evcs-auth:8081
-          predicates:
-            - Path=/api/auth/**
-          filters:
-            - StripPrefix=2
-
-        # Dashboard路由
-        - id: evcs-dashboard
-          uri: lb://evcs-tenant
-          predicates:
-            - Path=/api/dashboard/**
-          filters:
-            - StripPrefix=1
-
-        # 租户管理路由
-        - id: evcs-tenant
-          uri: lb://evcs-tenant
-          predicates:
-            - Path=/api/tenant/**
-          filters:
-            - StripPrefix=1
-
-        # 用户管理路由
-        - id: evcs-user
-          uri: lb://evcs-auth
-          predicates:
-            - Path=/api/user/**
-          filters:
-            - StripPrefix=1
-
-        # 角色管理路由
-        - id: evcs-role
-          uri: lb://evcs-auth
-          predicates:
-            - Path=/api/role/**
-          filters:
-            - StripPrefix=1
-
-        # 菜单管理路由
-        - id: evcs-menu
-          uri: lb://evcs-auth
-          predicates:
-            - Path=/api/menu/**
-          filters:
-            - StripPrefix=1
-
-        # 站点服务路由
-        - id: evcs-station
-          uri: lb://evcs-station
-          predicates:
-            - Path=/api/station/**
-          filters:
-            - StripPrefix=1
-
-        # 充电桩路由
-        - id: evcs-charger
-          uri: lb://evcs-station
-          predicates:
-            - Path=/api/charger/**
-          filters:
-            - StripPrefix=1
-
-        # 订单服务路由
-        - id: evcs-order
-          uri: lb://evcs-order
-          predicates:
-            - Path=/api/order/**
-          filters:
-            - StripPrefix=1
-
-        # 计费方案路由
-        - id: evcs-billing
-          uri: lb://evcs-order
-          predicates:
-            - Path=/api/billing/**
-          filters:
-            - StripPrefix=1
-
-        # 支付服务路由
-        - id: evcs-payment
-          uri: lb://evcs-payment
-          predicates:
-            - Path=/api/payment/**
-          filters:
-            - StripPrefix=1
-
-      # 全局超时配置
-      httpclient:
-        connect-timeout: 5000
-        response-timeout: 10s
-
-  # Eureka客户端配置
-  discovery:
-    client:
-      service-url:
-        defaultZone: http://eureka:8761/eureka/
-      register-with-eureka: true
-      fetch-registry: true
-      eureka-server-connect-timeout-seconds: 5
-      eureka-server-read-timeout-seconds: 8
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://eureka:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
 
 # 监控配置
 management:
@@ -134,7 +36,7 @@ management:
 # 日志配置
 logging:
   level:
-    org.springframework.cloud.gateway: DEBUG
-    reactor.netty: INFO
+    org.springframework.cloud.gateway: INFO
+    org.springframework.cloud.config: DEBUG
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
