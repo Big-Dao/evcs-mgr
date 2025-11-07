@@ -1070,7 +1070,7 @@ end_of_line = crlf
 ---
 
 **相关文档**:
-- [技术架构设计](../01-core/architecture.md)
+- [技术架构设计](../architecture/architecture.md)
 - [测试指南](./testing-guide.md)
 - [开发环境搭建](./setup.md)
 - [贡献指南](./contribution.md)

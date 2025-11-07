@@ -90,7 +90,6 @@ docs/
 │   ├── API-DOCUMENTATION.md   # API文档 ✅
 │   ├── API-DOCUMENTATION-GUIDE.md # API指南 ✅
 │   └── CHANGELOG.md          # 变更日志 ✅
-├── 📦 quick-start/           # 快速开始
 └── 🗂️ archive/              # 历史归档 (150+个文档) ✅
 ```
 
@@ -149,7 +148,6 @@ docs/
 | testing/ | 7个 | 测试指南、质量报告 |
 | troubleshooting/ | 6个 | 问题排查、修复记录 |
 | references/ | 3个 | API文档、参考资料 |
-| quick-start/ | - | 快速开始目录 |
 | archive/ | 150+个 | 历史文档归档 |
 
 ### 核心改进

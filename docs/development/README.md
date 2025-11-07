@@ -1,15 +1,50 @@
 # 开发文档
 
-本目录包含 EVCS Manager 项目的开发工具和问题修复相关文档。
+> **版本**: v1.0 | **更新日期**: 2025-11-07 | **维护者**: 技术负责人 | **状态**: 活跃
 
-## 📄 文档列表
+## 📋 目录说明
 
-### 开发工具
-- **IDE-FIX-GUIDE.md** - IDE 错误修复指南
-  - VS Code 配置
-  - Gradle 集成
-  - Java 21 环境配置
-  - 常见 IDE 问题解决方案
+本目录包含EVCS充电站管理系统的开发指南、规范和工具文档，为开发团队提供完整的开发指导。
+
+### 📁 核心文档
+
+#### 🎯 开发指南与规范
+- **[DEVELOPER-GUIDE.md](DEVELOPER-GUIDE.md)** ⭐ **开发者指南**
+  - 新模块开发流程、代码规范
+  - 多租户开发注意事项、Git工作流
+  - 适合：开发人员日常参考
+
+- **[AI-ASSISTANT-UNIFIED-CONFIG.md](AI-ASSISTANT-UNIFIED-CONFIG.md)** 🤖 **AI助手统一配置**
+  - Claude Code、GitHub Copilot、CodeX统一配置
+  - 项目上下文、编码标准、架构说明
+
+- **[coding-standards.md](coding-standards.md)** 📝 **编码标准**
+  - 代码规范、命名约定、最佳实践
+
+- **[API-DESIGN-STANDARDS.md](API-DESIGN-STANDARDS.md)** 🔌 **API设计标准**
+  - RESTful API设计规范、接口约定
+
+- **[DATABASE-DESIGN-STANDARDS.md](DATABASE-DESIGN-STANDARDS.md)** 🗄️ **数据库设计标准**
+  - 数据库设计规范、命名约定
+
+- **[CODE-QUALITY-CHECKLIST.md](CODE-QUALITY-CHECKLIST.md)** ✅ **代码质量检查清单**
+  - 代码审查要点、质量标准
+
+#### 🤖 AI助手配置
+- **[AI-ASSISTANTS-INDEX.md](AI-ASSISTANTS-INDEX.md)** - AI助手规范索引
+- **[AI-ASSISTANT-GUIDELINES.md](AI-ASSISTANT-GUIDELINES.md)** - AI助手使用指南
+- **[AI-CONFIG-NECESSITY-ANALYSIS.md](AI-CONFIG-NECESSITY-ANALYSIS.md)** - AI配置必要性分析
+- **[AI-CONFIG-CLEANUP-REPORT.md](AI-CONFIG-CLEANUP-REPORT.md)** - AI配置清理报告
+- **[AI-CONFIG-CONSISTENCY-REPORT.md](AI-CONFIG-CONSISTENCY-REPORT.md)** - AI配置一致性报告
+- **[AI-CONFIG-DEDUPLICATION-REPORT.md](AI-CONFIG-DEDUPLICATION-REPORT.md)** - AI配置去重报告
+- **[COPILOT-INSTRUCTIONS-SETUP.md](COPILOT-INSTRUCTIONS-SETUP.md)** - Copilot配置说明
+
+#### 🔧 开发工具与问题修复
+- **[DOCKER-BUILD-FIX.md](DOCKER-BUILD-FIX.md)** - Docker构建依赖问题修复
+- **[DOCUMENTATION-CLEANUP-SUMMARY.md](DOCUMENTATION-CLEANUP-SUMMARY.md)** - 文档整理总结
+- **[DOCUMENTATION-MAINTENANCE-GUIDE.md](DOCUMENTATION-MAINTENANCE-GUIDE.md)** - 文档维护指南
+- **[DOCUMENTATION-REORGANIZATION-PLAN.md](DOCUMENTATION-REORGANIZATION-PLAN.md)** - 文档重组计划
+- **[DOCUMENTATION-REORGANIZATION-COMPLETE.md](DOCUMENTATION-REORGANIZATION-COMPLETE.md)** - 文档重组完成报告
 
 ## 🔗 相关文档
 

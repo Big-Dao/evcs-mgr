@@ -1,5 +1,7 @@
 # Docker 构建依赖问题修复
 
+> **版本**: v1.0 | **更新日期**: 2025-11-07 | **维护者**: DevOps工程师 | **状态**: 活跃
+
 ## 问题描述
 
 在 CI/CD 环境中进行 Docker 构建时，`evcs-station` 模块编译失败，提示找不到 `com.evcs.protocol.api` 包：

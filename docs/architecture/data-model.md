@@ -841,4 +841,4 @@ ALTER TABLE charging_order ADD COLUMN payment_status INTEGER DEFAULT 0;
 - [产品需求文档](./requirements.md)
 - [技术架构设计](./architecture.md)
 - [API接口设计](./api-design.md)
-- [开发规范](../02-development/coding-standards.md)
+- [开发规范](../development/coding-standards.md)

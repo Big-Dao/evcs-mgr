@@ -1,8 +1,7 @@
 # GitHub Copilot Instructions Setup
 
-**Date**: 2025-10-14  
-**Status**: ✅ Completed  
-**Issue**: [Setup Copilot instructions](https://github.com/Big-Dao/evcs-mgr/issues/XXX)
+> **版本**: v1.0 | **更新日期**: 2025-11-07 | **维护者**: 技术负责人 | **状态**: 活跃
+> **Issue**: [Setup Copilot instructions](https://github.com/Big-Dao/evcs-mgr/issues/XXX)
 
 ## Overview
 

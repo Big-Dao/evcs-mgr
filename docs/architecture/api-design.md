@@ -616,4 +616,4 @@ Content-Type: application/json
 - [产品需求文档](./requirements.md)
 - [技术架构设计](./architecture.md)
 - [数据模型设计](./data-model.md)
-- [开发规范](../02-development/coding-standards.md)
+- [开发规范](../development/coding-standards.md)
