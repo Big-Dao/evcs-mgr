@@ -126,12 +126,13 @@ evcs-mgr/                                    # 项目根目录
 
 ## 🎯 目录功能说明
 
-### 🚀 快速开始目录 (`../overview/`)
-这个目录包含新用户快速上手所需的核心文档：
-- **部署指南**: 详细的环境搭建和服务启动说明
-- **服务参考**: 各个微服务的功能介绍和API示例
-- **默认凭据**: 系统的默认账号密码信息
-- **快速文档指南**: 文档结构和使用说明
+### 🚀 快速开始 (目录待创建)
+**状态**: 计划创建，暂未实现
+
+**当前替代方案**: 使用 `../deployment/` 目录进行部署
+- **部署指南**: 详细的环境搭建和服务启动说明 ([DEPLOYMENT-GUIDE.md](../deployment/DEPLOYMENT-GUIDE.md))
+- **服务参考**: 各个微服务的功能介绍和API示例 ([SERVICES-REFERENCE.md](SERVICES-REFERENCE.md))
+- **默认凭据**: 系统的默认账号密码信息 ([DEFAULT-CREDENTIALS.md](DEFAULT-CREDENTIALS.md))
 
 ### 🔧 开发文档目录 (`../development/`)
 包含开发人员需要的技术文档：
