@@ -174,7 +174,7 @@ RUN ./gradlew :evcs-common:jar :evcs-protocol:jar --no-daemon --parallel
 
 - **详细技术文档**: [docs/development/DOCKER-BUILD-FIX.md](DOCKER-BUILD-FIX.md)
 - **文档索引**: [DOCUMENTATION-INDEX.md](../../DOCUMENTATION-INDEX.md)
-- **开发者指南**: [docs/DEVELOPER-GUIDE.md](../DEVELOPER-GUIDE.md)
+- **开发者指南**: [docs/DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md)
 - **CI/CD 配置**: [.github/workflows/test-environment.yml](../../.github/workflows/test-environment.yml)
 
 ## 问题排查

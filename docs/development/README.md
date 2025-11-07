@@ -49,9 +49,9 @@
 ## 🔗 相关文档
 
 开发指南和规范请参考：
-- [DEVELOPER-GUIDE.md](../DEVELOPER-GUIDE.md) - 开发者指南 ⭐
+- [DEVELOPER-GUIDE.md](./DEVELOPER-GUIDE.md) - 开发者指南 ⭐
 - [../../.github/copilot-instructions.md](../../.github/copilot-instructions.md) - GitHub Copilot 使用指南
-- [COPILOT-INSTRUCTIONS-SETUP.md](../COPILOT-INSTRUCTIONS-SETUP.md) - Copilot 配置说明
+- [COPILOT-INSTRUCTIONS-SETUP.md](./COPILOT-INSTRUCTIONS-SETUP.md) - Copilot 配置说明
 
 ### 模块开发规范
 - [../../.github/instructions/common.instructions.md](../../.github/instructions/common.instructions.md) - evcs-common 模块规范
