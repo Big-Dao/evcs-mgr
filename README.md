@@ -193,28 +193,28 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 
 ## 📚 项目文档
 
-**完整文档导航**：[📚 DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) ⭐
+**完整文档导航**：[📚 DOCUMENTATION-INDEX.md](docs/operations/DOCUMENTATION-INDEX.md) ⭐
 
 ### 快速开始
 - **项目概述**: [README.md](README.md) ⭐
-- **文档索引**: [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) ⭐
-- **产品需求**: [产品需求文档](docs/01-core/requirements.md)
-- **架构设计**: [技术架构设计](docs/01-core/architecture.md)
+- **文档索引**: [DOCUMENTATION-INDEX.md](docs/operations/DOCUMENTATION-INDEX.md) ⭐
+- **产品需求**: [产品需求文档](docs/architecture/requirements.md)
+- **架构设计**: [技术架构设计](docs/architecture/architecture.md)
 
 ### 开发文档
-- **🤖 AI编程助手配置**: [统一AI配置](AI-ASSISTANT-UNIFIED-CONFIG.md) ⭐
-- **📋 项目编码标准**: [编程规范总览](PROJECT-CODING-STANDARDS.md) ⭐
-- **🔧 API设计规范**: [API设计标准](docs/02-development/API-DESIGN-STANDARDS.md) ⭐
-- **🗄️ 数据库设计规范**: [数据库设计标准](docs/02-development/DATABASE-DESIGN-STANDARDS.md) ⭐
+- **🤖 AI编程助手配置**: [统一AI配置](docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md) ⭐
+- **📋 项目编码标准**: [编程规范总览](docs/overview/PROJECT-CODING-STANDARDS.md) ⭐
+- **🔧 API设计规范**: [API设计标准](docs/development/API-DESIGN-STANDARDS.md) ⭐
+- **🗄️ 数据库设计规范**: [数据库设计标准](docs/development/DATABASE-DESIGN-STANDARDS.md) ⭐
 - **🧪 统一测试指南**: [测试框架指南](docs/testing/UNIFIED-TESTING-GUIDE.md) ⭐
-- **📊 代码质量清单**: [代码质量检查](docs/02-development/CODE-QUALITY-CHECKLIST.md) ⭐
-- **编码规范**: [编码规范](docs/02-development/coding-standards.md)
-- **开发者指南**: [开发者指南](docs/DEVELOPER-GUIDE.md) ⭐
+- **📊 代码质量清单**: [代码质量检查](docs/development/CODE-QUALITY-CHECKLIST.md) ⭐
+- **编码规范**: [编码规范](docs/development/coding-standards.md)
+- **开发者指南**: [开发者指南](docs/development/DEVELOPER-GUIDE.md) ⭐
 
 ### 部署与运维
-- **🚀 统一部署指南**: [Docker部署指南](DEPLOYMENT-GUIDE.md) ⭐
-- **🐳 Docker配置指南**: [Docker使用指南](DOCKER-CONFIGURATION-GUIDE.md) ⭐
-- **运维手册**: [运维手册](docs/04-operations/user-manual.md)（待创建）
+- **🚀 统一部署指南**: [Docker部署指南](docs/deployment/DEPLOYMENT-GUIDE.md) ⭐
+- **🐳 Docker配置指南**: [Docker使用指南](docs/deployment/DOCKER-CONFIGURATION-GUIDE.md) ⭐
+- **运维手册**: [运维手册](docs/operations/user-manual.md)（待创建）
 
 ## 🤝 第三方对接
 

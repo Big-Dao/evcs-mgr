@@ -9,7 +9,7 @@
 基于Spring Boot 3.2.10 + Java 21的微服务架构电动汽车充电站管理系统（EVCS），专为小规模业务优化设计，支持多租户隔离。
 
 ### 📋 完整规范
-**🔥 重要：请首先阅读项目完整规范文档**: [PROJECT-CODING-STANDARDS.md](PROJECT-CODING-STANDARDS.md)
+**🔥 重要：请首先阅读项目完整规范文档**: [PROJECT-CODING-STANDARDS.md](../overview/PROJECT-CODING-STANDARDS.md)
 
 该文档包含了生成高质量代码所需的**所有规范要求**，包括：
 - 强制架构规范和代码模板
