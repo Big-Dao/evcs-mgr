@@ -31,163 +31,79 @@
 
 **🔥 重要：所有代码生成必须严格遵循PROJECT-CODING-STANDARDS.md中的规范要求！**
 
-## 🔧 技术栈
+## 🎯 核心功能模块
 
-### 后端技术栈
-- **Spring Boot**: 3.2.10 (最新稳定版)
-- **Java**: 21 (LTS版本)
-- **Spring Security**: JWT认证 + RBAC权限控制
-- **MyBatis Plus**: ORM框架 + 多租户支持
-- **PostgreSQL**: 15 (主数据库)
-- **Redis**: 7 (缓存 + 会话存储)
-- **RabbitMQ**: 3 (消息队列)
-- **Gradle**: 8.11.1 (构建工具)
+EVCS系统包含以下核心功能模块：
 
-### 缓存策略
-- 查询方法：@Cacheable(value = "cacheName", key = "#param")
-- 更新方法：@CacheEvict(value = "cacheName", allEntries = true)
+### 1. 用户管理模块
+- 多租户用户注册和认证
+- 基于角色的权限控制（RBAC）
+- 用户信息管理和安全控制
 
-### 租户隔离
-```java
-// 必须设置租户上下文
-try {
-    TenantContext.setCurrentTenantId(tenantId);
-    // 业务逻辑
-} finally {
-    TenantContext.clear();
-}
+### 2. 充电站管理模块
+- 充电站信息管理
+- 设备状态监控
+- 充电站配置和调度
 
-// 查询方法添加数据权限注解
-@DataScope(DataScopeType.TENANT)
-public List<{Resource}> getAll() {
-    return {resource}Mapper.selectList(null);
-}
-```
+### 3. 订单管理模块
+- 充电订单创建和管理
+- 计费方案配置
+- 订单状态跟踪
 
-## 📝 编码标准
+### 4. 支付管理模块
+- 多种支付方式集成（支付宝、微信支付）
+- 支付状态跟踪
+- 财务对账和报表
 
-### 必须使用的注解
+### 5. 协议处理模块
+- OCPP协议支持
+- 第三方充电桩协议对接
+- 实时数据通信
 
-#### Controller层
-```java
-@RestController
-@RequestMapping("/api/v1/{resource}")
-@Validated
-@Slf4j
-public class {Resource}Controller {
+## 🔧 项目特点
 
-    @PostMapping
-    @PreAuthorize("hasPermission('{resource}', 'create')")
-    public ResponseEntity<ApiResponse<{Resource}DTO>> create(
-            @Valid @RequestBody Create{Resource}Request request) {
-        // 实现
-    }
-}
-```
+### 多租户架构
+- 完整的数据隔离机制
+- 租户级别的配置管理
+- 灵活的权限控制
 
-#### Service层
-```java
-@Service
-@Transactional
-@Slf4j
-public class {Resource}Service {
+### 微服务设计
+- 服务间松耦合
+- 独立部署和扩展
+- 容错和故障隔离
 
-    @Cacheable(value = "{resource}s", key = "#id")
-    @DataScope(DataScopeType.TENANT)
-    public {Resource}DTO getById(Long id) {
-        // 查询实现
-    }
+### 安全机制
+- JWT令牌认证
+- API接口安全防护
+- 数据传输加密
 
-    @CacheEvict(value = "{resource}s", allEntries = true)
-    @Transactional
-    public {Resource}DTO create(Create{Resource}Request request) {
-        // 创建实现
-    }
-}
-```
+### 监控运维
+- 全面的健康检查
+- 性能指标监控
+- 业务数据分析
 
-#### Entity层
-```java
-@Entity
-@Table(name = "{resource}s", indexes = {
-    @Index(name = "idx_tenant_id", columnList = "tenant_id")
-})
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-@EqualsAndHashCode(callSuper = true)
-public class {Resource} extends BaseEntity {
+## 📚 相关文档
 
-    @Column(name = "name", nullable = false)
-    private String name;
+### 核心规范
+- **[项目编程规范总览](../../docs/overview/PROJECT-CODING-STANDARDS.md)** - 完整的架构和编码规范
+- **[AI助手统一配置](../../docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md)** - AI助手使用指南
 
-    @PrePersist
-    protected void onCreate() {
-        super.onCreate();
-        // 初始化逻辑
-    }
+### 开发文档
+- **[开发者指南](../../docs/development/DEVELOPER-GUIDE.md)** - 开发流程和最佳实践
+- **[架构设计](../../docs/architecture/architecture.md)** - 系统架构设计
 
-    @PreUpdate
-    protected void onUpdate() {
-        super.onUpdate();
-        // 更新验证逻辑
-    }
-}
-```
+### 部署运维
+- **[部署指南](../../docs/deployment/DEPLOYMENT-GUIDE.md)** - 部署和运维指南
+- **[监控指南](../../docs/operations/MONITORING-GUIDE.md)** - 监控配置指南
 
-## 🚫 严格禁止的模式
+## ⚠️ 重要提醒
 
-### 跨服务数据访问
-```java
-// ❌ 禁止：跨服务直接访问数据库
-@Service
-public class OrderService {
-    @Autowired
-    private UserRepository userRepo; // 跨服务访问 - 严禁！
-}
-
-// ✅ 正确：通过Feign客户端调用
-@Service
-public class OrderService {
-    @Autowired
-    private UserFeignClient userClient; // 正确方式
-}
-```
-
-### 硬编码敏感信息
-```java
-// ❌ 禁止：硬编码敏感信息
-String dbUrl = "jdbc:postgresql://localhost:5432/evcs";
-String jwtSecret = "my-secret-key";
-
-// ✅ 正确：使用环境变量
-@Value("${spring.datasource.url}")
-private String dbUrl;
-
-@Value("${app.jwt.secret}")
-private String jwtSecret;
-```
-
-## ✅ 质量要求
-
-### 测试覆盖率
-- **Service层**: >= 80%
-- **Controller层**: >= 70%
-- **Repository层**: >= 60%
-
-### 性能优化
-- 避免N+1查询问题
-- 合理使用Spring Cache
-- 异步处理耗时操作（@Async）
-- 正确释放资源
-
-### 安全要求
-- API必须包含认证检查（@PreAuthorize）
-- 输入参数必须验证（@Valid）
-- SQL操作必须参数化查询
-- 租户隔离必须正确实现
+1. **严格遵循规范**: 所有代码生成必须遵循PROJECT-CODING-STANDARDS.md中的规范要求
+2. **多租户支持**: 所有功能都必须考虑多租户数据隔离
+3. **安全第一**: 确保所有接口都有适当的安全防护
+4. **性能考虑**: 数据库查询和缓存策略需要考虑性能优化
+5. **测试覆盖**: 核心功能必须有相应的测试用例
 
 ---
 
-**注意：本文档提供所有AI助手共享的基础项目信息。各助手特定的使用说明请参考各自的配置文件。**
+**本项目采用严格的文档规范和编码标准，确保代码质量和系统可靠性。所有AI助手在生成代码时，都必须以上述规范为准，确保输出内容的一致性和正确性。**
