@@ -31,7 +31,7 @@
 - **项目结构**: [项目结构说明](../operations/PROJECT-STRUCTURE.md)
 
 ### 我要快速开始...
-- **快速开始**: 查看docs/quick-start/目录（即将完善）
+- **快速开始**: 查看../overview/目录（即将完善）
 - **服务参考**: [服务详细参考](../references/API-DOCUMENTATION.md)
 
 ## 🔍 常见问题快速解答
@@ -85,20 +85,20 @@ docker-compose up -d
 
 ### 新手入门路径 (30分钟)
 1. **了解项目** → [README.md](README.md) (5分钟)
-2. **理解架构** → [架构设计](docs/01-core/architecture.md) (10分钟)
-3. **快速部署** → [Docker部署指南](docs/03-deployment/docker-deployment.md) (10分钟)
-4. **熟悉规范** → [编码规范](docs/02-development/coding-standards.md) (5分钟)
+2. **理解架构** → [架构设计](../architecture/architecture.md) (10分钟)
+3. **快速部署** → [部署指南](../deployment/DEPLOYMENT-GUIDE.md) (10分钟)
+4. **熟悉规范** → [编码规范](../development/coding-standards.md) (5分钟)
 
 ### 开发者路径 (1小时)
-1. **需求理解** → [产品需求文档](docs/01-core/requirements.md) (15分钟)
-2. **技术深入** → [架构设计](docs/01-core/architecture.md) + [数据模型](docs/01-core/data-model.md) (20分钟)
-3. **API掌握** → [API接口设计](docs/01-core/api-design.md) (15分钟)
-4. **测试框架** → [测试框架指南](docs/testing/TESTING-FRAMEWORK-GUIDE.md) (10分钟)
+1. **需求理解** → [产品需求文档](../architecture/requirements.md) (15分钟)
+2. **技术深入** → [架构设计](../architecture/architecture.md) + [数据模型](../architecture/data-model.md) (20分钟)
+3. **API掌握** → [API接口设计](../architecture/api-design.md) (15分钟)
+4. **测试框架** → [统一测试指南](../testing/UNIFIED-TESTING-GUIDE.md) (10分钟)
 
 ### 运维人员路径 (45分钟)
-1. **部署掌握** → [Docker部署指南](docs/03-deployment/docker-deployment.md) (20分钟)
-2. **配置理解** → [服务名映射表](SERVICE_NAMES_MAPPING.md) + [错误预防检查清单](ERROR_PREVENTION_CHECKLIST.md) (15分钟)
-3. **监控了解** → [监控配置](docs/03-deployment/monitoring-setup.md) (10分钟)
+1. **部署掌握** → [部署指南](../deployment/DEPLOYMENT-GUIDE.md) (20分钟)
+2. **配置理解** → [服务名映射表](../operations/SERVICE_NAMES_MAPPING.md) + [错误预防检查清单](../troubleshooting/ERROR_PREVENTION_CHECKLIST.md) (15分钟)
+3. **监控了解** → [监控配置](../deployment/monitoring-setup.md) (10分钟)
 
 ## 📞 获取帮助
 

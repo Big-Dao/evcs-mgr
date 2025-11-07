@@ -2,7 +2,7 @@
 
 一个基于Spring Boot和微服务架构的电动汽车充电站管理平台，支持多租户、多协议充电桩管理。
 
-> 📚 **[统一部署指南](DEPLOYMENT-GUIDE.md)** | [AI编程助手规范](AI-ASSISTANTS-INDEX.md)** | [快速文档指南](docs/quick-start/QUICK-DOCUMENTATION-GUIDE.md)** | [服务参考](docs/quick-start/SERVICES-REFERENCE.md)** | [故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)**
+> 📚 **[统一部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)** | [AI编程助手规范](docs/development/AI-ASSISTANTS-INDEX.md)** | [快速文档指南](docs/overview/QUICK-DOCUMENTATION-GUIDE.md)** | [服务参考](docs/operations/SERVICES-REFERENCE.md)** | [故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)
 
 ## 🎯 项目状态
 
@@ -30,7 +30,7 @@
 
 ## 🏗️ 技术架构
 
-📚 **详细架构文档**: [技术架构设计](docs/01-core/architecture.md) | [数据模型](docs/01-core/data-model.md) | [API设计](docs/01-core/api-design.md)
+📚 **详细架构文档**: [技术架构设计](docs/architecture/architecture.md) | [数据模型](docs/architecture/data-model.md) | [API设计](docs/architecture/api-design.md)
 
 ### 完整技术栈概览
 - **后端框架**：Spring Boot 3.2.2 + Spring Cloud 2023.0.0

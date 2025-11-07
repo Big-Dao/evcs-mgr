@@ -418,11 +418,11 @@ docker-compose up -d
 
 ## 📚 相关文档
 
-- [AI助手详细指南](docs/02-development/AI-ASSISTANT-GUIDELINES.md)
-- [代码质量清单](docs/02-development/CODE-QUALITY-CHECKLIST.md)
-- [项目结构说明](docs/operations/PROJECT-STRUCTURE.md)
-- [部署指南](docs/quick-start/DEPLOYMENT-GUIDE.md)
-- [故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)
+- [AI助手详细指南](../development/AI-ASSISTANT-GUIDELINES.md)
+- [代码质量清单](../development/CODE-QUALITY-CHECKLIST.md)
+- [项目结构说明](../operations/PROJECT-STRUCTURE.md)
+- [部署指南](../deployment/DEPLOYMENT-GUIDE.md)
+- [故障排除](../troubleshooting/ERROR_PREVENTION_CHECKLIST.md)
 
 ---
 

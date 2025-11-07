@@ -126,21 +126,21 @@ evcs-mgr/                                    # 项目根目录
 
 ## 🎯 目录功能说明
 
-### 🚀 快速开始目录 (`docs/quick-start/`)
+### 🚀 快速开始目录 (`../overview/`)
 这个目录包含新用户快速上手所需的核心文档：
 - **部署指南**: 详细的环境搭建和服务启动说明
 - **服务参考**: 各个微服务的功能介绍和API示例
 - **默认凭据**: 系统的默认账号密码信息
 - **快速文档指南**: 文档结构和使用说明
 
-### 🔧 开发文档目录 (`docs/02-development/`)
+### 🔧 开发文档目录 (`../development/`)
 包含开发人员需要的技术文档：
 - **环境搭建**: 开发环境配置指南
 - **编码规范**: 代码风格和最佳实践
 - **API文档**: 接口设计和使用说明
 - **测试指南**: 单元测试和集成测试指导
 
-### 🚀 部署文档目录 (`docs/03-deployment/`)
+### 🚀 部署文档目录 (`../deployment/`)
 包含系统部署相关的文档：
 - **Docker部署**: 容器化部署完整指南
 - **生产部署**: 生产环境部署注意事项
@@ -210,12 +210,12 @@ evcs-mgr/                                    # 项目根目录
 ## 🎯 使用建议
 
 ### 新用户
-1. 先阅读 `docs/quick-start/DEPLOYMENT-GUIDE.md`
+1. 先阅读 `../overview/DEPLOYMENT-GUIDE.md`
 2. 使用 `docker-compose.core-dev.yml` 快速启动
-3. 参考 `docs/quick-start/SERVICES-REFERENCE.md` 了解各服务
+3. 参考 `../overview/SERVICES-REFERENCE.md` 了解各服务
 
 ### 开发人员
-1. 查看 `docs/02-development/` 目录下的开发文档
+1. 查看 `../development/` 目录下的开发文档
 2. 使用 `scripts/docker/` 下的脚本管理服务
 3. 遇到问题查看 `docs/troubleshooting/` 目录
 
@@ -227,7 +227,7 @@ evcs-mgr/                                    # 项目根目录
 ## 📝 文档维护
 
 ### 新增文档
-- 快速开始类文档放入 `docs/quick-start/`
+- 快速开始类文档放入 `../overview/`
 - 技术文档放入相应的分类目录
 - 过时文档移入 `docs/archive/`
 

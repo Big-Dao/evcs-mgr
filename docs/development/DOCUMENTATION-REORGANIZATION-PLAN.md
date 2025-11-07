@@ -34,7 +34,7 @@ docs/
 
 **具体问题**:
 1. ❌ **根目录文档过多**: 6个重要文档在根目录，分散注意力
-2. ❌ **部署文档缺失**: docs/03-deployment/目录为空
+2. ❌ **部署文档缺失**: ../deployment/目录为空
 3. ❌ **文档分类不清**: 其他207个文档没有按功能分类
 4. ❌ **编号不连贯**: 跳过了04、06、07等编号
 5. ❌ **归档文件过多**: 150个归档文件影响查找
@@ -178,8 +178,8 @@ mkdir -p docs/{overview,architecture,development,deployment,operations,reference
 ### ✅ 步骤3: 分类整理docs目录
 ```bash
 # 已完成移动：
-✅ docs/01-core/* → docs/architecture/
-✅ docs/02-development/* → docs/development/
+✅ ../architecture/* → docs/architecture/
+✅ ../development/* → docs/development/
 ✅ 所有散落文档 → 按功能重新分类
 ✅ 删除旧的编号目录
 ```
