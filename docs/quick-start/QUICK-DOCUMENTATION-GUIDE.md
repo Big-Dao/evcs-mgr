@@ -1,79 +1,85 @@
 # 📚 文档快速导航指南
 
-> **更新日期**: 2025-11-06 | **目标**: 30秒找到你需要的信息
+> **更新日期**: 2025-11-07 | **目标**: 30秒找到你需要的信息
 
 ## 🎯 快速定位
 
 ### 我要了解项目...
-- **项目概述**: [README.md](README.md) ⭐
-- **完整文档索引**: [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) ⭐
-- **产品功能需求**: [产品需求文档](docs/01-core/requirements.md)
-- **微服务详情**: [服务详细参考](SERVICES-REFERENCE.md) ⭐
+- **项目概述**: [../README.md](../README.md) ⭐
+- **完整文档索引**: [../operations/DOCUMENTATION-INDEX.md](../operations/DOCUMENTATION-INDEX.md) ⭐
+- **产品功能需求**: [产品需求文档](../architecture/requirements.md)
+- **项目规范**: [项目编程规范](../overview/PROJECT-CODING-STANDARDS.md) ⭐
 
 ### 我要开发...
-- **技术架构**: [架构设计](docs/01-core/architecture.md) ⭐
-- **编码规范**: [编码规范](docs/02-development/coding-standards.md)
-- **API设计**: [API接口设计](docs/01-core/api-design.md)
-- **数据模型**: [数据模型设计](docs/01-core/data-model.md)
-- **测试指南**: [测试框架指南](docs/testing/TESTING-FRAMEWORK-GUIDE.md)
+- **技术架构**: [架构设计](../architecture/architecture.md) ⭐
+- **编码规范**: [编码规范](../development/coding-standards.md)
+- **API设计**: [API接口设计](../architecture/api-design.md)
+- **数据模型**: [数据模型设计](../architecture/data-model.md)
+- **开发指南**: [开发者指南](../development/DEVELOPER-GUIDE.md)
+- **测试指南**: [统一测试指南](../testing/UNIFIED-TESTING-GUIDE.md)
 
 ### 我要部署...
-- **Docker部署**: [Docker部署指南](docs/03-deployment/docker-deployment.md) ⭐
-- **配置说明**: [服务名映射表](SERVICE_NAMES_MAPPING.md)
-- **错误预防**: [错误预防检查清单](ERROR_PREVENTION_CHECKLIST.md)
+- **部署指南**: [部署指南](../deployment/DEPLOYMENT-GUIDE.md) ⭐
+- **Docker配置**: [Docker配置指南](../deployment/DOCKER-CONFIGURATION-GUIDE.md)
+- **默认凭据**: [默认账号密码](../operations/DEFAULT-CREDENTIALS.md)
+- **错误预防**: [错误预防检查清单](../troubleshooting/ERROR_PREVENTION-CHECKLIST.md)
 
 ### 我要运维...
-- **用户手册**: [用户手册](docs/04-operations/user-manual.md)（待创建）
-- **故障排查**: [故障排查](docs/04-operations/troubleshooting.md)（待创建）
-- **监控配置**: [监控配置](docs/03-deployment/monitoring-setup.md)（待创建）
+- **监控指南**: [监控指南](../operations/MONITORING-GUIDE.md)
+- **业务指标**: [业务指标](../operations/BUSINESS-METRICS.md)
+- **故障排查**: [问题排查](../troubleshooting/)
+- **项目结构**: [项目结构说明](../operations/PROJECT-STRUCTURE.md)
 
-### 我要规划...
-- **发展路线图**: [发展路线图](docs/05-planning/roadmap.md) ⭐
-- **里程碑计划**: [里程碑计划](docs/05-planning/milestones.md)（待创建）
+### 我要快速开始...
+- **快速开始**: 查看docs/quick-start/目录（即将完善）
+- **服务参考**: [服务详细参考](../references/API-DOCUMENTATION.md)
 
 ## 🔍 常见问题快速解答
 
 ### Q: 如何快速部署项目？
-**A**: 直接查看 [Docker部署指南](docs/03-deployment/docker-deployment.md)，一键部署命令：
+**A**: 直接查看 [部署指南](../deployment/DEPLOYMENT-GUIDE.md)，一键部署命令：
 ```bash
 docker-compose up -d
 ```
 
 ### Q: 服务名配置在哪里？
-**A**: 查看 [服务名映射表](SERVICE_NAMES_MAPPING.md)，包含所有服务的标准命名。
+**A**: 查看 [Docker配置指南](../deployment/DOCKER-CONFIGURATION-GUIDE.md)，包含所有服务的标准命名。
 
 ### Q: 遇到配置错误怎么办？
-**A**: 参考 [错误预防检查清单](ERROR_PREVENTION_CHECKLIST.md) 和 [Claude错误记忆库](CLAUDE_ERROR_MEMORY.md)。
+**A**: 参考 [错误预防检查清单](../troubleshooting/ERROR_PREVENTION-CHECKLIST.md) 和 [Claude错误记忆库](../troubleshooting/CLAUDE_ERROR_MEMORY.md)。
 
 ### Q: 如何了解技术架构？
-**A**: 从 [架构设计](docs/01-core/architecture.md) 开始，然后查看 [数据模型](docs/01-core/data-model.md) 和 [API设计](docs/01-core/api-design.md)。
+**A**: 从 [架构设计](../architecture/architecture.md) 开始，然后查看 [数据模型](../architecture/data-model.md) 和 [API设计](../architecture/api-design.md)。
 
 ### Q: 各个微服务分别做什么？
-**A**: 查看 [服务详细参考](SERVICES-REFERENCE.md)，了解每个服务的功能、端口和配置。
+**A**: 查看 [API文档](../references/API-DOCUMENTATION.md)，了解每个服务的功能、端口和配置。
 
 ### Q: 编码规范是什么？
-**A**: 查看 [编码规范](docs/02-development/coding-standards.md)，包含完整的Java开发规范。
+**A**: 查看 [编码规范](../development/coding-standards.md)，包含完整的Java开发规范。
+
+### Q: AI助手配置在哪里？
+**A**: 查看 [AI助手配置](../development/AI-ASSISTANT-UNIFIED-CONFIG.md) 和 [AI助手索引](../development/AI-ASSISTANTS-INDEX.md)。
 
 ## 📋 文档优先级
 
 ### 🔥 必读文档 (优先级最高)
-1. [README.md](README.md) - 项目概述
-2. [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) - 文档导航
-3. [服务详细参考](SERVICES-REFERENCE.md) - 微服务详解 ⭐
-4. [Docker部署指南](docs/03-deployment/docker-deployment.md) - 部署指南
-5. [架构设计](docs/01-core/architecture.md) - 技术架构
+1. [项目概述](../README.md) - 项目概述
+2. [文档导航中心](../README.md) - 文档导航
+3. [项目规范](../overview/PROJECT-CODING-STANDARDS.md) - 编程规范 ⭐
+4. [部署指南](../deployment/DEPLOYMENT-GUIDE.md) - 部署指南
+5. [架构设计](../architecture/architecture.md) - 技术架构
 
 ### 📖 重要文档
-1. [产品需求文档](docs/01-core/requirements.md) - 需求理解
-2. [编码规范](docs/02-development/coding-standards.md) - 开发规范
-3. [测试框架指南](docs/testing/TESTING-FRAMEWORK-GUIDE.md) - 测试指南
-4. [发展路线图](docs/05-planning/roadmap.md) - 项目规划
+1. [产品需求文档](../architecture/requirements.md) - 需求理解
+2. [开发者指南](../development/DEVELOPER-GUIDE.md) - 开发指南
+3. [统一测试指南](../testing/UNIFIED-TESTING-GUIDE.md) - 测试指南
+4. [项目结构说明](../operations/PROJECT-STRUCTURE.md) - 项目结构
 
 ### 🔧 参考文档
-1. [服务名映射表](SERVICE_NAMES_MAPPING.md) - 配置参考
-2. [错误预防检查清单](ERROR_PREVENTION_CHECKLIST.md) - 错误预防
-3. [API接口设计](docs/01-core/api-design.md) - API参考
-4. [数据模型设计](docs/01-core/data-model.md) - 数据库参考
+1. [API文档](../references/API-DOCUMENTATION.md) - API参考
+2. [错误预防检查清单](../troubleshooting/ERROR_PREVENTION-CHECKLIST.md) - 错误预防
+3. [API接口设计](../architecture/api-design.md) - API参考
+4. [数据模型设计](../architecture/data-model.md) - 数据库参考
 
 ## 🚀 学习路径
 

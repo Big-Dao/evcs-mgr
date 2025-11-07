@@ -20,40 +20,47 @@ evcs-mgr/                                    # 项目根目录
 │   ├── evcs-admin/                        # 🖥️ 前端管理界面
 │   └── evcs-web/                          # 🌐 Web前端（如果存在）
 ├── 📁 docs/                               # 项目文档
-│   ├── quick-start/                       # 🚀 快速开始文档
-│   │   ├── DEPLOYMENT-GUIDE.md            # 部署指南 ⭐
-│   │   ├── QUICK-DOCUMENTATION-GUIDE.md   # 快速文档指南
-│   │   ├── DEFAULT-CREDENTIALS.md         # 默认账号密码
-│   │   ├── SERVICE_NAMES_MAPPING.md       # 服务名称映射
-│   │   └── SERVICES-REFERENCE.md          # 服务功能参考
-│   ├── 01-core/                           # 📖 核心文档
+│   ├── README.md                           # 📚 文档导航中心 ⭐
+│   ├── overview/                           # 📖 项目概览
+│   │   ├── PROJECT-CODING-STANDARDS.md    # 项目编程规范
+│   │   └── 管理层摘要.md                   # 管理层摘要
+│   ├── architecture/                       # 🏗️ 架构设计
 │   │   ├── architecture.md                # 系统架构设计
 │   │   ├── data-model.md                  # 数据模型设计
 │   │   ├── api-design.md                  # API设计规范
-│   │   └── requirements.md                # 产品需求文档
-│   ├── 02-development/                    # 🔧 开发文档
-│   │   ├── setup.md                       # 开发环境搭建
+│   │   ├── requirements.md                # 产品需求文档
+│   │   └── 协议事件模型说明.md              # 协议文档
+│   ├── development/                        # 🔧 开发指南
+│   │   ├── DEVELOPER-GUIDE.md            # 开发者指南
+│   │   ├── AI-ASSISTANT-UNIFIED-CONFIG.md # AI助手配置
+│   │   ├── AI-ASSISTANTS-INDEX.md         # AI助手索引
 │   │   ├── coding-standards.md            # 编码规范
-│   │   ├── api/                           # API文档目录
-│   │   └── testing/                       # 测试相关文档
-│   ├── 03-deployment/                     # 🚀 部署文档
-│   │   ├── docker-deployment.md           # Docker部署指南
-│   │   ├── k8s-deployment.md              # Kubernetes部署
-│   │   └── production-guide.md            # 生产环境指南
-│   ├── troubleshooting/                   # 🔧 故障排除
-│   │   ├── ERROR_PREVENTION_CHECKLIST.md  # 错误预防清单
-│   │   └── CLAUDE_ERROR_MEMORY.md         # Claude错误记忆库
-│   ├── operations/                        # ⚙️ 运维文档
-│   │   ├── DOCUMENTATION-INDEX.md         # 文档索引
-│   │   ├── PROJECT-STRUCTURE.md           # 项目结构说明（本文档）
-│   │   └── user-manual.md                 # 用户手册
-│   ├── testing/                           # 🧪 测试文档
-│   │   ├── TESTING-FRAMEWORK-GUIDE.md     # 测试框架指南
-│   │   └── TESTING-GUIDE.md               # 测试指南
-│   ├── monitoring/                        # 📊 监控文档
-│   │   ├── metrics-guide.md               # 指标监控指南
-│   │   └── alerting-rules.md             # 告警规则
-│   └── archive/                           # 📦 归档文档
+│   │   ├── API-DESIGN-STANDARDS.md        # API设计标准
+│   │   └── [其他开发文档...]              # 开发相关文档
+│   ├── deployment/                         # 🚀 部署运维
+│   │   ├── DEPLOYMENT-GUIDE.md            # 部署指南
+│   │   ├── DOCKER-CONFIGURATION-GUIDE.md # Docker配置
+│   │   └── DOCKER-OPTIMIZATION.md         # Docker优化
+│   ├── operations/                         # ⚙️ 运营管理
+│   │   ├── MONITORING-GUIDE.md            # 监控指南
+│   │   ├── BUSINESS-METRICS.md            # 业务指标
+│   │   ├── DEFAULT-CREDENTIALS.md         # 默认凭据
+│   │   ├── PROJECT-STRUCTURE.md           # 项目结构（本文档）
+│   │   └── DOCUMENTATION-INDEX.md         # 文档索引
+│   ├── testing/                            # 🧪 测试质量
+│   │   ├── UNIFIED-TESTING-GUIDE.md      # 统一测试指南
+│   │   ├── TEST-COMPLETION-SUMMARY.md     # 测试完成总结
+│   │   └── [其他测试文档...]              # 测试相关文档
+│   ├── troubleshooting/                    # 🔍 问题排查
+│   │   ├── ERROR_PREVENTION-CHECKLIST.md # 错误预防清单
+│   │   ├── CLAUDE_ERROR_MEMORY.md         # Claude错误记忆
+│   │   └── [其他排查文档...]              # 故障处理文档
+│   ├── references/                         # 📚 参考资料
+│   │   ├── API-DOCUMENTATION.md          # API文档
+│   │   ├── API-DOCUMENTATION-GUIDE.md    # API指南
+│   │   └── CHANGELOG.md                   # 变更日志
+│   ├── quick-start/                         # 📦 快速开始
+│   └── archive/                            # 🗂️ 历史归档
 │       ├── completed-weeks/               # 已完成周报
 │       ├── documentation-history/         # 文档历史版本
 │       ├── duplicate-docs-cleanup-*       # 重复文档清理记录

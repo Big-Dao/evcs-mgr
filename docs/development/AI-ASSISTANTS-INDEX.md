@@ -6,7 +6,7 @@
 
 ## 📋 核心规范文档
 
-### 🌟 [PROJECT-CODING-STANDARDS.md](PROJECT-CODING-STANDARDS.md)
+### 🌟 [PROJECT-CODING-STANDARDS.md](../overview/PROJECT-CODING-STANDARDS.md)
 **🔥 所有AI助手的必读文档！**
 
 这是项目的**完整编程规范总览**，包含了所有AI编程助手生成高质量代码所需的全部信息：
@@ -22,34 +22,34 @@
 ## 🤖 各AI助手配置
 
 ### 1. Claude Code
-- **配置文件**: [.claude/project-instructions.md](.claude/project-instructions.md)
+- **配置文件**: [../../.claude/project-instructions.md](../../.claude/project-instructions.md)
 - **自动读取**: Claude Code会自动读取.claude/目录下的配置文件
 - **引用规范**: 配置文件指向PROJECT-CODING-STANDARDS.md
 
 ### 2. GitHub Copilot
-- **配置文件**: [.github/copilot-instructions.md](.github/copilot-instructions.md)
+- **配置文件**: [../../.github/copilot-instructions.md](../../.github/copilot-instructions.md)
 - **自动读取**: Copilot会自动读取.github/目录下的copilot-instructions.md
 - **引用规范**: 配置文件指向PROJECT-CODING-STANDARDS.md
 
 ### 3. OpenAI CodeX/ChatGPT
-- **配置目录**: [.codex/](.codex/)
+- **配置目录**: [../../.codex/](../../.codex/)
 - **使用方式**: 通过API调用时包含项目上下文
 - **核心文件**:
-  - [.codex/project-context.md](.codex/project-context.md) - 项目上下文
-  - [.codex/QUICK-REFERENCE.md](.codex/QUICK-REFERENCE.md) - 快速参考
-  - [.codex/examples/station-service-example.md](.codex/examples/station-service-example.md) - 完整示例
+  - [../../.codex/project-context.md](../../.codex/project-context.md) - 项目上下文
+  - [../../.codex/QUICK-REFERENCE.md](../../.codex/QUICK-REFERENCE.md) - 快速参考
+  - [../../.codex/examples/station-service-example.md](../../.codex/examples/station-service-example.md) - 完整示例
 
 ## 📚 相关文档
 
 ### 详细规范文档
-- [AI助手详细指南](docs/02-development/AI-ASSISTANT-GUIDELINES.md)
-- [代码质量检查清单](docs/02-development/CODE-QUALITY-CHECKLIST.md)
-- [CodeX集成指南](docs/02-development/CODEX-INTEGRATION-GUIDE.md)
+- [AI助手详细指南](AI-ASSISTANT-GUIDELINES.md)
+- [代码质量检查清单](CODE-QUALITY-CHECKLIST.md)
+- [CodeX集成指南](CODEX-INTEGRATION-GUIDE.md)
 
 ### 技术文档
-- [项目结构说明](docs/operations/PROJECT-STRUCTURE.md)
-- [部署指南](docs/quick-start/DEPLOYMENT-GUIDE.md)
-- [服务参考](docs/quick-start/SERVICES-REFERENCE.md)
+- [项目结构说明](../operations/PROJECT-STRUCTURE.md)
+- [部署指南](../deployment/DEPLOYMENT-GUIDE.md)
+- [文档导航中心](../README.md)
 
 ## 🔧 使用方法
 
