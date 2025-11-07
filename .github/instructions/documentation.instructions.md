@@ -117,14 +117,14 @@ docs/
 
 ### 命名规则
 
-1. **使用大写字母和连字符**：`DEPLOYMENT-GUIDE.md`（英文文档）
+1. **使用小写字母和连字符**：`deployment-guide.md`（英文文档）
 2. **保持中文文件名**：`协议对接指南.md`（中文文档）
 3. **日期格式**：`YYYY-MM-DD` 格式，放在文件名末尾
-   - ✅ `CLEANUP-SUMMARY-2025-10-20.md`
-   - ❌ `2025-10-20-CLEANUP-SUMMARY.md`
+   - ✅ `cleanup-summary-2025-10-20.md`
+   - ❌ `2025-10-20-cleanup-summary.md`
 4. **避免版本号**：使用 Git 管理版本，不在文件名中包含 `v1`、`v2`
 5. **描述性命名**：文件名应清晰表达内容
-   - ✅ `TESTING-FRAMEWORK-GUIDE.md`
+   - ✅ `testing-framework-guide.md`
    - ❌ `test.md` 或 `guide.md`
 
 ---

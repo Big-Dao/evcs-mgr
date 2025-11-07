@@ -8,7 +8,7 @@
 这是一个基于Spring Boot 3.2.10 + Java 21的微服务架构电动汽车充电站管理系统（EVCS），专为小规模业务优化设计，支持多租户隔离。
 
 ### 📋 完整规范
-**🔥 重要：请首先阅读项目完整规范文档**: [PROJECT-CODING-STANDARDS.md](../../PROJECT-CODING-STANDARDS.md)
+**🔥 重要：请首先阅读项目完整规范文档**: [PROJECT-CODING-STANDARDS.md](../../docs/overview/PROJECT-CODING-STANDARDS.md)
 
 该文档包含了生成高质量代码所需的**所有规范要求**，包括：
 - 强制架构规范和代码模板
@@ -18,33 +18,18 @@
 
 **在生成任何代码之前，请务必遵循PROJECT-CODING-STANDARDS.md中的所有规范！**
 
-## 🏗️ 微服务架构
+## 🏗️ 架构概览
 
-### 微服务模块划分
-```
-evcs-gateway (8080)     - API网关，路由和安全防护
-evcs-auth (8081)       - 认证授权服务，JWT + RBAC
-evcs-station (8082)    - 充电站管理，设备控制
-evcs-order (8083)      - 订单管理，计费方案
-evcs-payment (8084)    - 支付服务，支付宝/微信
-evcs-protocol (8085)   - 协议处理，OCPP/云快充
-evcs-tenant (8086)     - 租户管理，多租户隔离
-evcs-monitoring (8087) - 监控服务，健康检查
-evcs-config (8888)     - 配置中心，Git配置
-evcs-eureka (8761)     - 服务注册中心
-evcs-common            - 公共组件，共享工具类
-```
+**详细的微服务架构、分层规范、注解要求、禁止模式等完整内容，请参考**: [项目编程规范总览](../../docs/overview/PROJECT-CODING-STANDARDS.md)
 
-### 严格分层架构
-```
-Controller层 → Service层 → Repository层 → Entity层
-```
+该文档包含：
+- 完整的微服务架构定义和模块划分
+- 强制分层架构和注解使用规范
+- 严禁的架构违规和代码模式
+- 正确的实现方式示例
+- 完整的技术栈和最佳实践
 
-### 严禁的架构违规
-- ❌ **跨服务数据库访问**: 如OrderService中注入UserRepository
-- ❌ **业务逻辑在Controller**: Controller只处理HTTP请求/响应
-- ❌ **直接返回Entity**: 必须使用DTO返回数据
-- ❌ **硬编码敏感信息**: 使用环境变量配置
+**🔥 重要：所有代码生成必须严格遵循PROJECT-CODING-STANDARDS.md中的规范要求！**
 
 ## 🔧 技术栈
 
