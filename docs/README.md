@@ -117,7 +117,7 @@
 - **[CHANGELOG.md](./references/CHANGELOG.md)** 📝 **版本变更日志**
   - 版本发布记录、变更内容
 
-### 📦 快速开始 ([quick-start/](./quick-start/))
+### 📦 快速开始
 - 快速部署和入门指南
 - **注意**: quick-start目录正在建设中，请参考 [deployment/](./deployment/) 进行部署
 
@@ -227,7 +227,7 @@
 | 测试质量 | testing/ | 7个 | 测试指南、质量报告 |
 | 问题排查 | troubleshooting/ | 6个 | 错误预防、修复记录 |
 | 参考资料 | references/ | 3个 | API文档、变更日志 |
-| 快速开始 | quick-start/ | - | 入门指南（建设中） |
+| 快速开始 | quick-start/ | - | 入门指南（建设中，暂未创建） |
 | 历史归档 | archive/ | 150+个 | 历史文档、完成记录 |
 
 ---

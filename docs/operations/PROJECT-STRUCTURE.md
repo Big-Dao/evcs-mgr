@@ -59,7 +59,7 @@ evcs-mgr/                                    # 项目根目录
 │   │   ├── API-DOCUMENTATION.md          # API文档
 │   │   ├── API-DOCUMENTATION-GUIDE.md    # API指南
 │   │   └── CHANGELOG.md                   # 变更日志
-│   ├── quick-start/                         # 📦 快速开始
+│   ├── quick-start/                         # 📦 快速开始 (建设中)
 │   └── archive/                            # 🗂️ 历史归档
 │       ├── completed-weeks/               # 已完成周报
 │       ├── documentation-history/         # 文档历史版本
