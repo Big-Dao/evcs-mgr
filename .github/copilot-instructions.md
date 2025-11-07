@@ -5,7 +5,7 @@
 ## 🤖 GitHub Copilot配置
 
 ### 📋 项目上下文
-请读取统一的项目配置：[AI-ASSISTANT-UNIFIED-CONFIG.md](../../AI-ASSISTANT-UNIFIED-CONFIG.md)
+请读取统一的项目配置：[AI-ASSISTANT-UNIFIED-CONFIG.md](../../docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md)
 
 该文档包含完整的项目架构、微服务模块、技术栈和编码标准。
 

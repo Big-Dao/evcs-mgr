@@ -33,10 +33,9 @@
   - 失败时收集日志
 
 ### 4️⃣ 完整文档体系
-- ✅ `TEST-ENVIRONMENT-QUICKSTART.md` - 5分钟快速开始
-- ✅ `docs/TEST-ENVIRONMENT-GUIDE.md` - 完整部署指南（500+行）
-- ✅ `DEPLOYMENT-TESTING-SUMMARY.md` - 部署任务总结
-- ✅ 更新 `README.md` 和 `DOCKER-DEPLOYMENT.md`
+- ✅ `docs/deployment/DEPLOYMENT-GUIDE.md` - 统一部署指南
+- ✅ `docs/README.md` - 项目文档导航中心
+- ✅ 相关文档已归档至 `docs/archive/` 目录
 
 ---
 

@@ -71,7 +71,7 @@ docs/
 ├── development/                 # 👨‍💻 开发相关
 │   ├── README.md
 │   ├── DEVELOPER-GUIDE.md
-│   └── IDE-FIX-GUIDE.md
+│   └── [其他开发文档...]
 │
 ├── architecture/                # 🏗️ 架构设计（可选）
 │   ├── README.md

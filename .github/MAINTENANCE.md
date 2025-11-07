@@ -15,7 +15,8 @@
 ├── instructions/                      🎯 模块级 Copilot 指令
 │   ├── common.instructions.md         - evcs-common 模块规范
 │   ├── station.instructions.md        - evcs-station 模块规范
-│   └── test.instructions.md           - 测试编写规范
+│   ├── test.instructions.md           - 测试编写规范
+│   └── documentation.instructions.md  - 文档管理规范
 │
 └── workflows/                         ⚙️ GitHub Actions CI/CD
     ├── build.yml                      - 构建流水线

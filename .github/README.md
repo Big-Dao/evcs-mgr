@@ -14,7 +14,7 @@ GitHub Copilot AI 助手的自定义指令。这些指令帮助 Copilot 理解�
 - 代码质量标准
 - 常见陷阱和注意事项
 
-**最后更新**: 2025-10-20
+**最后更新**: 2025-11-07
 
 ### MAINTENANCE.md
 `.github` 目录的维护指南，包括：
@@ -22,7 +22,7 @@ GitHub Copilot AI 助手的自定义指令。这些指令帮助 Copilot 理解�
 - 维护时机和清单
 - 维护历史记录
 
-**最后更新**: 2025-10-20
+**最后更新**: 2025-11-07
 
 ### pull-request-template-deployment.md
 部署相关 Pull Request 的模板。
@@ -34,7 +34,7 @@ GitHub Copilot AI 助手的自定义指令。这些指令帮助 Copilot 理解�
 - `test.instructions.md` - 测试代码编写规范
 - `documentation.instructions.md` - **文档管理规范**（⭐ 新增）
 
-**最后更新**: 2025-10-20
+**最后更新**: 2025-11-07
 
 ### workflows/
 GitHub Actions 工作流定义，用于 CI/CD 流水线：
@@ -95,12 +95,12 @@ applyTo: "evcs-station/**/*.java"
 - [GitHub Actions 文档](https://docs.github.com/zh/actions)
 
 ### 项目相关文档
-- [../DOCUMENTATION-INDEX.md](../DOCUMENTATION-INDEX.md) - 项目文档导航
+- [../docs/README.md](../docs/README.md) - 项目文档导航
 - [MAINTENANCE.md](MAINTENANCE.md) - 维护指南
-- [../docs/DEVELOPER-GUIDE.md](../docs/DEVELOPER-GUIDE.md) - 开发者指南
+- [../docs/development/DEVELOPER-GUIDE.md](../docs/development/DEVELOPER-GUIDE.md) - 开发者指南
 
 ---
 
 **目录创建**: 2025-10-14  
-**最后更新**: 2025-10-20
+**最后更新**: 2025-11-07
 
