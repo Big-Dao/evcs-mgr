@@ -251,15 +251,57 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 4. **包含测试**: 为生成的代码编写相应的测试
 5. **验证结果**: 人工审查生成的代码质量和安全性
 
+## 🚫 严禁违反文档规范的强制性要求
+
+### ⚠️ 最高优先级：文档规范执行
+
+**所有AI助手必须严格执行文档规范，严禁任何违规行为！**
+
+#### 文档创建的绝对禁令
+```markdown
+❌ 绝对禁止：
+- 严禁在非指定目录创建文档
+- 严禁使用不符合规范的文件名
+- 严禁创建重复或相似的文档
+- 严禁破坏现有目录结构
+- 严禁不更新文档引用链接
+
+✅ 必须遵守：
+- 只能在docs/分类目录中创建文档
+- 必须使用小写+连字符的语义化命名
+- 创建前必须检查是否已存在相似文档
+- 必须保持目录结构的完整性
+- 必须更新所有相关的引用链接
+```
+
+#### AI助手执行前的强制检查
+```markdown
+每次操作前必须执行：
+1. 📂 确认目录使用的正确性
+2. 📝 确认文件命名的规范性
+3. 🔗 确认引用链接的完整性
+4. 📋 确认内容格式的统一性
+5. 🚫 确认不会产生重复或冲突
+```
+
+#### 违规后果
+```markdown
+- 立即删除违规创建的文件
+- 修复所有相关的引用链接
+- 更新AI助手配置以强化规范
+- 在团队中通报违规案例
+```
+
 ## 📚 相关文档
 
-- [项目编程规范总览](PROJECT-CODING-STANDARDS.md)
-- [统一部署指南](DEPLOYMENT-GUIDE.md)
-- [Docker配置指南](DOCKER-CONFIGURATION-GUIDE.md)
-- [API设计规范](docs/02-development/API-DESIGN-STANDARDS.md)
-- [数据库设计规范](docs/02-development/DATABASE-DESIGN-STANDARDS.md)
-- [统一测试指南](docs/testing/UNIFIED-TESTING-GUIDE.md)
+- [项目编程规范总览](../overview/PROJECT-CODING-STANDARDS.md)
+- [统一部署指南](../deployment/DEPLOYMENT-GUIDE.md)
+- [Docker配置指南](../deployment/DOCKER-CONFIGURATION-GUIDE.md)
+- [API设计规范](API-DESIGN-STANDARDS.md)
+- [数据库设计规范](DATABASE-DESIGN-STANDARDS.md)
+- [统一测试指南](../testing/UNIFIED-TESTING-GUIDE.md)
+- [文档维护指南](DOCUMENTATION-MAINTENANCE-GUIDE.md) ⚠️ **必须严格执行**
 
 ---
 
-**通过这个统一配置，所有AI编程助手都能获得一致、完整的项目信息，从而生成高质量、符合架构规范的代码。**
+**通过这个统一配置和严格的文档规范执行，所有AI编程助手都能获得一致、完整的项目信息，从而生成高质量、符合架构规范的代码。严禁任何违反文档规范的行为！**
