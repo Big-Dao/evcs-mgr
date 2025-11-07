@@ -13,12 +13,12 @@
 ### ✅ 已完成任务
 
 1. **清理重复的部署指南文档** ✅
-   - 创建统一部署指南：[DEPLOYMENT-GUIDE.md](../../DEPLOYMENT-GUIDE.md)
+   - 创建统一部署指南：[DEPLOYMENT-GUIDE.md](../deployment/DEPLOYMENT-GUIDE.md)
    - 归档重复文档到 `docs/archive/deployment-docs-cleanup-2025-11-07/`
    - 更新所有引用指向统一文档
 
 2. **统一AI助手配置规范** ✅
-   - 创建核心规范文档：[PROJECT-CODING-STANDARDS.md](../../PROJECT-CODING-STANDARDS.md)
+   - 创建核心规范文档：[PROJECT-CODING-STANDARDS.md](../overview/PROJECT-CODING-STANDARDS.md)
    - 更新所有AI助手配置指向统一规范
    - 创建AI助手索引：[AI-ASSISTANTS-INDEX.md](../../AI-ASSISTANTS-INDEX.md)
 

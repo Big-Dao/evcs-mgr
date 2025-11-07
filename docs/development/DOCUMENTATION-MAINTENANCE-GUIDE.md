@@ -13,7 +13,7 @@
 ### 核心规范文档（高优先级）
 | 文档名称 | 维护频率 | 负责人 | 审核人 |
 |----------|----------|--------|--------|
-| [PROJECT-CODING-STANDARDS.md](../../PROJECT-CODING-STANDARDS.md) | 每月 | 技术负责人 | 架构师 |
+| [PROJECT-CODING-STANDARDS.md](../overview/PROJECT-CODING-STANDARDS.md) | 每月 | 技术负责人 | 架构师 |
 | [API-DESIGN-STANDARDS.md](API-DESIGN-STANDARDS.md) | 每月 | API负责人 | 技术负责人 |
 | [DATABASE-DESIGN-STANDARDS.md](DATABASE-DESIGN-STANDARDS.md) | 每月 | DBA | 技术负责人 |
 | [UNIFIED-TESTING-GUIDE.md](../testing/UNIFIED-TESTING-GUIDE.md) | 每月 | 测试负责人 | 技术负责人 |
@@ -21,8 +21,8 @@
 ### 操作指南文档（中优先级）
 | 文档名称 | 维护频率 | 负责人 | 审核人 |
 |----------|----------|--------|--------|
-| [DEPLOYMENT-GUIDE.md](../../DEPLOYMENT-GUIDE.md) | 每季度 | DevOps工程师 | 运维负责人 |
-| [DOCKER-CONFIGURATION-GUIDE.md](../../DOCKER-CONFIGURATION-GUIDE.md) | 每季度 | DevOps工程师 | 运维负责人 |
+| [DEPLOYMENT-GUIDE.md](../deployment/DEPLOYMENT-GUIDE.md) | 每季度 | DevOps工程师 | 运维负责人 |
+| [DOCKER-CONFIGURATION-GUIDE.md](../deployment/DOCKER-CONFIGURATION-GUIDE.md) | 每季度 | DevOps工程师 | 运维负责人 |
 | [CODE-QUALITY-CHECKLIST.md](CODE-QUALITY-CHECKLIST.md) | 每月 | 质量负责人 | 技术负责人 |
 
 ### AI助手配置（高优先级）

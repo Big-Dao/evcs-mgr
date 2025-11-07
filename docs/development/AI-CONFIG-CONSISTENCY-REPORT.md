@@ -111,7 +111,7 @@ evcs-common            - 公共组件，共享工具类
 
 ## 📚 相关文档
 
-- [项目编程规范总览](../../PROJECT-CODING-STANDARDS.md)
+- [项目编程规范总览](../overview/PROJECT-CODING-STANDARDS.md)
 - [AI助手规范索引](../../AI-ASSISTANTS-INDEX.md)
 - [文档维护指南](DOCUMENTATION-MAINTENANCE-GUIDE.md)
 

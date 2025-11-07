@@ -728,9 +728,9 @@ class IntegrationTest {
 
 ## 📚 相关文档
 
-- [项目编码标准](../../PROJECT-CODING-STANDARDS.md)
-- [AI助手测试规范](../../AI-ASSISTANTS-INDEX.md)
-- [构建指南](../03-deployment/)
+- [项目编码标准](../overview/PROJECT-CODING-STANDARDS.md)
+- [AI助手测试规范](../development/AI-ASSISTANTS-INDEX.md)
+- [构建指南](../deployment/)
 - [故障排除指南](../troubleshooting/)
 
 ---

@@ -567,7 +567,7 @@ DELETE FROM audit_logs WHERE changed_at < NOW() - INTERVAL '1 year';
 - [项目编码标准](../PROJECT-CODING-STANDARDS.md)
 - [API设计规范](API-DESIGN-STANDARDS.md)
 - [统一测试指南](testing/UNIFIED-TESTING-GUIDE.md)
-- [统一部署指南](../../DEPLOYMENT-GUIDE.md)
+- [统一部署指南](../deployment/DEPLOYMENT-GUIDE.md)
 
 ---
 
