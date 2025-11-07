@@ -1,0 +1,146 @@
+name: Code Quality and Security Check
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  code-quality:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Cache Gradle packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.gradle/caches
+          ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
+
+    - name: Run unit tests
+      run: ./gradlew test --continue
+
+    - name: Run integration tests
+      run: ./gradlew integrationTest --continue
+
+    - name: Generate test coverage report
+      run: ./gradlew jacocoTestReport jacocoIntegrationTestReport
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./build/reports/jacoco/test/jacocoTestReport.xml,./build/reports/jacoco/integrationTest/jacocoIntegrationTestReport.xml
+        fail_ci_if_error: false
+
+    - name: Run Checkstyle
+      run: ./gradlew checkstyleMain checkstyleTest
+
+    - name: Run PMD
+      run: ./gradlew pmdMain pmdTest
+
+    - name: Run SpotBugs
+      run: ./gradlew spotbugsMain spotbugsTest
+
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: build-reports
+        path: |
+          build/reports/
+          **/build/reports/
+        retention-days: 30
+
+  security-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  dependency-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+
+    - name: Run OWASP Dependency Check
+      uses: dependency-check/Dependency-Check_Action@main
+      with:
+        project: 'evcs-mgr'
+        path: '.'
+        format: 'HTML'
+
+    - name: Upload OWASP Dependency Check results
+      uses: actions/upload-artifact@v3
+      with:
+        name: dependency-check-report
+        path: reports/
+        retention-days: 30
+
+  docker-security:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Build Docker images
+      run: |
+        docker buildx build --load -t evcs-auth:latest -f evcs-auth/Dockerfile .
+        docker buildx build --load -t evcs-gateway:latest -f evcs-gateway/Dockerfile .
+
+    - name: Run Trivy on Docker images
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: 'evcs-auth:latest'
+        format: 'sarif'
+        output: 'trivy-auth-results.sarif'
+
+    - name: Upload Trivy Docker scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-auth-results.sarif'

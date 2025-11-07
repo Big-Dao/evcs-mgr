@@ -2,7 +2,7 @@
 
 一个基于Spring Boot和微服务架构的电动汽车充电站管理平台，支持多租户、多协议充电桩管理。
 
-> 📚 **[快速导航指南](QUICK-DOCUMENTATION-GUIDE.md)** | [完整文档索引](DOCUMENTATION-INDEX.md) | [架构设计](docs/01-core/architecture.md) | [部署指南](docs/03-deployment/docker-deployment.md)
+> 📚 **[统一部署指南](DEPLOYMENT-GUIDE.md)** | [AI编程助手规范](AI-ASSISTANTS-INDEX.md)** | [快速文档指南](docs/quick-start/QUICK-DOCUMENTATION-GUIDE.md)** | [服务参考](docs/quick-start/SERVICES-REFERENCE.md)** | [故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)**
 
 ## 🎯 项目状态
 
@@ -64,22 +64,45 @@ evcs-mgr/
 
 ## 🚀 快速开始
 
-### Docker 完整部署（推荐 ⭐）
-
-**一键部署**:
+#### 1. 小规模开发环境（推荐 ⭐）
 ```bash
-git clone https://github.com/Big-Dao/evcs-mgr.git
-cd evcs-mgr
-docker-compose up -d
+# 启动核心服务：基础设施 + 认证 + 网关
+docker-compose -f docker-compose.core-dev.yml up -d
+
+# 检查服务状态
+docker-compose -f docker-compose.core-dev.yml ps
+
+# 访问服务
+curl http://localhost:8080/api/auth/test
 ```
 
-**访问服务**:
-- 🌐 **前端管理界面**: http://localhost:3000
+#### 2. 完整生产环境
+```bash
+# 启动所有服务
+docker-compose up -d
+
+# 添加监控服务
+docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
+```
+
+**核心服务访问**：
 - 🚪 **API网关**: http://localhost:8080
-- 📊 **Grafana监控**: http://localhost:3001 (admin/admin123)
+- 🔐 **认证服务**: http://localhost:8081
 - 📡 **服务注册中心**: http://localhost:8761
 - ⚙️ **配置中心**: http://localhost:8888
-- 🐰 **消息队列管理**: http://localhost:15672 (guest/guest)
+
+**扩展服务访问**：
+- ⚡ **充电站服务**: http://localhost:8082
+- 📋 **订单服务**: http://localhost:8083
+- 💳 **支付服务**: http://localhost:8084
+- 🔌 **协议服务**: http://localhost:8085
+- 🏢 **租户服务**: http://localhost:8086
+- 📊 **监控服务**: http://localhost:8087
+
+**基础设施访问**：
+- 🗄️ **数据库**: localhost:5432 (postgres/postgres)
+- 🔄 **缓存**: localhost:6379
+- 🐰 **消息队列**: http://localhost:15672 (guest/guest)
 
 📚 **完整部署指南**: [Docker部署指南](docs/03-deployment/docker-deployment.md)
 
@@ -179,12 +202,18 @@ docker-compose up -d
 - **架构设计**: [技术架构设计](docs/01-core/architecture.md)
 
 ### 开发文档
+- **🤖 AI编程助手配置**: [统一AI配置](AI-ASSISTANT-UNIFIED-CONFIG.md) ⭐
+- **📋 项目编码标准**: [编程规范总览](PROJECT-CODING-STANDARDS.md) ⭐
+- **🔧 API设计规范**: [API设计标准](docs/02-development/API-DESIGN-STANDARDS.md) ⭐
+- **🗄️ 数据库设计规范**: [数据库设计标准](docs/02-development/DATABASE-DESIGN-STANDARDS.md) ⭐
+- **🧪 统一测试指南**: [测试框架指南](docs/testing/UNIFIED-TESTING-GUIDE.md) ⭐
+- **📊 代码质量清单**: [代码质量检查](docs/02-development/CODE-QUALITY-CHECKLIST.md) ⭐
 - **编码规范**: [编码规范](docs/02-development/coding-standards.md)
 - **开发者指南**: [开发者指南](docs/DEVELOPER-GUIDE.md) ⭐
-- **测试框架**: [测试框架指南](docs/testing/TESTING-FRAMEWORK-GUIDE.md) ⭐
 
 ### 部署与运维
-- **部署指南**: [Docker部署指南](docs/03-deployment/docker-deployment.md) ⭐
+- **🚀 统一部署指南**: [Docker部署指南](DEPLOYMENT-GUIDE.md) ⭐
+- **🐳 Docker配置指南**: [Docker使用指南](DOCKER-CONFIGURATION-GUIDE.md) ⭐
 - **运维手册**: [运维手册](docs/04-operations/user-manual.md)（待创建）
 
 ## 🤝 第三方对接

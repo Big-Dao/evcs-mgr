@@ -6,22 +6,24 @@ plugins {
 
 description = 'Authentication and Authorization Service'
 
+ext {
+    set('postgresqlVersion', '42.7.4')
+}
+
 dependencies {
-    implementation project(':evcs-common')
+    // 临时移除evcs-common以排除依赖冲突
+    // implementation project(':evcs-common')
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
-    
+
     // Database
     implementation "org.postgresql:postgresql:${postgresqlVersion}"
 
     // Utilities
     implementation 'org.apache.commons:commons-lang3:3.14.0'
-    
-    // API Documentation
-    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.2.0'
-    
+
     // Test dependencies
-    testImplementation testFixtures(project(':evcs-common'))
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }

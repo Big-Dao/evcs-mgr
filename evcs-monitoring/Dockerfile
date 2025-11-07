@@ -1,5 +1,5 @@
 # Stage 1: Download dependencies (cached layer)
-FROM gradle:8.5-jdk21-alpine AS dependencies
+FROM gradle:8.11-jdk21-alpine AS dependencies
 WORKDIR /workspace
 # Copy only dependency-related files for better caching
 COPY build.gradle settings.gradle ./
@@ -8,7 +8,7 @@ COPY gradle ./gradle
 RUN gradle dependencies --no-daemon || true
 
 # Stage 2: Build application
-FROM gradle:8.5-jdk21-alpine AS build
+FROM gradle:8.11-jdk21-alpine AS build
 WORKDIR /workspace
 # Copy cached dependencies from previous stage
 COPY --from=dependencies /root/.gradle /root/.gradle

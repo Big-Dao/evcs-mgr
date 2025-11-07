@@ -1,0 +1,152 @@
+version: '3.8'
+
+# 小规模业务开发环境配置
+# 包含核心服务：基础设施 + 认证 + 网关
+# 用法: docker-compose -f docker-compose.core-dev.yml up -d
+
+services:
+  # PostgreSQL数据库
+  postgres:
+    image: postgres:15-alpine
+    container_name: evcs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evcs_mgr
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - evcs-network
+
+  # Redis缓存
+  redis:
+    image: redis:7-alpine
+    container_name: evcs-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - evcs-network
+
+  # Eureka注册中心
+  eureka:
+    build:
+      context: evcs-eureka
+      dockerfile: Dockerfile
+    container_name: evcs-eureka
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+    environment:
+      JAVA_OPTS: "-Xms128m -Xmx256m"
+      TZ: Asia/Shanghai
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - evcs-network
+
+  # 配置中心
+  config-server:
+    build:
+      context: evcs-config
+      dockerfile: Dockerfile
+    container_name: evcs-config
+    restart: unless-stopped
+    ports:
+      - "8888:8888"
+    environment:
+      JAVA_OPTS: "-Xms128m -Xmx256m"
+      SPRING_PROFILES_ACTIVE: "local"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://eureka:8761/eureka/"
+      SPRING_DATA_REDIS_HOST: "redis"
+      SPRING_DATA_REDIS_PORT: "6379"
+      TZ: Asia/Shanghai
+    volumes:
+      - ./config-repo:/config-repo:ro
+    depends_on:
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+
+  # API网关
+  gateway:
+    build:
+      context: evcs-gateway
+      dockerfile: Dockerfile
+    container_name: evcs-gateway
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+      SPRING_PROFILES_ACTIVE: "local"
+      CONFIG_SERVER_URL: "http://config-server:8888"
+      EUREKA_SERVER_URL: "http://eureka:8761/eureka/"
+      SPRING_DATA_REDIS_HOST: "redis"
+      SPRING_DATA_REDIS_PORT: "6379"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+
+  # 认证服务
+  auth-service:
+    build:
+      context: evcs-auth
+      dockerfile: Dockerfile
+    container_name: evcs-auth
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      JAVA_OPTS: "-Xms256m -Xmx512m"
+      SPRING_PROFILES_ACTIVE: "local"
+      CONFIG_SERVER_URL: "http://config-server:8888"
+      EUREKA_SERVER_URL: "http://eureka:8761/eureka/"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/evcs_mgr"
+      SPRING_DATASOURCE_USERNAME: "postgres"
+      SPRING_DATASOURCE_PASSWORD: "postgres"
+      SPRING_DATA_REDIS_HOST: "redis"
+      SPRING_DATA_REDIS_PORT: "6379"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  evcs-network:
+    driver: bridge

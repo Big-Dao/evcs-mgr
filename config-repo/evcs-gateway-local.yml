@@ -22,7 +22,7 @@ spring:
           predicates:
             - Path=/api/auth/**
           filters:
-            - StripPrefix=2  # 去掉/api/auth，转发到auth服务的/login等
+            - StripPrefix=1  # 去掉/api，保留/auth，转发到auth服务的/api/login等
         
         # 租户/Dashboard服务路由
         - id: evcs-dashboard

@@ -1,0 +1,16 @@
+# CodeX temporary files
+*.tmp
+*.bak
+.cache/
+.output/
+
+# IDE integration files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# API keys and secrets
+.env
+api-keys.txt
+secrets.txt

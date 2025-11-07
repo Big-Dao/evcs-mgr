@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Exclude test classes -->
+    <Match>
+        <Class name="~.*Test.*" />
+    </Match>
+
+    <!-- Exclude generated classes -->
+    <Match>
+        <Class name="~.*\..*_.+.*" />
+    </Match>
+
+    <!-- Exclude Lombok generated code -->
+    <Match>
+        <Class name="~.*\$.*" />
+    </Match>
+
+    <!-- Exclude Spring Boot auto-configuration classes -->
+    <Match>
+        <Class name="~.*AutoConfiguration.*" />
+    </Match>
+
+    <!-- Exclude known false positives -->
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP" />
+        <Class name="~.*DTO.*" />
+    </Match>
+
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2" />
+        <Class name="~.*DTO.*" />
+    </Match>
+</FindBugsFilter>

@@ -15,8 +15,7 @@ COPY --from=dependencies /root/.gradle /root/.gradle
 # Copy dependency files
 COPY build.gradle settings.gradle ./
 COPY gradle ./gradle
-# Copy only necessary source files
-COPY evcs-common ./evcs-common
+# Copy only necessary source files (removed evcs-common)
 COPY evcs-auth ./evcs-auth
 # Build only this module (using gradle command from base image)
 RUN gradle :evcs-auth:bootJar --no-daemon --parallel

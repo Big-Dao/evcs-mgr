@@ -16,10 +16,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
  */
 @Configuration
 @EnableWebSecurity
-@RequiredArgsConstructor
 public class SecurityConfig {
-
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     /**
      * 密码编码器
@@ -30,7 +27,7 @@ public class SecurityConfig {
     }
 
     /**
-     * 安全过滤链配置 - 临时允许所有请求
+     * 安全过滤链配置 - 允许健康检查和认证相关端点
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -39,8 +36,15 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             // 无状态Session
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            // 临时允许所有请求
-            .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
+            // 配置请求授权
+            .authorizeHttpRequests(auth -> auth
+                // 允许健康检查端点
+                .requestMatchers("/health", "/health/**", "/actuator/**", "/api/health", "/api/health/**").permitAll()
+                // 允许认证相关端点
+                .requestMatchers("/login", "/logout", "/refresh", "/userinfo", "/test").permitAll()
+                // 允许其他所有请求（临时调试）
+                .anyRequest().permitAll()
+            )
             // 禁用默认登录页面
             .formLogin(form -> form.disable())
             // 禁用HTTP Basic认证

@@ -4,6 +4,9 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.6' apply false
     id 'com.palantir.docker' version '0.35.0' apply false
     id 'jacoco' // 代码覆盖率
+    id 'checkstyle' // 代码风格检查
+    id 'pmd' // 代码质量检查
+    id 'com.github.spotbugs' version '6.0.25' apply false // 静态代码分析
 }
 
 group = 'com.evcs'
@@ -41,7 +44,10 @@ subprojects {
     apply plugin: 'org.springframework.boot'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'jacoco'
-    
+    apply plugin: 'checkstyle'
+    apply plugin: 'pmd'
+    apply plugin: 'com.github.spotbugs'
+
     group = rootProject.group
     version = rootProject.version
     
@@ -148,10 +154,69 @@ subprojects {
     }
 }
 
+// 代码质量检查配置
+configure(subprojects.findAll { it.name.startsWith('evcs-') }) {
+
+    // Checkstyle配置
+    checkstyle {
+        toolVersion = '10.17.0'
+        configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+        ignoreFailures = false
+        maxWarnings = 0
+        showViolations = true
+    }
+
+    // PMD配置
+    pmd {
+        toolVersion = '7.0.0'
+        ruleSetFiles = files("${rootDir}/config/pmd/ruleset.xml")
+        ignoreFailures = false
+        consoleOutput = true
+    }
+
+    // SpotBugs配置
+    spotbugs {
+        toolVersion = '4.8.6'
+        ignoreFailures = false
+        showStackTraces = true
+        showProgress = true
+    }
+
+    // Jacoco配置 - 代码覆盖率
+    jacoco {
+        toolVersion = '0.8.12'
+        reportsDirectory = file("${buildDir}/reports/jacoco")
+    }
+
+    jacocoTestReport {
+        reports {
+            xml.required.set(true)
+            html.required.set(true)
+            csv.required.set(false)
+        }
+    }
+
+    // 测试任务配置
+    test {
+        useJUnitPlatform()
+        finalizedBy jacocoTestReport
+        testLogging {
+            events "passed", "skipped", "failed"
+            exceptionFormat "full"
+        }
+    }
+
+    // 代码质量检查任务
+    task('qualityCheck') {
+        dependsOn checkstyleMain, pmdMain, spotbugsMain, test
+        description = 'Run all code quality checks'
+    }
+}
+
 // Docker构建配置
 configure(subprojects.findAll { !it.name.endsWith('-common') }) {
     apply plugin: 'com.palantir.docker'
-    
+
     def registryHost = 'registry.cn-hangzhou.aliyuncs.com'
 
     docker {

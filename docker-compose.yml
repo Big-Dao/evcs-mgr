@@ -1,22 +1,19 @@
 x-java-env: &java-env
   JAVA_OPTS: >
-    -Xms512m -Xmx512m
-    -XX:+UseG1GC
-    -XX:MaxGCPauseMillis=100
-    -XX:+ParallelRefProcEnabled
-    -XX:+UseStringDeduplication
+    -Xms256m -Xmx512m
+    -XX:+UseContainerSupport
+    -XX:MaxRAMPercentage=60.0
+    -server
+    -Djava.security.egd=file:/dev/./urandom
     -Dspring.config.import=optional:configserver:http://config-server:8888
-    -XX:StartFlightRecording=dumponexit=true,filename=/tmp/flight.jfr
-    -XX:FlightRecorderOptions=stackdepth=128
   SPRING_PROFILES_ACTIVE: "local"
   CONFIG_SERVER_URL: "http://config-server:8888"
   SPRING_CLOUD_CONFIG_PROFILE: "local"
   EUREKA_SERVER_URL: "http://eureka:8761/eureka/"
-  DB_HOST: "postgres"
-  DB_PORT: "5432"
-  DB_NAME: "evcs_mgr"
-  DB_USER: "postgres"
-  DB_PASSWORD: "postgres"
+  # 数据库配置 - 统一使用Spring Boot标准格式
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/evcs_mgr"
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATASOURCE_PASSWORD: "postgres"
   SPRING_DATA_REDIS_HOST: "redis"
   SPRING_DATA_REDIS_PORT: "6379"
   SPRING_DATA_REDIS_PASSWORD: ""
