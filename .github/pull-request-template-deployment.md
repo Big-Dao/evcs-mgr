@@ -226,9 +226,9 @@ BUILD SUCCESSFUL in 29s
 ```
 
 ### 查看文档
-- **快速入门**: [TEST-ENVIRONMENT-QUICKSTART.md](../TEST-ENVIRONMENT-QUICKSTART.md)
-- **完整指南**: [docs/TEST-ENVIRONMENT-GUIDE.md](../docs/TEST-ENVIRONMENT-GUIDE.md)
-- **部署总结**: [DEPLOYMENT-TESTING-SUMMARY.md](../DEPLOYMENT-TESTING-SUMMARY.md)
+- **测试指南**: [../docs/testing/UNIFIED-TESTING-GUIDE.md](../docs/testing/UNIFIED-TESTING-GUIDE.md)
+- **部署指南**: [../docs/deployment/DEPLOYMENT-GUIDE.md](../docs/deployment/DEPLOYMENT-GUIDE.md)
+- **历史文档**: [../docs/archive/TEST-ENVIRONMENT-QUICKSTART.md](../docs/archive/TEST-ENVIRONMENT-QUICKSTART.md)
 
 ---
 

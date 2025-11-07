@@ -190,7 +190,7 @@ docs/
 
 5. **提供交叉引用**
    ```markdown
-   详见 [部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)
+   详见 [部署指南](../../../docs/deployment/DEPLOYMENT-GUIDE.md)
    ```
 
 6. **包含具体示例**
@@ -455,9 +455,9 @@ docs: 归档 P3 阶段文档
 
 ### 项目相关
 
-- [DOCUMENTATION-INDEX.md](../../DOCUMENTATION-INDEX.md) - 文档总索引
-- [.github/MAINTENANCE.md](../MAINTENANCE.md) - .github 维护指南
-- [docs/archive/documentation-history/](../../docs/archive/documentation-history/) - 文档维护历史
+- [../docs/README.md](../../../docs/README.md) - 文档导航中心
+- [../MAINTENANCE.md](../MAINTENANCE.md) - .github 维护指南
+- [docs/archive/documentation-history/](../../../docs/archive/documentation-history/) - 文档维护历史
 
 ---
 

@@ -135,8 +135,8 @@
 
 ### 项目文档
 - [../README.md](../README.md) - 项目主 README
-- [../DOCUMENTATION-INDEX.md](../DOCUMENTATION-INDEX.md) - 文档导航
-- [../docs/DEVELOPER-GUIDE.md](../docs/DEVELOPER-GUIDE.md) - 开发者指南
+- [../docs/README.md](../docs/README.md) - 文档导航中心
+- [../docs/development/DEVELOPER-GUIDE.md](../docs/development/DEVELOPER-GUIDE.md) - 开发者指南
 
 ### GitHub 官方文档
 - [GitHub Copilot Custom Instructions](https://docs.github.com/en/copilot/customizing-copilot/adding-custom-instructions-for-github-copilot)
