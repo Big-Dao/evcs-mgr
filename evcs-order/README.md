@@ -1,44 +1,28 @@
 # EVCS订单管理服务
 
-> **端口**: 8083 | **状态**: 活跃
->
-> **功能**: 订单管理和计费方案
+> **服务信息**: 完整信息请参考项目文档
 
-## 📋 服务概述
+## 🔗 服务文档
 
-EVCS订单管理服务负责充电订单的全生命周期管理：
-- 充电订单创建和管理
-- 计费方案计算
-- 订单支付状态跟踪
-- 用户账单管理
-- 订单统计分析
+| 信息类型 | 文档来源 |
+|---------|---------|
+| **服务功能与职责** | [架构文档 - 订单服务](../../docs/architecture/architecture.md#evcs-order) |
+| **技术栈与依赖** | [架构文档 - 技术栈](../../docs/architecture/architecture.md#技术栈) |
+| **API接口规范** | [API文档 - 订单服务](../../docs/references/API-DOCUMENTATION.md#evcs-order) |
+| **开发规范与指南** | [开发指南 - 订单服务](../../docs/development/DEVELOPER-GUIDE.md#evcs-order) |
+| **部署配置说明** | [部署指南 - 订单服务](../../docs/deployment/DEPLOYMENT-GUIDE.md#evcs-order) |
+| **测试策略与用例** | [测试指南 - 订单服务](../../docs/testing/UNIFIED-TESTING-GUIDE.md#evcs-order) |
+| **监控与运维** | [监控指南 - 订单服务](../../docs/operations/MONITORING-GUIDE.md#evcs-order) |
+| **端口与配置** | [项目结构 - 订单服务](../../docs/operations/PROJECT-STRUCTURE.md#evcs-order) |
+| **团队与负责人** | [团队配置 - 订单服务](../../docs/operations/TEAM-CONFIGURATION.md#evcs-order) |
 
-## 🔧 技术栈
-- Spring Boot 3.2.10
-- Spring Data JPA
-- PostgreSQL
-- Redis (缓存)
-- RabbitMQ (消息队列)
+## 🎯 使用原则
 
-## 🚀 快速启动
-
-```bash
-# 构建和运行
-./gradlew :evcs-order:bootRun
-
-# 健康检查
-curl http://localhost:8083/actuator/health
-```
-
-## 📡 主要API
-- `POST /api/v1/orders` - 创建订单
-- `GET /api/v1/orders/{id}` - 获取订单详情
-- `PUT /api/v1/orders/{id}/payment` - 更新支付状态
-
-## 🔗 相关链接
-- [API文档](../../docs/references/API-DOCUMENTATION.md#evcs-order)
-- [项目文档](../../docs/README.md)
+1. **本README不包含任何独立信息**
+2. **所有服务信息均引用项目文档**
+3. **确保信息的一致性和准确性**
+4. **避免维护多份重复信息**
 
 ---
 
-**服务负责人**: 订单团队
+**维护原则**: 严格遵循单一源头原则，所有详细信息请参考项目文档。
