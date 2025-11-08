@@ -69,15 +69,14 @@ evcs-mgr/                                    # 项目根目录
 │       ├── progress-reports/              # 进度报告
 │       └── pull-requests/                 # PR记录
 ├── 📁 scripts/                            # 🔧 脚本工具
-│   ├── docker/                            # 🐳 Docker相关脚本
-│   │   ├── health-check.sh                # 健康检查脚本
-│   │   ├── start-services.sh              # 启动服务脚本
-│   │   └── stop-services.sh               # 停止服务脚本
-│   └── pre-commit-check.sh                # Git预提交检查
-├── 📁 database/                           # 🗄️ 数据库相关
-│   └── scripts/                           # 数据库脚本
-│       ├── reset-admin-password.sql       # 重置管理员密码
-│       └── update-password.sql            # 更新密码脚本
+│   └── docker/                            # 🐳 Docker相关脚本
+│       ├── health-check.sh                # 健康检查脚本
+│       ├── start-services.sh              # 启动服务脚本
+│       └── stop-services.sh               # 停止服务脚本
+├── 📁 config/                             # ⚙️ 配置文件
+│   ├── application.yml                    # 应用配置
+│   ├── bootstrap.yml                      # 引导配置
+│   └── 其他配置文件
 ├── 📁 config-repo/                        # ⚙️ 配置仓库
 │   ├── evcs-*-local.yml                   # 各服务本地配置
 │   └── application-local.yml              # 应用本地配置
@@ -97,7 +96,12 @@ evcs-mgr/                                    # 项目根目录
 ├── 📁 gradle/                             # 📦 Gradle配置
 ├── 📁 .git/                               # 📚 Git版本控制
 ├── 📁 .github/                            # 🐙 GitHub配置
-│   └── workflows/                         # GitHub Actions工作流
+│   ├── workflows/                         # GitHub Actions工作流
+│   ├── instructions/                      # GitHub指令配置
+│   ├── pull-request-template-deployment.md # PR模板
+│   ├── README.md                           # GitHub配置说明
+│   ├── MAINTENANCE.md                     # 维护指南
+│   └── copilot-instructions.md            # Copilot配置
 ├── 📁 .gradle/                            # 📦 Gradle缓存
 ├── 📁 .claude/                            # 🤖 Claude相关配置
 ├── 📁 .vscode/                            # 💻 VSCode配置
@@ -114,12 +118,8 @@ evcs-mgr/                                    # 项目根目录
 ├── 📄 docker-compose*.yml                 # 🐳 Docker Compose配置
 │   ├── docker-compose.yml                 # 主配置（生产环境）
 │   ├── docker-compose.core-dev.yml        # 核心开发环境 ⭐
-│   ├── docker-compose.dev.yml             # 开发环境
-│   ├── docker-compose.local.yml           # 本地环境
-│   ├── docker-compose.local-images.yml    # 本地镜像版本
-│   ├── docker-compose.local-jars.yml      # 本地JAR版本
-│   ├── docker-compose.monitoring.yml      # 监控服务
-│   └── docker-compose.test.yml            # 测试环境
+│   └── docker-compose.monitoring.yml      # 监控服务
+│   # 注意：其他docker-compose配置文件已归档至 docs/archive/docker-configs-cleanup-2025-11-07/
 ├── 📄 nul                                 # 🔨 临时文件（可删除）
 └── 📄 *.md                                # 📖 各种Markdown文档
 ```
@@ -171,9 +171,8 @@ evcs-mgr/                                    # 项目根目录
 - **start-services.sh**: 一键启动所有服务
 - **stop-services.sh**: 一键停止所有服务
 
-### 数据库脚本 (`database/scripts/`)
-- **reset-admin-password.sql**: 重置管理员管理员密码
-- **update-password.sql**: 更新用户密码
+### 数据库脚本 (`sql/`)
+- SQL初始化脚本和数据库相关文件
 
 ## 🐳 Docker配置文件说明
 
@@ -186,9 +185,13 @@ evcs-mgr/                                    # 项目根目录
 - **docker-compose.test.yml**: 测试环境配置
 - **docker-compose.monitoring.yml**: 监控服务扩展
 
-### 本地开发配置
-- **docker-compose.local-jars.yml**: 使用本地构建JAR
-- **docker-compose.local-images.yml**: 使用本地镜像
+### 归档配置
+- **docker-compose.dev.yml**: 开发环境配置（已归档）
+- **docker-compose.test.yml**: 测试环境配置（已归档）
+- **docker-compose.local.yml**: 本地环境配置（已归档）
+- **docker-compose.local-jars.yml**: 使用本地构建JAR（已归档）
+- **docker-compose.local-images.yml**: 使用本地镜像（已归档）
+- **位置**: `docs/archive/docker-configs-cleanup-2025-11-07/`
 
 ## 📊 服务端口映射
 
@@ -211,9 +214,9 @@ evcs-mgr/                                    # 项目根目录
 ## 🎯 使用建议
 
 ### 新用户
-1. 先阅读 `../overview/DEPLOYMENT-GUIDE.md`
+1. 先阅读 `../deployment/DEPLOYMENT-GUIDE.md`
 2. 使用 `docker-compose.core-dev.yml` 快速启动
-3. 参考 `../overview/SERVICES-REFERENCE.md` 了解各服务
+3. 参考 `SERVICES-REFERENCE.md` 了解各服务
 
 ### 开发人员
 1. 查看 `../development/` 目录下的开发文档
@@ -228,17 +231,40 @@ evcs-mgr/                                    # 项目根目录
 ## 📝 文档维护
 
 ### 新增文档
-- 快速开始类文档放入 `../overview/`
 - 技术文档放入相应的分类目录
 - 过时文档移入 `docs/archive/`
+- 归档时包含清理说明和时间记录
 
 ### 文档更新
 - 定期检查文档的时效性
 - 重大变更后更新相关文档
 - 保持目录结构的一致性
 
+## 🚨 重要变更说明
+
+### Docker配置文件清理 (2025-11-07)
+为简化配置管理，以下Docker Compose文件已归档：
+- `docker-compose.dev.yml`
+- `docker-compose.test.yml`
+- `docker-compose.local.yml`
+- `docker-compose.local-images.yml`
+- `docker-compose.local-jars.yml`
+
+**当前使用的配置**：
+- 生产环境：`docker-compose.yml`
+- 开发环境：`docker-compose.core-dev.yml`（推荐）
+- 监控扩展：`docker-compose.monitoring.yml`
+
+### 新增目录
+- `.ai-assistant-config/`: AI助手配置目录
+- `config/`: 应用配置文件目录
+
+### 删除的目录结构
+- `database/` 目录不存在，SQL脚本直接在项目根目录的 `sql/` 目录
+
 这个目录结构设计旨在：
 - 📁 **逻辑清晰**: 按功能和用途分类
 - 🚀 **易于导航**: 新用户能快速找到所需信息
 - 🔧 **便于维护**: 结构化的文档管理
 - 📈 **可扩展**: 支持未来功能扩展
+- 🧹 **保持整洁**: 定期归档过时配置和文档
