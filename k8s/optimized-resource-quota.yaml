@@ -1,0 +1,504 @@
+# EVCS Manager Kubernetes 资源优化配置
+# 定义资源配额和限制，确保合理的资源使用
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: evcs-mgr
+  labels:
+    name: evcs-mgr
+    environment: production
+
+---
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: evcs-mgr-quota
+  namespace: evcs-mgr
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    persistentvolumeclaims: "10"
+    pods: "25"
+    services: "15"
+    secrets: "20"
+    configmaps: "20"
+
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: evcs-mgr-limits
+  namespace: evcs-mgr
+spec:
+  limits:
+  - default:
+      cpu: "1"
+      memory: "512Mi"
+    defaultRequest:
+      cpu: "0.1"
+      memory: "128Mi"
+    type: Container
+  - max:
+      cpu: "2"
+      memory: "2Gi"
+    min:
+      cpu: "0.1"
+      memory: "64Mi"
+    type: Container
+
+---
+# 数据库配置
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: evcs-mgr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        env:
+        - name: POSTGRES_DB
+          value: "evcs_mgr"
+        - name: POSTGRES_USER
+          value: "postgres"
+        - name: POSTGRES_PASSWORD
+          value: "postgres"
+        - name: TZ
+          value: "Asia/Shanghai"
+        ports:
+        - containerPort: 5432
+        resources:
+          requests:
+            cpu: "0.5"
+            memory: "512Mi"
+          limits:
+            cpu: "1.5"
+            memory: "1.5Gi"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        livenessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - pg_isready
+            - -U
+            - postgres
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-pvc
+
+---
+# Redis 配置
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: evcs-mgr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command:
+        - redis-server
+        - --appendonly
+        - "yes"
+        - --maxmemory
+        - "256mb"
+        - --maxmemory-policy
+        - "allkeys-lru"
+        ports:
+        - containerPort: 6379
+        resources:
+          requests:
+            cpu: "0.2"
+            memory: "128Mi"
+          limits:
+            cpu: "0.5"
+            memory: "256Mi"
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: redis-pvc
+
+---
+# Eureka 注册中心
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eureka
+  namespace: evcs-mgr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eureka
+  template:
+    metadata:
+      labels:
+        app: eureka
+    spec:
+      containers:
+      - name: eureka
+        image: evcs-eureka:latest
+        ports:
+        - containerPort: 8761
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms64m -Xmx192m -XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0"
+        - name: TZ
+          value: "Asia/Shanghai"
+        resources:
+          requests:
+            cpu: "0.2"
+            memory: "128Mi"
+          limits:
+            cpu: "0.5"
+            memory: "256Mi"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8761
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8761
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+# API Gateway
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: evcs-mgr
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+      - name: gateway
+        image: evcs-gateway:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0 -XX:+UseG1GC"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "k8s"
+        - name: EUREKA_SERVER_URL
+          value: "http://eureka:8761/eureka/"
+        - name: SPRING_DATA_REDIS_HOST
+          value: "redis"
+        - name: SPRING_DATA_REDIS_PORT
+          value: "6379"
+        resources:
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+
+---
+# Auth Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: evcs-mgr
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+      - name: auth-service
+        image: evcs-auth:latest
+        ports:
+        - containerPort: 8081
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0 -XX:+UseG1GC"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "k8s"
+        - name: EUREKA_SERVER_URL
+          value: "http://eureka:8761/eureka/"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:5432/evcs_mgr"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "postgres"
+        - name: SPRING_DATA_REDIS_HOST
+          value: "redis"
+        - name: SPRING_DATA_REDIS_PORT
+          value: "6379"
+        resources:
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 90
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8081
+          initialDelaySeconds: 60
+          periodSeconds: 10
+
+---
+# Station Service
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: station-service
+  namespace: evcs-mgr
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: station-service
+  template:
+    metadata:
+      labels:
+        app: station-service
+    spec:
+      containers:
+      - name: station-service
+        image: evcs-station:latest
+        ports:
+        - containerPort: 8082
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0 -XX:+UseG1GC"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "k8s"
+        - name: EUREKA_SERVER_URL
+          value: "http://eureka:8761/eureka/"
+        - name: SPRING_DATASOURCE_URL
+          value: "jdbc:postgresql://postgres:5432/evcs_mgr"
+        - name: SPRING_DATASOURCE_USERNAME
+          value: "postgres"
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: "postgres"
+        - name: SPRING_DATA_REDIS_HOST
+          value: "redis"
+        - name: SPRING_DATA_REDIS_PORT
+          value: "6379"
+        resources:
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8082
+          initialDelaySeconds: 90
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /actuator/health
+            port: 8082
+          initialDelaySeconds: 60
+          periodSeconds: 10
+
+---
+# Persistent Volume Claims
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: evcs-mgr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redis-pvc
+  namespace: evcs-mgr
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 2Gi
+  storageClassName: standard
+
+---
+# Services
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: evcs-mgr
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis
+  namespace: evcs-mgr
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: eureka
+  namespace: evcs-mgr
+spec:
+  selector:
+    app: eureka
+  ports:
+  - port: 8761
+    targetPort: 8761
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: evcs-mgr
+spec:
+  selector:
+    app: gateway
+  ports:
+  - port: 8080
+    targetPort: 8080
+  type: LoadBalancer
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: evcs-mgr
+spec:
+  selector:
+    app: auth-service
+  ports:
+  - port: 8081
+    targetPort: 8081
+  type: ClusterIP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: station-service
+  namespace: evcs-mgr
+spec:
+  selector:
+    app: station-service
+  ports:
+  - port: 8082
+    targetPort: 8082
+  type: ClusterIP

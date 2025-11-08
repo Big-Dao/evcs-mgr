@@ -1,0 +1,265 @@
+version: '3.8'
+
+# 极简资源配置 - 适用于开发/测试环境
+# 最小化资源占用，仅包含核心服务
+# 用法: docker-compose -f docker-compose.minimal.yml up -d
+
+x-java-env: &java-env
+  JAVA_OPTS: >
+    -Xms64m -Xmx192m
+    -XX:+UseContainerSupport
+    -XX:MaxRAMPercentage=60.0
+    -XX:InitialRAMPercentage=30.0
+    -XX:+UseG1GC
+    -XX:+UseStringDeduplication
+    -XX:MinHeapFreeRatio=20
+    -XX:MaxHeapFreeRatio=50
+    -server
+    -Djava.security.egd=file:/dev/./urandom
+    -Dspring.jmx.enabled=false
+    -Dmanagement.endpoints.web.exposure.include=health
+  SPRING_PROFILES_ACTIVE: "local"
+  EUREKA_SERVER_URL: "http://eureka:8761/eureka/"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/evcs_mgr"
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATASOURCE_PASSWORD: "postgres"
+  SPRING_DATA_REDIS_HOST: "redis"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_DATASOURCE_HIKARI_MAXIMUM-POOL-SIZE: "10"
+  SPRING_DATASOURCE_HIKARI_MINIMUM-IDLE: "2"
+
+x-light-deploy: &light-java-deploy
+  deploy:
+    resources:
+      limits:
+        cpus: '0.5'
+        memory: 256M
+      reservations:
+        cpus: '0.2'
+        memory: 128M
+  restart: unless-stopped
+
+services:
+  # PostgreSQL - 最小内存配置
+  postgres:
+    image: postgres:15-alpine
+    container_name: evcs-postgres-minimal
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evcs_mgr
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: Asia/Shanghai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+    networks:
+      - evcs-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 1G
+        reservations:
+          cpus: '0.3'
+          memory: 384M
+    command: >
+      postgres
+      -c max_connections=50
+      -c shared_buffers=128MB
+      -c effective_cache_size=384MB
+      -c maintenance_work_mem=32MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=8MB
+      -c default_statistics_target=10
+
+  # Redis - 最小内存配置
+  redis:
+    image: redis:7-alpine
+    container_name: evcs-redis-minimal
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 128mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --tcp-keepalive 60
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 20s
+      timeout: 3s
+      retries: 3
+    networks:
+      - evcs-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+  # Eureka - 超轻量级
+  eureka:
+    build:
+      context: .
+      dockerfile: evcs-eureka/Dockerfile
+    container_name: evcs-eureka-minimal
+    <<: *light-java-deploy
+    ports:
+      - "8761:8761"
+    environment:
+      JAVA_OPTS: "-Xms32m -Xmx96m -XX:+UseContainerSupport -XX:MaxRAMPercentage=50.0"
+      TZ: Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 2
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - evcs-network
+
+  # Config Server - 超轻量级
+  config-server:
+    build:
+      context: .
+      dockerfile: evcs-config/Dockerfile
+    container_name: evcs-config-minimal
+    <<: *light-java-deploy
+    ports:
+      - "8888:8888"
+    environment:
+      JAVA_OPTS: "-Xms32m -Xmx96m -XX:+UseContainerSupport -XX:MaxRAMPercentage=50.0"
+      SPRING_PROFILES_ACTIVE: "local"
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: "file:/config-repo"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://eureka:8761/eureka/"
+      TZ: Asia/Shanghai
+    volumes:
+      - ./config-repo:/config-repo:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8888/actuator/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 2
+      start_period: 30s
+    depends_on:
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+
+  # Gateway - 轻量级
+  gateway:
+    build:
+      context: .
+      dockerfile: evcs-gateway/Dockerfile
+    container_name: evcs-gateway-minimal
+    <<: *light-java-deploy
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *java-env
+      CONFIG_SERVER_URL: "http://config-server:8888"
+      SPRING_CLOUD_CONFIG_PROFILE: "local"
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 2
+      start_period: 60s
+
+  # Auth Service - 轻量级
+  auth-service:
+    build:
+      context: .
+      dockerfile: evcs-auth/Dockerfile
+    container_name: evcs-auth-minimal
+    <<: *light-java-deploy
+    ports:
+      - "8081:8081"
+    environment:
+      <<: *java-env
+      CONFIG_SERVER_URL: "http://config-server:8888"
+      SPRING_CLOUD_CONFIG_PROFILE: "local"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 2
+      start_period: 90s
+
+  # Station Service - 轻量级（核心业务服务）
+  station-service:
+    build:
+      context: .
+      dockerfile: evcs-station/Dockerfile
+    container_name: evcs-station-minimal
+    <<: *light-java-deploy
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *java-env
+      CONFIG_SERVER_URL: "http://config-server:8888"
+      SPRING_CLOUD_CONFIG_PROFILE: "local"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 2
+      start_period: 90s
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  evcs-network:
+    driver: bridge

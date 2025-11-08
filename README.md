@@ -2,7 +2,7 @@
 
 一个基于Spring Boot和微服务架构的电动汽车充电站管理平台，支持多租户、多协议充电桩管理。
 
-> 📚 **[统一部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)** | [AI编程助手规范](docs/development/AI-ASSISTANTS-INDEX.md)** | [快速文档指南](docs/overview/QUICK-DOCUMENTATION-GUIDE.md)** | [服务参考](docs/operations/SERVICES-REFERENCE.md)** | [故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)
+> 🚀 **[快速启动指南](docs/deployment/QUICK-START.md)** ⭐ | 📚 **[统一部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)** | [AI编程助手规范](docs/development/AI-ASSISTANTS-INDEX.md)** | [快速文档指南](docs/overview/QUICK-DOCUMENTATION-GUIDE.md)** | [服务参考](docs/operations/SERVICES-REFERENCE.md)** | [故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)
 
 ## 🎯 项目状态
 
@@ -12,13 +12,19 @@
 ![JDK](https://img.shields.io/badge/JDK-21-orange)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-**当前阶段**: 🟢 生产就绪 - 企业级监控与安全架构完成
-**最近更新**: 2025-11-06
-**整体完成度**: 约85% - 核心功能完整
+**当前阶段**: 🟢 生产就绪 - 资源优化版本
+**最近更新**: 2025-11-08
+**整体完成度**: 约90% - 核心功能完整 + 资源优化
 
 **系统规模**: 281个Java文件 | 12个微服务 | 23个控制器 | 39个服务类 | 37个测试文件
 
-### 最新完成（2025-11-06）✅
+### 最新完成（2025-11-08）✅
+- ✅ **资源优化**: 内存占用减少50-67%，CPU需求减少50-67%
+- ✅ **多级配置**: 最小配置(2-4GB)、优化配置(6-8GB)、完整配置(12-16GB)
+- ✅ **智能部署**: 根据系统资源自动选择最佳配置
+- ✅ **监控工具**: 实时资源监控和自动优化脚本
+
+### 历史完成（2025-11-06）✅
 - ✅ **文档体系重构**: 彻底清理重复和冲突文档，建立清晰的文档架构
 - ✅ **配置管理优化**: 统一服务名配置，解决nginx与docker-compose不一致问题
 - ✅ **错误预防机制**: 建立Claude错误记忆库和检查流程
@@ -64,7 +70,27 @@ evcs-mgr/
 
 ## 🚀 快速开始
 
-#### 1. 小规模开发环境（推荐 ⭐）
+### 🎯 一键启动（推荐）
+
+#### 最小配置 - 2-4GB内存
+```bash
+# 快速启动核心服务，适合开发和测试
+docker-compose -f docker-compose.minimal.yml up -d
+```
+
+#### 优化配置 - 6-8GB内存（生产推荐）
+```bash
+# 启动完整服务栈，资源优化版本
+docker-compose -f docker-compose.optimized.yml up -d
+```
+
+#### 智能部署 - 自动选择配置
+```bash
+# 根据系统资源自动选择最佳配置
+./scripts/deploy/optimized-deploy.sh auto
+```
+
+#### 1. 小规模开发环境
 ```bash
 # 启动核心服务：基础设施 + 认证 + 网关
 docker-compose -f docker-compose.core-dev.yml up -d
@@ -212,7 +238,9 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 - **开发者指南**: [开发者指南](docs/development/DEVELOPER-GUIDE.md) ⭐
 
 ### 部署与运维
+- **🚀 快速启动指南**: [快速启动指南](docs/deployment/QUICK-START.md) ⭐
 - **🚀 统一部署指南**: [Docker部署指南](docs/deployment/DEPLOYMENT-GUIDE.md) ⭐
+- **⚡ 资源优化指南**: [资源优化指南](docs/deployment/RESOURCE-OPTIMIZATION-GUIDE.md) ⭐
 - **🐳 Docker配置指南**: [Docker使用指南](docs/deployment/DOCKER-CONFIGURATION-GUIDE.md) ⭐
 - **运维手册**: [运维手册](docs/operations/user-manual.md)（待创建）
 

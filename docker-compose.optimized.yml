@@ -1,0 +1,503 @@
+version: '3.8'
+
+# 优化资源版本的生产环境配置
+# 专注于减少内存和CPU占用
+# 用法: docker-compose -f docker-compose.optimized.yml up -d
+
+x-java-env: &java-env
+  JAVA_OPTS: >
+    -Xms128m -Xmx384m
+    -XX:+UseContainerSupport
+    -XX:MaxRAMPercentage=65.0
+    -XX:InitialRAMPercentage=35.0
+    -XX:+UseG1GC
+    -XX:+UseStringDeduplication
+    -XX:+OptimizeStringConcat
+    -XX:MinHeapFreeRatio=20
+    -XX:MaxHeapFreeRatio=40
+    -server
+    -Djava.security.egd=file:/dev/./urandom
+    -Dspring.config.import=optional:configserver:http://config-server:8888
+    -Dspring.jmx.enabled=false
+  SPRING_PROFILES_ACTIVE: "local"
+  CONFIG_SERVER_URL: "http://config-server:8888"
+  SPRING_CLOUD_CONFIG_PROFILE: "local"
+  EUREKA_SERVER_URL: "http://eureka:8761/eureka/"
+  # 数据库配置
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/evcs_mgr"
+  SPRING_DATASOURCE_USERNAME: "postgres"
+  SPRING_DATASOURCE_PASSWORD: "postgres"
+  SPRING_DATA_REDIS_HOST: "redis"
+  SPRING_DATA_REDIS_PORT: "6379"
+  SPRING_DATA_REDIS_PASSWORD: ""
+  SPRING_RABBITMQ_HOST: "rabbitmq"
+  SPRING_RABBITMQ_PORT: "5672"
+  SPRING_RABBITMQ_USERNAME: "guest"
+  SPRING_RABBITMQ_PASSWORD: "guest"
+  SPRING_RABBITMQ_VIRTUAL_HOST: "/"
+  # 优化的连接池配置
+  SPRING_DATASOURCE_HIKARI_MAXIMUM-POOL-SIZE: "20"
+  SPRING_DATASOURCE_HIKARI_MINIMUM-IDLE: "5"
+  SPRING_DATASOURCE_HIKARI_CONNECTION-TIMEOUT: "20000"
+  SPRING_DATASOURCE_HIKARI_IDLE-TIMEOUT: "300000"
+  SPRING_DATASOURCE_HIKARI_MAX-LIFETIME: "1200000"
+  SPRING_DATASOURCE_HIKARI_LEAK-DETECTION-THRESHOLD: "60000"
+  # JWT 配置
+  JWT_SECRET: "evcs-secret-key-change-in-production"
+
+x-common-deploy: &java-deploy
+  deploy:
+    resources:
+      limits:
+        cpus: '0.8'
+        memory: 512M
+      reservations:
+        cpus: '0.3'
+        memory: 256M
+  restart: unless-stopped
+
+services:
+  # PostgreSQL - 优化内存使用
+  postgres:
+    image: postgres:15-alpine
+    container_name: evcs-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evcs_mgr
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      TZ: Asia/Shanghai
+      # PostgreSQL 内存优化
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
+      - ./sql/charging_station_tables.sql:/docker-entrypoint-initdb.d/02-station.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - evcs-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1.5G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c max_connections=100
+      -c shared_buffers=256MB
+      -c effective_cache_size=768MB
+      -c maintenance_work_mem=64MB
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c default_statistics_target=10
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+
+  # Redis - 优化内存配置
+  redis:
+    image: redis:7-alpine
+    container_name: evcs-redis
+    restart: unless-stopped
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --tcp-keepalive 60
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+    networks:
+      - evcs-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 256M
+        reservations:
+          cpus: '0.2'
+          memory: 128M
+
+  # RabbitMQ - 轻量级配置
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: evcs-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+      TZ: Asia/Shanghai
+      # RabbitMQ 内存优化
+      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: "0.6"
+      RABBITMQ_DISK_FREE_LIMIT: "1GB"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - evcs-network
+    deploy:
+      resources:
+        limits:
+          cpus: '0.8'
+          memory: 768M
+        reservations:
+          cpus: '0.3'
+          memory: 256M
+
+  # Eureka - 轻量级配置
+  eureka:
+    build:
+      context: .
+      dockerfile: evcs-eureka/Dockerfile
+    container_name: evcs-eureka
+    <<: *java-deploy
+    ports:
+      - "8761:8761"
+    environment:
+      JAVA_OPTS: "-Xms64m -Xmx192m -XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0"
+      TZ: Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8761/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - evcs-network
+
+  # Config Server - 轻量级配置
+  config-server:
+    build:
+      context: .
+      dockerfile: evcs-config/Dockerfile
+    container_name: evcs-config
+    <<: *java-deploy
+    ports:
+      - "8888:8888"
+    environment:
+      JAVA_OPTS: "-Xms64m -Xmx192m -XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0"
+      SPRING_PROFILES_ACTIVE: "local"
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: "file:/config-repo"
+      EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://eureka:8761/eureka/"
+      SPRING_DATA_REDIS_HOST: "redis"
+      SPRING_DATA_REDIS_PORT: "6379"
+      TZ: Asia/Shanghai
+    volumes:
+      - ./config-repo:/config-repo:ro
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8888/actuator/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    depends_on:
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+
+  # Gateway - 优化资源配置
+  gateway:
+    build:
+      context: .
+      dockerfile: evcs-gateway/Dockerfile
+    container_name: evcs-gateway
+    <<: *java-deploy
+    ports:
+      - "8080:8080"
+    environment:
+      <<: *java-env
+    depends_on:
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Auth Service - 优化资源配置
+  auth-service:
+    build:
+      context: .
+      dockerfile: evcs-auth/Dockerfile
+    container_name: evcs-auth
+    <<: *java-deploy
+    ports:
+      - "8081:8081"
+    environment:
+      <<: *java-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8081/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # Tenant Service - 优化资源配置
+  tenant-service:
+    build:
+      context: .
+      dockerfile: evcs-tenant/Dockerfile
+    container_name: evcs-tenant
+    <<: *java-deploy
+    ports:
+      - "8086:8086"
+    environment:
+      <<: *java-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8086/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # Station Service - 优化资源配置
+  station-service:
+    build:
+      context: .
+      dockerfile: evcs-station/Dockerfile
+    container_name: evcs-station
+    <<: *java-deploy
+    ports:
+      - "8082:8082"
+    environment:
+      <<: *java-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8082/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # Order Service - 优化资源配置
+  order-service:
+    build:
+      context: .
+      dockerfile: evcs-order/Dockerfile
+    container_name: evcs-order
+    <<: *java-deploy
+    ports:
+      - "8083:8083"
+    environment:
+      <<: *java-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8083/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # Payment Service - 优化资源配置
+  payment-service:
+    build:
+      context: .
+      dockerfile: evcs-payment/Dockerfile
+    container_name: evcs-payment
+    <<: *java-deploy
+    ports:
+      - "8084:8084"
+    environment:
+      <<: *java-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8084/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # Protocol Service - 优化资源配置
+  protocol-service:
+    build:
+      context: .
+      dockerfile: evcs-protocol/Dockerfile
+    container_name: evcs-protocol
+    <<: *java-deploy
+    ports:
+      - "8085:8085"
+    environment:
+      <<: *java-env
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8085/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # Monitoring Service - 优化资源配置
+  monitoring-service:
+    build:
+      context: .
+      dockerfile: evcs-monitoring/Dockerfile
+    container_name: evcs-monitoring
+    <<: *java-deploy
+    ports:
+      - "8087:8087"
+    environment:
+      <<: *java-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8087/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 90s
+
+  # 前端管理界面 - 轻量级Nginx
+  admin-frontend:
+    build:
+      context: ./evcs-admin
+      dockerfile: Dockerfile
+    container_name: evcs-admin
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - gateway
+    networks:
+      - evcs-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 128M
+        reservations:
+          cpus: '0.1'
+          memory: 64M
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+
+networks:
+  evcs-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
