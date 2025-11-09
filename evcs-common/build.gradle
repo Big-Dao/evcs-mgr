@@ -47,6 +47,6 @@ dependencies {
     // Test fixtures dependencies
     testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
     testFixturesApi "com.baomidou:mybatis-plus-boot-starter:${mybatisPlusVersion}"
-    testFixturesApi 'com.h2database:h2:2.3.232'  // 升级修复 PostgreSQL 兼容性问题
+    testFixturesApi "com.h2database:h2:${h2Version}"  // 统一使用h2Version变量
     testFixturesImplementation 'org.springframework.security:spring-security-core'
 }

@@ -5,18 +5,15 @@ import com.evcs.payment.dto.PaymentRequest;
 import com.evcs.payment.dto.PaymentResponse;
 import com.evcs.payment.dto.RefundRequest;
 import com.evcs.payment.dto.RefundResponse;
-import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
 import java.util.Map;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.UUID;
 
 /**
  * 微信支付渠道服务 V2 - 简化版本

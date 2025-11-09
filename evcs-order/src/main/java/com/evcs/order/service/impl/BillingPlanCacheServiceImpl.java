@@ -8,7 +8,6 @@ import com.evcs.order.service.IBillingPlanService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.listener.ChannelTopic;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -42,6 +41,7 @@ public class BillingPlanCacheServiceImpl implements IBillingPlanCacheService {
         }
         
         String cacheKey = buildCacheKey(stationId, planId);
+        java.util.Objects.requireNonNull(cacheKey, "cacheKey不能为null");
         
         // 尝试从缓存获取
         BillingPlan cached = (BillingPlan) redisTemplate.opsForValue().get(cacheKey);
@@ -56,6 +56,7 @@ public class BillingPlanCacheServiceImpl implements IBillingPlanCacheService {
         
         if (plan != null && plan.getStationId() != null && plan.getStationId().equals(stationId)) {
             // 放入缓存
+            java.util.Objects.requireNonNull(cacheKey, "cacheKey不能为null");
             redisTemplate.opsForValue().set(cacheKey, plan, CACHE_TTL_HOURS, TimeUnit.HOURS);
             return plan;
         }
@@ -125,6 +126,8 @@ public class BillingPlanCacheServiceImpl implements IBillingPlanCacheService {
         }
         
         String cacheKey = buildCacheKey(stationId, planId);
+        java.util.Objects.requireNonNull(cacheKey, "cacheKey不能为null");
+        
         redisTemplate.delete(cacheKey);
         
         // 广播缓存失效消息到其他实例
@@ -200,6 +203,7 @@ public class BillingPlanCacheServiceImpl implements IBillingPlanCacheService {
      */
     private void broadcastInvalidation(String cacheKey) {
         try {
+            java.util.Objects.requireNonNull(cacheKey, "cacheKey不能为null");
             redisTemplate.convertAndSend(INVALIDATE_TOPIC, cacheKey);
             log.debug("Broadcasted cache invalidation: {}", cacheKey);
         } catch (Exception e) {

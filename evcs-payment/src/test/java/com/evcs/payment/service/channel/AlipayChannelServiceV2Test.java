@@ -3,9 +3,7 @@ package com.evcs.payment.service.channel;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.response.AlipayTradeAppPayResponse;
-import com.alipay.api.response.AlipayTradePagePayResponse;
 import com.alipay.api.response.AlipayTradeQueryResponse;
-import com.alipay.api.response.AlipayTradeRefundResponse;
 import com.evcs.payment.config.PaymentConfig;
 import com.evcs.payment.dto.PaymentRequest;
 import com.evcs.payment.dto.PaymentResponse;
@@ -25,7 +23,6 @@ import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 /**

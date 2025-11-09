@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 租户控制器测试
  */
-@SpringBootTest(classes = TenantServiceApplication.class)
+@SpringBootTest(classes = {TenantServiceApplication.class, com.evcs.tenant.config.TestConfig.class})
 @AutoConfigureMockMvc
 @DisplayName("租户控制器测试")
 class TenantControllerTest extends BaseControllerTest {

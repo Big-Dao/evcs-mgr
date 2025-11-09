@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * 系统租户服务测试
  */
-@SpringBootTest(classes = TenantServiceApplication.class)
+@SpringBootTest(classes = {TenantServiceApplication.class, com.evcs.tenant.config.TestConfig.class})
 @DisplayName("系统租户服务测试")
 class SysTenantServiceImplTest extends BaseServiceTest {
 

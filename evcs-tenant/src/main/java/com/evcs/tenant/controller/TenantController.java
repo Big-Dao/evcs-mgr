@@ -2,7 +2,6 @@ package com.evcs.tenant.controller;
 
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.page.PageQuery;
-import com.evcs.common.page.PageResult;
 import com.evcs.common.result.Result;
 import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.service.ISysTenantService;

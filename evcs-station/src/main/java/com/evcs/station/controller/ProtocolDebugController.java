@@ -1,10 +1,6 @@
 package com.evcs.station.controller;
 
 import com.evcs.common.result.Result;
-import com.evcs.protocol.api.ICloudChargeProtocolService;
-import com.evcs.protocol.api.IOCPPProtocolService;
-import com.evcs.station.entity.Charger;
-import com.evcs.station.mapper.ChargerMapper;
 import com.evcs.station.service.IChargerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -27,22 +23,8 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/debug/protocol")
 public class ProtocolDebugController {
 
-    @Autowired(required = false)
-    private IOCPPProtocolService ocppService;
-
-    @Autowired(required = false)
-    private ICloudChargeProtocolService cloudService;
-
-    @Autowired
-    private ChargerMapper chargerMapper;
-
     @Autowired
     private IChargerService chargerService;
-
-    private boolean useOcpp(Charger charger) {
-        String protocols = charger.getSupportedProtocols();
-        return protocols != null && protocols.toLowerCase().contains("ocpp");
-    }
 
     @PostMapping("/{chargerId}/heartbeat")
     @Operation(summary = "触发心跳", description = "根据充电桩协议触发一次心跳")

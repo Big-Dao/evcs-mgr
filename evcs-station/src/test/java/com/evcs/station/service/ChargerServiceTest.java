@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 充电桩服务测试类
  */
-@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class},
+@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class, com.evcs.station.config.TestConfig.class},
                 webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @DisplayName("充电桩服务测试")
 class ChargerServiceTest extends BaseServiceTest {

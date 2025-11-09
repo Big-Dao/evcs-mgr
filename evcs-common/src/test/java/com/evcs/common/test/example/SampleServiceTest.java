@@ -1,7 +1,6 @@
 package com.evcs.common.test.example;
 
 import com.evcs.common.test.base.BaseServiceTest;
-import com.evcs.common.test.util.AssertionHelper;
 import com.evcs.common.test.util.TestDataFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

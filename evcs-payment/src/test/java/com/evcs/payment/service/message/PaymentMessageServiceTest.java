@@ -1,7 +1,6 @@
 package com.evcs.payment.service.message;
 
-import com.evcs.payment.config.MockPaymentMetricsConfig;
-import com.evcs.payment.config.TestRedisConfig;
+import com.evcs.payment.config.TestConfig;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.mapper.PaymentOrderMapper;
@@ -23,9 +22,10 @@ import static org.junit.jupiter.api.Assertions.*;
  * 支付消息服务测试
  */
 @Slf4j
-@SpringBootTest
+@SpringBootTest(classes = {com.evcs.payment.PaymentServiceApplication.class, com.evcs.payment.config.TestConfig.class},
+    properties = {"spring.autoconfigure.exclude=com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration,org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"})
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {TestRedisConfig.class, MockPaymentMetricsConfig.class})
+@ContextConfiguration(classes = {TestConfig.class})
 @DisplayName("支付消息服务测试")
 class PaymentMessageServiceTest {
 

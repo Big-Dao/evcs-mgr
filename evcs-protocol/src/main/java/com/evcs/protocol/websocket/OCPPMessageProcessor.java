@@ -3,12 +3,9 @@ package com.evcs.protocol.websocket;
 import com.evcs.protocol.api.ProtocolEventListener;
 import com.evcs.protocol.dto.ocpp.OCPPMessage;
 import com.evcs.protocol.dto.ocpp.OCPPCallMessage;
-import com.evcs.protocol.dto.ocpp.OCPPCallErrorMessage;
 import com.evcs.protocol.dto.ocpp.OCPPBootNotificationRequest;
 import com.evcs.protocol.dto.ocpp.OCPPMessageParser;
-import com.evcs.protocol.dto.ocpp.OCPPMessageType;
 import com.evcs.protocol.dto.ocpp.OCPPErrorCode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -16,7 +13,6 @@ import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * OCPP消息处理器
@@ -28,7 +24,6 @@ import java.util.UUID;
 public class OCPPMessageProcessor {
 
     private final ProtocolEventListener eventListener;
-    private final ObjectMapper objectMapper;
     private final OCPPMessageParser messageParser;
 
     /**
@@ -273,7 +268,7 @@ public class OCPPMessageProcessor {
             Integer connectorId = (Integer) payload.get("connectorId");
             String idTag = (String) payload.get("idTag");
             Integer meterStart = (Integer) payload.get("meterStart");
-            String timestamp = (String) payload.get("timestamp");
+            // timestamp is available in payload but not currently used
 
             log.info("Received StartTransaction from charger {}: connectorId={}, idTag={}, meterStart={}",
                     session.getChargerCode(), connectorId, idTag, meterStart);
@@ -294,8 +289,7 @@ public class OCPPMessageProcessor {
             if (eventListener != null) {
                 try {
                     Long chargerId = Long.valueOf(session.getChargerCode().replaceAll("[^0-9]", ""));
-                    String sessionId = "TXN_" + transactionId;
-                    eventListener.onStartAck(chargerId, sessionId, true, "Transaction started");
+                    eventListener.onStartAck(chargerId, "TXN_" + transactionId, true, "Transaction started");
                 } catch (Exception e) {
                     log.debug("Error triggering start transaction event", e);
                 }
@@ -315,7 +309,7 @@ public class OCPPMessageProcessor {
             Integer transactionId = (Integer) payload.get("transactionId");
             String idTag = (String) payload.get("idTag");
             Integer meterStop = (Integer) payload.get("meterStop");
-            String timestamp = (String) payload.get("timestamp");
+            // timestamp is available in payload but not currently used
 
             log.info("Received StopTransaction from charger {}: transactionId={}, idTag={}, meterStop={}",
                     session.getChargerCode(), transactionId, idTag, meterStop);
@@ -331,7 +325,6 @@ public class OCPPMessageProcessor {
             if (eventListener != null) {
                 try {
                     Long chargerId = Long.valueOf(session.getChargerCode().replaceAll("[^0-9]", ""));
-                    String sessionId = "TXN_" + transactionId;
                     eventListener.onStopAck(chargerId, true, "Transaction stopped");
                 } catch (Exception e) {
                     log.debug("Error triggering stop transaction event", e);
@@ -397,7 +390,11 @@ public class OCPPMessageProcessor {
     private void sendResponse(OCPPWebSocketSession session, OCPPMessage requestMessage, Map<String, Object> payload) {
         try {
             String responseMessage = messageParser.createCallResultMessage(requestMessage.getMessageId(), payload);
-            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(responseMessage));
+            session.getWebSocketSession().sendMessage(
+                new org.springframework.web.socket.TextMessage(
+                    java.util.Objects.requireNonNull(responseMessage, "responseMessage must not be null")
+                )
+            );
         } catch (Exception e) {
             log.error("Error sending response to charger: {}", session.getChargerCode(), e);
         }
@@ -417,7 +414,11 @@ public class OCPPMessageProcessor {
             }
 
             String responseMessage = messageParser.createCallResultMessage(requestMessage.getMessageId(), payload);
-            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(responseMessage));
+            session.getWebSocketSession().sendMessage(
+                new org.springframework.web.socket.TextMessage(
+                    java.util.Objects.requireNonNull(responseMessage, "responseMessage must not be null")
+                )
+            );
 
         } catch (Exception e) {
             log.error("Error sending BootNotification response to charger: {}", session.getChargerCode(), e);
@@ -438,7 +439,11 @@ public class OCPPMessageProcessor {
 
             String errorMessage = messageParser.createCallErrorMessage(
                 requestMessage.getMessageId(), ocppErrorCode, errorDescription, null);
-            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(errorMessage));
+            session.getWebSocketSession().sendMessage(
+                new org.springframework.web.socket.TextMessage(
+                    java.util.Objects.requireNonNull(errorMessage, "errorMessage must not be null")
+                )
+            );
         } catch (Exception e) {
             log.error("Error sending error response to charger: {}", session.getChargerCode(), e);
         }

@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.lang.NonNull;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -50,6 +51,7 @@ public class AsyncConfig implements AsyncConfigurer {
      * 同时提供别名 {@code taskExecutor}，以便将其作为默认的 async executor 使用。
      */
     @Bean(name = {"chargingExecutor", "taskExecutor"})
+    @SuppressWarnings("null")
     public ThreadPoolTaskExecutor chargingExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
 
@@ -87,7 +89,7 @@ public class AsyncConfig implements AsyncConfigurer {
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return new AsyncUncaughtExceptionHandler() {
             @Override
-            public void handleUncaughtException(Throwable ex, Method method, Object... params) {
+            public void handleUncaughtException(@NonNull Throwable ex, @NonNull Method method, @NonNull Object... params) {
                 try {
                     log.error(
                         "Uncaught async exception in method [{}], params={}, tenantContext={}",

@@ -102,6 +102,9 @@ public class ProtocolServiceConfiguration {
 
             // 这里可以添加启动时的初始化逻辑
             // 例如：加载设备配置、检查连接状态、启动定时任务等
+            if (protocolManager != null) {
+                log.debug("Protocol manager initialized: {}", protocolManager.getClass().getSimpleName());
+            }
 
             log.info("Protocol service initializer completed");
         }

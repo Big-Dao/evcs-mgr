@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 多租户隔离集成测试
  * 验证不同租户之间的数据完全隔离
  */
-@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class},
+@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class, com.evcs.integration.config.TestConfig.class},
                 webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @DisplayName("多租户隔离集成测试")
 class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {

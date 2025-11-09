@@ -111,6 +111,7 @@ public class OCPPBootNotificationRequest extends OCPPRequestPayload {
  * OCPP BootNotification响应
  */
 @Data
+@EqualsAndHashCode(callSuper = false)
 class OCPPBootNotificationResponse extends OCPPResponsePayload {
 
     /**

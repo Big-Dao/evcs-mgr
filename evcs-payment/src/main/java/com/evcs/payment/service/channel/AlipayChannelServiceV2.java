@@ -19,7 +19,6 @@ import com.evcs.payment.dto.PaymentRequest;
 import com.evcs.payment.dto.PaymentResponse;
 import com.evcs.payment.dto.RefundRequest;
 import com.evcs.payment.dto.RefundResponse;
-import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +26,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 

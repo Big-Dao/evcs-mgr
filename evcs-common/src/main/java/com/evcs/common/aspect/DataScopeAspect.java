@@ -50,7 +50,6 @@ public class DataScopeAspect {
             // 获取当前用户的租户信息
             Long currentTenantId = TenantContext.getTenantId();
             Long currentUserId = TenantContext.getUserId();
-            Integer tenantType = TenantContext.getTenantType();
             
             if (currentTenantId == null) {
                 log.warn("数据权限检查失败：缺少租户上下文");

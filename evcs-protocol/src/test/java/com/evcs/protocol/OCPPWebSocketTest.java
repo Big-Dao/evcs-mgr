@@ -4,25 +4,17 @@ import com.evcs.protocol.config.ProtocolProperties;
 import com.evcs.protocol.dto.ProtocolRequest;
 import com.evcs.protocol.dto.ProtocolResponse;
 import com.evcs.protocol.enums.ProtocolType;
+import com.evcs.protocol.mq.ProtocolEventPublisher;
 import com.evcs.protocol.service.impl.OCPPProtocolServiceImpl;
 import com.evcs.protocol.websocket.OCPPSessionManager;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.test.context.TestPropertySource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * OCPP WebSocket协议测试
  */
-@SpringBootTest
-@ActiveProfiles("test")
-@TestPropertySource(properties = {
-    "evcs.protocol.ocpp.enabled=true",
-    "evcs.protocol.ocpp.port=8089"
-})
 @DisplayName("OCPP WebSocket协议测试")
 class OCPPWebSocketTest {
 
@@ -34,8 +26,9 @@ class OCPPWebSocketTest {
     void testOCPPProtocolServiceInitialization() {
         ProtocolProperties properties = new ProtocolProperties();
         OCPPSessionManager sessionManager = new OCPPSessionManager();
+        ProtocolEventPublisher eventPublisher = new ProtocolEventPublisher();
 
-        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties) {
+        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager) {
             @Override
             protected boolean doConnect(String deviceCode, ProtocolType protocolType) {
                 return true;
@@ -132,8 +125,9 @@ class OCPPWebSocketTest {
     void testOCPPProtocolRequestHandling() {
         ProtocolProperties properties = new ProtocolProperties();
         OCPPSessionManager sessionManager = new OCPPSessionManager();
+        ProtocolEventPublisher eventPublisher = new ProtocolEventPublisher();
 
-        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties) {
+        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager) {
             @Override
             protected boolean doConnect(String deviceCode, ProtocolType protocolType) {
                 return ProtocolType.OCPP.equals(protocolType);
@@ -228,8 +222,9 @@ class OCPPWebSocketTest {
     void testInvalidProtocolType() {
         ProtocolProperties properties = new ProtocolProperties();
         OCPPSessionManager sessionManager = new OCPPSessionManager();
+        ProtocolEventPublisher eventPublisher = new ProtocolEventPublisher();
 
-        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties) {
+        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager) {
             @Override
             protected boolean doConnect(String deviceCode, ProtocolType protocolType) {
                 return false;

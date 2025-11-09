@@ -3,7 +3,7 @@ package com.evcs.payment.integration;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.test.base.BaseIntegrationTest;
 import com.evcs.payment.PaymentServiceApplication;
-import com.evcs.payment.TestConfig;
+import com.evcs.payment.config.TestConfig;
 import com.evcs.payment.dto.*;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentMethod;
@@ -39,7 +39,9 @@ import static org.junit.jupiter.api.Assertions.*;
         "spring.datasource.url=jdbc:h2:mem:payment_testdb;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH",
         "spring.datasource.username=sa",
         "spring.datasource.password=",
-        "spring.autoconfigure.exclude=org.springframework.amqp.rabbit.annotation.RabbitBootstrapConfiguration"
+        "spring.sql.init.mode=always",
+        "spring.sql.init.schema-locations=classpath:schema-h2.sql",
+        "spring.autoconfigure.exclude=com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration,org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"
     }
 )
 @ActiveProfiles("test")

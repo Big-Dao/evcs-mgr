@@ -3,7 +3,6 @@ package com.evcs.order.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
-import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.validation.TimeRangeValidator;
 import com.evcs.order.entity.ChargingOrder;
 import com.evcs.order.mapper.ChargingOrderMapper;

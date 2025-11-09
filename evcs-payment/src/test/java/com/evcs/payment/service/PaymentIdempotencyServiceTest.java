@@ -32,6 +32,7 @@ import static org.mockito.Mockito.when;
  * 支付幂等性服务测试
  */
 @ExtendWith(MockitoExtension.class)
+@SuppressWarnings({"null", "unchecked"})
 class PaymentIdempotencyServiceTest {
 
     @Mock

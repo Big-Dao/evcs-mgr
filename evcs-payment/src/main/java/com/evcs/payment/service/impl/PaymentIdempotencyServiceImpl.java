@@ -8,6 +8,7 @@ import com.evcs.payment.service.PaymentIdempotencyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -32,12 +33,10 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
     private final PaymentMetrics paymentMetrics;
 
     // Redis键前缀
-    private static final String IDEMPOTENT_KEY_PREFIX = "payment:idempotent:";
     private static final String LOCK_KEY_PREFIX = "payment:lock:";
     private static final String CACHE_KEY_PREFIX = "payment:cache:";
 
     // 默认过期时间
-    private static final long DEFAULT_LOCK_TIME = 30; // 30秒
     private static final long DEFAULT_CACHE_TIME = 24; // 24小时
     private static final long MAX_IDEMPOTENT_KEY_LENGTH = 64;
 
@@ -49,6 +48,9 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
 
         String lockKey = buildLockKey(idempotentKey);
         try {
+            java.util.Objects.requireNonNull(lockKey, "lockKey不能为null");
+            java.util.Objects.requireNonNull(requestId, "requestId不能为null");
+            
             Boolean success = redisTemplate.opsForValue().setIfAbsent(
                 lockKey,
                 requestId,
@@ -91,15 +93,21 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
                 "    return 0 " +
                 "end";
 
+            java.util.Objects.requireNonNull(lockKey, "lockKey不能为null");
+            java.util.Objects.requireNonNull(requestId, "requestId不能为null");
+            
+            // 使用RedisScript替代废弃的eval方法
+            DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
+            redisScript.setScriptText(luaScript);
+            redisScript.setResultType(Long.class);
+            
+            java.util.List<String> keys = java.util.Collections.singletonList(lockKey);
+            java.util.Objects.requireNonNull(keys, "keys不能为null");
+            
             Long result = redisTemplate.execute(
-                (org.springframework.data.redis.connection.RedisConnection connection) ->
-                    connection.eval(
-                        luaScript.getBytes(),
-                        org.springframework.data.redis.connection.ReturnType.INTEGER,
-                        1,
-                        lockKey.getBytes(),
-                        requestId.getBytes()
-                    )
+                redisScript,
+                keys,
+                requestId
             );
 
             if (result != null && result > 0) {
@@ -169,6 +177,9 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
 
         String cacheKey = buildCacheKey(idempotentKey);
         try {
+            java.util.Objects.requireNonNull(cacheKey, "cacheKey不能为null");
+            java.util.Objects.requireNonNull(timeUnit, "timeUnit不能为null");
+            
             redisTemplate.opsForValue().set(cacheKey, paymentOrder, expireTime, timeUnit);
             log.debug("缓存支付结果成功: idempotentKey={}, tradeNo={}, expireTime={}",
                 idempotentKey, paymentOrder.getTradeNo(), expireTime);
@@ -190,6 +201,8 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
 
         String cacheKey = buildCacheKey(idempotentKey);
         try {
+            java.util.Objects.requireNonNull(cacheKey, "cacheKey不能为null");
+            
             Object cached = redisTemplate.opsForValue().get(cacheKey);
             if (cached instanceof PaymentOrder) {
                 return (PaymentOrder) cached;
@@ -290,6 +303,8 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
         try {
             // 检查是否已有相同幂等键的请求在处理
             String lockKey = buildLockKey(idempotentKey);
+            java.util.Objects.requireNonNull(lockKey, "lockKey不能为null");
+            
             Object existingRequestId = redisTemplate.opsForValue().get(lockKey);
 
             boolean isDuplicate = requestId.equals(existingRequestId);

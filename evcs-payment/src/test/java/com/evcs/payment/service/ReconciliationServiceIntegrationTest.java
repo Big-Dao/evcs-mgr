@@ -1,13 +1,11 @@
 package com.evcs.payment.service;
 
-import com.evcs.payment.config.MockPaymentMetricsConfig;
-import com.evcs.payment.config.TestRedisConfig;
+import com.evcs.payment.config.TestConfig;
 import com.evcs.payment.dto.ReconciliationRequest;
 import com.evcs.payment.dto.ReconciliationResult;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.mapper.PaymentOrderMapper;
-import com.evcs.payment.service.IReconciliationService;
 import com.evcs.payment.service.reconciliation.ReconciliationStatementService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,9 +26,10 @@ import static org.mockito.Mockito.*;
 /**
  * 对账服务集成测试
  */
-@SpringBootTest
+@SpringBootTest(classes = {com.evcs.payment.PaymentServiceApplication.class, com.evcs.payment.config.TestConfig.class},
+    properties = {"spring.autoconfigure.exclude=com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration,org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"})
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {TestRedisConfig.class, MockPaymentMetricsConfig.class})
+@ContextConfiguration(classes = {TestConfig.class})
 @DisplayName("对账服务集成测试")
 class ReconciliationServiceIntegrationTest {
 

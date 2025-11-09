@@ -2,14 +2,12 @@ package com.evcs.payment.service;
 
 import com.evcs.payment.config.OrderSyncConfig;
 import com.evcs.payment.entity.PaymentOrder;
-import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.service.impl.OrderSyncServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.*;

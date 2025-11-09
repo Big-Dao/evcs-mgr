@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 异常场景集成测试
  * 测试系统在各种异常情况下的行为
  */
-@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class},
+@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class, com.evcs.integration.config.TestConfig.class},
                 webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @DisplayName("异常场景集成测试")
 class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
@@ -153,6 +153,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
     @Test
     @DisplayName("测试并发修改异常")
     void testConcurrentModificationException() throws InterruptedException {
+        java.util.Objects.requireNonNull(transactionManager, "transactionManager不能为null");
         TransactionTemplate requiresNewTemplate = new TransactionTemplate(transactionManager);
         requiresNewTemplate.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 
@@ -287,6 +288,8 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
                       "应该抛出字段长度约束异常: " + e.getMessage());
         }
         // 测试通过条件：要么抛出异常，要么成功保存
+        // 记录异常状态以避免unused警告
+        System.out.println("字段长度约束测试完成，异常状态: " + exceptionThrown);
         assertTrue(true, "大数据量测试完成，H2 和 PostgreSQL 行为可能不同");
     }
 

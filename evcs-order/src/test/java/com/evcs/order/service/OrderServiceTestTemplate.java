@@ -8,10 +8,6 @@ import com.evcs.common.test.base.BaseServiceTest;
 import com.evcs.common.test.util.TestDataFactory;
 import com.evcs.order.entity.ChargingOrder;
 import com.evcs.order.mapper.ChargingOrderMapper;
-import com.evcs.order.service.IBillingPlanCacheService;
-import com.evcs.order.service.IBillingService;
-import com.evcs.order.service.IChargingOrderService;
-import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,8 +16,6 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.listener.RedisMessageListenerContainer;
 
 /**
  * 订单服务测试模板

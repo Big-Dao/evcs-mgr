@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 充电站管理集成测试
  * 测试充电站和充电桩的完整业务流程
  */
-@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class},
+@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class, com.evcs.integration.config.TestConfig.class},
                 webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @DisplayName("充电站管理集成测试")
 class StationManagementIntegrationTest extends BaseIntegrationTest {

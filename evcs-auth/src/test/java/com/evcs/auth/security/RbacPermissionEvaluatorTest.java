@@ -4,7 +4,7 @@ import com.evcs.auth.entity.Permission;
 import com.evcs.auth.entity.Role;
 import com.evcs.auth.service.IPermissionService;
 import com.evcs.auth.service.IRoleService;
-import com.evcs.common.tenant.TenantContext;
+import com.evcs.auth.tenant.TenantContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,8 +18,6 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.List;
-import java.util.Set;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;

@@ -1,19 +1,51 @@
 package com.evcs.station.config;
 
+import com.evcs.protocol.api.ProtocolEventListener;
 import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
+
+import java.time.LocalDateTime;
 
 /**
  * 测试配置类
- *
- * 注意：由于主代码使用了Optional依赖（@Autowired(required = false)），
- * 不再需要为Protocol服务提供Mock Bean。
- * 服务层会在协议服务不可用时优雅降级。
- *
- * 如果特定测试需要测试协议交互，可以在测试类中单独创建Mock。
+ * 提供测试所需的Mock Bean
  */
 @TestConfiguration
 public class TestConfig {
-    // Protocol服务的Mock已移除
-    // 主代码使用Optional依赖，测试时会自动处理null情况
-    // 如果需要添加其他测试专用的Bean，可以在这里定义
+
+    /**
+     * 提供一个空的ProtocolEventListener实现用于测试
+     * 避免测试时因缺少该Bean导致ApplicationContext启动失败
+     */
+    @Bean
+    @Primary
+    public ProtocolEventListener protocolEventListener() {
+        return new ProtocolEventListener() {
+            @Override
+            public void onHeartbeat(Long chargerId, LocalDateTime time) {
+                // 测试环境空实现
+            }
+
+            @Override
+            public void onStatusChange(Long chargerId, Integer status) {
+                // 测试环境空实现
+            }
+
+            @Override
+            public void onStartAck(Long chargerId, String sessionId, boolean success, String message) {
+                // 测试环境空实现
+            }
+
+            @Override
+            public void onStopAck(Long chargerId, boolean success, String message) {
+                // 测试环境空实现
+            }
+
+            @Override
+            public void onError(Long chargerId, String code, String message) {
+                // 测试环境空实现
+            }
+        };
+    }
 }

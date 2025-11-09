@@ -1,7 +1,6 @@
 package com.evcs.protocol.controller;
 
 import com.evcs.protocol.dto.ProtocolRequest;
-import com.evcs.protocol.dto.ProtocolResponse;
 import com.evcs.protocol.service.CloudChargeSignatureValidator;
 import com.evcs.protocol.mq.ProtocolEventPublisher;
 import lombok.RequiredArgsConstructor;

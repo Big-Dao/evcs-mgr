@@ -1,9 +1,7 @@
 package com.evcs.payment.service.reconciliation;
 
-import com.alipay.api.AlipayApiException;
 import com.evcs.payment.config.AlipayConfig;
-import com.evcs.payment.config.MockPaymentMetricsConfig;
-import com.evcs.payment.config.TestRedisConfig;
+import com.evcs.payment.config.TestConfig;
 import com.evcs.payment.service.channel.AlipayClientFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,19 +11,17 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 /**
  * 支付宝对账服务测试
  */
-@SpringBootTest
+@SpringBootTest(classes = {com.evcs.payment.PaymentServiceApplication.class, com.evcs.payment.config.TestConfig.class},
+    properties = {"spring.autoconfigure.exclude=com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration,org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"})
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {TestRedisConfig.class, MockPaymentMetricsConfig.class})
+@ContextConfiguration(classes = {TestConfig.class})
 @DisplayName("支付宝对账服务测试")
 class AlipayReconciliationServiceTest {
 

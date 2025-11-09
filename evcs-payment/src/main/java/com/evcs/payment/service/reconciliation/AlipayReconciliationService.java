@@ -16,7 +16,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
 import java.net.HttpURLConnection;
-import java.net.URL;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -93,8 +93,9 @@ public class AlipayReconciliationService {
     private String downloadBillContent(String billDownloadUrl) throws IOException {
         log.info("下载支付宝对账单文件: url={}", billDownloadUrl);
 
-        URL url = new URL(billDownloadUrl);
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        // 使用URI替代废弃的URL构造器
+        URI uri = URI.create(billDownloadUrl);
+        HttpURLConnection connection = (HttpURLConnection) uri.toURL().openConnection();
         connection.setRequestMethod("GET");
         connection.setConnectTimeout(30000);
         connection.setReadTimeout(30000);

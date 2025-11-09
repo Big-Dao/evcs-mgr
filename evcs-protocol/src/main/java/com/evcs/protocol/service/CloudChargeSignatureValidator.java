@@ -3,9 +3,13 @@ package com.evcs.protocol.service;
 import com.evcs.protocol.config.ProtocolProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.codec.digest.HmacUtils;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
@@ -100,15 +104,34 @@ public class CloudChargeSignatureValidator {
         }
 
         String algorithm = protocolProperties.getCloudCharge().getSignAlgorithm();
-        switch (algorithm.toUpperCase()) {
-            case "HMAC-SHA256":
-                return HmacUtils.hmacSha256Hex(appSecret, signString);
-            case "HMAC-SHA1":
-                return HmacUtils.hmacSha1Hex(appSecret, signString);
-            case "HMAC-MD5":
-                return HmacUtils.hmacMd5Hex(appSecret, signString);
-            default:
-                throw new IllegalArgumentException("Unsupported signature algorithm: " + algorithm);
+        // Only support HMAC-SHA256 for security reasons
+        if ("HMAC-SHA256".equals(algorithm.toUpperCase())) {
+            return calculateHmacSha256(appSecret, signString);
+        } else {
+            throw new IllegalArgumentException("Unsupported signature algorithm: " + algorithm +
+                ". Only HMAC-SHA256 is supported for security reasons.");
+        }
+    }
+
+    /**
+     * 使用标准Java加密API计算HMAC-SHA256签名
+     */
+    private String calculateHmacSha256(String appSecret, String signString) {
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec secretKeySpec = new SecretKeySpec(appSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(secretKeySpec);
+            byte[] hmacBytes = mac.doFinal(signString.getBytes(StandardCharsets.UTF_8));
+
+            // Convert to hexadecimal string
+            StringBuilder sb = new StringBuilder(hmacBytes.length * 2);
+            for (byte b : hmacBytes) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException | InvalidKeyException e) {
+            log.error("Error calculating HMAC-SHA256 signature", e);
+            throw new RuntimeException("Failed to calculate signature", e);
         }
     }
 

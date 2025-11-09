@@ -4,8 +4,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.test.base.BaseServiceTest;
 import com.evcs.order.OrderServiceApplication;
-import com.evcs.order.config.CachePreloadRunner;
-import com.evcs.order.config.RedisConfig;
 import com.evcs.order.config.TestConfig;
 import com.evcs.order.entity.BillingPlan;
 import com.evcs.order.entity.ChargingOrder;

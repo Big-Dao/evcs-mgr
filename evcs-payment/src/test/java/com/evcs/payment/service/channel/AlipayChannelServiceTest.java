@@ -1,8 +1,7 @@
 package com.evcs.payment.service.channel;
 
 import com.evcs.payment.config.AlipayConfig;
-import com.evcs.payment.config.MockPaymentMetricsConfig;
-import com.evcs.payment.config.TestRedisConfig;
+import com.evcs.payment.config.TestConfig;
 import com.evcs.payment.dto.PaymentRequest;
 import com.evcs.payment.dto.PaymentResponse;
 import com.evcs.payment.dto.RefundRequest;
@@ -23,9 +22,11 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 支付宝渠道服务测试
  */
-@SpringBootTest
+@SpringBootTest(properties = {
+    "spring.autoconfigure.exclude=com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration,org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration"
+})
 @ActiveProfiles("test")
-@ContextConfiguration(classes = {TestRedisConfig.class, MockPaymentMetricsConfig.class})
+@ContextConfiguration(classes = {TestConfig.class})
 @DisplayName("支付宝渠道服务测试")
 class AlipayChannelServiceTest {
 

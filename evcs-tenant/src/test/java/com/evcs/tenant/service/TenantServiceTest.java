@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 租户服务测试
  */
-@SpringBootTest(classes = TenantServiceApplication.class)
+@SpringBootTest(classes = {TenantServiceApplication.class, com.evcs.tenant.config.TestConfig.class})
 @DisplayName("租户服务测试")
 class TenantServiceTest extends BaseServiceTest {
 

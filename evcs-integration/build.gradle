@@ -8,6 +8,7 @@ description = 'Third-party Integration Service'
 
 dependencies {
     implementation project(':evcs-common')
+    implementation project(':evcs-protocol')  // 需要ProtocolEventListener接口
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
@@ -26,7 +27,7 @@ dependencies {
     // Test dependencies for integration tests
     testImplementation project(':evcs-station')
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'com.h2database:h2'
+    testImplementation "com.h2database:h2:${h2Version}"  // 统一H2版本
     
     // Include test utilities from evcs-common using testFixtures
     testImplementation testFixtures(project(':evcs-common'))

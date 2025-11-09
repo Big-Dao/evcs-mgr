@@ -13,11 +13,7 @@
         <property name="fileNamePattern" value="module\-info\.java$"/>
     </module>
 
-    <!-- https://checkstyle.org/config_filters.html#SuppressionFilter -->
-    <module name="SuppressionFilter">
-        <property name="file" value="${configFolder}/suppressions.xml"/>
-        <property name="optional" value="true"/>
-    </module>
+    <!-- Suppression filter removed due to missing suppressions.xml -->
 
     <!-- Checks for whether files contain tabs -->
     <module name="FileTabCharacter">

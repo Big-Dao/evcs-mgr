@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 充电站多租户隔离测试
  */
-@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class},
+@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class, com.evcs.station.config.TestConfig.class},
                 webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @DisplayName("充电站多租户隔离测试")
 class StationTenantIsolationTest extends BaseTenantIsolationTest {

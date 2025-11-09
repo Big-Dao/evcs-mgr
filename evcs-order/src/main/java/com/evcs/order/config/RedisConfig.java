@@ -58,8 +58,11 @@ public class RedisConfig {
             RedisConnectionFactory connectionFactory,
             MessageListenerAdapter listenerAdapter) {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
-        container.setConnectionFactory(connectionFactory);
-        container.addMessageListener(listenerAdapter, new ChannelTopic(INVALIDATE_TOPIC));
+        container.setConnectionFactory(java.util.Objects.requireNonNull(connectionFactory, "connectionFactory must not be null"));
+        container.addMessageListener(
+            java.util.Objects.requireNonNull(listenerAdapter, "listenerAdapter must not be null"), 
+            new ChannelTopic(INVALIDATE_TOPIC)
+        );
         log.info("Redis message listener container configured for topic: {}", INVALIDATE_TOPIC);
         return container;
     }
@@ -69,7 +72,10 @@ public class RedisConfig {
      */
     @Bean
     public MessageListenerAdapter listenerAdapter(BillingPlanCacheInvalidationListener listener) {
-        return new MessageListenerAdapter(listener, "onMessage");
+        return new MessageListenerAdapter(
+            java.util.Objects.requireNonNull(listener, "listener must not be null"), 
+            "onMessage"
+        );
     }
     
     /**

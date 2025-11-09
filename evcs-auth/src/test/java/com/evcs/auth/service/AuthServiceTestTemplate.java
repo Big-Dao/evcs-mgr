@@ -1,13 +1,12 @@
 package com.evcs.auth.service;
 
-import com.evcs.common.test.base.BaseServiceTest;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 // import org.springframework.boot.test.context.SpringBootTest;
 
 /**
  * 认证服务测试模板
- * 
+ *
  * 使用说明:
  * 1. 取消注释@SpringBootTest注解并指定正确的Application类
  * 2. 注入需要测试的Service
@@ -15,7 +14,7 @@ import org.junit.jupiter.api.Test;
  */
 // @SpringBootTest(classes = AuthServiceApplication.class)
 @DisplayName("认证服务测试")
-class AuthServiceTestTemplate extends BaseServiceTest {
+class AuthServiceTestTemplate {
 
     // @Resource
     // private IAuthService authService;

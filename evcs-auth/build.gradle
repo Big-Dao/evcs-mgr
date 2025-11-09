@@ -11,8 +11,7 @@ ext {
 }
 
 dependencies {
-    // 临时移除evcs-common以排除依赖冲突
-    // implementation project(':evcs-common')
+    implementation project(':evcs-common')
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'

@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.test.base.BaseServiceTest;
 import com.evcs.common.test.util.TestDataFactory;
 import com.evcs.station.entity.Station;
-import com.evcs.station.service.IStationService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -20,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
  * 充电站服务测试类
  * 使用新的测试框架基类
  */
-@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class},
+@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class, com.evcs.station.config.TestConfig.class},
                 webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @AutoConfigureWebMvc
 @DisplayName("充电站服务测试")
