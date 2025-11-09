@@ -42,25 +42,39 @@ import static org.mockito.ArgumentMatchers.any;
 @TestConfiguration
 public class TestConfig {
 
-    private RedisServer redisServer;
+    // 静态Redis服务器实例，在所有测试间共享，避免端口冲突
+    private static RedisServer redisServer;
+    private static final Object REDIS_LOCK = new Object();
+    private static volatile boolean redisStarted = false;
 
     /**
-     * 启动嵌入式Redis服务器
+     * 启动嵌入式Redis服务器（单例模式）
      */
     @PostConstruct
     public void setUp() throws IOException {
-        redisServer = new RedisServer(6370);
-        redisServer.start();
+        synchronized (REDIS_LOCK) {
+            if (!redisStarted) {
+                redisServer = new RedisServer(6370);
+                redisServer.start();
+                redisStarted = true;
+                
+                // 注册JVM关闭钩子，确保Redis在所有测试完成后关闭
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    if (redisServer != null && redisServer.isActive()) {
+                        redisServer.stop();
+                    }
+                }));
+            }
+        }
     }
 
     /**
-     * 关闭嵌入式Redis服务器
+     * 不在PreDestroy关闭Redis，让它在所有测试完成后才关闭
+     * 由JVM shutdown hook处理清理
      */
     @PreDestroy
     public void tearDown() {
-        if (redisServer != null) {
-            redisServer.stop();
-        }
+        // 不做任何操作，Redis由shutdown hook清理
     }
 
     /**
