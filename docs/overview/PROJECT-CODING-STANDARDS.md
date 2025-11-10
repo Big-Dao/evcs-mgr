@@ -1,15 +1,15 @@
 # EVCS充电站管理系统 - 编程规范总览
 
-> **最后更新**: 2025-11-07 | **维护者**: 技术负责人 | **状态**: 活跃
+> **版本**: v1.1 | **最后更新**: 2025-11-10 | **维护者**: 技术负责人 | **状态**: 活跃
 >
-> 📋 **本文档为AI编程助手（Claude、GitHub Copilot、CodeX等）提供完整的项目规范**
+> 📋 **本文档为 AI 编程助手（Claude、GitHub Copilot、CodeX 等）提供完整的项目规范**
 
 ## 🎯 项目概述
 
-**项目名称**: EVCS充电站管理系统
-**架构**: Spring Boot 3.2.12 + Java 21微服务架构
-**特点**: 多租户数据隔离、小规模业务优化（2GB内存内）
-**代码规范版本**: v1.0.0
+**项目名称**: EVCS充电站管理系统  
+**技术栈**: Spring Boot 3.2.12 + Java 21 微服务架构  
+**核心特性**: 多租户数据隔离、配置中心、统一认证、监控告警  
+**当前基线**: v0.1.0（网关 / 认证 / 订单真实链路已打通，支付 / 协议闭环进行中）
 
 ## 📋 目录 (TOC)
 
@@ -44,12 +44,12 @@
 
 ### 1. 微服务模块划分
 ```
-evcs-gateway (8080)     - API网关，路由和安全防护
-evcs-auth (8081)       - 认证授权服务，JWT + RBAC
-evcs-station (8082)    - 充电站管理，设备控制
-evcs-order (8083)      - 订单管理，计费方案
-evcs-payment (8084)    - 支付服务，支付宝/微信
-evcs-protocol (8085)   - 协议处理，OCPP/云快充
+evcs-gateway (8080)     - API网关，路由与安全防护（统一鉴权）
+evcs-auth (8081)        - 认证授权服务，JWT + RBAC + 多租户上下文
+evcs-station (8082)     - 充电站管理，设备控制与状态同步
+evcs-order (8083)       - 订单管理，计费方案，演示订单数据基线
+evcs-payment (8084)     - 支付服务，支付宝/微信沙箱接入（迭代中）
+evcs-protocol (8085)    - 协议处理，OCPP / 云快充事件流
 evcs-tenant (8086)     - 租户管理，多租户隔离
 evcs-monitoring (8087) - 监控服务，健康检查
 evcs-config (8888)     - 配置中心，Git配置
@@ -256,8 +256,8 @@ public class OrderService {
 ```java
 // ❌ 禁止：硬编码敏感信息
 String dbUrl = "jdbc:postgresql://localhost:5432/evcs";
-String jwtSecret = "my-secret-key";
-String alipayAppId = "2021000000000000";
+String jwtSecret = "replace-with-env-secret";
+String alipayAppId = "2021000000000000"; // 示例：请通过配置中心注入
 
 // ✅ 正确：使用环境变量
 @Value("${spring.datasource.url}")

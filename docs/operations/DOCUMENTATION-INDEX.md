@@ -1,12 +1,13 @@
 # EVCS Manager 文档索引
 
-> **版本**: v3.0 | **更新日期**: 2025-11-06 | **状态**: 活跃 - 文档重构完成
+> **版本**: v3.1 | **最后更新**: 2025-11-10 | **维护者**: PMO | **状态**: 活跃 - 文档重构完成
 
 ## 📚 文档概览
 
 本文档是 EVCS Manager 充电站管理平台的完整文档索引，提供了项目所有相关文档的导航和说明。
 
 ### 🎯 文档重构说明
+- **最新更新**: 2025-11-10 - 对齐管理层摘要 / 行动计划，完善引用关系
 - **最新重构**: 2025-11-06 - 彻底清理重复和冲突文档
 - **首次重构**: 2025-11-02 - 建立文档架构框架
 - **重构目标**: 解决文档冗余、陈旧、分散问题
@@ -20,9 +21,9 @@
 📁 evcs-mgr/
 ├── 📁 docs/                          # 主文档目录
 │   ├── 📁 overview/                  # 项目概览
+│   │   ├── 📄 EXECUTIVE-SUMMARY.md          # 管理层摘要
+│   │   ├── 📄 NEXT-STEP-ACTION-PLAN.md      # 行动计划（Week 4-8）
 │   │   ├── 📄 PROJECT-CODING-STANDARDS.md   # 项目规范
-│   │   ├── 📄 EXECUTIVE-SUMMARY.md          # 管理层摘要（最新状态）
-│   │   ├── 📄 NEXT-STEP-ACTION-PLAN.md      # PMO 行动计划（Week 4-8）
 │   │   └── 📄 QUICK-DOCUMENTATION-GUIDE.md  # 快速导航
 │   ├── 📁 architecture/              # 架构设计
 │   │   ├── 📄 architecture.md         # 技术架构设计

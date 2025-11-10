@@ -1,17 +1,29 @@
 # EVCS Manager 项目文档中心
 
-> **最后更新**: 2025-11-07 | **维护者**: 项目团队 | **状态**: 活跃
+> **版本**: v2.1 | **最后更新**: 2025-11-10 | **维护者**: PMO & 架构团队 | **状态**: 活跃
 >
-> **文档导航** | 快速找到你需要的信息
+> 📚 **用途**: 文档导航中心（概览 / 架构 / 开发 / 部署 / 测试 / 运维）
 
 ---
 
 ## 📖 文档分类
 
 ### 🎯 项目概览 ([overview/](./overview/))
+- **[EXECUTIVE-SUMMARY.md](./overview/EXECUTIVE-SUMMARY.md)** 🗂️ **管理层摘要**
+  - 项目健康度、风险、下一步关键任务
+  - 适合：管理层、项目经理快速掌握现状
+
+- **[NEXT-STEP-ACTION-PLAN.md](./overview/NEXT-STEP-ACTION-PLAN.md)** 🚦 **行动计划（Week 4-8）**
+  - 里程碑、任务拆解、依赖与风险
+  - 适合：跨团队协调与执行跟踪
+
 - **[PROJECT-CODING-STANDARDS.md](./overview/PROJECT-CODING-STANDARDS.md)** ⭐ **项目规范**
-  - 微服务架构定义、编码规范、质量要求
-  - 适合：所有团队成员了解项目标准
+  - 微服务架构定义、编码规范、质量 / 安全 / 性能标准
+  - 适合：所有团队成员了解统一规范
+
+- **[QUICK-DOCUMENTATION-GUIDE.md](./overview/QUICK-DOCUMENTATION-GUIDE.md)** 📎 **快速导航**
+  - 常用文档入口与使用场景
+  - 适合：新人入门、快速定位资料
 
 ### 🏗️ 系统架构 ([architecture/](./architecture/))
 - **[architecture.md](./architecture/architecture.md)** 🏗️ **系统架构**
@@ -65,6 +77,10 @@
   - 构建优化、性能调优
 
 ### 🔧 运营管理 ([operations/](./operations/))
+- **[DOCUMENTATION-INDEX.md](./operations/DOCUMENTATION-INDEX.md)** 🗂️ **文档索引与维护**
+  - 文档架构、维护指引、归档策略
+  - 适合：文档维护、信息检索
+
 - **[MONITORING-GUIDE.md](./operations/MONITORING-GUIDE.md)** 📊 **监控指南**
   - Prometheus + Grafana配置
   - 关键指标、告警规则
@@ -73,8 +89,13 @@
 - **[BUSINESS-METRICS.md](./operations/BUSINESS-METRICS.md)** 📈 **业务指标**
   - 业务监控指标、数据分析
 
-- **[DEFAULT-CREDENTIALS.md](./operations/DEFAULT-CREDENTIALS.md)** 🔑 **默认凭据**
-  - 系统默认账号密码配置
+- **[DEFAULT-CREDENTIALS.md](./operations/DEFAULT-CREDENTIALS.md)** 🔑 **默认凭据（演示 / 测试）**
+  - 演示 / 测试环境账号密码配置
+  - 适合：联调、演示准备
+
+- **[SERVICES-REFERENCE.md](./operations/SERVICES-REFERENCE.md)** 🧭 **服务说明**
+  - 微服务职责、端口、依赖、健康检查
+  - 适合：排障、交付演示
 
 - **[PROJECT-STRUCTURE.md](./operations/PROJECT-STRUCTURE.md)** 📁 **项目结构**
   - 项目目录结构说明
@@ -91,8 +112,8 @@
 - **[TEST-COVERAGE-REPORT.md](./testing/TEST-COVERAGE-REPORT.md)** 📊 **测试覆盖率报告**
   - 代码覆盖率分析、测试质量评估
 
-- **[FRONTEND-TESTING-CHECKLIST.md](./testing/FRONTEND-TESTING-CHECKLIST.md)** 🖥️ **前端测试检查清单**
-  - 前端测试要点、浏览器兼容性
+- **[FRONTEND-TESTING-CHECKLIST.md](./testing/FRONTEND-TESTING-CHECKLIST.md)** 🖥️ **前端回归清单**
+  - 前端回归要点、浏览器兼容性
 
 ### 🔍 问题排查 ([troubleshooting/](./troubleshooting/))
 - **[ERROR_PREVENTION_CHECKLIST.md](./troubleshooting/ERROR_PREVENTION_CHECKLIST.md)** ⚠️ **错误预防检查清单**

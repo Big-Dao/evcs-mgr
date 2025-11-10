@@ -1,11 +1,15 @@
 # 📚 文档快速导航指南
 
-> **更新日期**: 2025-11-07 | **目标**: 30秒找到你需要的信息
+> **版本**: v1.1 | **最后更新**: 2025-11-10 | **维护者**: PMO | **状态**: 活跃
+>
+> 🎯 **目标**: 30 秒内定位到合适的项目文档
 
 ## 🎯 快速定位
 
 ### 我要了解项目...
 - **项目概述**: [../README.md](../README.md) ⭐
+- **管理层摘要**: [EXECUTIVE-SUMMARY.md](./EXECUTIVE-SUMMARY.md)
+- **行动计划（Week 4-8）**: [NEXT-STEP-ACTION-PLAN.md](./NEXT-STEP-ACTION-PLAN.md)
 - **完整文档索引**: [../operations/DOCUMENTATION-INDEX.md](../operations/DOCUMENTATION-INDEX.md) ⭐
 - **产品功能需求**: [产品需求文档](../architecture/requirements.md)
 - **项目规范**: [项目编程规范](../overview/PROJECT-CODING-STANDARDS.md) ⭐
