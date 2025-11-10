@@ -1,6 +1,8 @@
 # 部署运维文档
 
-> **版本**: v1.0 | **更新日期**: 2025-11-07 | **维护者**: DevOps工程师 | **状态**: 活跃
+> **版本**: v1.1 | **最后更新**: 2025-11-10 | **维护者**: DevOps 团队 | **状态**: 活跃
+>
+> 🚀 **用途**: 汇总部署、资源优化、Docker 配置与运维指南
 
 ## 📋 目录说明
 
@@ -9,8 +11,11 @@
 ### 📁 文档列表
 
 - **[DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)** - 统一部署指南
+- **[QUICK-START.md](QUICK-START.md)** - 本地一键启动步骤
 - **[DOCKER-CONFIGURATION-GUIDE.md](DOCKER-CONFIGURATION-GUIDE.md)** - Docker配置指南
 - **[DOCKER-OPTIMIZATION.md](DOCKER-OPTIMIZATION.md)** - Docker优化建议
+- **[RESOURCE-OPTIMIZATION-GUIDE.md](RESOURCE-OPTIMIZATION-GUIDE.md)** - 资源优化指导
+- **[RESOURCE-OPTIMIZATION-SUMMARY.md](RESOURCE-OPTIMIZATION-SUMMARY.md)** - 资源优化结果总结
 
 ## 🎯 使用指南
 
