@@ -1,8 +1,8 @@
 # EVCS Manager 监控体系指南
 
-> **最后更新**: 2025-11-07 | **维护者**: DevOps工程师 | **状态**: 活跃
+> **版本**: v1.1 | **最后更新**: 2025-11-10 | **维护者**: DevOps 团队 | **状态**: 活跃
 >
-> **注意**: 监控功能基础框架存在，但完整的监控体系尚未建立
+> 📊 **提示**: Prometheus / Grafana 框架已部署，指标告警持续完善中
 
 ## 概述
 
@@ -514,4 +514,3 @@ http://localhost:3000/alerting/list
 - [Grafana官方文档](https://grafana.com/docs/)
 - [Resilience4j官方文档](https://resilience4j.readme.io/)
 - [Spring Boot Actuator文档](https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html)
-
