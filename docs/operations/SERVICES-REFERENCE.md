@@ -48,8 +48,10 @@
   - JWT Token生成和验证
   - 角色权限管理
   - 多租户认证
+- **登录入口**: `POST /api/auth/login`（Body需包含 `username`、`password`、`tenantId`）
+- **下游请求头**: 所有业务请求必须携带 `Authorization: Bearer <token>`、`X-Tenant-Id`、`X-User-Id`
 - **API路径**: `/api/auth/**`
-- **数据表**: `users`, `roles`, `permissions`
+- **数据表**: `sys_user`, `sys_role`, `sys_user_role`, `sys_permission`
 - **健康检查**: http://localhost:8081/actuator/health
 
 ### ⚙️ 配置管理层
@@ -102,7 +104,10 @@
   - 计费方案配置
   - 时间分段计费
   - 订单统计分析
+- **订单状态**: `0` 已创建、`1` 已完成、`2` 已取消、`10` 待支付、`11` 已支付、`12` 退款中、`13` 已退款
 - **API路径**: `/api/order/**`
+- **鉴权要求**: 与网关一致，需要JWT与租户上下文请求头
+- **数据表**: `charging_order`, `billing_plan`, `billing_plan_segment`
 - **集成服务**: 支付服务, 站点服务
 - **健康检查**: http://localhost:8083/actuator/health
 
@@ -218,6 +223,16 @@
 | 业务服务 | 8081-8086 | 认证、业务、协议服务 |
 | 监控服务 | 9090 | 系统监控 |
 | 前端界面 | 80, 3000 | 管理界面 |
+
+## 📦 演示数据与测试账号
+
+- **平台租户**: `PLATFORM-001`（tenant_id = `1001`）
+- **管理员账号**: `admin.east` / `password`
+- **演示数据脚本**: `sql/demo-order-data.sql`
+  - macOS/Linux: `cat sql/demo-order-data.sql | docker exec -i evcs-postgres psql -U postgres -d evcs_mgr`
+  - Windows (PowerShell): `Get-Content sql/demo-order-data.sql | docker exec -i evcs-postgres psql -U postgres -d evcs_mgr`
+  - 内容: 默认计费方案及 5 条订单样本，覆盖创建/待支付/已支付/退款中等状态
+- **前端访问**: 登录后 `http://localhost:3000/orders` 可查看真实订单数据（若未导入则回退到模拟数据）
 
 ## 🚨 故障排查
 

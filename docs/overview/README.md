@@ -10,19 +10,20 @@
 
 - **[PROJECT-CODING-STANDARDS.md](PROJECT-CODING-STANDARDS.md)** - 项目编程规范总览
 - **[QUICK-DOCUMENTATION-GUIDE.md](QUICK-DOCUMENTATION-GUIDE.md)** - 快速文档导航指南
-- **[管理层摘要.md](管理层摘要.md)** - 管理层摘要报告
+- **[EXECUTIVE-SUMMARY.md](EXECUTIVE-SUMMARY.md)** - 管理层摘要报告
+- **[NEXT-STEP-ACTION-PLAN.md](NEXT-STEP-ACTION-PLAN.md)** - 最新行动计划（PMO版）
 
 ## 🎯 使用指南
 
 ### 新成员入门
 1. 首先阅读 [PROJECT-CODING-STANDARDS.md](PROJECT-CODING-STANDARDS.md) 了解项目规范
 2. 使用 [QUICK-DOCUMENTATION-GUIDE.md](QUICK-DOCUMENTATION-GUIDE.md) 快速找到所需文档
-3. 管理层可参考 [管理层摘要.md](管理层摘要.md) 了解项目概况
+3. 管理层可参考 [EXECUTIVE-SUMMARY.md](EXECUTIVE-SUMMARY.md) 了解项目概况，并在需要时查看 [NEXT-STEP-ACTION-PLAN.md](NEXT-STEP-ACTION-PLAN.md) 追踪任务进展
 
 ### 开发参考
 - **编码规范**: 必读 [PROJECT-CODING-STANDARDS.md](PROJECT-CODING-STANDARDS.md)
 - **快速导航**: 使用 [QUICK-DOCUMENTATION-GUIDE.md](QUICK-DOCUMENTATION-GUIDE.md)
-- **项目概览**: 参考 [管理层摘要.md](管理层摘要.md)
+- **项目概览**: 参考 [EXECUTIVE-SUMMARY.md](EXECUTIVE-SUMMARY.md) 与 [NEXT-STEP-ACTION-PLAN.md](NEXT-STEP-ACTION-PLAN.md)
 
 ## 📚 相关文档
 

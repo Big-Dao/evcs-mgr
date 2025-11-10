@@ -20,8 +20,10 @@
 📁 evcs-mgr/
 ├── 📁 docs/                          # 主文档目录
 │   ├── 📁 overview/                  # 项目概览
-│   │   ├── 📄 PROJECT-CODING-STANDARDS.md  # 项目规范
-│   │   └── 📄 QUICK-DOCUMENTATION-GUIDE.md # 快速导航
+│   │   ├── 📄 PROJECT-CODING-STANDARDS.md   # 项目规范
+│   │   ├── 📄 EXECUTIVE-SUMMARY.md          # 管理层摘要（最新状态）
+│   │   ├── 📄 NEXT-STEP-ACTION-PLAN.md      # PMO 行动计划（Week 4-8）
+│   │   └── 📄 QUICK-DOCUMENTATION-GUIDE.md  # 快速导航
 │   ├── 📁 architecture/              # 架构设计
 │   │   ├── 📄 architecture.md         # 技术架构设计
 │   │   ├── 📄 requirements.md        # 产品需求文档 (PRD)
@@ -230,10 +232,12 @@
 4. **故障排查**: [故障排查](./../troubleshooting/troubleshooting.md) - 处理问题
 
 ### 📊 项目管理者指南
-1. **需求文档**: [产品需求文档](./../architecture/requirements.md) - 了解功能需求
-2. **发展路线**: [发展路线图](./../references/roadmap.md) - 了解项目规划
-3. **里程碑**: [里程碑计划](./../references/milestones.md) - 了解关键节点
-4. **发布说明**: [发布说明](./../references/release-notes.md) - 了解版本信息
+1. **管理层摘要**: [EXECUTIVE-SUMMARY.md](../overview/EXECUTIVE-SUMMARY.md) - 获取当前健康度与风险
+2. **行动计划**: [NEXT-STEP-ACTION-PLAN.md](../overview/NEXT-STEP-ACTION-PLAN.md) - 跟踪 Week 4-8 任务
+3. **需求文档**: [产品需求文档](./../architecture/requirements.md) - 了解功能需求
+4. **发展路线**: [发展路线图](./../references/roadmap.md) - 了解项目规划
+5. **里程碑**: [里程碑计划](./../references/milestones.md) - 了解关键节点
+6. **发布说明**: [发布说明](./../references/release-notes.md) - 了解版本信息
 
 ## 📝 文档维护
 

@@ -82,6 +82,37 @@ docker-compose ps
 - Swagger API文档: http://localhost:8080/doc.html
 - Actuator健康检查: http://localhost:8080/actuator/health
 
+### 导入演示数据（可选）
+
+> 初始数据库仅包含基础结构。执行以下脚本可以导入平台租户（1001）的演示计费方案与订单样本，便于前端联调。
+
+- macOS/Linux:
+```bash
+cat sql/demo-order-data.sql | docker exec -i evcs-postgres psql -U postgres -d evcs_mgr
+```
+- Windows PowerShell:
+```powershell
+Get-Content sql/demo-order-data.sql | docker exec -i evcs-postgres psql -U postgres -d evcs_mgr
+```
+
+### 演示账号与调用示例
+
+- **租户**: `PLATFORM-001` (`tenantId = 1001`)
+- **管理员账号**: `admin.east` / `password`
+- **获取JWT**:
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin.east","password":"password","tenantId":1001}'
+```
+- **调用订单列表**（需携带上下文头）:
+```bash
+curl "http://localhost:8080/api/order/list?current=1&size=10" \
+  -H "Authorization: Bearer <token>" \
+  -H "X-Tenant-Id: 1001" \
+  -H "X-User-Id: 1010"
+```
+
 ---
 
 ## 项目结构
@@ -877,4 +908,3 @@ mybatis-plus:
 **开发问题**: dev@evcs-mgr.com  
 **技术讨论**: Slack #evcs-dev 频道  
 **文档反馈**: docs@evcs-mgr.com
-
