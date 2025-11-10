@@ -1,6 +1,6 @@
 # EVCS API设计规范
 
-> **版本**: v1.0 | **更新日期**: 2025-11-07
+> **版本**: v1.1 | **最后更新**: 2025-11-10 | **维护者**: 技术负责人 | **状态**: 活跃
 >
 > 📋 **本文档定义EVCS项目RESTful API的设计标准和规范**
 
@@ -173,6 +173,13 @@ Content-Type: application/json
 ### JWT Token格式
 ```http
 Authorization: Bearer <jwt_token>
+```
+
+#### 多租户上下文头部
+```http
+X-Tenant-Id: <tenant-id>
+X-User-Id: <user-id>
+X-Request-Id: <trace-id-optional>
 ```
 
 ### 权限控制注解
