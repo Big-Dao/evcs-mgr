@@ -1,8 +1,8 @@
 # EVCS Manager API 文档
 
-> **最后更新**: 2025-11-07 | **维护者**: 技术负责人 | **状态**: 活跃
+> **版本**: v1.1 | **最后更新**: 2025-11-10 | **维护者**: 技术负责人 | **状态**: 活跃
 >
-> **注意**: 部分API接口为模拟实现，支付相关API尚未完成
+> ⚠️ **注意**: 支付回调与协议事件接口仍在真实联调阶段
 
 ## 概述
 
@@ -631,4 +631,3 @@ Gateway --> UserA: 返回数据（仅租户A数据）
 **技术支持**: tech-support@evcs-mgr.com  
 **API问题反馈**: api-feedback@evcs-mgr.com  
 **GitHub Issues**: https://github.com/Big-Dao/evcs-mgr/issues
-
