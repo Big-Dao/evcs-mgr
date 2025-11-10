@@ -24,6 +24,15 @@ service.interceptors.request.use(
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`
     }
+    // Propagate tenant/user context for backend multi-tenant filtering
+    const tenantId = localStorage.getItem('tenantId')
+    if (tenantId) {
+      config.headers['X-Tenant-Id'] = tenantId
+    }
+    const userId = localStorage.getItem('userId')
+    if (userId) {
+      config.headers['X-User-Id'] = userId
+    }
     console.log('API请求:', config.method?.toUpperCase(), config.url)
     return config
   },

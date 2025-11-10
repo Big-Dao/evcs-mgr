@@ -4,7 +4,7 @@ import com.evcs.auth.entity.Permission;
 import com.evcs.auth.entity.Role;
 import com.evcs.auth.service.IPermissionService;
 import com.evcs.auth.service.IRoleService;
-import com.evcs.auth.tenant.TenantContext;
+import com.evcs.common.tenant.TenantContext;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
@@ -33,8 +33,14 @@ public class RbacPermissionEvaluator {
      * 检查是否有指定权限
      */
     public boolean hasPermission(final Authentication authentication, final String permission) {
-        if (authentication == null || permission == null || permission.trim().isEmpty()) {
-            return permission == null || permission.trim().isEmpty();
+        if (authentication == null) {
+            return false;
+        }
+        if (permission == null) {
+            return true;
+        }
+        if (permission.trim().isEmpty()) {
+            return false;
         }
 
         // 检查租户上下文
@@ -79,7 +85,7 @@ public class RbacPermissionEvaluator {
      * 检查数据权限
      */
     public boolean hasDataPermission(Authentication authentication, Long dataId) {
-        if (authentication == null || dataId == null) {
+        if (authentication == null) {
             return false;
         }
 
@@ -114,6 +120,9 @@ public class RbacPermissionEvaluator {
                             case 1: // 全部数据权限
                                 return true;
                             case 5: // 仅本人数据权限
+                                if (dataId == null) {
+                                    return false;
+                                }
                                 String username = authentication.getName();
                                 return username.equals(dataId.toString());
                             default:

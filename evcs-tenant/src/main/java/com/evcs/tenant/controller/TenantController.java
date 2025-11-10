@@ -7,10 +7,8 @@ import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.service.ISysTenantService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -19,7 +17,6 @@ import java.util.List;
 /**
  * 租户管理控制器
  */
-@Tag(name = "租户管理", description = "租户的创建、查询、更新、删除等操作")
 @RestController
 @RequestMapping("/tenant")
 @RequiredArgsConstructor
@@ -30,7 +27,6 @@ public class TenantController {
     /**
      * 创建租户
      */
-    @Operation(summary = "创建租户", description = "创建新的租户")
     @PostMapping
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY, 
               description = "只能在当前租户下创建子租户")
@@ -42,7 +38,6 @@ public class TenantController {
     /**
      * 更新租户
      */
-    @Operation(summary = "更新租户", description = "更新租户信息")
     @PutMapping("/{id}")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能更新本租户及下级租户信息")
@@ -58,7 +53,6 @@ public class TenantController {
     /**
      * 删除租户
      */
-    @Operation(summary = "删除租户", description = "删除租户（逻辑删除）")
     @DeleteMapping("/{id}")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能删除下级租户")
@@ -70,7 +64,6 @@ public class TenantController {
     /**
      * 查询租户详情
      */
-    @Operation(summary = "查询租户详情", description = "根据ID查询租户详细信息")
     @GetMapping("/{id}")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查询本租户及下级租户信息")
@@ -82,7 +75,6 @@ public class TenantController {
     /**
      * 查询租户列表（不分页）
      */
-    @Operation(summary = "查询租户列表", description = "查询租户列表（不分页）")
     @GetMapping("/list")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查询本租户及下级租户")
@@ -94,7 +86,6 @@ public class TenantController {
     /**
      * 分页查询租户
      */
-    @Operation(summary = "分页查询租户", description = "分页查询租户列表")
     @GetMapping("/page")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查询本租户及下级租户")
@@ -107,7 +98,6 @@ public class TenantController {
     /**
      * 查询子租户列表
      */
-    @Operation(summary = "查询子租户", description = "查询指定租户的子租户列表")
     @GetMapping("/{parentId}/children")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查询本租户及下级租户的子租户")
@@ -120,7 +110,6 @@ public class TenantController {
     /**
      * 查询租户树
      */
-    @Operation(summary = "查询租户树", description = "查询租户层级树结构")
     @GetMapping("/tree")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "从当前租户开始的层级树")
@@ -135,7 +124,6 @@ public class TenantController {
     /**
      * 启用/禁用租户
      */
-    @Operation(summary = "启用/禁用租户", description = "修改租户状态")
     @PutMapping("/{id}/status")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能修改下级租户状态")
@@ -149,7 +137,6 @@ public class TenantController {
     /**
      * 检查租户编码是否存在
      */
-    @Operation(summary = "检查租户编码", description = "检查租户编码是否已存在")
     @GetMapping("/check-code")
     public Result<Boolean> checkTenantCode(
             @Parameter(description = "租户编码") @RequestParam String tenantCode) {

@@ -6,14 +6,14 @@
 
 ## 🎯 项目概述
 
-基于Spring Boot 3.2.10 + Java 21的微服务架构电动汽车充电站管理系统（EVCS），专为小规模业务优化设计，支持多租户隔离。
+基于Spring Boot 3.2.12 + Java 21的微服务架构电动汽车充电站管理系统（EVCS），专为小规模业务优化设计，支持多租户隔离。
 
 ### 📋 完整规范
 **🔥 重要：请首先阅读项目完整规范文档**: [PROJECT-CODING-STANDARDS.md](../overview/PROJECT-CODING-STANDARDS.md)
 
 该文档包含了生成高质量代码所需的**所有规范要求**，包括：
 - 强制架构规范和代码模板
-- 必须使用的注解和禁止的模式
+- 推荐的注解组合与禁止的模式
 - 完整的质量检查清单
 - 测试要求和性能优化标准
 
@@ -99,7 +99,7 @@ OpenAI CodeX通过以下配置获取项目上下文：
 ### 规范遵循检查
 - [ ] 已阅读并理解PROJECT-CODING-STANDARDS.md中的所有规范
 - [ ] 了解项目的微服务架构和分层要求
-- [ ] 熟悉必须使用的注解和禁止的模式
+- [ ] 熟悉推荐的注解组合与禁止的模式
 - [ ] 理解多租户数据隔离的要求
 
 ### 代码生成检查
@@ -115,6 +115,40 @@ OpenAI CodeX通过以下配置获取项目上下文：
 - [ ] 遵循了多租户数据隔离要求
 - [ ] 代码注释清晰完整
 - [ ] 通过代码质量检查清单的验证
+
+## ✅ AI助手统一入口验证清单（短期高优）
+
+> 场景：新增/更新规范文件、引入新的 AI 助手、或发布重要版本前。
+
+### 1. 单一来源引用检查
+- [ ] `.claude/project-instructions.md` 首段引用 `AGENTS.md` → `docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md`
+- [ ] `.github/copilot-instructions.md` 首段引用链一致
+- [ ] `.codex/project-context.md` 首段引用链一致
+- [ ] `.ai-assistant-config/SHARED-PROJECT-CONTEXT.md` 未复制规范正文，仅指向 SSOT 文件
+- [ ] 其它新增助手配置（如 `.cursor/`, `.aider/` 等）遵循相同链路
+
+快速校验命令（任意终端执行）
+
+```bash
+rg -n "AGENTS.md" .claude .github .codex
+rg -n "AI-ASSISTANT-UNIFIED-CONFIG" .claude .github .codex
+```
+
+命令输出中，每个文件都应至少出现一次对应路径。
+
+### 2. 规范同步确认
+- [ ] `AGENTS.md` 记录最新修改时间、维护人，并说明 SSOT 结构
+- [ ] `docs/overview/PROJECT-CODING-STANDARDS.md` 中的版本号/更新记录与实际改动一致
+- [ ] 如有架构/安全策略新增，补充至相关 RFC 或文档并在此处链接
+
+### 3. 变更后的沟通与验证
+- [ ] 在团队沟通渠道告知“AI 助手规范已更新”及关键变化
+- [ ] 针对常用 IDE（VS Code / JetBrains）各运行一次助手提示，确认能读取到最新说明
+- [ ] 若引入脚本或工具校验（如 CI 任务），确保成功执行并记录位置
+
+### 4. 自动化建议（可选）
+- 可在 CI 中增加 `rg` 检查，若某文件缺失 `AGENTS.md` / `AI-ASSISTANT-UNIFIED-CONFIG` 引用则失败
+- 如需强校验，可编写简单脚本对关键文件做正则匹配并输出报告（示例：`scripts/verify-ai-assistant-entry.ps1`）
 
 ---
 

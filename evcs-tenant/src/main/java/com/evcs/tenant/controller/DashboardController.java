@@ -5,18 +5,16 @@ import com.evcs.common.result.Result;
 import com.evcs.tenant.dto.DashboardStatsDTO;
 import com.evcs.tenant.dto.RecentOrderDTO;
 import com.evcs.tenant.service.IDashboardService;
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 
 import java.util.List;
 
 /**
  * Dashboard统计控制器
  */
-@Tag(name = "Dashboard统计", description = "Dashboard数据统计接口")
 @RestController
 @RequestMapping("/dashboard")
 @RequiredArgsConstructor

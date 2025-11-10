@@ -7,7 +7,7 @@
 ## 🎯 项目概述
 
 **项目名称**: EVCS充电站管理系统
-**架构**: Spring Boot 3.2.10 + Java 21微服务架构
+**架构**: Spring Boot 3.2.12 + Java 21微服务架构
 **特点**: 多租户数据隔离、小规模业务优化（2GB内存内）
 **代码规范版本**: v1.0.0
 
@@ -17,7 +17,7 @@
   - [微服务模块划分](#1-微服务模块划分)
   - [严格分层架构](#2-严格分层架构)
   - [严禁的架构违规](#3-严禁的架构违规)
-  - [必须使用的注解](#4-必须使用的注解)
+- [推荐的注解组合](#4-推荐的注解组合)
     - [Controller层](#controller层)
     - [Service层](#service层)
     - [Entity层](#entity层)
@@ -68,21 +68,21 @@ Controller层 → Service层 → Repository层 → Entity层
 - ❌ **直接返回Entity**: 必须使用DTO返回数据
 - ❌ **硬编码敏感信息**: 使用环境变量配置
 
-### 4. 必须使用的注解
+### 4. 推荐的注解组合
 
 #### Controller层
 ```java
 @RestController
-@RequestMapping("/api/v1/{resource}")
-@Validated
+@RequestMapping("/{resource}") // 根据模块约定选择合适前缀，例如 "/order"
 @Slf4j
+@RequiredArgsConstructor
+@Validated // 当需要对方法参数启用 Bean Validation 时添加
 public class {Resource}Controller {
 
-    @PostMapping
-    @PreAuthorize("hasPermission('{resource}', 'create')")
-    public ResponseEntity<ApiResponse<{Resource}DTO>> create(
-            @Valid @RequestBody Create{Resource}Request request) {
-        // 实现
+    @GetMapping
+    @PreAuthorize("hasPermission('{resource}', 'query')") // 对涉安全/运营端点启用鉴权
+    public ApiResponse<Page<{Resource}DTO>> list(@Valid Search{Resource}Request request) {
+        return ApiResponse.success(service.list(request));
     }
 }
 ```
@@ -90,21 +90,22 @@ public class {Resource}Controller {
 #### Service层
 ```java
 @Service
-@Transactional
 @Slf4j
+@RequiredArgsConstructor
 public class {Resource}Service {
 
-    @Cacheable(value = "{resource}s", key = "#id")
+    @Transactional(readOnly = true)
     @DataScope(DataScopeType.TENANT)
     public {Resource}DTO getById(Long id) {
         // 查询实现
     }
 
-    @CacheEvict(value = "{resource}s", allEntries = true)
     @Transactional
     public {Resource}DTO create(Create{Resource}Request request) {
         // 创建实现
     }
+
+    // 若需要缓存，请在读操作上使用 @Cacheable，并在写操作上配合 @CacheEvict，确保缓存键包含 tenantId 等隔离信息
 }
 ```
 
@@ -141,7 +142,7 @@ public class {Resource} extends BaseEntity {
 ## 🔧 技术栈约束
 
 ### 后端技术栈
-- **Spring Boot**: 3.2.10 (最新稳定版)
+- **Spring Boot**: 3.2.12 (当前仓库版本)
 - **Java**: 21 (LTS版本)
 - **Spring Security**: JWT认证 + RBAC权限控制
 - **MyBatis Plus**: ORM框架 + 多租户支持

@@ -97,7 +97,26 @@ public class ChargerServiceImpl
         // 排序
         wrapper.orderByAsc("station_id").orderByAsc("charger_code");
 
-        return this.page(page, wrapper);
+        IPage<Charger> result = this.page(page, wrapper);
+
+        if (result != null && result.getRecords() != null && !result.getRecords().isEmpty()) {
+            List<Long> stationIds = result.getRecords().stream()
+                    .map(Charger::getStationId)
+                    .filter(id -> id != null)
+                    .distinct()
+                    .collect(Collectors.toList());
+            if (!stationIds.isEmpty()) {
+                List<Station> stations = stationMapper.selectBatchIds(stationIds);
+                Map<Long, String> stationCodeMap = stations.stream()
+                        .collect(Collectors.toMap(Station::getStationId, Station::getStationCode));
+                result.getRecords().forEach(charger -> {
+                    String code = stationCodeMap.get(charger.getStationId());
+                    charger.setStationCode(code);
+                });
+            }
+        }
+
+        return result;
     }
 
     /**
@@ -107,7 +126,13 @@ public class ChargerServiceImpl
     @Override
     @DataScope
     public List<Charger> getChargersByStationId(Long stationId) {
-        return baseMapper.selectByStationId(stationId);
+        List<Charger> chargers = baseMapper.selectByStationId(stationId);
+        if (chargers != null && !chargers.isEmpty()) {
+            Station station = stationMapper.selectById(stationId);
+            String stationCode = station != null ? station.getStationCode() : null;
+            chargers.forEach(charger -> charger.setStationCode(stationCode));
+        }
+        return chargers;
     }
 
     /**

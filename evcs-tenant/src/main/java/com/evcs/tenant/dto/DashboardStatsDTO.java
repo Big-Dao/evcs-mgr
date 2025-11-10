@@ -16,7 +16,6 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "Dashboard统计数据")
 public class DashboardStatsDTO implements Serializable {
     
     private static final long serialVersionUID = 1L;

@@ -17,10 +17,13 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 /**
@@ -70,6 +73,64 @@ class RbacPermissionEvaluatorTest {
                 .authorities(List.of(new SimpleGrantedAuthority("ROLE_USER")))
                 .build();
         userAuth = new UsernamePasswordAuthenticationToken(normalUser, null, normalUser.getAuthorities());
+
+        // 默认模拟：根据角色编码生成基础角色信息
+        lenient().when(roleService.listByRoleCodes(anySet())).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            Set<String> roleCodes = (Set<String>) invocation.getArgument(0);
+            if (roleCodes == null || roleCodes.isEmpty()) {
+                return List.of();
+            }
+            List<Role> roles = new ArrayList<>();
+            for (String code : roleCodes) {
+                Role role = new Role();
+                role.setRoleCode(code);
+                if ("ROLE_ADMIN".equals(code)) {
+                    role.setId(2L);
+                    role.setDataScope(1);
+                } else if ("ROLE_USER".equals(code)) {
+                    role.setId(1L);
+                    role.setDataScope(5);
+                } else if ("ROLE_SUPER_ADMIN".equals(code)) {
+                    role.setId(3L);
+                    role.setDataScope(1);
+                } else {
+                    role.setId(100L + roles.size());
+                    role.setDataScope(0);
+                }
+                roles.add(role);
+            }
+            return roles;
+        });
+
+        // 默认模拟：为常见角色提供基础权限
+        lenient().when(permissionService.listByRoleIds(any())).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            List<Long> roleIds = (List<Long>) invocation.getArgument(0);
+            if (roleIds == null || roleIds.isEmpty()) {
+                return List.of();
+            }
+            List<Permission> permissions = new ArrayList<>();
+            for (Long roleId : roleIds) {
+                if (roleId == null) {
+                    continue;
+                }
+                if (roleId == 2L || roleId == 3L) { // 管理员及超管
+                    Permission viewPermission = new Permission();
+                    viewPermission.setId(10L + roleId);
+                    viewPermission.setPerms("user:view");
+                    viewPermission.setStatus(1);
+                    permissions.add(viewPermission);
+                } else if (roleId == 1L) { // 普通用户默认只读权限
+                    Permission viewPermission = new Permission();
+                    viewPermission.setId(20L);
+                    viewPermission.setPerms("user:view");
+                    viewPermission.setStatus(1);
+                    permissions.add(viewPermission);
+                }
+            }
+            return permissions;
+        });
     }
 
     @Test
@@ -102,7 +163,7 @@ class RbacPermissionEvaluatorTest {
         userRole.setRoleCode("ROLE_USER");
         userRole.setDataScope(5); // 仅本人数据权限
 
-        when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
+        lenient().when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
 
         // 模拟用户权限
         Permission userPermission = new Permission();
@@ -126,7 +187,7 @@ class RbacPermissionEvaluatorTest {
         userRole.setRoleCode("ROLE_USER");
         userRole.setDataScope(5);
 
-        when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
+        lenient().when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
 
         // 模拟通配符权限
         Permission wildcardPermission = new Permission();
@@ -151,7 +212,7 @@ class RbacPermissionEvaluatorTest {
         userRole.setRoleCode("ROLE_USER");
         userRole.setDataScope(5);
 
-        when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
+        lenient().when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
 
         // 模拟层级权限
         Permission basePermission = new Permission();
@@ -176,7 +237,7 @@ class RbacPermissionEvaluatorTest {
         adminRole.setRoleCode("ROLE_ADMIN");
         adminRole.setDataScope(1); // 全部数据权限
 
-        when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(adminRole));
+        lenient().when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(adminRole));
 
         // 测试数据权限
         assertTrue(rbacPermissionEvaluator.hasDataPermission(adminAuth, 100L));
@@ -192,7 +253,7 @@ class RbacPermissionEvaluatorTest {
         userRole.setRoleCode("ROLE_USER");
         userRole.setDataScope(5); // 仅本人数据权限
 
-        when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
+        lenient().when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
 
         // 创建一个测试用户，用户名对应要测试的数据ID
         UserDetails testUser = User.builder()
@@ -232,7 +293,7 @@ class RbacPermissionEvaluatorTest {
         userRole.setRoleCode("ROLE_USER");
         userRole.setDataScope(5);
 
-        when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
+        lenient().when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
 
         // 模拟禁用的权限
         Permission disabledPermission = new Permission();
@@ -254,7 +315,7 @@ class RbacPermissionEvaluatorTest {
         userRole.setRoleCode("ROLE_USER");
         userRole.setDataScope(5);
 
-        when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
+        lenient().when(roleService.listByRoleCodes(anySet())).thenReturn(List.of(userRole));
 
         // 模拟空权限
         Permission emptyPermission = new Permission();
@@ -262,7 +323,7 @@ class RbacPermissionEvaluatorTest {
         emptyPermission.setPerms("   "); // 空字符串
         emptyPermission.setStatus(1);
 
-        when(permissionService.listByRoleIds(any())).thenReturn(List.of(emptyPermission));
+        lenient().when(permissionService.listByRoleIds(any())).thenReturn(List.of(emptyPermission));
 
         // 测试空权限不被授予
         assertFalse(rbacPermissionEvaluator.hasPermission(userAuth, "   "));

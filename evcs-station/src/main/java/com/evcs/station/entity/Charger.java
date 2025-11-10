@@ -1,5 +1,6 @@
 package com.evcs.station.entity;
 
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
@@ -41,8 +42,9 @@ public class Charger extends BaseEntity {
     private Long stationId;
     
     /**
-     * 充电站编码
+     * 充电站编码（通过关联查询填充，不在 charger 表中存储）
      */
+    @TableField(exist = false)
     private String stationCode;
     
     /**

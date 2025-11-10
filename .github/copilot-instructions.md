@@ -5,7 +5,9 @@
 ## 🤖 GitHub Copilot配置
 
 ### 📋 项目上下文
-请读取统一的项目配置：[AI-ASSISTANT-UNIFIED-CONFIG.md](../docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md)
+请先读取仓库统一入口：[AGENTS.md](../AGENTS.md)
+
+随后读取统一的项目配置：[AI-ASSISTANT-UNIFIED-CONFIG.md](../docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md)
 
 该文档包含完整的项目架构、微服务模块、技术栈和编码标准。
 
@@ -18,4 +20,4 @@
 
 ---
 
-**GitHub Copilot会自动读取本配置文件，请优先参考统一的项目配置。**
+**GitHub Copilot 会读取本文件，但以 `AGENTS.md` 及 `AI-ASSISTANT-UNIFIED-CONFIG.md` 为单一来源，请勿在此重复或偏离规范。**

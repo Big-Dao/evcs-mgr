@@ -11,7 +11,8 @@ spring:
   cloud:
     gateway:
       # 路由配置通过Config Server管理
-      routes: []
+      # 本地不定义 routes，确保由 Config Server 下发
+      routes: 
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration

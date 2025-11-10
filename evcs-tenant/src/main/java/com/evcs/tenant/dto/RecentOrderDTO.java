@@ -15,7 +15,6 @@ import java.math.BigDecimal;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "最近订单信息")
 public class RecentOrderDTO {
     
     @Schema(description = "订单ID")

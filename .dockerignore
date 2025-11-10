@@ -8,6 +8,24 @@
 build/
 */build/
 !evcs-gateway/build/
+!evcs-auth/build/
+!evcs-config/build/
+!evcs-eureka/build/
+!evcs-order/build/
+!evcs-payment/build/
+!evcs-station/build/
+!evcs-tenant/build/
+!evcs-protocol/build/
+!evcs-monitoring/build/
+!evcs-auth/build/libs/
+!evcs-config/build/libs/
+!evcs-eureka/build/libs/
+!evcs-order/build/libs/
+!evcs-payment/build/libs/
+!evcs-station/build/libs/
+!evcs-tenant/build/libs/
+!evcs-protocol/build/libs/
+!evcs-monitoring/build/libs/
 !gradle/wrapper/
 out/
 */out/
@@ -57,6 +75,12 @@ dist/
 # Docker
 docker-compose*.yml
 Dockerfile*
+.dockerignore
+!Dockerfile
+!evcs-*/Dockerfile
+!docker-compose.yml
+!docker-compose.core-dev.yml
+!docker-compose.monitoring.yml
 .dockerignore
 
 # Scripts and config (if not needed for build)

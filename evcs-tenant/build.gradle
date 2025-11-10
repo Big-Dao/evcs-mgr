@@ -26,8 +26,8 @@ dependencies {
     // Database
     implementation "org.postgresql:postgresql:${postgresqlVersion}"
 
-    // API Documentation
-    implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
+    // API Documentation: 使用 SpringDoc (Boot 3 兼容)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
 
     // Test dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
