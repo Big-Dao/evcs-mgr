@@ -1,9 +1,9 @@
 # RFC：租户上下文在异步任务中的传播  
 比较 `TaskDecorator` 与 `TransmittableThreadLocal`（TTTL）并提出迁移计划
 
-作者：架构/平台团队（建议审阅：安全、运维、各业务模块负责人）  
-状态：草案（Draft）  
-日期：2025-10-19
+> **版本**: v0.2-draft | **最后更新**: 2025-11-10 | **作者**: 架构 / 平台团队 | **状态**: Draft
+>
+> 🧵 **范围**: 说明租户上下文在异步/线程池场景的传播方案与迁移计划
 
 ---
 
@@ -250,4 +250,3 @@
 - 或者直接按 Phase 1 对 `evcs-order`、`evcs-station` 的 executor 注册 `TenantContextTaskDecorator` 并增加必要的并发集成测试。  
 
 请回复你希望我下一步执行的具体项（例如：“开始审计清单” 或 “直接在 evcs-order 部署 TaskDecorator”）。谢谢。
-

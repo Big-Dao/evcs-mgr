@@ -1,6 +1,8 @@
 # 架构设计文档
 
-> **最后更新**: 2025-11-07 | **维护者**: 架构师 | **状态**: 活跃
+> **版本**: v1.1 | **最后更新**: 2025-11-10 | **维护者**: 架构团队 | **状态**: 活跃
+>
+> 🏗️ **用途**: 汇总系统架构、需求、接口、数据模型等设计文档入口
 
 ## 📋 目录说明
 
@@ -14,7 +16,7 @@
 - **[data-model.md](data-model.md)** - 数据模型设计
 - **[TECHNICAL-DESIGN.md](TECHNICAL-DESIGN.md)** - 技术设计文档
 - **[TENANT-CONTEXT-ASYNC-RFC.md](TENANT-CONTEXT-ASYNC-RFC.md)** - 租户上下文异步处理设计
-- **[协议事件模型说明.md](协议事件模型说明.md)** - 协议事件模型说明
+- **[PROTOCOL-EVENT-MODEL.md](PROTOCOL-EVENT-MODEL.md)** - 协议事件模型说明
 
 ## 🎯 使用指南
 
