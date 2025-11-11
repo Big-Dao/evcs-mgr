@@ -38,7 +38,7 @@ public class OCPPSessionManager {
     /**
      * 最大会话数
      */
-    private final int maxSessions = 1000;
+    private static final int MAX_SESSIONS = 1000;
 
     public OCPPSessionManager() {
         // 启动会话清理任务
@@ -56,8 +56,8 @@ public class OCPPSessionManager {
             return false;
         }
 
-        if (activeSessions.size() >= maxSessions) {
-            log.warn("Maximum session limit reached: {}", maxSessions);
+        if (activeSessions.size() >= MAX_SESSIONS) {
+            log.warn("Maximum session limit reached: {}", MAX_SESSIONS);
             return false;
         }
 

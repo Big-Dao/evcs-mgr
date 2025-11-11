@@ -6,6 +6,7 @@ spring:
     name: evcs-gateway
   main:
     web-application-type: reactive
+    allow-bean-definition-overriding: true
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration

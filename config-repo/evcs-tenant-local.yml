@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: evcs-tenant
+  autoconfigure:
+    exclude:
+      - com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration
+      - com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration$Knife4jGatewayReactiveFilterConfiguration
   datasource:
     driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:evcs_mgr}?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai

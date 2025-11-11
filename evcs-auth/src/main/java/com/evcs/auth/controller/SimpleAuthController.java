@@ -1,9 +1,11 @@
 package com.evcs.auth.controller;
 
 import com.evcs.auth.controller.dto.LoginRequest;
-import com.evcs.auth.entity.SysUser;
 import com.evcs.auth.service.ISysUserService;
 import com.evcs.common.result.Result;
+import com.evcs.common.tenant.CustomTenantLineHandler;
+import com.evcs.common.tenant.TenantContext;
+import com.evcs.auth.entity.SysUser;
 import com.evcs.common.util.JwtUtil;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -43,7 +45,14 @@ public class SimpleAuthController {
 
     @PostMapping("/login")
     public Result<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
-        SysUser user = userService.getByIdentifier(request.getIdentifier());
+        SysUser user;
+        try {
+            // 登录阶段允许跨租户查询，根据登录标识定位用户
+            CustomTenantLineHandler.disableTenantFilter();
+            user = userService.getByIdentifier(request.getIdentifier());
+        } finally {
+            CustomTenantLineHandler.enableTenantFilter();
+        }
         if (user == null || user.getTenantId() == null || (user.getStatus() != null && user.getStatus() == 0)) {
             return Result.failure(401, "账号或密码错误");
         }
@@ -51,6 +60,9 @@ public class SimpleAuthController {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             return Result.failure(401, "账号或密码错误");
         }
+
+        TenantContext.setTenantId(user.getTenantId());
+        TenantContext.setUserId(user.getId());
 
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getTenantId());
         List<String> roles = userService.listRoleCodes(user.getId());
