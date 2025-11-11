@@ -15,6 +15,9 @@
         <el-form-item label="用户名">
           <el-input v-model="searchForm.username" placeholder="请输入用户名" clearable />
         </el-form-item>
+        <el-form-item label="登录账号">
+          <el-input v-model="searchForm.loginIdentifier" placeholder="手机号/邮箱" clearable />
+        </el-form-item>
         <el-form-item label="真实姓名">
           <el-input v-model="searchForm.realName" placeholder="请输入真实姓名" clearable />
         </el-form-item>
@@ -27,6 +30,7 @@
       <el-table :data="tableData" v-loading="loading" style="width: 100%">
         <el-table-column prop="id" label="用户ID" width="80" />
         <el-table-column prop="username" label="用户名" />
+        <el-table-column prop="loginIdentifier" label="登录账号" />
         <el-table-column prop="realName" label="真实姓名" />
         <el-table-column prop="phone" label="手机号" width="120" />
         <el-table-column prop="email" label="邮箱" />
@@ -73,6 +77,7 @@ const loading = ref(false)
 
 const searchForm = reactive<UserQueryParams>({
   username: '',
+  loginIdentifier: '',
   realName: '',
   current: 1,
   size: 10
@@ -92,6 +97,7 @@ const loadUserList = async () => {
   try {
     const params: UserQueryParams = {
       username: searchForm.username,
+      loginIdentifier: searchForm.loginIdentifier,
       realName: searchForm.realName,
       current: pagination.currentPage,
       size: pagination.pageSize
@@ -109,6 +115,7 @@ const loadUserList = async () => {
       {
         id: 1,
         username: 'admin',
+        loginIdentifier: 'admin@example.com',
         realName: '管理员',
         phone: '13800138000',
         email: 'admin@example.com',
@@ -119,6 +126,7 @@ const loadUserList = async () => {
       {
         id: 2,
         username: 'operator',
+        loginIdentifier: 'operator@example.com',
         realName: '运营人员',
         phone: '13800138001',
         email: 'operator@example.com',
@@ -140,6 +148,7 @@ const handleSearch = () => {
 
 const handleReset = () => {
   searchForm.username = ''
+  searchForm.loginIdentifier = ''
   searchForm.realName = ''
   loadUserList()
 }

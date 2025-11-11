@@ -7,10 +7,10 @@
         <p>充电站管理系统</p>
       </div>
       <el-form :model="loginForm" :rules="rules" ref="loginFormRef">
-        <el-form-item prop="username">
+        <el-form-item prop="identifier">
           <el-input
-            v-model="loginForm.username"
-            placeholder="用户名"
+            v-model="loginForm.identifier"
+            placeholder="手机号或邮箱"
             prefix-icon="User"
             size="large"
           />
@@ -21,15 +21,6 @@
             type="password"
             placeholder="密码"
             prefix-icon="Lock"
-            size="large"
-            @keyup.enter="handleLogin"
-          />
-        </el-form-item>
-        <el-form-item prop="tenantId">
-          <el-input
-            v-model.number="loginForm.tenantId"
-            placeholder="租户ID (默认为1)"
-            prefix-icon="Key"
             size="large"
             @keyup.enter="handleLogin"
           />
@@ -63,18 +54,13 @@ const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
 
 const loginForm = reactive({
-  username: 'admin',
-  password: 'password', // 统一后的默认密码（数据库中存储的是此密码的BCrypt哈希）
-  tenantId: 1 // 默认租户ID
+  identifier: localStorage.getItem('loginIdentifier') || '',
+  password: ''
 })
 
 const rules: FormRules = {
-  username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
-  password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
-  tenantId: [
-    { required: true, message: '请输入租户ID', trigger: 'blur' },
-    { type: 'number', message: '租户ID必须为数字', trigger: 'blur' }
-  ]
+  identifier: [{ required: true, message: '请输入手机号或邮箱', trigger: 'blur' }],
+  password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
 }
 
 const handleLogin = async () => {
@@ -86,9 +72,8 @@ const handleLogin = async () => {
       try {
         // 调用真实登录API
         const response = await login({
-          username: loginForm.username,
-          password: loginForm.password,
-          tenantId: loginForm.tenantId
+          identifier: loginForm.identifier,
+          password: loginForm.password
         })
         
         const payload: LoginResponse | undefined = response?.data
@@ -117,15 +102,22 @@ const handleLogin = async () => {
             localStorage.removeItem('userId')
           }
 
-          const tenantId = user?.tenantId ?? loginForm.tenantId
+          const tenantId = user?.tenantId
           if (tenantId !== undefined && tenantId !== null) {
             localStorage.setItem('tenantId', String(tenantId))
           } else {
             localStorage.removeItem('tenantId')
           }
 
-          const username = user?.username ?? loginForm.username
-          localStorage.setItem('username', username)
+          const username = user?.username || user?.identifier || loginForm.identifier
+          if (username) {
+            localStorage.setItem('username', username)
+          }
+          if (user?.identifier) {
+            localStorage.setItem('loginIdentifier', user.identifier)
+          } else {
+            localStorage.removeItem('loginIdentifier')
+          }
 
           if (user?.realName) {
             localStorage.setItem('realName', user.realName)

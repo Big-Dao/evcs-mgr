@@ -31,8 +31,9 @@ public class TenantController {
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY, 
               description = "只能在当前租户下创建子租户")
     public Result<SysTenant> createTenant(@Valid @RequestBody SysTenant tenant) {
-        SysTenant created = tenantService.saveTenant(tenant) ? tenant : null;
-        return Result.success("租户创建成功", created);
+        boolean created = tenantService.saveTenant(tenant);
+        SysTenant payload = created ? tenantService.getTenantById(tenant.getId()) : null;
+        return Result.success("租户创建成功", payload);
     }
     
     /**
@@ -89,9 +90,10 @@ public class TenantController {
     @GetMapping("/page")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查询本租户及下级租户")
-    public Result<IPage<SysTenant>> pageTenants(@Valid PageQuery pageQuery) {
+    public Result<IPage<SysTenant>> pageTenants(@Valid PageQuery pageQuery, SysTenant query) {
         Page<SysTenant> page = new Page<>(pageQuery.getPage(), pageQuery.getSize());
-        IPage<SysTenant> result = tenantService.queryTenantPage(page, new SysTenant());
+        SysTenant condition = query != null ? query : new SysTenant();
+        IPage<SysTenant> result = tenantService.queryTenantPage(page, condition);
         return Result.success("查询成功", result);
     }
     

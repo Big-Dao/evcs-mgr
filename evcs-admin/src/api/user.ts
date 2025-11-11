@@ -8,6 +8,7 @@ import type { PageResult } from './types'
 // 用户列表查询参数
 export interface UserQueryParams {
   username?: string
+  loginIdentifier?: string
   realName?: string
   status?: number
   current?: number
@@ -18,6 +19,7 @@ export interface UserQueryParams {
 export interface User {
   id: number
   username: string
+  loginIdentifier?: string
   realName?: string
   phone?: string
   email?: string
@@ -34,6 +36,7 @@ export interface User {
 export interface UserForm {
   username: string
   password?: string
+  loginIdentifier?: string
   realName?: string
   phone?: string
   email?: string

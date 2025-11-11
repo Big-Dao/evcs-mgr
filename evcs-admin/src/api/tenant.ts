@@ -7,10 +7,12 @@ import type { PageResult } from './types'
 
 // 租户列表查询参数
 export interface TenantQueryParams {
-  name?: string
-  type?: string
+  tenantName?: string
+  tenantCode?: string
+  tenantType?: number
+  parentId?: number
   status?: number
-  current?: number
+  page?: number
   size?: number
 }
 
@@ -19,28 +21,42 @@ export interface Tenant {
   id: number
   tenantCode: string
   tenantName: string
-  tenantType: string
+  tenantType: number
   parentId?: number
+  parentName?: string
+  tenantTypeName?: string
+  childrenCount?: number
   contactName?: string
   contactPhone?: string
   contactEmail?: string
   address?: string
   status: number
+  maxUsers?: number
+  maxStations?: number
+  maxChargers?: number
+  expireTime?: string
+  remark?: string | null
   createTime?: string
   updateTime?: string
+  children?: Tenant[]
 }
 
 // 租户表单数据
 export interface TenantForm {
   tenantCode: string
   tenantName: string
-  tenantType: string
+  tenantType: number
   parentId?: number
   contactName?: string
   contactPhone?: string
   contactEmail?: string
   address?: string
   status: number
+  maxUsers?: number | null
+  maxStations?: number | null
+  maxChargers?: number | null
+  expireTime?: string | null
+  remark?: string | null
 }
 
 /**
@@ -100,7 +116,7 @@ export function deleteTenant(id: number) {
  * 获取租户树形结构
  */
 export function getTenantTree() {
-  return request({
+  return request<Tenant[]>({
     url: '/tenant/tree',
     method: 'get'
   })

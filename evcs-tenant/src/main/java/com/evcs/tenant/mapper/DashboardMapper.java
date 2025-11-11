@@ -94,4 +94,39 @@ public interface DashboardMapper {
             @Param("tenantId") Long tenantId,
             @Param("limit") Integer limit
     );
+
+    /**
+     * 统计充电桩状态分布
+     */
+    @InterceptorIgnore(tenantLine = "1")
+    Map<String, Object> getChargerStatusStats(@Param("tenantId") Long tenantId);
+
+    /**
+     * 获取充电量趋势（最近N天）
+     */
+    @InterceptorIgnore(tenantLine = "1")
+    List<Map<String, Object>> getChargingTrend(
+            @Param("tenantId") Long tenantId,
+            @Param("days") Integer days
+    );
+
+    /**
+     * 获取收入趋势（最近N天）
+     */
+    @InterceptorIgnore(tenantLine = "1")
+    List<Map<String, Object>> getRevenueTrend(
+            @Param("tenantId") Long tenantId,
+            @Param("days") Integer days
+    );
+
+    /**
+     * 获取订单时段分布（按小时段聚合，当天）
+     */
+    @InterceptorIgnore(tenantLine = "1")
+    List<Map<String, Object>> getOrderPeriodDistribution(
+            @Param("tenantId") Long tenantId,
+            @Param("date") java.time.LocalDate date,
+            @Param("granularity") Integer granularity,
+            @Param("stationId") Long stationId
+    );
 }

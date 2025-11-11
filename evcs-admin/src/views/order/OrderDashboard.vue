@@ -81,13 +81,7 @@
             </div>
           </template>
 
-          <div style="height: 300px; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
-            <div style="text-align: center; color: #999;">
-              <el-icon :size="60"><TrendCharts /></el-icon>
-              <p style="margin-top: 10px;">订单趋势图表（需集成 ECharts）</p>
-              <p style="font-size: 14px;">显示订单数量和营收趋势</p>
-            </div>
-          </div>
+          <div ref="orderTrendRef" class="chart-box"></div>
         </el-card>
       </el-col>
 
@@ -97,12 +91,9 @@
             <span>充电时段分布</span>
           </template>
 
-          <div style="height: 300px; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
-            <div style="text-align: center; color: #999;">
-              <el-icon :size="60"><PieChart /></el-icon>
-              <p style="margin-top: 10px;">时段分布饼图（需集成 ECharts）</p>
-              <p style="font-size: 14px;">显示不同时段的订单占比</p>
-            </div>
+          <div class="chart-box period-box">
+            <div v-if="periodEmpty" class="empty-mask">暂无时段数据</div>
+            <div ref="periodDistRef" class="chart-canvas"></div>
           </div>
         </el-card>
       </el-col>
@@ -179,8 +170,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch, onBeforeUnmount } from 'vue'
 import { ElMessage } from 'element-plus'
+import * as echarts from 'echarts'
+import { getChargingTrend, getRevenueTrend, getOrderPeriodDistribution } from '@/api/dashboard'
 
 const trendPeriod = ref('week')
 
@@ -266,8 +259,93 @@ const loadDashboardData = async () => {
   }
 }
 
+// 图表引用与实例
+const orderTrendRef = ref<HTMLDivElement | null>(null)
+const periodDistRef = ref<HTMLDivElement | null>(null)
+let orderTrendChart: echarts.ECharts | null = null
+let periodDistChart: echarts.ECharts | null = null
+
+const buildOrderTrend = async () => {
+  if (!orderTrendRef.value) return
+  if (!orderTrendChart) orderTrendChart = echarts.init(orderTrendRef.value)
+  try {
+    const days = trendPeriod.value === 'week' ? 7 : (trendPeriod.value === 'month' ? 30 : 365)
+    const [energyResp, revenueResp] = await Promise.all([
+      getChargingTrend(days),
+      getRevenueTrend(days)
+    ])
+    const energy = (energyResp.data || []) as Array<{date:string;value:number}>
+    const revenue = (revenueResp.data || []) as Array<{date:string;value:number}>
+    const x = [...new Set([...energy.map(e=>e.date), ...revenue.map(r=>r.date)])].sort()
+    const eMap = Object.fromEntries(energy.map(e=>[e.date,e.value]))
+    const rMap = Object.fromEntries(revenue.map(e=>[e.date,e.value]))
+    orderTrendChart.clear()
+    orderTrendChart.setOption({
+      tooltip:{trigger:'axis'},
+      legend:{data:['充电量(kWh)','收入(¥)']},
+      grid:{left:40,right:20,top:40,bottom:30},
+      xAxis:{type:'category',data:x},
+      yAxis:[{type:'value',name:'kWh'},{type:'value',name:'¥'}],
+      series:[
+        {name:'充电量(kWh)',type:'line',smooth:true,data:x.map(d=>eMap[d]??0)},
+        {name:'收入(¥)',type:'line',smooth:true,yAxisIndex:1,data:x.map(d=>rMap[d]??0)}
+      ]
+    })
+  } catch (err) {
+    console.error('订单趋势加载失败',err)
+    orderTrendChart?.setOption({title:{text:'订单趋势(MOCK)',left:'center'},series:[{type:'line',data:[5,8,12,9,14,20,18]}]})
+  }
+}
+
+const periodEmpty = ref(false)
+const buildPeriodDist = async () => {
+  if (!periodDistRef.value) return
+  if (!periodDistChart) periodDistChart = echarts.init(periodDistRef.value)
+  try {
+    const resp = await getOrderPeriodDistribution({ granularity: 3 })
+    const list = resp.data || []
+    const x = list.map((i:any) => i.slot)
+    const y = list.map((i:any) => i.count)
+    const total = y.reduce((a:number,b:number)=>a+b,0)
+    periodDistChart.clear()
+    periodDistChart.setOption({
+      tooltip:{trigger:'axis'},
+      grid:{left:40,right:20,top:30,bottom:30},
+      xAxis:{type:'category',data:x},
+      yAxis:{type:'value',name:'订单数',min:0,max: total>0? undefined:1},
+      series:[{ 
+        name:'订单数',
+        type:'line',smooth:true,
+        showAllSymbol:true,
+        symbol:'circle',symbolSize:8,
+        lineStyle:{width:2,color:'#409eff'},
+        areaStyle:{color:'rgba(64,158,255,0.25)'},
+        label:{show: total===0, formatter: '{c}'},
+        data:y 
+      }]
+    })
+    periodEmpty.value = total === 0
+  } catch (e) {
+    console.error('时段分布加载失败', e)
+    periodEmpty.value = true
+  }
+}
+
+const resizeCharts = () => { orderTrendChart?.resize(); periodDistChart?.resize() }
+
+watch(trendPeriod, () => { buildOrderTrend() })
+
 onMounted(() => {
   loadDashboardData()
+  buildOrderTrend()
+  buildPeriodDist()
+  window.addEventListener('resize', resizeCharts)
+})
+
+onBeforeUnmount(()=>{
+  window.removeEventListener('resize', resizeCharts)
+  orderTrendChart?.dispose(); periodDistChart?.dispose();
+  orderTrendChart=null; periodDistChart=null;
 })
 
 const getUtilizationColor = (utilization: number) => {
@@ -275,12 +353,18 @@ const getUtilizationColor = (utilization: number) => {
   if (utilization >= 60) return '#e6a23c'
   return '#f56c6c'
 }
+
 </script>
 
 <style scoped>
 .order-dashboard {
   height: 100%;
 }
+
+.chart-box { height:300px; }
+.period-box { position: relative; }
+.chart-canvas { height:100%; }
+.empty-mask { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#909399; }
 
 .card-header {
   display: flex;

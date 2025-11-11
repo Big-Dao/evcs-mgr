@@ -8,6 +8,7 @@
 
 ### 管理员账号 ✅
 - **用户名**: `admin`
+- **登录账号**: `admin@tenant1`  _(租户ID自动写入 Token，无需手工输入)_
 - **密码**: `password`
 - **租户ID**: `1`
 - **状态**: 激活
@@ -24,16 +25,15 @@
 2. 访问 http://localhost:3000
 
 3. 使用以下凭证登录：
-  - 用户名: `admin`
+  - 登录账号: `admin@tenant1` （或管理员设置的手机号/邮箱）
   - 密码: `password`
-  - 租户ID: `1` (已预填)
 
 ### API 测试
 ```powershell
-# 测试登录接口
+# 测试登录接口（identifier = 手机 / 邮箱 / 迁移脚本生成的占位）
 curl -X POST http://localhost:8080/api/auth/login `
   -H "Content-Type: application/json" `
-  -d '{"username":"admin","password":"password","tenantId":1}'
+  -d '{"identifier":"admin@tenant1","password":"password"}'
 ```
 
 ## 前端更新说明
@@ -43,18 +43,18 @@ curl -X POST http://localhost:8080/api/auth/login `
 1. ✅ 创建 `src/api/auth.ts` - 登录API接口
 2. ✅ 更新 `src/views/Login.vue` - 集成真实登录API
 3. ✅ 更新 `src/utils/request.ts` - 修正响应格式处理（success字段）
-4. ✅ 添加租户ID字段（默认为1）
+4. ✅ 登录账号自动解析租户，无需手工输入租户ID
 
 ## 登录流程
 
 ```
-用户输入凭证 
-  → 前端调用 /api/auth/login 
-  → Vite代理转发到 Gateway (localhost:8080)
-  → Gateway路由到 evcs-auth 服务
-  → 返回JWT token
-  → 前端保存token到localStorage
-  → 跳转到Dashboard
+用户输入账号/密码
+  → 前端调用 /api/auth/login（identifier + password）
+  → Vite 代理转发到 Gateway (localhost:8080)
+  → Gateway 路由到 evcs-auth 服务
+  → 返回 JWT（payload 含 userId / tenantId / username）
+  → 前端保存 token 与用户信息到 localStorage
+  → 跳转到 Dashboard
 ```
 
 ## 密码信息

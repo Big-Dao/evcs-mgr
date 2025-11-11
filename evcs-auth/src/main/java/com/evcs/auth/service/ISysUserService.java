@@ -25,5 +25,5 @@ public interface ISysUserService extends IService<SysUser> {
 
     void deleteUser(Long userId, Long tenantId);
 
-    SysUser getByUsername(String username, Long tenantId);
+    SysUser getByIdentifier(String identifier);
 }

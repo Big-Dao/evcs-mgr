@@ -86,3 +86,14 @@ export function getRevenueTrend(days: number = 7) {
     params: { days }
   })
 }
+
+/**
+ * 获取订单时段分布（当天）
+ */
+export function getOrderPeriodDistribution(params?: { date?: string; granularity?: number; stationId?: number }) {
+  return request<Array<{ slot: string; count: number }>>({
+    url: '/dashboard/order-period-distribution',
+    method: 'get',
+    params
+  })
+}

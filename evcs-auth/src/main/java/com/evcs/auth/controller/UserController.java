@@ -36,6 +36,7 @@ public class UserController {
 
     @GetMapping("/list")
     public Result<PageResponse<UserResponse>> listUsers(@RequestParam(required = false) String username,
+                                                        @RequestParam(required = false) String loginIdentifier,
                                                         @RequestParam(required = false) String realName,
                                                         @RequestParam(required = false) Integer status,
                                                         @RequestParam(defaultValue = "1") @Min(1) long current,
@@ -50,6 +51,7 @@ public class UserController {
 
         UserQuery query = new UserQuery();
         query.setUsername(username);
+        query.setLoginIdentifier(loginIdentifier);
         query.setRealName(realName);
         query.setStatus(status);
         query.setCurrent(current);
@@ -102,6 +104,7 @@ public class UserController {
         SysUser user = new SysUser();
         user.setUsername(request.getUsername());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
+        user.setLoginIdentifier(request.getLoginIdentifier());
         user.setRealName(request.getRealName());
         user.setPhone(request.getPhone());
         user.setEmail(request.getEmail());
@@ -134,6 +137,9 @@ public class UserController {
         update.setId(id);
         if (StringUtils.isNotBlank(request.getUsername())) {
             update.setUsername(request.getUsername());
+        }
+        if (StringUtils.isNotBlank(request.getLoginIdentifier())) {
+            update.setLoginIdentifier(request.getLoginIdentifier());
         }
         if (StringUtils.isNotBlank(request.getRealName())) {
             update.setRealName(request.getRealName());
@@ -235,6 +241,7 @@ public class UserController {
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
+                .loginIdentifier(user.getLoginIdentifier())
                 .realName(user.getRealName())
                 .phone(user.getPhone())
                 .email(user.getEmail())
@@ -282,4 +289,3 @@ public class UserController {
         }
     }
 }
-

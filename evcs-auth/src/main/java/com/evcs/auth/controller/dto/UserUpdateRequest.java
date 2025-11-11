@@ -10,6 +10,9 @@ public class UserUpdateRequest {
     @Size(max = 50)
     private String username;
 
+    @Size(max = 100)
+    private String loginIdentifier;
+
     @Size(max = 50)
     private String realName;
 
@@ -25,4 +28,3 @@ public class UserUpdateRequest {
 
     private Integer userType;
 }
-

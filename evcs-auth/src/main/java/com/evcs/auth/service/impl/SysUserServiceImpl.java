@@ -41,6 +41,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         wrapper.eq(SysUser::getTenantId, tenantId)
                 .eq(SysUser::getDeleted, 0)
                 .like(StringUtils.isNotBlank(query.getUsername()), SysUser::getUsername, query.getUsername())
+                .like(StringUtils.isNotBlank(query.getLoginIdentifier()), SysUser::getLoginIdentifier, query.getLoginIdentifier())
                 .like(StringUtils.isNotBlank(query.getRealName()), SysUser::getRealName, query.getRealName())
                 .eq(Objects.nonNull(query.getStatus()), SysUser::getStatus, query.getStatus())
                 .orderByDesc(SysUser::getCreateTime);
@@ -51,6 +52,7 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             countWrapper.eq(SysUser::getTenantId, tenantId)
                     .eq(SysUser::getDeleted, 0)
                     .like(StringUtils.isNotBlank(query.getUsername()), SysUser::getUsername, query.getUsername())
+                    .like(StringUtils.isNotBlank(query.getLoginIdentifier()), SysUser::getLoginIdentifier, query.getLoginIdentifier())
                     .like(StringUtils.isNotBlank(query.getRealName()), SysUser::getRealName, query.getRealName())
                     .eq(Objects.nonNull(query.getStatus()), SysUser::getStatus, query.getStatus());
             long total = this.count(countWrapper);
@@ -136,6 +138,10 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     public void createUser(SysUser user, Long tenantId) {
         ensureTenant(tenantId);
         validateUsernameUnique(user.getUsername(), tenantId, null);
+        validateIdentifierUnique(user.getLoginIdentifier(), null);
+        if (StringUtils.isBlank(user.getLoginIdentifier())) {
+            throw new IllegalArgumentException("登录标识不能为空");
+        }
         user.setTenantId(tenantId);
         user.setDeleted(0);
         this.save(user);
@@ -154,6 +160,9 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         }
         if (StringUtils.isNotBlank(user.getUsername()) && !user.getUsername().equals(existing.getUsername())) {
             validateUsernameUnique(user.getUsername(), tenantId, user.getId());
+        }
+        if (StringUtils.isNotBlank(user.getLoginIdentifier()) && !user.getLoginIdentifier().equals(existing.getLoginIdentifier())) {
+            validateIdentifierUnique(user.getLoginIdentifier(), user.getId());
         }
         user.setTenantId(tenantId);
         this.updateById(user);
@@ -175,14 +184,12 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
     }
 
     @Override
-    public SysUser getByUsername(String username, Long tenantId) {
-        if (StringUtils.isBlank(username) || tenantId == null) {
+    public SysUser getByIdentifier(String identifier) {
+        if (StringUtils.isBlank(identifier)) {
             return null;
         }
-        ensureTenant(tenantId);
         LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(SysUser::getTenantId, tenantId)
-                .eq(SysUser::getUsername, username)
+        wrapper.eq(SysUser::getLoginIdentifier, identifier)
                 .eq(SysUser::getDeleted, 0)
                 .last("LIMIT 1");
         return this.getOne(wrapper, false);
@@ -209,6 +216,22 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         long count = this.count(wrapper);
         if (count > 0) {
             throw new IllegalArgumentException("用户名已存在");
+        }
+    }
+
+    private void validateIdentifierUnique(String identifier, Long excludeUserId) {
+        if (StringUtils.isBlank(identifier)) {
+            throw new IllegalArgumentException("登录标识不能为空");
+        }
+        LambdaQueryWrapper<SysUser> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(SysUser::getLoginIdentifier, identifier)
+                .eq(SysUser::getDeleted, 0);
+        if (excludeUserId != null) {
+            wrapper.ne(SysUser::getId, excludeUserId);
+        }
+        long count = this.count(wrapper);
+        if (count > 0) {
+            throw new IllegalArgumentException("登录标识已存在");
         }
     }
 }

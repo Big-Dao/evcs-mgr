@@ -43,13 +43,13 @@ public class SimpleAuthController {
 
     @PostMapping("/login")
     public Result<Map<String, Object>> login(@Valid @RequestBody LoginRequest request) {
-        SysUser user = userService.getByUsername(request.getUsername(), request.getTenantId());
-        if (user == null || (user.getStatus() != null && user.getStatus() == 0)) {
-            return Result.failure(401, "用户名或密码错误");
+        SysUser user = userService.getByIdentifier(request.getIdentifier());
+        if (user == null || user.getTenantId() == null || (user.getStatus() != null && user.getStatus() == 0)) {
+            return Result.failure(401, "账号或密码错误");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            return Result.failure(401, "用户名或密码错误");
+            return Result.failure(401, "账号或密码错误");
         }
 
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getTenantId());
@@ -59,6 +59,7 @@ public class SimpleAuthController {
         userInfo.put("id", user.getId());
         userInfo.put("tenantId", user.getTenantId());
         userInfo.put("username", user.getUsername());
+        userInfo.put("identifier", user.getLoginIdentifier());
         userInfo.put("realName", user.getRealName());
         userInfo.put("status", user.getStatus());
         userInfo.put("userType", user.getUserType());

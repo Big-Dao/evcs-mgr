@@ -24,6 +24,11 @@ public class SysUser extends BaseEntity {
 
     private String username;
 
+    /**
+     * 登录唯一标识（手机号或邮箱）
+     */
+    private String loginIdentifier;
+
     private String password;
 
     private String realName;

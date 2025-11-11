@@ -48,7 +48,9 @@
   - JWT Token生成和验证
   - 角色权限管理
   - 多租户认证
-- **登录入口**: `POST /api/auth/login`（Body需包含 `username`、`password`、`tenantId`）
+- **登录入口**: `POST /api/auth/login`
+  - 请求体：`identifier`（手机号或邮箱）、`password`
+  - 认证成功后，服务端根据 `identifier` 自动解析所属租户并在 JWT 中写入 `tenantId`，前端无需再手工传递租户信息。
 - **下游请求头**: 所有业务请求必须携带 `Authorization: Bearer <token>`、`X-Tenant-Id`、`X-User-Id`
 - **API路径**: `/api/auth/**`
 - **数据表**: `sys_user`, `sys_role`, `sys_user_role`, `sys_permission`

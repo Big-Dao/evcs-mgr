@@ -38,8 +38,9 @@ public class SysTenant extends BaseEntity {
     private String ancestors;
     
     @NotBlank(message = "联系人不能为空")
-    private String contactPerson;
-    
+    @TableField("contact_person")
+    private String contactName;
+
     @NotBlank(message = "联系电话不能为空")
     @Pattern(regexp = "^1[3-9]\\d{9}$", message = "联系电话格式不正确")
     private String contactPhone;
@@ -60,4 +61,13 @@ public class SysTenant extends BaseEntity {
     private Integer maxStations;
     private Integer maxChargers;
     private String remark;
+
+    @TableField(exist = false)
+    private String parentName;
+
+    @TableField(exist = false)
+    private String tenantTypeName;
+
+    @TableField(exist = false)
+    private Integer childrenCount;
 }

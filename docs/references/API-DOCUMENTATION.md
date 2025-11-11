@@ -36,9 +36,8 @@
 **请求示例**:
 ```json
 {
-  "username": "admin",
-  "password": "password123",
-  "tenantId": 1
+  "identifier": "admin@example.com",
+  "password": "password123"
 }
 ```
 
@@ -54,6 +53,7 @@
       "userId": 1,
       "username": "admin",
       "tenantId": 1,
+      "identifier": "admin@example.com",
       "roles": ["ADMIN"]
     }
   }

@@ -56,7 +56,7 @@ curl http://localhost:8080/api/auth/auth/login
 curl -X POST http://localhost:8080/api/auth/auth/login \
   -H "Content-Type: application/json" \
   -d '{
-    "username": "admin",
+    "identifier": "admin@tenant1",
     "password": "admin123"
   }'
 ```
@@ -73,6 +73,7 @@ curl -X POST http://localhost:8080/api/auth/auth/login \
     "user": {
       "id": 1,
       "username": "admin",
+      "identifier": "admin@tenant1",
       "tenantId": 1
     }
   }
@@ -82,8 +83,8 @@ curl -X POST http://localhost:8080/api/auth/auth/login \
 #### 2. 使用Token访问API
 ```bash
 curl -X GET http://localhost:8080/api/tenant/tenants \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..."
-  -H "X-Tenant-Id: 1"
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9..." \
+  -H "X-Tenant-Id: 1"   # 手工调用时从登录响应获取；前端会自动注入
 ```
 
 #### 3. Token刷新

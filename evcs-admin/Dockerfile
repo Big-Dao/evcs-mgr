@@ -1,5 +1,7 @@
 # Stage 1: Build frontend
 FROM node:20-alpine AS build
+ARG BUILD_NUMBER=0
+ENV BUILD_NUMBER=${BUILD_NUMBER}
 WORKDIR /app
 
 # Copy package files for better caching
@@ -9,7 +11,7 @@ RUN npm ci --only=production || npm install
 
 # Copy source files
 COPY . .
-# Build the application
+# Build the application (includes writing version.json)
 RUN npm run build
 
 # Stage 2: Runtime with Nginx
@@ -22,7 +24,7 @@ RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf
 # Copy custom nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Copy built assets from build stage
+# Copy built assets from build stage (including version.json)
 COPY --from=build /app/dist .
 
 # Expose port

@@ -57,7 +57,7 @@
         <div class="header-content">
           <span class="page-title">{{ pageTitle }}</span>
           <div class="user-info">
-            <el-dropdown>
+            <el-dropdown @command="onUserCommand">
               <span class="el-dropdown-link">
                 <el-icon><Avatar /></el-icon>
                 管理员
@@ -65,8 +65,8 @@
               </span>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item>个人中心</el-dropdown-item>
-                  <el-dropdown-item divided @click="handleLogout">退出登录</el-dropdown-item>
+                  <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                  <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -90,8 +90,10 @@ const router = useRouter()
 const activeMenu = computed(() => route.path)
 const pageTitle = computed(() => route.meta.title as string || '')
 
-const handleLogout = () => {
-  router.push('/login')
+const handleLogout = () => { router.push('/login') }
+const onUserCommand = (cmd: string) => {
+  if (cmd === 'profile') router.push('/profile')
+  if (cmd === 'logout') handleLogout()
 }
 </script>
 

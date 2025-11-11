@@ -53,7 +53,9 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
     @DataScope
     public IPage<SysTenant> queryTenantPage(Page<SysTenant> page, SysTenant tenant) {
         QueryWrapper<SysTenant> wrapper = buildTenantQueryWrapper(tenant);
-        return this.page(page, wrapper);
+        IPage<SysTenant> result = this.page(page, wrapper);
+        decorateTenantInfo(result.getRecords());
+        return result;
     }
 
     /**
@@ -66,6 +68,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
     @DataScope
     public List<SysTenant> queryTenantList(SysTenant tenant) {
         Long currentTenantId = TenantContext.getCurrentTenantId();
+        SysTenant criteria = tenant != null ? tenant : new SysTenant();
         
         // 查询当前租户信息，判断租户类型
         SysTenant currentTenant = this.getById(currentTenantId);
@@ -74,7 +77,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
             return List.of();
         }
         
-        QueryWrapper<SysTenant> wrapper = buildTenantQueryWrapper(tenant);
+        QueryWrapper<SysTenant> wrapper = buildTenantQueryWrapper(criteria);
         
         // 根据租户类型应用不同的过滤逻辑
         // 特殊处理：系统租户(SYSTEM)只能看到自己
@@ -99,7 +102,9 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
                      currentTenantId, currentTenant.getTenantType());
         }
         
-        return this.list(wrapper);
+        List<SysTenant> list = this.list(wrapper);
+        decorateTenantInfo(list);
+        return list;
     }
     
     /**
@@ -118,6 +123,10 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
             wrapper.like("tenant_code", tenant.getTenantCode());
         }
         
+        if (tenant.getTenantType() != null) {
+            wrapper.eq("tenant_type", tenant.getTenantType());
+        }
+
         // 根据状态查询
         if (tenant.getStatus() != null) {
             wrapper.eq("status", tenant.getStatus());
@@ -167,7 +176,11 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
      */
     @Override
     public SysTenant getTenantById(Long tenantId) {
-        return this.getById(tenantId);
+        SysTenant tenant = this.getById(tenantId);
+        if (tenant != null) {
+            decorateTenantInfo(java.util.Collections.singletonList(tenant));
+        }
+        return tenant;
     }
 
     /**
@@ -372,7 +385,9 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
      */
     @Override
     public List<SysTenant> getSubTenants(Long parentId) {
-        return this.list(new QueryWrapper<SysTenant>().eq("parent_id", parentId));
+        List<SysTenant> list = this.list(new QueryWrapper<SysTenant>().eq("parent_id", parentId));
+        decorateTenantInfo(list);
+        return list;
     }
 
     /**
@@ -413,5 +428,61 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
         }
         
         return this.count(wrapper) > 0;
+    }
+
+    private void decorateTenantInfo(List<SysTenant> tenants) {
+        if (CollUtil.isEmpty(tenants)) {
+            return;
+        }
+
+        List<Long> parentIds = tenants.stream()
+                .map(SysTenant::getParentId)
+                .filter(id -> id != null && id > 0)
+                .distinct()
+                .collect(Collectors.toList());
+
+        List<Long> tenantIds = tenants.stream()
+                .map(SysTenant::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .collect(Collectors.toList());
+
+        var parentMap = parentIds.isEmpty() ? java.util.Collections.<Long, SysTenant>emptyMap()
+                : this.listByIds(parentIds).stream()
+                    .collect(Collectors.toMap(SysTenant::getId, t -> t));
+
+        var childCountMap = tenantIds.isEmpty() ? java.util.Collections.<Long, Integer>emptyMap()
+                : this.listMaps(new QueryWrapper<SysTenant>()
+                        .select("parent_id", "COUNT(1) AS cnt")
+                        .in("parent_id", tenantIds)
+                        .groupBy("parent_id"))
+                    .stream()
+                    .collect(Collectors.toMap(
+                            m -> ((Number) m.get("parent_id")).longValue(),
+                            m -> ((Number) m.get("cnt")).intValue()
+                    ));
+
+        for (SysTenant tenant : tenants) {
+            tenant.setTenantTypeName(resolveTenantTypeName(tenant.getTenantType()));
+            if (tenant.getParentId() != null && tenant.getParentId() > 0) {
+                SysTenant parent = parentMap.get(tenant.getParentId());
+                tenant.setParentName(parent != null ? parent.getTenantName() : "-");
+            } else {
+                tenant.setParentName("无");
+            }
+            tenant.setChildrenCount(childCountMap.getOrDefault(tenant.getId(), 0));
+        }
+    }
+
+    private String resolveTenantTypeName(Integer type) {
+        if (type == null) {
+            return "未知";
+        }
+        return switch (type) {
+            case 1 -> "平台方";
+            case 2 -> "运营商";
+            case 3 -> "站点方";
+            default -> "未知";
+        };
     }
 }

@@ -23,6 +23,100 @@
             AND (id = #{tenantId} OR parent_id = #{tenantId} OR ancestors LIKE CONCAT(#{tenantId}, ',%') OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
         )
     </select>
+
+    <!-- 统计充电桩状态分布 -->
+    <select id="getChargerStatusStats" resultType="java.util.HashMap">
+        <![CDATA[
+        SELECT 
+            COALESCE(SUM(CASE WHEN c.status <> 0 THEN 1 ELSE 0 END), 0) AS online,
+            COALESCE(SUM(CASE WHEN c.status = 0 THEN 1 ELSE 0 END), 0) AS offline,
+            COALESCE(SUM(CASE WHEN c.status = 2 THEN 1 ELSE 0 END), 0) AS charging,
+            COALESCE(SUM(CASE WHEN c.status = 1 THEN 1 ELSE 0 END), 0) AS idle
+        FROM charger c
+        WHERE c.deleted = 0
+        AND c.tenant_id IN (
+            SELECT id FROM sys_tenant 
+            WHERE deleted = 0 
+            AND (id = #{tenantId} OR parent_id = #{tenantId} OR ancestors LIKE CONCAT(#{tenantId}, ',%') OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+        )
+        ]]>
+    </select>
+
+    <!-- 获取充电量趋势（最近N天，按天聚合） -->
+    <select id="getChargingTrend" resultType="java.util.HashMap">
+        <![CDATA[
+        SELECT to_char(d::date, 'YYYY-MM-DD') AS date,
+               COALESCE(SUM(co.energy), 0)    AS value
+        FROM generate_series(current_date - (#{days} - 1), current_date, interval '1 day') AS d
+        LEFT JOIN charging_order co
+          ON co.deleted = 0
+         AND co.start_time::date = d::date
+         AND co.tenant_id IN (
+              SELECT id FROM sys_tenant WHERE deleted = 0
+                AND (id = #{tenantId}
+                  OR parent_id = #{tenantId}
+                  OR ancestors LIKE CONCAT(#{tenantId}, ',%')
+                  OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+         )
+        GROUP BY d
+        ORDER BY d
+        ]]>
+    </select>
+
+    <!-- 获取收入趋势（最近N天，按天聚合） -->
+    <select id="getRevenueTrend" resultType="java.util.HashMap">
+        <![CDATA[
+        SELECT to_char(d::date, 'YYYY-MM-DD') AS date,
+               COALESCE(SUM(co.amount), 0)    AS value
+        FROM generate_series(current_date - (#{days} - 1), current_date, interval '1 day') AS d
+        LEFT JOIN charging_order co
+          ON co.deleted = 0
+         AND co.start_time::date = d::date
+         AND co.status IN (1, 11)
+         AND co.tenant_id IN (
+              SELECT id FROM sys_tenant WHERE deleted = 0
+                AND (id = #{tenantId}
+                  OR parent_id = #{tenantId}
+                  OR ancestors LIKE CONCAT(#{tenantId}, ',%')
+                  OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+         )
+        GROUP BY d
+        ORDER BY d
+        ]]>
+    </select>
+
+    <!-- 获取订单时段分布（当日，3小时粒度） -->
+    <select id="getOrderPeriodDistribution" resultType="java.util.HashMap">
+        <![CDATA[
+        WITH params AS (
+          SELECT 
+            #{date}::date AS target_date,
+            COALESCE(#{granularity}, 3) AS g
+        ), slots AS (
+          SELECT generate_series(0, 24 - (SELECT g FROM params), (SELECT g FROM params)) AS start_hour
+        )
+        SELECT 
+          CONCAT(start_hour, '-', start_hour + (SELECT g FROM params), '时') AS slot,
+          COALESCE(COUNT(co.id), 0) AS cnt
+        FROM slots s
+        LEFT JOIN charging_order co ON co.deleted = 0
+          AND co.start_time >= (SELECT target_date FROM params)
+          AND co.start_time < (SELECT target_date FROM params) + interval '1 day'
+          AND extract(hour from co.start_time) >= s.start_hour
+          AND extract(hour from co.start_time) < s.start_hour + (SELECT g FROM params)
+          AND co.tenant_id IN (
+                SELECT id FROM sys_tenant WHERE deleted = 0
+                  AND (id = #{tenantId} OR parent_id = #{tenantId}
+                       OR ancestors LIKE CONCAT(#{tenantId}, ',%')
+                       OR ancestors LIKE CONCAT('%,', #{tenantId}, ',%'))
+          )
+          <if test="stationId != null">
+            AND co.station_id = #{stationId}
+          </if>
+        GROUP BY s.start_hour
+        ORDER BY s.start_hour
+        ]]>
+    </select>
     
     <!-- 统计充电站数量 -->
     <select id="countStations" resultType="java.lang.Long">

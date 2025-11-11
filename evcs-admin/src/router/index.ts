@@ -20,6 +20,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '仪表盘', icon: 'DataAnalysis' }
       },
       {
+        path: 'profile',
+        name: 'Profile',
+        component: () => import('@/views/account/Profile.vue'),
+        meta: { title: '个人中心', icon: 'Avatar', hidden: true }
+      },
+      {
         path: 'tenants',
         name: 'Tenants',
         component: () => import('@/views/tenant/TenantList.vue'),

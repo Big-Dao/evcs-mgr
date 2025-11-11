@@ -11,6 +11,7 @@ import java.util.List;
 public class UserResponse {
     Long id;
     String username;
+    String loginIdentifier;
     String realName;
     String phone;
     String email;
@@ -23,4 +24,3 @@ public class UserResponse {
     LocalDateTime updateTime;
     List<String> roles;
 }
-

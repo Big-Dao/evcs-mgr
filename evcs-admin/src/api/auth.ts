@@ -1,14 +1,14 @@
 import request from '../utils/request'
 
 export interface LoginRequest {
-  username: string
+  identifier: string
   password: string
-  tenantId?: number
 }
 
 export interface LoginUserInfo {
   id: number
   username: string
+  identifier?: string
   realName?: string
   phone?: string
   email?: string

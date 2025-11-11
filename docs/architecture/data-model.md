@@ -60,6 +60,11 @@ CREATE INDEX idx_tenant_type_status ON sys_tenant(tenant_type, status, deleted);
 CREATE INDEX idx_tenant_code ON sys_tenant(tenant_code, deleted);
 ```
 
+> **TenantID 生成与使用规则**
+> - `tenant_id` 由数据库 `BIGSERIAL` 自动生成，禁止手工指定或更改。
+> - 管理端仅允许配置 `tenant_name` 与 `tenant_code`（系统生成可读编码），不可直接编辑 `tenant_id`。
+> - 所有微服务内部、日志、审计与上下文传递统一使用 `tenant_id` 作为唯一主键；`tenant_code` 仅用于展示或人工识别。
+
 ##### 用户表 (sys_user)
 ```sql
 CREATE TABLE sys_user (

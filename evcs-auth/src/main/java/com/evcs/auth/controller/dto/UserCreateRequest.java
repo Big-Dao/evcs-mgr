@@ -13,6 +13,10 @@ public class UserCreateRequest {
     @Size(max = 50)
     private String username;
 
+    @NotBlank(message = "登录标识不能为空")
+    @Size(max = 100)
+    private String loginIdentifier;
+
     @NotBlank(message = "密码不能为空")
     @Size(min = 6, max = 64)
     private String password;
@@ -35,4 +39,3 @@ public class UserCreateRequest {
 
     private Long tenantId;
 }
-
