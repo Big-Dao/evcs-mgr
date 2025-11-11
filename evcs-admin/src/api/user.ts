@@ -28,6 +28,7 @@ export interface User {
   status: number
   userType: number
   tenantId: number
+  tenantName?: string
   createTime?: string
   updateTime?: string
 }
@@ -43,6 +44,7 @@ export interface UserForm {
   gender?: number
   status: number
   userType?: number
+  tenantId: number
 }
 
 /**

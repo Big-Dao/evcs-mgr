@@ -76,6 +76,9 @@ const form = reactive({
   email: '',
   phone: '',
   gender: 0,
+  status: 1,
+  userType: 2,
+  tenantId: 0
 })
 
 const rules: FormRules = {
@@ -116,12 +119,14 @@ const saveBasic = () => {
     try {
       await updateUser(form.id, {
         username: form.username,
+        loginIdentifier: form.loginIdentifier,
         realName: form.realName,
         email: form.email,
         phone: form.phone,
         gender: form.gender,
-        status: 1,
-        userType: 2
+        status: form.status ?? 1,
+        userType: form.userType ?? 2,
+        tenantId: form.tenantId || 0
       })
       ElMessage.success('保存成功')
     } catch { ElMessage.error('保存失败') } finally { savingBasic.value = false }
