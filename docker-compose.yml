@@ -191,6 +191,7 @@ services:
       - "8080:8080"
     environment:
       <<: *java-env
+      SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
     depends_on:
       config-server:
         condition: service_healthy
