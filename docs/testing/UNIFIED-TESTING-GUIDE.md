@@ -128,7 +128,7 @@ class OrderServiceTest {
 class OrderControllerIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
+static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17")
             .withDatabaseName("evcs_test")
             .withUsername("test")
             .withPassword("test");
@@ -717,7 +717,7 @@ class OrderServiceTest {
 @Testcontainers
 class IntegrationTest {
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15");
+    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:17");
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {

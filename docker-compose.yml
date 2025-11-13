@@ -36,9 +36,12 @@ x-java-env: &java-env
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     container_name: evcs-postgres
     restart: unless-stopped
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
     environment:
       POSTGRES_DB: evcs_mgr
       POSTGRES_USER: postgres

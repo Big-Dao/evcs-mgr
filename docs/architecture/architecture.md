@@ -92,7 +92,7 @@ graph TB
 | Java | 21 | 编程语言 | 现代化特性，性能优秀 |
 | Spring Boot | 3.2.2 | 应用框架 | 成熟稳定，生态丰富 |
 | Spring Cloud | 2023.0.0 | 微服务框架 | 完整的微服务解决方案 |
-| PostgreSQL | 15 | 关系数据库 | 强一致性，支持复杂查询 |
+| PostgreSQL | 17 | 关系数据库 | 强一致性，支持复杂查询 |
 | Redis | 7 | 缓存数据库 | 高性能，支持多种数据结构 |
 | RabbitMQ | 3.12 | 消息队列 | 可靠的消息传递 |
 | Docker | 28.5+ | 容器化 | 标准化部署 |
@@ -864,7 +864,7 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     environment:
       POSTGRES_DB: evcs_mgr
       POSTGRES_USER: postgres
@@ -954,7 +954,7 @@ server {
 # docker-compose.replication.yml
 services:
   postgres-master:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     environment:
       POSTGRES_REPLICATION_USER: replicator
       POSTGRES_REPLICATION_PASSWORD: replicator_password
@@ -965,7 +965,7 @@ services:
       -c max_replication_slots=10
 
   postgres-slave:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     environment:
       PGUSER: postgres
       POSTGRES_MASTER_SERVICE: postgres-master

@@ -239,7 +239,7 @@ services:
     $composeContent += @"
 
   postgres:
-    image: postgres:15-alpine
+    image: postgres:17-alpine
     container_name: evcs-postgres
     restart: unless-stopped
     environment:
