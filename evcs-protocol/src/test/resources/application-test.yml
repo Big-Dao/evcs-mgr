@@ -2,16 +2,19 @@ spring:
   application:
     name: evcs-protocol-test
 
-  # 禁用Config Server导入（覆盖主配置）
+  rabbitmq:
+    enabled: false
+
+  # Disable config server import in tests
   config:
     import: "optional:"
 
-  # 禁用RabbitMQ自动配置（测试环境）
+  # Skip Rabbit auto configuration when running tests
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
 
-  # 测试数据源配置
+  # H2 in-memory datasource for tests
   datasource:
     driver-class-name: org.h2.Driver
     url: jdbc:h2:mem:testdb

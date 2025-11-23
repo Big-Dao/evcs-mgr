@@ -34,4 +34,7 @@ dependencies {
     
     // API Documentation
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
+
+    // Structured logging encoder used by logback configuration
+    implementation "net.logstash.logback:logstash-logback-encoder:${logstashLogbackVersion}"
 }

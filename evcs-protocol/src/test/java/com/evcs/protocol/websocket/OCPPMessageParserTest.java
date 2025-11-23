@@ -142,10 +142,16 @@ class OCPPMessageParserTest {
 
         // Then
         assertNotNull(message);
-        assertTrue(message.contains("\"2\""));
-        assertTrue(message.contains("\"12345\""));
-        assertTrue(message.contains("\"TestAction\""));
-        assertTrue(message.contains("\"value\""));
+        OCPPMessage parsedMessage = messageParser.parse(message);
+        assertNotNull(parsedMessage);
+        assertEquals(OCPPMessageType.CALL, parsedMessage.getMessageType());
+        assertEquals("12345", parsedMessage.getMessageId());
+        assertTrue(parsedMessage instanceof com.evcs.protocol.dto.ocpp.OCPPCallMessage);
+        com.evcs.protocol.dto.ocpp.OCPPCallMessage callMessage =
+            (com.evcs.protocol.dto.ocpp.OCPPCallMessage) parsedMessage;
+        assertEquals("TestAction", callMessage.getAction());
+        assertNotNull(callMessage.getPayload());
+        assertEquals("value", callMessage.getPayload().get("key"));
     }
 
     @Test
@@ -160,9 +166,15 @@ class OCPPMessageParserTest {
 
         // Then
         assertNotNull(message);
-        assertTrue(message.contains("\"3\""));
-        assertTrue(message.contains("\"12345\""));
-        assertTrue(message.contains("\"Accepted\""));
+        OCPPMessage parsedMessage = messageParser.parse(message);
+        assertNotNull(parsedMessage);
+        assertEquals(OCPPMessageType.CALL_RESULT, parsedMessage.getMessageType());
+        assertEquals("12345", parsedMessage.getMessageId());
+        assertTrue(parsedMessage instanceof com.evcs.protocol.dto.ocpp.OCPPCallResultMessage);
+        com.evcs.protocol.dto.ocpp.OCPPCallResultMessage callResultMessage =
+            (com.evcs.protocol.dto.ocpp.OCPPCallResultMessage) parsedMessage;
+        assertNotNull(callResultMessage.getPayload());
+        assertEquals("Accepted", callResultMessage.getPayload().get("status"));
     }
 
     @Test
@@ -178,11 +190,17 @@ class OCPPMessageParserTest {
 
         // Then
         assertNotNull(message);
-        assertTrue(message.contains("\"4\""));
-        assertTrue(message.contains("\"12345\""));
-        assertTrue(message.contains("\"NotSupported\""));
-        assertTrue(message.contains("\"Not supported\""));
-        assertTrue(message.contains("\"error detail\""));
+        OCPPMessage parsedMessage = messageParser.parse(message);
+        assertNotNull(parsedMessage);
+        assertEquals(OCPPMessageType.CALL_ERROR, parsedMessage.getMessageType());
+        assertEquals("12345", parsedMessage.getMessageId());
+        assertTrue(parsedMessage instanceof com.evcs.protocol.dto.ocpp.OCPPCallErrorMessage);
+        com.evcs.protocol.dto.ocpp.OCPPCallErrorMessage callErrorMessage =
+            (com.evcs.protocol.dto.ocpp.OCPPCallErrorMessage) parsedMessage;
+        assertEquals(com.evcs.protocol.dto.ocpp.OCPPErrorCode.NOT_SUPPORTED, callErrorMessage.getErrorCode());
+        assertEquals("Not supported", callErrorMessage.getErrorDescription());
+        assertNotNull(callErrorMessage.getErrorDetails());
+        assertEquals("error detail", callErrorMessage.getErrorDetails().get("detail"));
     }
 
     @Test

@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 协议集成测试
  */
-@SpringBootTest
+@SpringBootTest(classes = ProtocolServiceApplication.class)
 @ActiveProfiles("test")
 @DisplayName("协议集成测试")
 class ProtocolIntegrationTest {
