@@ -251,10 +251,10 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         PaymentResponse response = paymentService.createPayment(request);
 
         // 2. 发送失败回调
-        boolean success = paymentService.handlePaymentCallback(response.getTradeNo(), false);
+        boolean handled = paymentService.handlePaymentCallback(response.getTradeNo(), false);
 
         // 3. 验证订单状态为失败
-        assertTrue(success);
+        assertFalse(handled);
         PaymentOrder order = paymentService.getByOrderId(5L);
         assertEquals(PaymentStatus.FAILED, order.getStatusEnum());
     }

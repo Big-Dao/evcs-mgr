@@ -1,14 +1,19 @@
 package com.evcs.payment.service;
 
+import com.evcs.common.tenant.TenantContext;
 import com.evcs.payment.config.TestConfig;
 import com.evcs.payment.dto.ReconciliationRequest;
 import com.evcs.payment.dto.ReconciliationResult;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.mapper.PaymentOrderMapper;
+import com.evcs.payment.service.reconciliation.ReconciliationExceptionService;
 import com.evcs.payment.service.reconciliation.ReconciliationStatementService;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.ActiveProfiles;
@@ -17,10 +22,13 @@ import org.springframework.test.context.ContextConfiguration;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
@@ -40,7 +48,22 @@ class ReconciliationServiceIntegrationTest {
     private ReconciliationStatementService reconciliationStatementService;
 
     @MockBean
+    private ReconciliationExceptionService reconciliationExceptionService;
+
+    @Autowired
     private IReconciliationService reconciliationService;
+
+    @BeforeEach
+    void setUpTenantContext() {
+        TenantContext.setTenantId(1L);
+        TenantContext.setUserId(1001L);
+        TenantContext.setTenantType(0);
+    }
+
+    @AfterEach
+    void clearTenantContext() {
+        TenantContext.clear();
+    }
 
     @Test
     @DisplayName("测试支付宝对账功能")
@@ -59,6 +82,10 @@ class ReconciliationServiceIntegrationTest {
         systemOrders.add(order2);
 
         when(paymentOrderMapper.selectList(any())).thenReturn(systemOrders);
+        when(reconciliationExceptionService.detectExceptions(anyString())).thenReturn(Collections.emptyList());
+        when(reconciliationExceptionService.handleExceptions(anyList()))
+            .thenReturn(new ReconciliationExceptionService.ReconciliationExceptionHandleResult(0, 0, 0, Collections.emptyList()));
+        when(reconciliationExceptionService.generateExceptionReport(anyString())).thenReturn("");
 
         // Act
         ReconciliationResult result = reconciliationService.reconcile(request);
@@ -84,6 +111,10 @@ class ReconciliationServiceIntegrationTest {
         systemOrders.add(order);
 
         when(paymentOrderMapper.selectList(any())).thenReturn(systemOrders);
+        when(reconciliationExceptionService.detectExceptions(anyString())).thenReturn(Collections.emptyList());
+        when(reconciliationExceptionService.handleExceptions(anyList()))
+            .thenReturn(new ReconciliationExceptionService.ReconciliationExceptionHandleResult(0, 0, 0, Collections.emptyList()));
+        when(reconciliationExceptionService.generateExceptionReport(anyString())).thenReturn("");
 
         // Act
         ReconciliationResult result = reconciliationService.reconcile(request);
@@ -104,6 +135,10 @@ class ReconciliationServiceIntegrationTest {
         request.setReconciliationDate(reconciliationDate);
 
         when(paymentOrderMapper.selectList(any())).thenReturn(new ArrayList<>());
+        when(reconciliationExceptionService.detectExceptions(anyString())).thenReturn(Collections.emptyList());
+        when(reconciliationExceptionService.handleExceptions(anyList()))
+            .thenReturn(new ReconciliationExceptionService.ReconciliationExceptionHandleResult(0, 0, 0, Collections.emptyList()));
+        when(reconciliationExceptionService.generateExceptionReport(anyString())).thenReturn("");
 
         // Act
         ReconciliationResult result = reconciliationService.reconcile(request);
@@ -125,6 +160,10 @@ class ReconciliationServiceIntegrationTest {
 
         // 模拟数据库异常
         when(paymentOrderMapper.selectList(any())).thenThrow(new RuntimeException("Database error"));
+        when(reconciliationExceptionService.detectExceptions(anyString())).thenReturn(Collections.emptyList());
+        when(reconciliationExceptionService.handleExceptions(anyList()))
+            .thenReturn(new ReconciliationExceptionService.ReconciliationExceptionHandleResult(0, 0, 0, Collections.emptyList()));
+        when(reconciliationExceptionService.generateExceptionReport(anyString())).thenReturn("");
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {

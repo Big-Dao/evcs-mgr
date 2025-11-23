@@ -132,7 +132,14 @@ public class AlipayReconciliationService {
             line = line.trim();
 
             // 跳过注释行和空行
-            if (line.isEmpty() || line.startsWith("#")) {
+            if (line.isEmpty()) {
+                continue;
+            }
+
+            if (line.startsWith("#")) {
+                if (!dataStart && line.contains(",")) {
+                    dataStart = true;
+                }
                 continue;
             }
 
