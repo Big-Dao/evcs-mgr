@@ -121,6 +121,16 @@
   - 退款处理
   - 对账系统
   - 幂等性保护
+- **回调地址**:
+
+  | 类型 | 支付回调 | 退款回调 |
+  | ---- | -------- | -------- |
+  | 支付宝 | `/api/payment/callback/alipay` | `/api/payment/callback/alipay/refund` |
+  | 微信   | `/api/payment/callback/wechat` | `/api/payment/callback/wechat/refund` |
+
+- **配置要点**:
+  - 微信退款回调解密需配置 `evcs.payment.wechat.api-v2-key`（用于 `req_info` AES 解密与签名校验）
+  - 回调地址通过 API 网关暴露，生产环境需在渠道侧配置公网可达域名
 - **API路径**: `/api/payment/**`
 - **消息队列**: RabbitMQ异步通知
 - **健康检查**: http://localhost:8084/actuator/health

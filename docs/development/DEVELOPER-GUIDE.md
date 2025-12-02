@@ -157,6 +157,13 @@ evcs-mgr/
 | evcs-protocol | 协议对接（OCPP、CloudCharge） | 8085 |
 | evcs-tenant | 租户管理（租户CRUD、层级关系） | 8086 |
 
+### 模块补充说明
+
+#### evcs-payment 支付服务
+
+- 沙箱密钥需在配置中心或本地 `application-*.yml` 中显式维护
+- 微信退款回调依赖 `evcs.payment.wechat.api-v2-key`（用于 `req_info` AES 解密与签名校验）；缺省时仅保留渠道层验签能力，适用于本地测试
+
 ---
 
 ## 新模块开发指南
