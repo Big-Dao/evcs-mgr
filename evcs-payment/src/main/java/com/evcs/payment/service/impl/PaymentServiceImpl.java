@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -340,6 +341,9 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
         PaymentMethod method = PaymentMethod.valueOf(
             paymentOrder.getPaymentMethod().toUpperCase().replace("_", "_")
         );
+        request.setTotalAmount(paymentOrder.getAmount());
+        request.setTradeNo(paymentOrder.getTradeNo());
+        request.setTransactionId(paymentOrder.getOutTradeNo());
         IPaymentChannel channel = selectChannel(method);
 
         // 调用支付渠道退款
@@ -430,6 +434,23 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
         if (request.getUserId() == null) {
             log.warn("用户ID为空");
             return false;
+        }
+
+        if (request.getPaymentMethod().name().startsWith("WECHAT")) {
+            if (request.getWechatOptions() == null) {
+                log.warn("微信支付缺少专属参数");
+                return false;
+            }
+            if (request.getPaymentMethod() == PaymentMethod.WECHAT_JSAPI) {
+                if (!StringUtils.hasText(request.getWechatOptions().getAppId())) {
+                    log.warn("微信JSAPI支付缺少appId");
+                    return false;
+                }
+                if (!StringUtils.hasText(request.getWechatOptions().getOpenId())) {
+                    log.warn("微信JSAPI支付缺少openId");
+                    return false;
+                }
+            }
         }
 
         return true;

@@ -129,8 +129,18 @@
   | 微信   | `/api/payment/callback/wechat` | `/api/payment/callback/wechat/refund` |
 
 - **配置要点**:
-  - 微信退款回调解密需配置 `evcs.payment.wechat.api-v2-key`（用于 `req_info` AES 解密与签名校验）
-  - 回调地址通过 API 网关暴露，生产环境需在渠道侧配置公网可达域名
+- 微信退款回调解密需配置 `evcs.payment.wechat.api-v2-key`（用于 `req_info` AES 解密与签名校验）
+- 回调地址通过 API 网关暴露，生产环境需在渠道侧配置公网可达域名
+- 网关需保留 `Wechatpay-Timestamp/Nonce/Signature/Serial` 请求头并透传至支付服务，以便回调验签与解密
+- 微信渠道真实接入需显式开启 `evcs.payment.wechat.enabled=true`，并补齐以下属性（若缺少则自动退回模拟模式）：
+  - `evcs.payment.wechat.app-id`（JSAPI/小程序）与 `evcs.payment.wechat.mchid`
+  - `evcs.payment.wechat.merchant-serial-number`、`evcs.payment.wechat.api-v3-key`
+  - `evcs.payment.wechat.private-key` 或 `evcs.payment.wechat.private-key-path`（PKCS8 PEM）
+  - 回调地址 `evcs.payment.wechat.notify-url` / 退款回调 `evcs.payment.wechat.refund-notify-url`
+- 前端/调用方在发起微信支付时需按支付方式补齐 `wechatOptions`:
+  - JSAPI：`appId` 与 `openId` 必填
+  - Native：推荐提供 `payerClientIp`，用于风控记录
+  - 可选透传 `attach`、`goodsTag`，会在回调中原样返回
 - **API路径**: `/api/payment/**`
 - **消息队列**: RabbitMQ异步通知
 - **健康检查**: http://localhost:8084/actuator/health

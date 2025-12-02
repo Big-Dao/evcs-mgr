@@ -7,6 +7,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.StringUtils;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * 支付配置
@@ -113,9 +118,24 @@ public class PaymentConfig {
     @Data
     public static class WechatConfig {
         /**
+         * 是否启用真实微信支付接入
+         */
+        private boolean enabled = false;
+
+        /**
+         * JSAPI/小程序使用的应用ID
+         */
+        private String appId = "";
+
+        /**
          * 商户号
          */
         private String mchid = "190000****";
+
+        /**
+         * 子商户号（服务商模式可选）
+         */
+        private String subMchid = "";
 
         /**
          * 商户API私钥路径
@@ -176,6 +196,43 @@ public class PaymentConfig {
          * 退款结果通知地址
          */
         private String refundNotifyUrl = "";
+
+        /**
+         * 加载私钥内容
+         */
+        public String resolvePrivateKey() {
+            if (StringUtils.hasText(privateKey)) {
+                return privateKey;
+            }
+            if (!StringUtils.hasText(privateKeyPath)) {
+                return "";
+            }
+            try {
+                Path path = Paths.get(privateKeyPath);
+                if (!path.isAbsolute()) {
+                    path = Paths.get(System.getProperty("user.dir")).resolve(privateKeyPath).normalize();
+                }
+                if (Files.exists(path)) {
+                    return Files.readString(path);
+                }
+                log.warn("指定的微信私钥路径不存在: {}", path);
+            } catch (Exception ex) {
+                log.error("读取微信私钥失败: {}", privateKeyPath, ex);
+            }
+            return "";
+        }
+
+        /**
+         * 判定配置是否满足真实接入条件
+         */
+        public boolean isFullyConfigured() {
+            return enabled
+                && StringUtils.hasText(appId)
+                && StringUtils.hasText(mchid)
+                && StringUtils.hasText(merchantSerialNumber)
+                && StringUtils.hasText(apiV3Key)
+                && StringUtils.hasText(resolvePrivateKey());
+        }
     }
 
     /**

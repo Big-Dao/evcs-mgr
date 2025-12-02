@@ -23,4 +23,19 @@ public class RefundRequest {
      * 退款原因
      */
     private String refundReason;
+
+    /**
+     * 原支付金额
+     */
+    private BigDecimal totalAmount;
+
+    /**
+     * 商户支付订单号（out_trade_no）
+     */
+    private String tradeNo;
+
+    /**
+     * 微信/第三方交易流水号（transaction_id）
+     */
+    private String transactionId;
 }

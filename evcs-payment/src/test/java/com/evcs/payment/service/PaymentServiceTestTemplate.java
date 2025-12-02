@@ -7,6 +7,7 @@ import com.evcs.payment.dto.PaymentRequest;
 import com.evcs.payment.dto.PaymentResponse;
 import com.evcs.payment.dto.RefundRequest;
 import com.evcs.payment.dto.RefundResponse;
+import com.evcs.payment.dto.WechatPaymentOptions;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
@@ -45,6 +46,15 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
 
     @MockBean
     private WechatPayChannelService wechatChannelService;
+
+    private WechatPaymentOptions buildWechatOptions() {
+        WechatPaymentOptions options = new WechatPaymentOptions();
+        options.setAppId("wx-test-app-id");
+        options.setOpenId("test-open-openid");
+        options.setPayerClientIp("127.0.0.1");
+        options.setAttach("test-attach");
+        return options;
+    }
 
     /**
      * 配置Mock行为
@@ -173,6 +183,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setUserId(1L);
         request.setDescription("微信支付测试");
         request.setIdempotentKey("test-idempotent-key-2");
+        request.setWechatOptions(buildWechatOptions());
         
         // Act
         PaymentResponse response = paymentService.createPayment(request);
@@ -220,6 +231,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setPaymentMethod(PaymentMethod.WECHAT_JSAPI);
         request.setUserId(1L);
         request.setIdempotentKey("test-idempotent-key-4");
+        request.setWechatOptions(buildWechatOptions());
         PaymentResponse response = paymentService.createPayment(request);
         
         // 2. 模拟支付平台回调
@@ -303,6 +315,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request.setPaymentMethod(PaymentMethod.WECHAT_NATIVE);
         request.setUserId(1L);
         request.setIdempotentKey("test-idempotent-key-7");
+        request.setWechatOptions(buildWechatOptions());
         PaymentResponse response = paymentService.createPayment(request);
         paymentService.handlePaymentCallback(response.getTradeNo(), true);
         
@@ -384,6 +397,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request1.setPaymentMethod(PaymentMethod.WECHAT_JSAPI);
         request1.setUserId(1L);
         request1.setIdempotentKey(idempotentKey);
+        request1.setWechatOptions(buildWechatOptions());
         
         PaymentResponse response1 = paymentService.createPayment(request1);
         
@@ -394,6 +408,7 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
         request2.setPaymentMethod(PaymentMethod.WECHAT_JSAPI);
         request2.setUserId(1L);
         request2.setIdempotentKey(idempotentKey);
+        request2.setWechatOptions(buildWechatOptions());
         
         PaymentResponse response2 = paymentService.createPayment(request2);
         

@@ -39,4 +39,9 @@ public class PaymentRequest {
      * 支付描述
      */
     private String description;
+
+    /**
+     * 微信支付专属参数
+     */
+    private WechatPaymentOptions wechatOptions;
 }

@@ -60,6 +60,16 @@ public class CallbackRequest {
     private String signType;
 
     /**
+     * 请求头信息
+     */
+    private Map<String, String> headers;
+
+    /**
+     * 事件类型（仅微信）
+     */
+    private String eventType;
+
+    /**
      * 其他参数
      */
     private Map<String, String> extraParams;
