@@ -111,17 +111,19 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
 
     @Override
     public boolean verifySignature(String channel, CallbackRequest request) {
-        try {
-            // 选择对应的支付渠道验证签名
-            PaymentMethod method = PaymentMethod.valueOf(channel.toUpperCase() + "_APP");
-            IPaymentChannel paymentChannel = paymentService.selectChannel(method);
-
-            if (paymentChannel != null) {
-                return paymentChannel.verifySignature(request.getRawData(), request.getSign());
-            }
-
+        PaymentMethod method = resolvePaymentMethod(channel);
+        if (method == null) {
             log.warn("未找到支付渠道: {}", channel);
             return false;
+        }
+
+        try {
+            IPaymentChannel paymentChannel = paymentService.selectChannel(method);
+            if (paymentChannel == null) {
+                log.warn("支付渠道未注册: {}", channel);
+                return false;
+            }
+            return paymentChannel.verifySignature(request.getRawData(), request.getSign());
         } catch (Exception e) {
             log.error("验证签名失败: channel={}", channel, e);
             return false;
@@ -215,5 +217,25 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
         }
 
         return CallbackResponse.success("OK");
+    }
+
+    private PaymentMethod resolvePaymentMethod(String channel) {
+        if (!org.springframework.util.StringUtils.hasText(channel)) {
+            return null;
+        }
+
+        if ("alipay".equalsIgnoreCase(channel)) {
+            return PaymentMethod.ALIPAY_APP;
+        }
+        if ("wechat".equalsIgnoreCase(channel)) {
+            return PaymentMethod.WECHAT_JSAPI;
+        }
+
+        try {
+            return PaymentMethod.valueOf(channel.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            log.warn("无法根据渠道解析支付方式: {}", channel, ex);
+            return null;
+        }
     }
 }

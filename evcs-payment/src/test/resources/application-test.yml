@@ -109,6 +109,11 @@ evcs:
       - sys_role
     default-tenant-id: 1
   payment:
+    enabled: true
+    wechat:
+      api-v2-key: test-api-v2-key-1234567890
+      api-v3-key: test-api-v3-key
+      mchid: test-mch-id
     message:
       enabled: false  # 禁用消息功能避免RabbitMQ依赖
     rabbitmq:

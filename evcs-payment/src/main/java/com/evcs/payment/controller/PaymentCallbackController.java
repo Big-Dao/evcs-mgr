@@ -10,12 +10,15 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StreamUtils;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.nio.charset.StandardCharsets;
 
 /**
  * 支付回调控制器
@@ -118,9 +121,34 @@ public class PaymentCallbackController {
     @Operation(summary = "微信退款回调")
     public ResponseEntity<String> wechatRefundCallback(HttpServletRequest request) {
         log.info("收到微信退款回调");
-        // TODO: 实现退款回调处理
-        String response = "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
-        return ResponseEntity.ok(response);
+        try {
+            String requestBody = StreamUtils.copyToString(request.getInputStream(), StandardCharsets.UTF_8);
+            if (!StringUtils.hasText(requestBody)) {
+                log.warn("微信退款回调请求体为空");
+                return ResponseEntity.ok(buildWechatFailureResponse("请求体为空"));
+            }
+
+            RefundCallbackRequest callbackRequest = refundCallbackService.parseWechatRefundCallback(requestBody);
+            if (callbackRequest == null) {
+                log.warn("微信退款回调解析失败");
+                return ResponseEntity.ok(buildWechatFailureResponse("解析失败"));
+            }
+
+            boolean success = refundCallbackService.handleRefundCallback(callbackRequest);
+            if (success) {
+                log.info("微信退款回调处理成功: outTradeNo={}, outRequestNo={}",
+                    callbackRequest.getOutTradeNo(), callbackRequest.getOutRequestNo());
+                return ResponseEntity.ok(buildWechatSuccessResponse());
+            }
+
+            log.warn("微信退款回调处理失败: outTradeNo={}, outRequestNo={}",
+                callbackRequest.getOutTradeNo(), callbackRequest.getOutRequestNo());
+            return ResponseEntity.ok(buildWechatFailureResponse("处理失败"));
+
+        } catch (Exception e) {
+            log.error("处理微信退款回调异常", e);
+            return ResponseEntity.ok(buildWechatFailureResponse("内部错误"));
+        }
     }
 
     /**
@@ -182,5 +210,14 @@ public class PaymentCallbackController {
         }
 
         return params;
+    }
+
+    private String buildWechatSuccessResponse() {
+        return "<xml><return_code><![CDATA[SUCCESS]]></return_code><return_msg><![CDATA[OK]]></return_msg></xml>";
+    }
+
+    private String buildWechatFailureResponse(String message) {
+        return String.format("<xml><return_code><![CDATA[FAIL]]></return_code><return_msg><![CDATA[%s]]></return_msg></xml>",
+            StringUtils.hasText(message) ? message : "FAIL");
     }
 }

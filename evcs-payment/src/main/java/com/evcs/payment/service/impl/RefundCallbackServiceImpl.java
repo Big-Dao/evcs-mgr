@@ -1,6 +1,7 @@
 package com.evcs.payment.service.impl;
 
 import com.evcs.payment.config.AlipayConfig;
+import com.evcs.payment.config.PaymentConfig;
 import com.evcs.payment.dto.RefundCallbackRequest;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentStatus;
@@ -11,10 +12,29 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.DigestUtils;
+import org.springframework.util.StringUtils;
 
 import jakarta.annotation.Resource;
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Locale;
+import java.util.stream.Collectors;
+import javax.crypto.Cipher;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.InputSource;
+import java.io.StringReader;
 
 /**
  * 退款回调服务实现
@@ -31,6 +51,9 @@ public class RefundCallbackServiceImpl implements IRefundCallbackService {
 
     @Resource
     private Map<String, IPaymentChannel> paymentChannelMap;
+
+    @Resource
+    private PaymentConfig paymentConfig;
 
     @Override
     @Transactional
@@ -118,9 +141,57 @@ public class RefundCallbackServiceImpl implements IRefundCallbackService {
 
     @Override
     public RefundCallbackRequest parseWechatRefundCallback(String xmlData) {
-        // TODO: 实现微信退款回调解析
-        log.warn("微信退款回调解析待实现");
-        return null;
+        if (!StringUtils.hasText(xmlData)) {
+            log.warn("微信退款回调XML为空");
+            return null;
+        }
+
+        Map<String, String> rootParams = parseXmlToMap(xmlData);
+        if (rootParams.isEmpty()) {
+            log.warn("微信退款回调解析后参数为空");
+            return null;
+        }
+
+        RefundCallbackRequest request = new RefundCallbackRequest();
+        request.setChannel("wechat");
+        request.setRawParams(rootParams);
+        request.setSign(rootParams.get("sign"));
+        request.setSignType(rootParams.get("sign_type"));
+
+        String returnCode = rootParams.get("return_code");
+        if (!"SUCCESS".equalsIgnoreCase(returnCode)) {
+            log.warn("微信退款回调返回码非SUCCESS: {}", returnCode);
+            request.setRefundStatus("REFUND_FAILED");
+            return request;
+        }
+
+        Map<String, String> decryptedParams = Collections.emptyMap();
+        String reqInfo = rootParams.get("req_info");
+        if (StringUtils.hasText(reqInfo)) {
+            decryptedParams = decryptWechatReqInfo(reqInfo);
+        } else {
+            decryptedParams = rootParams;
+        }
+
+        if (decryptedParams.isEmpty()) {
+            log.warn("微信退款回调解密信息为空");
+            return null;
+        }
+
+        request.setOutTradeNo(decryptedParams.getOrDefault("out_trade_no", rootParams.get("out_trade_no")));
+        request.setOutRequestNo(decryptedParams.getOrDefault("out_refund_no", rootParams.get("out_refund_no")));
+        request.setTradeNo(decryptedParams.getOrDefault("transaction_id", rootParams.get("transaction_id")));
+        request.setRefundStatus(normalizeWechatRefundStatus(decryptedParams.get("refund_status")));
+        request.setReason(decryptedParams.get("refund_reason"));
+        request.setGmtRefundPay(decryptedParams.getOrDefault("success_time",
+            decryptedParams.getOrDefault("refund_success_time", rootParams.get("success_time"))));
+
+        BigDecimal refundFee = extractWechatRefundAmount(decryptedParams);
+        if (refundFee != null) {
+            request.setRefundFee(refundFee);
+        }
+
+        return request;
     }
 
     /**
@@ -203,8 +274,172 @@ public class RefundCallbackServiceImpl implements IRefundCallbackService {
      * 验证微信退款回调签名
      */
     private boolean verifyWechatRefundSignature(RefundCallbackRequest callbackRequest) {
-        // TODO: 实现微信退款回调签名验证
-        log.warn("微信退款回调签名验证待实现");
-        return true; // 暂时返回true
+        Map<String, String> params = callbackRequest.getRawParams();
+        if (params == null || params.isEmpty()) {
+            log.warn("微信退款回调原始参数为空，无法验证签名");
+            return false;
+        }
+
+        String signature = params.get("sign");
+        if (!StringUtils.hasText(signature)) {
+            log.warn("微信退款回调缺少签名字段");
+            return false;
+        }
+
+        String signContent = buildWechatSignContent(params);
+        if (!StringUtils.hasText(signContent)) {
+            log.warn("微信退款回调签名内容为空");
+            return false;
+        }
+
+        String signType = params.getOrDefault("sign_type", "MD5");
+        String calculatedSignature = calculateWechatSignature(signContent, signType);
+        if (!StringUtils.hasText(calculatedSignature)) {
+            log.warn("微信退款回调签名计算失败，尝试使用渠道实现进行校验");
+            IPaymentChannel wechatChannel = paymentChannelMap.get("wechat");
+            if (wechatChannel != null) {
+                boolean fallback = wechatChannel.verifySignature(signContent, signature);
+                if (!fallback) {
+                    log.warn("微信退款回调渠道签名校验失败");
+                }
+                return fallback;
+            }
+            return false;
+        }
+
+        boolean match = signature.equalsIgnoreCase(calculatedSignature);
+        if (!match) {
+            log.warn("微信退款回调签名验证失败: expected={}, actual={}", calculatedSignature, signature);
+        }
+        return match;
+    }
+
+    private Map<String, String> parseXmlToMap(String xmlData) {
+        Map<String, String> result = new HashMap<>();
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setExpandEntityReferences(false);
+            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(new InputSource(new StringReader(xmlData)));
+            NodeList nodeList = document.getDocumentElement().getChildNodes();
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node node = nodeList.item(i);
+                if (node.getNodeType() == Node.ELEMENT_NODE) {
+                    result.put(node.getNodeName(), node.getTextContent());
+                }
+            }
+        } catch (Exception e) {
+            log.error("解析微信退款回调XML失败", e);
+        }
+        return result;
+    }
+
+    private Map<String, String> decryptWechatReqInfo(String reqInfo) {
+        if (!StringUtils.hasText(reqInfo)) {
+            return Collections.emptyMap();
+        }
+
+        try {
+            PaymentConfig.WechatConfig wechatConfig = paymentConfig != null ? paymentConfig.getWechat() : null;
+            if (wechatConfig == null || !StringUtils.hasText(wechatConfig.getApiV2Key())) {
+                log.warn("微信API v2密钥未配置，无法解密退款信息");
+                return Collections.emptyMap();
+            }
+
+            byte[] decodedBytes = Base64.getDecoder().decode(reqInfo);
+            String md5Key = DigestUtils.md5DigestAsHex(wechatConfig.getApiV2Key().getBytes(StandardCharsets.UTF_8))
+                .toLowerCase(Locale.ROOT);
+            SecretKeySpec keySpec = new SecretKeySpec(md5Key.getBytes(StandardCharsets.UTF_8), "AES");
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, keySpec);
+            byte[] decrypted = cipher.doFinal(decodedBytes);
+            String decryptedXml = new String(decrypted, StandardCharsets.UTF_8);
+            return parseXmlToMap(decryptedXml);
+        } catch (Exception e) {
+            log.error("解密微信退款回调信息失败", e);
+            return Collections.emptyMap();
+        }
+    }
+
+    private BigDecimal extractWechatRefundAmount(Map<String, String> params) {
+        String refundFee = params.get("refund_fee");
+        if (!StringUtils.hasText(refundFee)) {
+            refundFee = params.get("settlement_refund_fee");
+        }
+        if (!StringUtils.hasText(refundFee)) {
+            return null;
+        }
+        try {
+            return new BigDecimal(refundFee).movePointLeft(2);
+        } catch (NumberFormatException ex) {
+            log.warn("解析微信退款金额失败: {}", refundFee, ex);
+            return null;
+        }
+    }
+
+    private String normalizeWechatRefundStatus(String refundStatus) {
+        if (!StringUtils.hasText(refundStatus)) {
+            return "REFUND_FAILED";
+        }
+        switch (refundStatus.toUpperCase(Locale.ROOT)) {
+            case "SUCCESS":
+                return "REFUND_SUCCESS";
+            case "CHANGE":
+            case "REFUNDCLOSE":
+                return "REFUND_FAILED";
+            default:
+                return refundStatus;
+        }
+    }
+
+    private String buildWechatSignContent(Map<String, String> params) {
+        return params.entrySet().stream()
+            .filter(entry -> StringUtils.hasText(entry.getValue()))
+            .filter(entry -> !"sign".equals(entry.getKey()) && !"sign_type".equals(entry.getKey()))
+            .sorted(Map.Entry.comparingByKey())
+            .map(entry -> entry.getKey() + "=" + entry.getValue())
+            .collect(Collectors.joining("&"));
+    }
+
+    private String calculateWechatSignature(String signContent, String signType) {
+        PaymentConfig.WechatConfig wechatConfig = paymentConfig != null ? paymentConfig.getWechat() : null;
+        if (wechatConfig == null || !StringUtils.hasText(wechatConfig.getApiV2Key())) {
+            log.warn("微信API v2密钥未配置，无法计算签名");
+            return null;
+        }
+
+        String contentWithKey = signContent + "&key=" + wechatConfig.getApiV2Key();
+        try {
+            if ("HMAC-SHA256".equalsIgnoreCase(signType)) {
+                Mac mac = Mac.getInstance("HmacSHA256");
+                SecretKeySpec secretKeySpec = new SecretKeySpec(wechatConfig.getApiV2Key().getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+                mac.init(secretKeySpec);
+                byte[] bytes = mac.doFinal(contentWithKey.getBytes(StandardCharsets.UTF_8));
+                return bytesToHex(bytes).toUpperCase(Locale.ROOT);
+            }
+
+            MessageDigest md5 = MessageDigest.getInstance("MD5");
+            byte[] bytes = md5.digest(contentWithKey.getBytes(StandardCharsets.UTF_8));
+            return bytesToHex(bytes).toUpperCase(Locale.ROOT);
+        } catch (Exception e) {
+            log.error("计算微信退款签名失败", e);
+            return null;
+        }
+    }
+
+    private String bytesToHex(byte[] bytes) {
+        StringBuilder builder = new StringBuilder(bytes.length * 2);
+        for (byte b : bytes) {
+            String hex = Integer.toHexString(b & 0xFF);
+            if (hex.length() == 1) {
+                builder.append('0');
+            }
+            builder.append(hex);
+        }
+        return builder.toString();
     }
 }
