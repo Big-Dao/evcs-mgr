@@ -11,13 +11,21 @@ import com.evcs.payment.service.IPaymentService;
 import com.evcs.payment.service.OrderSyncService;
 import com.evcs.payment.service.callback.PaymentCallbackService;
 import com.evcs.payment.service.channel.IPaymentChannel;
+import com.evcs.payment.service.channel.WechatPayClientFactory;
 import com.evcs.payment.service.message.PaymentMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+
+import com.wechat.pay.java.core.notification.Notification;
+import com.wechat.pay.java.core.notification.NotificationParser;
+import com.wechat.pay.java.core.notification.RequestParam;
 
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * 支付回调服务实现
@@ -31,6 +39,7 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
     private final PaymentMetrics paymentMetrics;
     private final PaymentMessageService paymentMessageService;
     private final OrderSyncService orderSyncService;
+    private final Optional<WechatPayClientFactory> wechatPayClientFactory;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -111,6 +120,13 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
 
     @Override
     public boolean verifySignature(String channel, CallbackRequest request) {
+        if ("wechat".equalsIgnoreCase(channel)) {
+            Boolean verified = verifyWechatSignature(request);
+            if (verified != null) {
+                return verified;
+            }
+        }
+
         PaymentMethod method = resolvePaymentMethod(channel);
         if (method == null) {
             log.warn("未找到支付渠道: {}", channel);
@@ -128,6 +144,65 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
             log.error("验证签名失败: channel={}", channel, e);
             return false;
         }
+    }
+
+    private Boolean verifyWechatSignature(CallbackRequest request) {
+        Map<String, String> headers = request.getHeaders();
+        if (headers == null || headers.isEmpty()) {
+            log.warn("微信回调缺少请求头信息，无法验证签名");
+            return null;
+        }
+
+        Optional<NotificationParser> parserOptional = wechatPayClientFactory
+            .flatMap(WechatPayClientFactory::getNotificationParser);
+        if (parserOptional.isEmpty()) {
+            log.warn("微信支付通知解析器不可用，跳过签名验证");
+            return null;
+        }
+
+        String serial = getHeader(headers, "Wechatpay-Serial");
+        String signature = getHeader(headers, "Wechatpay-Signature");
+        String timestamp = getHeader(headers, "Wechatpay-Timestamp");
+        String nonce = getHeader(headers, "Wechatpay-Nonce");
+        String signType = getHeader(headers, "Wechatpay-Signature-Type");
+
+        if (!StringUtils.hasText(serial) || !StringUtils.hasText(signature)
+            || !StringUtils.hasText(timestamp) || !StringUtils.hasText(nonce)) {
+            log.warn("微信回调缺少必要签名参数 serial={}, signature={}, timestamp={}, nonce={}",
+                serial, signature, timestamp, nonce);
+            return false;
+        }
+
+        if (!StringUtils.hasText(request.getRawData())) {
+            log.warn("微信回调原始数据为空，无法验证签名");
+            return false;
+        }
+
+        try {
+            RequestParam requestParam = new RequestParam.Builder()
+                .serialNumber(serial)
+                .signature(signature)
+                .timestamp(timestamp)
+                .nonce(nonce)
+                .signType(signType)
+                .body(request.getRawData())
+                .build();
+            NotificationParser parser = parserOptional.get();
+            parser.parse(requestParam, Notification.class);
+            return true;
+        } catch (Exception ex) {
+            log.warn("微信签名验证失败", ex);
+            return false;
+        }
+    }
+
+    private String getHeader(Map<String, String> headers, String target) {
+        for (Map.Entry<String, String> entry : headers.entrySet()) {
+            if (target.equalsIgnoreCase(entry.getKey())) {
+                return entry.getValue();
+            }
+        }
+        return null;
     }
 
     /**
