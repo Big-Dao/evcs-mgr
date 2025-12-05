@@ -1,42 +1,15 @@
-# 架构设计文档
+# 架构索引（统一入口）
 
-> **版本**: v1.1 | **最后更新**: 2025-11-10 | **维护者**: 架构团队 | **状态**: 活跃
->
-> 🏗️ **用途**: 汇总系统架构、需求、接口、数据模型等设计文档入口
+用途：为架构相关文档提供简洁导航，指向单一来源与关键设计文件。
 
-## 📋 目录说明
+- 总规范：`docs/overview/PROJECT-CODING-STANDARDS.md`
+- 总体架构：`docs/architecture/architecture.md`
+- API 设计：`docs/architecture/api-design.md`
+- 数据模型：`docs/architecture/data-model.md`
+- 技术设计：`docs/architecture/TECHNICAL-DESIGN.md`
+- 需求说明：`docs/architecture/requirements.md`
+- 多租户异步上下文 RFC：`docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md`
 
-本目录包含EVCS充电站管理系统的架构设计文档，为技术团队提供完整的设计指导。
+- 档案入口：`docs/archive/README.md`
 
-### 📁 文档列表
-
-- **[architecture.md](architecture.md)** - 系统整体架构设计
-- **[requirements.md](requirements.md)** - 产品需求文档 (PRD)
-- **[api-design.md](api-design.md)** - API接口设计规范
-- **[data-model.md](data-model.md)** - 数据模型设计
-- **[TECHNICAL-DESIGN.md](TECHNICAL-DESIGN.md)** - 技术设计文档
-- **[TENANT-CONTEXT-ASYNC-RFC.md](TENANT-CONTEXT-ASYNC-RFC.md)** - 租户上下文异步处理设计
-- **[PROTOCOL-EVENT-MODEL.md](PROTOCOL-EVENT-MODEL.md)** - 协议事件模型说明
-
-## 🎯 使用指南
-
-### 新成员入门
-1. 首先阅读 [architecture.md](architecture.md) 了解整体架构
-2. 然后查看 [requirements.md](requirements.md) 理解业务需求
-3. 最后参考 [api-design.md](api-design.md) 和 [data-model.md](data-model.md) 了解技术细节
-
-### 开发参考
-- **接口设计**: 参考 [api-design.md](api-design.md)
-- **数据库设计**: 参考 [data-model.md](data-model.md)
-- **技术方案**: 参考 [TECHNICAL-DESIGN.md](TECHNICAL-DESIGN.md)
-- **多租户设计**: 参考 [TENANT-CONTEXT-ASYNC-RFC.md](TENANT-CONTEXT-ASYNC-RFC.md)
-
-## 📚 相关文档
-
-- [项目编程规范](../overview/PROJECT-CODING-STANDARDS.md)
-- [开发者指南](../development/DEVELOPER-GUIDE.md)
-- [文档导航中心](../README.md)
-
----
-
-**维护说明**: 架构文档变更需要架构师审核，确保设计的一致性和完整性。
+备注：新增架构内容前，先检查是否与总规范或现有设计重复；如需差异化方案，请先提交 RFC。

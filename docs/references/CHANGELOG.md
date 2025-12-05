@@ -106,3 +106,27 @@
 - 分时计费计划：每日最多 96 段，站点最多 16 组，桩可绑定计划
 - 订单：新增 /orders/start、/orders/stop 幂等流程，结束触发计费
 - 多租：@DataScope 与 TenantContext 贯穿
+### 2025-12-05 文档精简归档
+- 统一各目录 README 为简短索引，建立档案入口。
+- 归档清理/总结/分析类文档至 `docs/archive/*`：
+  - development：DOCUMENTATION-REORGANIZATION-PLAN/COMPLETE、DOCUMENTATION-CLEANUP-SUMMARY、PROJECT-COMPLIANCE-*、GITHUB-*
+  - operations：DOCUMENTATION-INDEX
+  - deployment：RESOURCE-OPTIMIZATION-SUMMARY
+  - testing：TEST-COMPLETION-SUMMARY、TEST-COVERAGE-REPORT
+- 保留单一来源：PROJECT-CODING-STANDARDS.md、AI-ASSISTANT-UNIFIED-CONFIG.md、SHARED-PROJECT-CONTEXT.md。
+### 2025-12-05 AI 配置类文档归档
+- 将 AI 配置分析与集成指南归档至 `docs/archive/ai-config-dedup-2025-12-05/`：
+- AI-CONFIG-NECESSITY-ANALYSIS.md；AI-CONFIG-DEDUPLICATION-REPORT.md；AI-CONFIG-CONSISTENCY-REPORT.md；CODEX-INTEGRATION-GUIDE.md；COPILOT-INSTRUCTIONS-SETUP.md
+- 统一入口：`docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md` + 指针文件（`.codex/`, `.claude/`, `.github/*`）。
+### 2025-12-05 模板与重复规范归档
+- 迁移模板与重复规范到 `docs/archive/documentation-docs-cleanup-2025-12-05/`：
+- MICROSERVICE-README-TEMPLATE.md；MINIMAL-README-TEMPLATE.md；SINGLE-SOURCE-PRINCIPLE-GUIDE.md；SINGLE-SOURCE-README-TEMPLATE.md；coding-standards.md
+- 现行规范仅保留于 `docs/overview/PROJECT-CODING-STANDARDS.md`。
+### 2025-12-05 部署文档精简
+- 以 `DEPLOYMENT-GUIDE.md` 为主，`DOCKER-CONFIGURATION-GUIDE.md` 为辅。
+- 归档优化类文档至 `docs/archive/deployment-docs-cleanup-2025-12-05/`：
+  - DOCKER-OPTIMIZATION.md
+  - RESOURCE-OPTIMIZATION-GUIDE.md
+### 2025-12-05 开发临时文档清理
+- 归档临时修复文档：`docs/archive/documentation-docs-cleanup-2025-12-05/DOCKER-BUILD-FIX.md`
+- 删除 IDE 修复指南（与项目无关）：`docs/development/IDE-FIX-GUIDE.md`、`docs/development/IDE-FIX-GUIDE.OLD.md`

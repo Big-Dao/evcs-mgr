@@ -433,7 +433,7 @@ List<Order> findByTenantAndStatus(@Param("tenantId") Long tenantId, @Param("stat
 ## 📚 相关文档
 
 - [项目编码标准](../PROJECT-CODING-STANDARDS.md)
-- [统一测试指南](testing/UNIFIED-TESTING-GUIDE.md)
+- [统一测试指南](testing/unified-testing-guide.md)
 - [安全配置指南](../troubleshooting/ERROR_PREVENTION_CHECKLIST.md)
 - [AI编程助手规范](../../AI-ASSISTANTS-INDEX.md)
 

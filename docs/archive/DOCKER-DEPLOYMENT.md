@@ -1,32 +1,32 @@
 # EVCS Manager Docker 部署指南
 
-> **最后更新**: 2025-10-20  
-> **维护者**: EVCS DevOps Team  
-> **状态**: 已发布
+> **最后更�?*: 2025-10-20  
+> **维护�?*: EVCS DevOps Team  
+> **状�?*: 已发�?
 
 ## 目录结构
 
 ```
 evcs-mgr/
 ├── docker-compose.yml          # 完整部署配置（生产环境）
-├── docker-compose.dev.yml      # 开发环境配置（包含应用服务）
-├── docker-compose.local.yml    # 本地开发配置（仅基础设施）
+├── docker-compose.dev.yml      # 开发环境配置（包含应用服务�?
+├── docker-compose.local.yml    # 本地开发配置（仅基础设施�?
 ├── docker-compose.test.yml     # 测试环境配置（CI/CD和人工测试）
 ├── evcs-tenant/Dockerfile      # 租户服务Docker镜像
 ├── evcs-station/Dockerfile     # 充电站服务Docker镜像
 └── scripts/
-    ├── start-local.ps1         # 启动本地基础设施（Windows）
-    ├── start-dev.ps1           # 启动完整开发环境（Windows）
-    ├── start-test.sh           # 启动测试环境（Linux/macOS）
-    ├── health-check.sh         # 健康检查脚本
+    ├── start-local.ps1         # 启动本地基础设施（Windows�?
+    ├── start-dev.ps1           # 启动完整开发环境（Windows�?
+    ├── start-test.sh           # 启动测试环境（Linux/macOS�?
+    ├── health-check.sh         # 健康检查脚�?
     ├── smoke-test.sh           # 冒烟测试脚本
     ├── stop-test.sh            # 停止测试环境
-    └── stop-all.ps1            # 停止所有服务（Windows）
+    └── stop-all.ps1            # 停止所有服务（Windows�?
 ```
 
-## 快速开始
+## 快速开�?
 
-### 方式一：本地开发（推荐）
+### 方式一：本地开发（推荐�?
 
 仅启动基础设施服务（PostgreSQL、Redis、RabbitMQ），应用服务在IDE中运行：
 
@@ -34,7 +34,7 @@ evcs-mgr/
 # 启动基础设施
 docker-compose -f docker-compose.local.yml up -d
 
-# 查看服务状态
+# 查看服务状�?
 docker-compose -f docker-compose.local.yml ps
 
 # 停止服务
@@ -50,7 +50,7 @@ docker-compose -f docker-compose.local.yml down
 构建并启动所有服务（包括应用服务）：
 
 ```powershell
-# 构建镜像并启动
+# 构建镜像并启�?
 docker-compose -f docker-compose.dev.yml up --build -d
 
 # 查看日志
@@ -69,7 +69,7 @@ docker-compose -f docker-compose.dev.yml down
 # Linux/macOS - 启动测试环境
 ./scripts/start-test.sh
 
-# 运行健康检查
+# 运行健康检�?
 ./scripts/health-check.sh
 
 # 运行冒烟测试
@@ -79,45 +79,45 @@ docker-compose -f docker-compose.dev.yml down
 ./scripts/stop-test.sh
 ```
 
-**测试环境特点**：
-- ✅ 独立的测试数据库和配置
-- ✅ 自动化健康检查和冒烟测试
-- ✅ 完整的服务日志和监控
-- ✅ 包含Adminer数据库管理工具
-- ✅ 适合CI/CD集成
+**测试环境特点**�?
+- �?独立的测试数据库和配�?
+- �?自动化健康检查和冒烟测试
+- �?完整的服务日志和监控
+- �?包含Adminer数据库管理工�?
+- �?适合CI/CD集成
 
-详见：[测试环境部署指南](docs/TEST-ENVIRONMENT-GUIDE.md)
+详见：[测试环境部署指南](docs/archive/TEST-ENVIRONMENT-QUICKSTART\.md)
 
 ## 服务访问地址
 
 ### 基础设施服务
 
-| 服务 | 地址 | 用户名/密码 |
+| 服务 | 地址 | 用户�?密码 |
 |------|------|-------------|
 | PostgreSQL | localhost:5432 | postgres/postgres |
-| Redis | localhost:6379 | (无密码) |
+| Redis | localhost:6379 | (无密�? |
 | RabbitMQ | localhost:5672 | guest/guest |
 | RabbitMQ管理界面 | http://localhost:15672 | guest/guest |
-| Adminer (数据库管理) | http://localhost:8090 | - |
+| Adminer (数据库管�? | http://localhost:8090 | - |
 
 ### 应用服务
 
-| 服务 | 端口 | 健康检查 |
+| 服务 | 端口 | 健康检�?|
 |------|------|----------|
 | 租户服务 | 8081 | http://localhost:8081/actuator/health |
-| 充电站服务 | 8082 | http://localhost:8082/actuator/health |
+| 充电站服�?| 8082 | http://localhost:8082/actuator/health |
 
 ## 数据库初始化
 
 数据库SQL脚本会在容器首次启动时自动执行：
 
-1. `sql/init.sql` - 基础表结构
+1. `sql/init.sql` - 基础表结�?
 2. `sql/charging_station_tables.sql` - 充电站相关表
 
-如需重新初始化数据库：
+如需重新初始化数据库�?
 
 ```powershell
-# 删除数据卷
+# 删除数据�?
 docker-compose -f docker-compose.local.yml down -v
 
 # 重新启动
@@ -129,7 +129,7 @@ docker-compose -f docker-compose.local.yml up -d
 ### 查看日志
 
 ```powershell
-# 查看所有服务日志
+# 查看所有服务日�?
 docker-compose -f docker-compose.local.yml logs
 
 # 查看特定服务日志
@@ -144,7 +144,7 @@ docker-compose -f docker-compose.local.yml logs -f
 ### 重启服务
 
 ```powershell
-# 重启所有服务
+# 重启所有服�?
 docker-compose -f docker-compose.local.yml restart
 
 # 重启特定服务
@@ -154,30 +154,30 @@ docker-compose -f docker-compose.local.yml restart postgres
 ### 清理环境
 
 ```powershell
-# 停止并删除容器
+# 停止并删除容�?
 docker-compose -f docker-compose.local.yml down
 
-# 停止并删除容器和数据卷
+# 停止并删除容器和数据�?
 docker-compose -f docker-compose.local.yml down -v
 
-# 清理所有未使用的资源
+# 清理所有未使用的资�?
 docker system prune -a
 ```
 
 ## 故障排查
 
-### 1. 端口被占用
+### 1. 端口被占�?
 
-如果端口已被占用，可以修改docker-compose文件中的端口映射：
+如果端口已被占用，可以修改docker-compose文件中的端口映射�?
 
 ```yaml
 ports:
-  - "15432:5432"  # 将本地端口改为15432
+  - "15432:5432"  # 将本地端口改�?5432
 ```
 
 ### 2. 容器无法启动
 
-查看容器日志：
+查看容器日志�?
 
 ```powershell
 docker logs evcs-postgres
@@ -185,7 +185,7 @@ docker logs evcs-redis
 docker logs evcs-rabbitmq
 ```
 
-### 3. 数据库连接失败
+### 3. 数据库连接失�?
 
 确保数据库容器健康：
 
@@ -193,7 +193,7 @@ docker logs evcs-rabbitmq
 docker-compose -f docker-compose.local.yml ps
 ```
 
-等待健康检查通过（HEALTH状态）。
+等待健康检查通过（HEALTH状态）�?
 
 ### 4. 应用服务连接失败
 
@@ -204,18 +204,18 @@ docker network ls
 docker network inspect evcs-mgr_evcs-network
 ```
 
-## 开发建议
+## 开发建�?
 
-1. **本地开发**：使用 `docker-compose.local.yml` 启动基础设施，在IDE中运行应用
-2. **集成测试**：使用 `docker-compose.dev.yml` 启动完整环境
-3. **生产部署**：使用 `docker-compose.yml` 并配置适当的环境变量
+1. **本地开�?*：使�?`docker-compose.local.yml` 启动基础设施，在IDE中运行应�?
+2. **集成测试**：使�?`docker-compose.dev.yml` 启动完整环境
+3. **生产部署**：使�?`docker-compose.yml` 并配置适当的环境变�?
 
 ## 环境变量
 
-应用服务支持以下环境变量：
+应用服务支持以下环境变量�?
 
 ```bash
-# 数据库配置
+# 数据库配�?
 SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/evcs_mgr
 SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=postgres
@@ -240,7 +240,7 @@ SPRING_PROFILES_ACTIVE=docker
 
 ## 性能优化
 
-### 数据库
+### 数据�?
 
 ```yaml
 environment:
@@ -258,7 +258,7 @@ environment:
 
 ## 监控
 
-### 应用健康检查
+### 应用健康检�?
 
 ```powershell
 curl http://localhost:8081/actuator/health

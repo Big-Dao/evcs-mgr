@@ -9,7 +9,7 @@
 - 助手配置：`docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md`
 - 架构设计：`docs/architecture/architecture.md`
 - 部署指南：`docs/deployment/DEPLOYMENT-GUIDE.md`
-- 测试指南：`docs/testing/UNIFIED-TESTING-GUIDE.md`
+- 测试指南：`docs/testing/unified-testing-guide.md`
 - 运维索引：`docs/operations/README.md`
 - 故障排查：`docs/troubleshooting/README.md`
 - 历史归档：`docs/archive/README.md`
