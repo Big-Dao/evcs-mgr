@@ -212,7 +212,7 @@ docker-compose --help
 
 ## 📄 许可�?
 
-本项目采�?MIT 许可证。详�?[LICENSE](../../LICENSE) 文件�?
+本项目采�?MIT 许可证。详�?[](../../) 文件�?
 
 ---
 

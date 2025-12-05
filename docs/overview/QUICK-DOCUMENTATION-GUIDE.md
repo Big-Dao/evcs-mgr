@@ -7,7 +7,7 @@
 ### 我要了解项目...
 - **项目概述**: [../README.md](../README.md) �?- **管理层摘�?*: [EXECUTIVE-SUMMARY.md](./EXECUTIVE-SUMMARY.md)
 - **行动计划（Week 4-8�?*: [NEXT-STEP-ACTION-PLAN.md](./NEXT-STEP-ACTION-PLAN.md)
-- **完整文档索引**: [../archive/documentation-docs-cleanup-2025-12-05/../archive/documentation-docs-cleanup-2025-12-05/DOCUMENTATION-INDEX.md](../archive/documentation-docs-cleanup-2025-12-05/../archive/documentation-docs-cleanup-2025-12-05/DOCUMENTATION-INDEX.md) �?- **产品功能需�?*: [产品需求文档](../architecture/requirements.md)
+- **完整文档索引**: [../archive/documentation-docs-cleanup-2025-12-05/../archive/documentation-docs-cleanup-2025-12-05/DOCUMENTATION-INDEX.md](../archive/documentation-docs-cleanup-2025-12-05/DOCUMENTATION-INDEX.md) �?- **产品功能需�?*: [产品需求文档](../architecture/requirements.md)
 - **项目规范**: [项目编程规范](../overview/PROJECT-CODING-STANDARDS.md) �?
 ### 我要开�?..
 - **技术架�?*: [架构设计](../architecture/architecture.md) �?- **编码规范**: [编码规范](../overview/PROJECT-CODING-STANDARDS.md)

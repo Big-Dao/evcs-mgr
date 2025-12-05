@@ -1,15 +1,34 @@
-ï»¿# EVCS é‚å›¨ã€‚ç»±ãˆ ç´©é”›å ¢ç²ºæ¶“â‚¬éãƒ¥å½›é”›?
-é—å Ÿæ¹°é”›æ­·2.2é”æ»„æ¸¶éšåº¢æ´¿é‚å¸®ç´°2025-11-10é”æ»…æ·®é¶ã‚ç´°PMO & é‹èˆµç€¯é¥ãˆ¤æ§¦é”æ»…å§¸é¬ä¾Šç´°å¨²æ˜ç©¬
+# ÎÄµµµ¼º½ÖĞĞÄ
+> °æ±¾: v1.0 | ¸üĞÂÊ±¼ä: 2025-12-05 | Î¬»¤Õß: ¼¼Êõ¸ºÔğÈË
 
-é¢ã„©â‚¬æ—“ç´°ç¼ç†¶ç«´é¨å‹¬æƒå¦—ï½…î‡±é‘¸îƒå¯Œæ¤¤ç¢‰ç´é¸å›§æ‚œçæˆ¦å™ºéˆ¥æ»ƒå´Ÿæ¶“â‚¬é‰ãƒ¦ç°®éˆ¥æ¿‡æƒå¦—ï½„ç¬Œéšå‹­æ´°è¤°?READMEé”›å²„ä¼©éå¶‰å™¸æ¾¶å¶„ç¬Œéæ¤¾ç¶‘éŠ†?
-## é¬æ˜î
-- æ¤¤åœ­æ´°ç‘™å‹®å¯–é”›æ­šdocs/overview/PROJECT-CODING-STANDARDS.md`
-- é”â•‚å¢œé–°å¶‡ç–†é”›æ­šdocs/development/AI-ASSISTANT-UNIFIED-CONFIG.md`
-- é‹èˆµç€¯ç’æî…¸é”›æ­šdocs/architecture/architecture.md`
-- é–®ã„§è®²é¸å›§å´¡é”›æ­šdocs/deployment/DEPLOYMENT-GUIDE.md`
-- å¨´å¬­ç˜¯é¸å›§å´¡é”›æ­šdocs/testing/unified-testing-guide.md`
-- æ©æ„®æ·®ç»±ãˆ ç´©é”›æ­šdocs/operations/README.md`
-- éå‘´æ®°éºæ“ç…¡é”›æ­šdocs/troubleshooting/README.md`
-- é˜å——å½¶è¤°æ“ã€‚é”›æ­šdocs/archive/README.md`
+»¶Ó­À´µ½ EVCS Manager ÎÄµµÖĞĞÄ¡£Çë°´ÕÕÏÂÊöÈë¿Ú¿ìËÙÕÒµ½ËùĞèĞÅÏ¢¡£
 
-æ¾¶å›¨æ•é”›æ°³î‡›ç¼å—™æ®‘é’å—™è¢«æ¶“åº¨æš±é’æ¥„ã€ƒç’‡å³°åŸŒéšå‹«ç“™é©î†¼ç¶é¨?`README.md` éŒãƒ©æ§„é”›æ¶™î„æ¶“å©šã€‰æ¶“å¶…å•€ç¼å­˜å§¢éæ¥…æš±å¨“å‘­å´ŸéŠ†?
+## ¸ÅÀÀÓë¹æ·¶£¨SSOT£©
+- [docs/overview/PROJECT-CODING-STANDARDS.md](overview/PROJECT-CODING-STANDARDS.md) ¡ª ÏîÄ¿±àÂëÓë¼Ü¹¹¹æ·¶£¨µ¥Ò»À´Ô´£©
+- [docs/overview/README.md](overview/README.md) ¡ª ÏîÄ¿¸ÅÀÀÓëµ¼º½
+- [docs/overview/EXECUTIVE-SUMMARY.md](overview/EXECUTIVE-SUMMARY.md) ¡ª ¹ÜÀí²ãÕªÒª
+- [docs/overview/NEXT-STEP-ACTION-PLAN.md](overview/NEXT-STEP-ACTION-PLAN.md) ¡ª ĞĞ¶¯¼Æ»®£¨PMO£©
+
+## ¿ª·¢Óë²âÊÔ
+- [docs/development/DEVELOPER-GUIDE.md](development/DEVELOPER-GUIDE.md) ¡ª ¿ª·¢ÕßÖ¸ÄÏ
+- [docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md](development/AI-ASSISTANT-UNIFIED-CONFIG.md) ¡ª AI ÖúÊÖÍ³Ò»ÅäÖÃ
+- [docs/testing/TEST-FIX-GUIDE.md](testing/TEST-FIX-GUIDE.md) ¡ª ²âÊÔĞŞ¸´ÓëÁ÷³ÌÖ¸ÄÏ
+
+## ¼Ü¹¹Óë²Î¿¼
+- [docs/architecture/architecture.md](architecture/architecture.md) ¡ª ¼¼Êõ¼Ü¹¹
+- [docs/architecture/api-design.md](architecture/api-design.md) ¡ª API Éè¼Æ
+- [docs/architecture/data-model.md](architecture/data-model.md) ¡ª Êı¾İÄ£ĞÍ
+- [docs/references/API-DOCUMENTATION.md](references/API-DOCUMENTATION.md) ¡ª API ÎÄµµ
+
+## ²¿ÊğÓëÔËÎ¬
+- [docs/deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md) ¡ª ²¿Êğ×ÜÀÀ
+- [docs/deployment/TEST-ENVIRONMENT-GUIDE.md](deployment/TEST-ENVIRONMENT-GUIDE.md) ¡ª ²âÊÔ»·¾³²¿ÊğÖ¸ÄÏ
+- [docs/operations/MONITORING-GUIDE.md](operations/MONITORING-GUIDE.md) ¡ª ¼à¿ØÖ¸ÄÏ
+- [docs/operations/PROJECT-STRUCTURE.md](operations/PROJECT-STRUCTURE.md) ¡ª ÏîÄ¿½á¹¹ËµÃ÷
+
+## ¹ÊÕÏÅÅ²é
+- [docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md](troubleshooting/ERROR_PREVENTION_CHECKLIST.md) ¡ª ´íÎóÔ¤·À¼ì²éÇåµ¥
+- [docs/troubleshooting/BUGFIX-CHARGER-API.md](troubleshooting/BUGFIX-CHARGER-API.md) ¡ª ³äµç×® API ĞŞ¸´¼ÇÂ¼
+
+## ¹éµµË÷Òı
+- [docs/archive/documentation-docs-cleanup-2025-12-05/DOCUMENTATION-INDEX.md](archive/documentation-docs-cleanup-2025-12-05/DOCUMENTATION-INDEX.md) ¡ª ÀúÊ·ÎÄµµË÷Òı

@@ -1,41 +1,38 @@
 # EVCS Manager API 文档指南
 
-> **版本**: v2.1 | **最后更新**: 2025-11-10 | **维护者**: 技术负责人 | **状态**: 活跃
+> **版本**: v2.1 | **最后更�?*: 2025-11-10 | **维护�?*: 技术负责人 | **状�?*: 活跃
 >
-> 📝 **用途**: 指导如何编写和维护平台 API 文档
+> 📝 **用�?*: 指导如何编写和维护平�?API 文档
 
 ## 📚 文档概述
 
-EVCS Manager 提供完整的 RESTful API 接口，支持充电站管理、订单处理、支付集成、多租户管理等核心功能。本文档介绍API的使用方法、接口规范和最佳实践。
-
-## 🚀 快速开始
-
+EVCS Manager 提供完整�?RESTful API 接口，支持充电站管理、订单处理、支付集成、多租户管理等核心功能。本文档介绍API的使用方法、接口规范和最佳实践�?
+## 🚀 快速开�?
 ### 访问API文档
 
 #### Knife4j 界面（推荐）
 - **租户服务**: http://localhost:8086/doc.html
 - **认证服务**: http://localhost:8081/doc.html
-- **充电站服务**: http://localhost:8082/doc.html
+- **充电站服�?*: http://localhost:8082/doc.html
 - **订单服务**: http://localhost:8083/doc.html
 - **支付服务**: http://localhost:8084/doc.html
 
 #### Swagger UI 界面
 - **租户服务**: http://localhost:8086/swagger-ui.html
 - **认证服务**: http://localhost:8081/swagger-ui.html
-- **充电站服务**: http://localhost:8082/swagger-ui.html
+- **充电站服�?*: http://localhost:8082/swagger-ui.html
 - **订单服务**: http://localhost:8083/swagger-ui.html
 - **支付服务**: http://localhost:8084/swagger-ui.html
 
 #### OpenAPI 规范文件
 - **租户服务**: http://localhost:8086/v3/api-docs
 - **认证服务**: http://localhost:8081/v3/api-docs
-- **充电站服务**: http://localhost:8082/v3/api-docs
+- **充电站服�?*: http://localhost:8082/v3/api-docs
 - **订单服务**: http://localhost:8083/v3/api-docs
 - **支付服务**: http://localhost:8084/v3/api-docs
 
 ### API网关统一入口
-所有API请求都应该通过API网关访问：
-- **网关地址**: http://localhost:8080
+所有API请求都应该通过API网关访问�?- **网关地址**: http://localhost:8080
 - **API前缀**: `/api/{service-name}/**`
 
 **示例**:
@@ -47,8 +44,7 @@ curl http://localhost:8080/api/tenant/tenants
 curl http://localhost:8080/api/auth/auth/login
 ```
 
-## 🔐 认证与授权
-
+## 🔐 认证与授�?
 ### JWT Token 认证
 
 #### 1. 获取Token
@@ -96,10 +92,8 @@ curl -X POST http://localhost:8080/api/auth/auth/refresh \
   }'
 ```
 
-### 多租户访问控制
-
-所有API请求都需要包含租户ID头部：
-```bash
+### 多租户访问控�?
+所有API请求都需要包含租户ID头部�?```bash
 curl -X GET http://localhost:8080/api/tenant/tenants \
   -H "Authorization: Bearer {token}" \
   -H "X-Tenant-Id: {tenant_id}"
@@ -108,8 +102,7 @@ curl -X GET http://localhost:8080/api/tenant/tenants \
 **权限级别**:
 - `ALL`: 查看所有数据（超级管理员）
 - `SELF`: 只能查看当前租户数据
-- `CHILDREN`: 可以查看当前租户及其子租户数据
-
+- `CHILDREN`: 可以查看当前租户及其子租户数�?
 ## 📊 API接口分类
 
 ### 1. 认证授权 API (`/api/auth`)
@@ -162,10 +155,9 @@ GET    /api/tenant/tenants/tree
 POST   /api/tenant/tenants/{id}/move
 ```
 
-### 3. 充电站管理 API (`/api/station`)
+### 3. 充电站管�?API (`/api/station`)
 
-#### 充电站管理
-```yaml
+#### 充电站管�?```yaml
 GET    /api/station/stations
 POST   /api/station/stations
 GET    /api/station/stations/{id}
@@ -174,8 +166,7 @@ DELETE /api/station/stations/{id}
 GET    /api/station/stations/{id}/status
 ```
 
-#### 充电桩管理
-```yaml
+#### 充电桩管�?```yaml
 GET    /api/station/chargers
 POST   /api/station/chargers
 GET    /api/station/chargers/{id}
@@ -270,7 +261,7 @@ GET    /api/payment/reconciliation/report
   "errors": [
     {
       "field": "username",
-      "message": "用户名不能为空"
+      "message": "用户名不能为�?
     }
   ],
   "timestamp": "2025-11-02T06:30:00Z",
@@ -285,11 +276,11 @@ GET    /api/payment/reconciliation/report
 | 200 | 成功 | 操作成功完成 |
 | 201 | 创建成功 | 资源创建成功 |
 | 400 | 请求错误 | 参数验证失败 |
-| 401 | 未授权 | Token无效或过期 |
+| 401 | 未授�?| Token无效或过�?|
 | 403 | 禁止访问 | 权限不足 |
-| 404 | 资源不存在 | 资源ID不存在 |
-| 409 | 冲突 | 资源已存在 |
-| 500 | 服务器错误 | 系统内部错误 |
+| 404 | 资源不存�?| 资源ID不存�?|
+| 409 | 冲突 | 资源已存�?|
+| 500 | 服务器错�?| 系统内部错误 |
 
 ### 分页响应格式
 ```json
@@ -312,12 +303,10 @@ GET    /api/payment/reconciliation/report
 }
 ```
 
-## 🔧 开发工具集成
-
+## 🔧 开发工具集�?
 ### Postman 集合
 
-导入以下环境变量和集合到Postman：
-
+导入以下环境变量和集合到Postman�?
 #### 环境变量
 ```json
 {
@@ -328,8 +317,7 @@ GET    /api/payment/reconciliation/report
 }
 ```
 
-#### 认证脚本（Pre-request Script）
-```javascript
+#### 认证脚本（Pre-request Script�?```javascript
 // 自动刷新Token
 if (!pm.environment.get("auth_token") ||
     pm.environment.get("auth_token") === "") {
@@ -372,14 +360,13 @@ curl -X GET http://localhost:8080/api/tenant/tenants \
   -H "X-Tenant-Id: 1"
 ```
 
-#### 创建充电站
-```bash
+#### 创建充电�?```bash
 curl -X POST http://localhost:8080/api/station/stations \
   -H "Authorization: Bearer $TOKEN" \
   -H "X-Tenant-Id: 1" \
   -H "Content-Type: application/json" \
   -d '{
-    "name": "测试充电站",
+    "name": "测试充电�?,
     "code": "STATION001",
     "address": "北京市朝阳区",
     "latitude": 39.9042,
@@ -388,36 +375,28 @@ curl -X POST http://localhost:8080/api/station/stations \
   }'
 ```
 
-## 🔒 安全最佳实践
-
+## 🔒 安全最佳实�?
 ### 1. Token管理
-- **Token有效期**: 默认2小时，建议客户端在过期前自动刷新
+- **Token有效�?*: 默认2小时，建议客户端在过期前自动刷新
 - **Token存储**: 客户端应安全存储Token，避免XSS攻击
-- **Token撤销**: 登出时将Token加入黑名单
-
+- **Token撤销**: 登出时将Token加入黑名�?
 ### 2. HTTPS使用
 - **生产环境**: 必须使用HTTPS协议
-- **本地开发**: 可使用HTTP，但需注意安全性
-
+- **本地开�?*: 可使用HTTP，但需注意安全�?
 ### 3. 请求限制
-- **频率限制**: 每个IP每分钟最多100次请求
-- **数据大小**: 请求体大小限制为10MB
-- **超时设置**: 连接超时30秒，读取超时60秒
-
+- **频率限制**: 每个IP每分钟最�?00次请�?- **数据大小**: 请求体大小限制为10MB
+- **超时设置**: 连接超时30秒，读取超时60�?
 ### 4. 数据验证
-- **输入验证**: 所有输入参数都会进行严格验证
-- **SQL注入防护**: 使用MyBatis Plus防止SQL注入
+- **输入验证**: 所有输入参数都会进行严格验�?- **SQL注入防护**: 使用MyBatis Plus防止SQL注入
 - **XSS防护**: 输出数据会进行XSS过滤
 
-## 📊 监控与日志
-
+## 📊 监控与日�?
 ### API监控指标
 
 #### Prometheus指标
 - `http_requests_total`: HTTP请求总数
 - `http_request_duration_seconds`: HTTP请求响应时间
-- `http_active_connections`: 活跃连接数
-- `security_authentication_success_total`: 认证成功次数
+- `http_active_connections`: 活跃连接�?- `security_authentication_success_total`: 认证成功次数
 - `security_authentication_failure_total`: 认证失败次数
 
 #### 访问日志格式
@@ -446,21 +425,19 @@ curl -X POST http://localhost:8080/api/station/stations \
 
 ### 错误处理
 
-#### 常见错误码
-| 错误码 | 说明 | 解决方案 |
+#### 常见错误�?| 错误�?| 说明 | 解决方案 |
 |--------|------|----------|
 | 1001 | Token无效 | 重新登录获取新Token |
 | 1002 | Token过期 | 使用refreshToken刷新 |
-| 1003 | 权限不足 | 联系管理员分配权限 |
-| 2001 | 租户不存在 | 检查租户ID是否正确 |
-| 2002 | 租户被禁用 | 联系管理员启用租户 |
+| 1003 | 权限不足 | 联系管理员分配权�?|
+| 2001 | 租户不存�?| 检查租户ID是否正确 |
+| 2002 | 租户被禁�?| 联系管理员启用租�?|
 | 3001 | 充电站不存在 | 检查充电站ID |
-| 3002 | 充电桩离线 | 检查充电桩连接状态 |
+| 3002 | 充电桩离�?| 检查充电桩连接状�?|
 
 ## 🚀 部署配置
 
-### 开发环境
-```yaml
+### 开发环�?```yaml
 # application-dev.yml
 springdoc:
   api-docs:
@@ -512,17 +489,16 @@ docker run -d \
 - [OpenAPI 3.0 规范](https://swagger.io/specification/)
 
 ### 示例代码
-- [Postman 集合下载](./examples/postman-collection.json)
-- [cURL 示例脚本](./examples/curl-examples.sh)
-- [Java SDK 示例](./examples/java-sdk/)
+- [Postman 集合下载](examples/postman-collection.json)
+- [cURL 示例脚本](examples/curl-examples.sh)
+- [Java SDK 示例](examples/java-sdk/)
 
 ### 社区支持
 - **GitHub Issues**: [提交问题](https://github.com/Big-Dao/evcs-mgr/issues)
-- **技术讨论**: [GitHub Discussions](https://github.com/Big-Dao/evcs-mgr/discussions)
+- **技术讨�?*: [GitHub Discussions](https://github.com/Big-Dao/evcs-mgr/discussions)
 - **API反馈**: api-feedback@evcs-manager.com
 
 ---
 
-**最后更新**: 2025-11-02
-**文档维护**: EVCS Manager 开发团队
-**版本**: v2.0
+**最后更�?*: 2025-11-02
+**文档维护**: EVCS Manager 开发团�?**版本**: v2.0
