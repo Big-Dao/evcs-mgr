@@ -1,17 +1,15 @@
-# EVCS 文档索引（统一入口）
+﻿# EVCS 鏂囨。绱㈠紩锛堢粺涓€鍏ュ彛锛?
+鐗堟湰锛歷2.2锝滄渶鍚庢洿鏂帮細2025-11-10锝滅淮鎶わ細PMO & 鏋舵瀯鍥㈤槦锝滅姸鎬侊細娲昏穬
 
-版本：v2.2｜最后更新：2025-11-10｜维护：PMO & 架构团队｜状态：活跃
+鐢ㄩ€旓細缁熶竴鐨勬枃妗ｅ鑸富椤碉紝鎸囧悜灏戦噺鈥滃崟涓€鏉ユ簮鈥濇枃妗ｄ笌鍚勭洰褰?README锛岄伩鍏嶉噸澶嶄笌鍐椾綑銆?
+## 鎬昏
+- 椤圭洰瑙勮寖锛歚docs/overview/PROJECT-CODING-STANDARDS.md`
+- 鍔╂墜閰嶇疆锛歚docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md`
+- 鏋舵瀯璁捐锛歚docs/architecture/architecture.md`
+- 閮ㄧ讲鎸囧崡锛歚docs/deployment/DEPLOYMENT-GUIDE.md`
+- 娴嬭瘯鎸囧崡锛歚docs/testing/unified-testing-guide.md`
+- 杩愮淮绱㈠紩锛歚docs/operations/README.md`
+- 鏁呴殰鎺掓煡锛歚docs/troubleshooting/README.md`
+- 鍘嗗彶褰掓。锛歚docs/archive/README.md`
 
-用途：统一的文档导航主页，指向少量“单一来源”文档与各目录 README，避免重复与冗余。
-
-## 总览
-- 项目规范：`docs/overview/PROJECT-CODING-STANDARDS.md`
-- 助手配置：`docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md`
-- 架构设计：`docs/architecture/architecture.md`
-- 部署指南：`docs/deployment/DEPLOYMENT-GUIDE.md`
-- 测试指南：`docs/testing/unified-testing-guide.md`
-- 运维索引：`docs/operations/README.md`
-- 故障排查：`docs/troubleshooting/README.md`
-- 历史归档：`docs/archive/README.md`
-
-备注：详细的分类与长列表请到各子目录的 `README.md` 查阅；此主页不再维护冗长清单。
+澶囨敞锛氳缁嗙殑鍒嗙被涓庨暱鍒楄〃璇峰埌鍚勫瓙鐩綍鐨?`README.md` 鏌ラ槄锛涙涓婚〉涓嶅啀缁存姢鍐楅暱娓呭崟銆?

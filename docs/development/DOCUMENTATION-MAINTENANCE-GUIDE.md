@@ -1,92 +1,69 @@
-# 文档维护指南（统一入口策略)
+﻿# 鏂囨。缁存姢鎸囧崡锛堢粺涓€鍏ュ彛绛栫暐)
 
-版本：v1.1｜最后更新：2025-11-10｜维护：文档协作组｜状态：活跃
+鐗堟湰锛歷1.1锝滄渶鍚庢洿鏂帮細2025-11-10锝滅淮鎶わ細鏂囨。鍗忎綔缁勶綔鐘舵€侊細娲昏穬
 
-本指南定义 EVCS 项目文档的维护流程与标准，并明确“单一来源（SSOT）”策略。
-
-## 概述
-- 目标：降低维护成本，避免内容漂移，提高可发现性与一致性。
-- 方法：统一入口 + 指针文件；规范正文只在 SSOT 维护，不在多处复制。
-
-## 文档分类与责任
-### 核心规范（高优先级）
-| 文档 | 频率 | 负责人 | 审核 |
+鏈寚鍗楀畾涔?EVCS 椤圭洰鏂囨。鐨勭淮鎶ゆ祦绋嬩笌鏍囧噯锛屽苟鏄庣‘鈥滃崟涓€鏉ユ簮锛圫SOT锛夆€濈瓥鐣ャ€?
+## 姒傝堪
+- 鐩爣锛氶檷浣庣淮鎶ゆ垚鏈紝閬垮厤鍐呭婕傜Щ锛屾彁楂樺彲鍙戠幇鎬т笌涓€鑷存€с€?- 鏂规硶锛氱粺涓€鍏ュ彛 + 鎸囬拡鏂囦欢锛涜鑼冩鏂囧彧鍦?SSOT 缁存姢锛屼笉鍦ㄥ澶勫鍒躲€?
+## 鏂囨。鍒嗙被涓庤矗浠?### 鏍稿績瑙勮寖锛堥珮浼樺厛绾э級
+| 鏂囨。 | 棰戠巼 | 璐熻矗浜?| 瀹℃牳 |
 |---|---|---|---|
-| `docs/overview/PROJECT-CODING-STANDARDS.md` | 每月 | 技术负责人 | 架构师 |
-| `docs/development/API-DESIGN-STANDARDS.md` | 每月 | API 负责人 | 技术负责人 |
-| `docs/development/DATABASE-DESIGN-STANDARDS.md` | 每月 | DBA | 技术负责人 |
-| `docs/testing/unified-testing-guide.md` | 每月 | 测试负责人 | 技术负责人 |
+| `docs/overview/PROJECT-CODING-STANDARDS.md` | 姣忔湀 | 鎶€鏈礋璐ｄ汉 | 鏋舵瀯甯?|
+| `docs/development/API-DESIGN-STANDARDS.md` | 姣忔湀 | API 璐熻矗浜?| 鎶€鏈礋璐ｄ汉 |
+| `docs/development/DATABASE-DESIGN-STANDARDS.md` | 姣忔湀 | DBA | 鎶€鏈礋璐ｄ汉 |
+| `docs/testing/unified-testing-guide.md` | 姣忔湀 | 娴嬭瘯璐熻矗浜?| 鎶€鏈礋璐ｄ汉 |
 
-### 操作指南（中优先级）
-| 文档 | 频率 | 负责人 | 审核 |
+### 鎿嶄綔鎸囧崡锛堜腑浼樺厛绾э級
+| 鏂囨。 | 棰戠巼 | 璐熻矗浜?| 瀹℃牳 |
 |---|---|---|---|
-| `docs/deployment/DEPLOYMENT-GUIDE.md` | 每季度 | DevOps | 运维负责人 |
-| `docs/deployment/docker-configuration-guide.md` | 每季度 | DevOps | 运维负责人 |
-| `docs/development/CODE-QUALITY-CHECKLIST.md` | 每月 | 质量负责人 | 技术负责人 |
+| `docs/deployment/DEPLOYMENT-GUIDE.md` | 姣忓搴?| DevOps | 杩愮淮璐熻矗浜?|
+| `docs/deployment/docker-configuration-guide.md` | 姣忓搴?| DevOps | 杩愮淮璐熻矗浜?|
+| `docs/development/CODE-QUALITY-CHECKLIST.md` | 姣忔湀 | 璐ㄩ噺璐熻矗浜?| 鎶€鏈礋璐ｄ汉 |
 
-### 助手配置（高优先级）
-| 指针文件 | 频率 | 负责人 | 审核 |
+### 鍔╂墜閰嶇疆锛堥珮浼樺厛绾э級
+| 鎸囬拡鏂囦欢 | 棰戠巼 | 璐熻矗浜?| 瀹℃牳 |
 |---|---|---|---|
-| `.codex/project-context.md` | 每月 | 技术负责人 | 架构师 |
-| `.claude/project-instructions.md` | 每月 | 技术负责人 | 架构师 |
-| `.github/*`（Copilot 说明） | 每月 | 技术负责人 | 架构师 |
+| `.codex/project-context.md` | 姣忔湀 | 鎶€鏈礋璐ｄ汉 | 鏋舵瀯甯?|
+| `.claude/project-instructions.md` | 姣忔湀 | 鎶€鏈礋璐ｄ汉 | 鏋舵瀯甯?|
+| `.github/*`锛圕opilot 璇存槑锛?| 姣忔湀 | 鎶€鏈礋璐ｄ汉 | 鏋舵瀯甯?|
 
-## 维护原则
-- 统一入口与单一来源：
-  - 编码与架构规范：`docs/overview/PROJECT-CODING-STANDARDS.md`
-  - 助手统一配置：`docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md`
-  - 项目共享上下文：`.ai-assistant-config/SHARED-PROJECT-CONTEXT.md`
-- 目录 README：仅保留简短索引与关键链接，不写冗长清单。
-- 历史/阶段性文档：迁移至 `docs/archive/`，在相关指南中留一个“档案入口”链接即可。
-- 指针文件：只保留引用路径，不复制正文。
+## 缁存姢鍘熷垯
+- 缁熶竴鍏ュ彛涓庡崟涓€鏉ユ簮锛?  - 缂栫爜涓庢灦鏋勮鑼冿細`docs/overview/PROJECT-CODING-STANDARDS.md`
+  - 鍔╂墜缁熶竴閰嶇疆锛歚docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md`
+  - 椤圭洰鍏变韩涓婁笅鏂囷細`.ai-assistant-config/SHARED-PROJECT-CONTEXT.md`
+- 鐩綍 README锛氫粎淇濈暀绠€鐭储寮曚笌鍏抽敭閾炬帴锛屼笉鍐欏啑闀挎竻鍗曘€?- 鍘嗗彶/闃舵鎬ф枃妗ｏ細杩佺Щ鑷?`docs/archive/`锛屽湪鐩稿叧鎸囧崡涓暀涓€涓€滄。妗堝叆鍙ｂ€濋摼鎺ュ嵆鍙€?- 鎸囬拡鏂囦欢锛氬彧淇濈暀寮曠敤璺緞锛屼笉澶嶅埗姝ｆ枃銆?
+## 鏂囨。鍛藉悕瑙勮寖锛堟柊澧烇級
+- 鏂囦欢鍚嶉鏍硷細缁熶竴浣跨敤灏忓啓鍔犺繛瀛楃锛坘ebab-case锛夛紝绀轰緥锛歚deployment-guide.md`銆乣technical-design.md`
+- 璇█涓庡瓧绗︼細浠呬娇鐢?ASCII 瀛楃锛涢伩鍏嶇┖鏍笺€佷腑鏂囨爣鐐广€乪moji銆佹贩鍚堢紪鐮侊紱蹇呰涓枃鍐呭鏀惧湪姝ｆ枃鑰岄潪鏂囦欢鍚?- 璇箟鍖栫畝娲侊細鏂囦欢鍚嶄笉瓒呰繃 4 涓瘝锛涚敤鏄庣‘涓婚璇嶏紝濡?`quick-start.md`銆乣unified-testing-guide.md`
+- 鐩綍鍓嶇紑锛堝彲閫夛級锛氭寜鍩熺粍缁囧 `architecture/`銆乣deployment/`銆乣testing/`銆乣operations/`銆乣development/`
+- 褰掓。鍛藉悕锛氭壒娆＄洰褰曚娇鐢?`docs/archive/<topic>-<YYYY-MM-DD>/` 鎴?`<domain>-docs-cleanup-<YYYY-MM-DD>/`锛屽綊妗ｅ唴鏂囦欢鍚嶅悓鏍蜂娇鐢ㄥ皬鍐欒繛瀛楃
+- 閾炬帴鏇存柊锛氶噸鍛藉悕鍚庡繀椤诲悓姝ユ洿鏂版墍鏈夊紩鐢ㄩ摼鎺ヤ笌绱㈠紩锛涘湪 `docs/references/CHANGELOG.md` 璁板綍鍛藉悕缁熶竴鍙樻洿
 
-## 文档命名规范（新增）
-- 文件名风格：统一使用小写加连字符（kebab-case），示例：`deployment-guide.md`、`technical-design.md`
-- 语言与字符：仅使用 ASCII 字符；避免空格、中文标点、emoji、混合编码；必要中文内容放在正文而非文件名
-- 语义化简洁：文件名不超过 4 个词；用明确主题词，如 `quick-start.md`、`unified-testing-guide.md`
-- 目录前缀（可选）：按域组织如 `architecture/`、`deployment/`、`testing/`、`operations/`、`development/`
-- 归档命名：批次目录使用 `docs/archive/<topic>-<YYYY-MM-DD>/` 或 `<domain>-docs-cleanup-<YYYY-MM-DD>/`，归档内文件名同样使用小写连字符
-- 链接更新：重命名后必须同步更新所有引用链接与索引；在 `docs/references/CHANGELOG.md` 记录命名统一变更
+## 鏂囨。鏇存柊娴佺▼
+### 1. 鏃ュ父缁存姢锛堟寔缁級
+- 瑙﹀彂鏉′欢锛?  - 浠ｇ爜鏋舵瀯鏇存柊銆丄PI 鏇存柊銆佹暟鎹簱缁撴瀯鏇存柊
+  - 鏂板鍔熻兘妯″潡銆佸彂鐜版枃妗ｉ敊璇垨杩囨椂淇℃伅
+- 鏇存柊姝ラ锛?  1. 璇嗗埆鍙樻洿闇€姹傚苟鍒涘缓浠诲姟锛堥」鐩鐞嗗伐鍏凤級
+  2. 鏇存柊鏂囨。涓庡紩鐢紝妫€鏌ユ牸寮忎笌閾炬帴
+  3. 鎻愪氦璇勫锛圥R 鎸囧畾瀹℃牳浜猴級
+  4. 鍚堝苟涓庡彂甯冿紙鏇存柊鐗堟湰淇℃伅骞堕€氱煡鐩稿叧浜哄憳锛?
+### 2. 瀹氭湡瀹℃煡锛堟瘡鏈?姣忓搴︼級
+- 鏈堝害娓呭崟锛?  - 妫€鏌ユ牳蹇冭鑼冩枃妗ｆ椂鏁堟€э紱楠岃瘉浠ｇ爜绀轰緥锛涙鏌ラ摼鎺ユ湁鏁堟€?  - 纭鎶€鏈増鏈俊鎭负鏈€鏂帮紱妫€鏌ュ姪鎵嬮厤缃槸鍚﹂渶鏇存柊锛涙洿鏂版枃妗ｇ増鏈笌鏃ユ湡
+- 瀛ｅ害娓呭崟锛?  - 鍏ㄩ潰妫€鏌ユ枃妗ｆ灦鏋勫悎鐞嗘€т笌瑕嗙洊搴︼紱鏀堕泦鍙嶉涓庝娇鐢ㄦ儏鍐?  - 鍒跺畾鏀硅繘璁″垝锛涙竻鐞嗚繃鏃朵笌閲嶅鏂囨。
 
-## 文档更新流程
-### 1. 日常维护（持续）
-- 触发条件：
-  - 代码架构更新、API 更新、数据库结构更新
-  - 新增功能模块、发现文档错误或过时信息
-- 更新步骤：
-  1. 识别变更需求并创建任务（项目管理工具）
-  2. 更新文档与引用，检查格式与链接
-  3. 提交评审（PR 指定审核人）
-  4. 合并与发布（更新版本信息并通知相关人员）
-
-### 2. 定期审查（每月/每季度）
-- 月度清单：
-  - 检查核心规范文档时效性；验证代码示例；检查链接有效性
-  - 确认技术版本信息为最新；检查助手配置是否需更新；更新文档版本与日期
-- 季度清单：
-  - 全面检查文档架构合理性与覆盖度；收集反馈与使用情况
-  - 制定改进计划；清理过时与重复文档
-
-## 文档质量标准
-- 内容质量：准确性、完整性、清晰性、一致性、时效性
-- 格式规范：
-  - 统一标题与版本信息；代码块标注语言；路径使用仓库相对地址
-  - 命令示例：
-    ```bash
-    # 命令行示例
-    docker compose -f docker-compose.core-dev.yml up -d
+## 鏂囨。璐ㄩ噺鏍囧噯
+- 鍐呭璐ㄩ噺锛氬噯纭€с€佸畬鏁存€с€佹竻鏅版€с€佷竴鑷存€с€佹椂鏁堟€?- 鏍煎紡瑙勮寖锛?  - 缁熶竴鏍囬涓庣増鏈俊鎭紱浠ｇ爜鍧楁爣娉ㄨ瑷€锛涜矾寰勪娇鐢ㄤ粨搴撶浉瀵瑰湴鍧€
+  - 鍛戒护绀轰緥锛?    ```bash
+    # 鍛戒护琛岀ず渚?    docker compose -f docker-compose.core-dev.yml up -d
     ```
 
-## 文档维护工具
-- 链接检查脚本建议：`scripts/check-doc-links.sh`（内部/外部链接校验）
-- 格式检查脚本建议：`scripts/check-doc-format.sh`（标题、版本信息、代码块语言）
-- 自动生成示例：OpenAPI、Schema 文档生成等（置于各模块的构建脚本中）
+## 鏂囨。缁存姢宸ュ叿
+- 閾炬帴妫€鏌ヨ剼鏈缓璁細`scripts/check-doc-links.sh`锛堝唴閮?澶栭儴閾炬帴鏍￠獙锛?- 鏍煎紡妫€鏌ヨ剼鏈缓璁細`scripts/check-doc-format.sh`锛堟爣棰樸€佺増鏈俊鎭€佷唬鐮佸潡璇█锛?- 鑷姩鐢熸垚绀轰緥锛歄penAPI銆丼chema 鏂囨。鐢熸垚绛夛紙缃簬鍚勬ā鍧楃殑鏋勫缓鑴氭湰涓級
 
-## 档案索引（新增）
-- 档案根目录：`docs/archive/README.md`
-- 分类示例：
-  - 文档重组与清理：`docs/archive/duplicate-docs-cleanup-*`、`docs/archive/documentation-docs-cleanup-*`
-  - 部署文档历史：`docs/archive/deployment-docs-cleanup-*`
-  - 测试文档历史：`docs/archive/testing-docs-cleanup-*`
-  - 过时文档归档：`docs/archive/obsolete-docs-*`
-- 维护要求：归档文件保留原始时间戳与说明，不在主目录重复引用；在对应指南的 README 添加“档案入口”链接。
+## 妗ｆ绱㈠紩锛堟柊澧烇級
+- 妗ｆ鏍圭洰褰曪細`docs/archive/README.md`
+- 鍒嗙被绀轰緥锛?  - 鏂囨。閲嶇粍涓庢竻鐞嗭細`docs/archive/duplicate-docs-cleanup-*`銆乣docs/archive/documentation-docs-cleanup-*`
+  - 閮ㄧ讲鏂囨。鍘嗗彶锛歚docs/archive/deployment-docs-cleanup-*`
+  - 娴嬭瘯鏂囨。鍘嗗彶锛歚docs/archive/testing-docs-cleanup-*`
+  - 杩囨椂鏂囨。褰掓。锛歚docs/archive/obsolete-docs-*`
+- 缁存姢瑕佹眰锛氬綊妗ｆ枃浠朵繚鐣欏師濮嬫椂闂存埑涓庤鏄庯紝涓嶅湪涓荤洰褰曢噸澶嶅紩鐢紱鍦ㄥ搴旀寚鍗楃殑 README 娣诲姞鈥滄。妗堝叆鍙ｂ€濋摼鎺ャ€?
