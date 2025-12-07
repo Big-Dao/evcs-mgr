@@ -36,6 +36,7 @@
 ## 速查索引
 | 目标 | 文档 | 说明 |
 | ---- | ---- | ---- |
+| **AI 助手能力说明** | `docs/development/AI-ASSISTANT-CAPABILITIES.md` | **我能做些什么？** |
 | 架构/编码全规范 | `docs/overview/PROJECT-CODING-STANDARDS.md` | 代码与分层硬性标准 |
 | AI 助手总配置 | `docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md` | 各助手行为统一入口 |
 | 租户异步上下文 | `docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md` | 上下文传播策略与库选型 |
