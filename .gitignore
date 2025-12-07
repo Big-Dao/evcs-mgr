@@ -186,5 +186,3 @@ hs_err_pid*.log
 **/*.jks
 **/secrets/
 **/credentials/
-# .claude
-.claude/
