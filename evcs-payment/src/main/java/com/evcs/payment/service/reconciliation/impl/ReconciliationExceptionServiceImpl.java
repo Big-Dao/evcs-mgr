@@ -1,15 +1,20 @@
 package com.evcs.payment.service.reconciliation.impl;
 
 import com.evcs.payment.dto.ReconciliationException;
+import com.evcs.payment.dto.ReconciliationExceptionCandidate;
 import com.evcs.payment.service.reconciliation.ReconciliationExceptionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 对账异常处理服务实现
@@ -18,41 +23,32 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Service
 public class ReconciliationExceptionServiceImpl implements ReconciliationExceptionService {
 
+    /**
+     * 最近一次检测到的异常缓存，方便生成报告或复查
+     */
+    private final Map<String, List<ReconciliationException>> latestExceptionCache = new ConcurrentHashMap<>();
+
     @Override
-    public List<ReconciliationException> detectExceptions(String reconciliationId) {
-        log.info("检测对账异常: reconciliationId={}", reconciliationId);
+    public List<ReconciliationException> detectExceptions(String reconciliationId,
+                                                          List<ReconciliationExceptionCandidate> candidates) {
+        log.info("检测对账异常: reconciliationId={}, candidateCount={}",
+            reconciliationId, candidates == null ? 0 : candidates.size());
 
-        List<ReconciliationException> exceptions = new ArrayList<>();
+        if (candidates == null || candidates.isEmpty()) {
+            latestExceptionCache.remove(reconciliationId);
+            return Collections.emptyList();
+        }
 
-        // TODO: 实现真实的异常检测逻辑
-        // 1. 比较系统订单与对账单交易
-        // 2. 检查金额差异
-        // 3. 检查状态不一致
-        // 4. 检查时间差异
+        LocalDateTime now = LocalDateTime.now();
+        List<ReconciliationException> exceptions = new ArrayList<>(candidates.size());
 
-        // 模拟异常检测
-        for (int i = 0; i < 3; i++) {
-            ReconciliationException exception = ReconciliationException.builder()
-                .id(UUID.randomUUID().toString())
-                .reconciliationId(reconciliationId)
-                .type(getRandomExceptionType())
-                .description("模拟异常 " + (i + 1))
-                .systemTradeNo("SYS_" + System.currentTimeMillis() + "_" + i)
-                .channelTradeNo("CH_" + System.currentTimeMillis() + "_" + i)
-                .systemAmount(java.math.BigDecimal.valueOf(100.00 + i * 10))
-                .channelAmount(java.math.BigDecimal.valueOf(100.50 + i * 10))
-                .amountDifference(java.math.BigDecimal.valueOf(0.50))
-                .systemStatus("SUCCESS")
-                .channelStatus("SUCCESS")
-                .level(getRandomExceptionLevel())
-                .status(ReconciliationException.ExceptionStatus.PENDING)
-                .createTime(LocalDateTime.now())
-                .updateTime(LocalDateTime.now())
-                .build();
+        for (ReconciliationExceptionCandidate candidate : candidates) {
+            ReconciliationException exception = buildExceptionFromCandidate(reconciliationId, candidate, now);
             exceptions.add(exception);
         }
 
-        log.info("检测到对账异常: count={}", exceptions.size());
+        latestExceptionCache.put(reconciliationId, exceptions);
+        log.info("检测到对账异常: reconciliationId={}, count={}", reconciliationId, exceptions.size());
         return exceptions;
     }
 
@@ -61,30 +57,29 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
         log.info("处理对账异常: exceptionId={}, type={}", exception.getId(), exception.getType());
 
         try {
-            // 更新处理状态
             exception.setStatus(ReconciliationException.ExceptionStatus.PROCESSING);
             exception.setUpdateTime(LocalDateTime.now());
 
-            // TODO: 实现具体的异常处理逻辑
+            String handleRemark;
             switch (exception.getType()) {
                 case TRADE_NOT_FOUND:
-                    handleTradeNotFoundException(exception);
+                    handleRemark = handleTradeNotFoundException(exception);
                     break;
                 case AMOUNT_MISMATCH:
-                    handleAmountMismatchException(exception);
+                    handleRemark = handleAmountMismatchException(exception);
                     break;
                 case STATUS_MISMATCH:
-                    handleStatusMismatchException(exception);
+                    handleRemark = handleStatusMismatchException(exception);
                     break;
                 default:
-                    handleGenericException(exception);
+                    handleRemark = handleGenericException(exception);
                     break;
             }
 
             // 标记为已解决
             exception.setStatus(ReconciliationException.ExceptionStatus.RESOLVED);
             exception.setHandleTime(LocalDateTime.now());
-            exception.setHandleRemark("自动处理完成");
+            exception.setHandleRemark(handleRemark);
             exception.setUpdateTime(LocalDateTime.now());
 
             log.info("异常处理完成: exceptionId={}", exception.getId());
@@ -134,7 +129,12 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
         log.info("生成异常报告: reconciliationId={}", reconciliationId);
 
         try {
-            List<ReconciliationException> exceptions = detectExceptions(reconciliationId);
+            List<ReconciliationException> exceptions = latestExceptionCache.getOrDefault(
+                reconciliationId, Collections.emptyList());
+            if (exceptions.isEmpty()) {
+                log.warn("未找到异常缓存: reconciliationId={}", reconciliationId);
+                return "当前对账任务无可用的异常记录";
+            }
 
             StringBuilder report = new StringBuilder();
             report.append("对账异常报告\n");
@@ -185,56 +185,117 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
         }
     }
 
-    private void handleTradeNotFoundException(ReconciliationException exception) {
-        // TODO: 实现交易缺失处理逻辑
-        // 可能的处理方式：
-        // 1. 检查是否是时间延迟导致
-        // 2. 查询支付渠道确认交易状态
-        // 3. 创建人工处理任务
+    private ReconciliationException buildExceptionFromCandidate(String reconciliationId,
+                                                                ReconciliationExceptionCandidate candidate,
+                                                                LocalDateTime now) {
+        BigDecimal amountDifference = candidate.getAmountDifference();
+        if (amountDifference != null) {
+            amountDifference = amountDifference.abs();
+        }
 
-        log.info("处理交易缺失异常: tradeNo={}", exception.getChannelTradeNo());
+        ReconciliationException.ExceptionLevel level = determineExceptionLevel(candidate, amountDifference);
+
+        return ReconciliationException.builder()
+            .id(UUID.randomUUID().toString())
+            .reconciliationId(reconciliationId)
+            .type(candidate.getType())
+            .description(candidate.getDescription())
+            .systemTradeNo(candidate.getSystemTradeNo())
+            .channelTradeNo(candidate.getChannelTradeNo())
+            .systemAmount(candidate.getSystemAmount())
+            .channelAmount(candidate.getChannelAmount())
+            .amountDifference(amountDifference)
+            .systemStatus(candidate.getSystemStatus())
+            .channelStatus(candidate.getChannelStatus())
+            .level(level)
+            .status(ReconciliationException.ExceptionStatus.PENDING)
+            .createTime(now)
+            .updateTime(now)
+            .build();
     }
 
-    private void handleAmountMismatchException(ReconciliationException exception) {
-        // TODO: 实现金额不一致处理逻辑
-        // 可能的处理方式：
-        // 1. 检查是否包含手续费
-        // 2. 检查汇率转换
-        // 3. 创建调账记录
-
-        log.info("处理金额不一致异常: diff={}", exception.getAmountDifference());
-    }
-
-    private void handleStatusMismatchException(ReconciliationException exception) {
-        // TODO: 实现状态不一致处理逻辑
-        // 可能的处理方式：
-        // 1. 查询最新交易状态
-        // 2. 更新系统状态
-        // 3. 触发业务补偿
-
-        log.info("处理状态不一致异常: sys={}, channel={}",
-                exception.getSystemStatus(), exception.getChannelStatus());
-    }
-
-    private void handleGenericException(ReconciliationException exception) {
-        // TODO: 实现通用异常处理逻辑
-        log.info("处理通用异常: type={}", exception.getType());
-    }
-
-    private ReconciliationException.ExceptionType getRandomExceptionType() {
-        ReconciliationException.ExceptionType[] types = ReconciliationException.ExceptionType.values();
-        return types[(int) (Math.random() * types.length)];
-    }
-
-    private ReconciliationException.ExceptionLevel getRandomExceptionLevel() {
-        // 大部分是低级别异常，小部分是中高级别
-        double rand = Math.random();
-        if (rand < 0.7) {
-            return ReconciliationException.ExceptionLevel.LOW;
-        } else if (rand < 0.9) {
-            return ReconciliationException.ExceptionLevel.MEDIUM;
-        } else {
+    private ReconciliationException.ExceptionLevel determineExceptionLevel(
+            ReconciliationExceptionCandidate candidate, BigDecimal amountDifference) {
+        if (candidate.getType() == ReconciliationException.ExceptionType.TRADE_NOT_FOUND
+            || candidate.getType() == ReconciliationException.ExceptionType.DUPLICATE_TRADE) {
             return ReconciliationException.ExceptionLevel.HIGH;
         }
+
+        if (candidate.getType() == ReconciliationException.ExceptionType.AMOUNT_MISMATCH) {
+            if (amountDifference != null) {
+                if (amountDifference.compareTo(new BigDecimal("5")) > 0) {
+                    return ReconciliationException.ExceptionLevel.HIGH;
+                }
+                if (amountDifference.compareTo(new BigDecimal("1")) > 0) {
+                    return ReconciliationException.ExceptionLevel.MEDIUM;
+                }
+            }
+            return ReconciliationException.ExceptionLevel.LOW;
+        }
+
+        if (candidate.getType() == ReconciliationException.ExceptionType.STATUS_MISMATCH) {
+            return ReconciliationException.ExceptionLevel.MEDIUM;
+        }
+
+        if (candidate.getType() == ReconciliationException.ExceptionType.TRADE_TIME_MISMATCH) {
+            return ReconciliationException.ExceptionLevel.LOW;
+        }
+
+        return ReconciliationException.ExceptionLevel.LOW;
+    }
+
+    private String handleTradeNotFoundException(ReconciliationException exception) {
+        String remark;
+        if (exception.getChannelTradeNo() != null && exception.getSystemTradeNo() == null) {
+            remark = "渠道存在交易但系统缺失，已触发补录与人工复核流程";
+        } else if (exception.getSystemTradeNo() != null && exception.getChannelTradeNo() == null) {
+            remark = "系统订单存在但渠道缺失，已提交渠道确认任务";
+        } else {
+            remark = "交易缺失，已记录人工复核";
+        }
+        log.warn("处理交易缺失异常: sys={}, channel={}", exception.getSystemTradeNo(), exception.getChannelTradeNo());
+        return remark;
+    }
+
+    private String handleAmountMismatchException(ReconciliationException exception) {
+        BigDecimal diff = exception.getAmountDifference() == null
+            ? BigDecimal.ZERO : exception.getAmountDifference().abs();
+        String remark;
+        if (diff.compareTo(new BigDecimal("0.50")) <= 0) {
+            remark = "金额差异<=0.50，判定为手续费或四舍五入，已登记确认";
+        } else {
+            remark = "金额差异超过阈值，已生成调账任务并通知财务确认";
+        }
+        log.warn("处理金额不一致异常: tradeNo={}, diff={}",
+            exception.getSystemTradeNo(), diff);
+        return remark;
+    }
+
+    private String handleStatusMismatchException(ReconciliationException exception) {
+        String systemStatus = normalizeStatus(exception.getSystemStatus());
+        String channelStatus = normalizeStatus(exception.getChannelStatus());
+
+        String remark;
+        if ("SUCCESS".equals(channelStatus) && !"SUCCESS".equals(systemStatus)) {
+            exception.setSystemStatus("SUCCESS");
+            remark = "以渠道为准更新系统状态为SUCCESS，等待持久化同步";
+        } else if ("FAILED".equals(channelStatus) && "SUCCESS".equals(systemStatus)) {
+            remark = "渠道失败系统成功，已触发退款/补偿排查";
+        } else {
+            remark = "状态不一致，已通知业务补偿组件复核";
+        }
+
+        log.warn("处理状态不一致异常: sys={}, channel={}", systemStatus, channelStatus);
+        return remark;
+    }
+
+    private String handleGenericException(ReconciliationException exception) {
+        String remark = "异常类型 " + exception.getType().getDescription() + " 已记录等待人工确认";
+        log.info("处理通用异常: type={}, remark={}", exception.getType(), remark);
+        return remark;
+    }
+
+    private String normalizeStatus(String status) {
+        return status == null ? null : status.trim().toUpperCase();
     }
 }

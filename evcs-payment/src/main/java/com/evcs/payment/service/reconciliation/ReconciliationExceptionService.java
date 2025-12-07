@@ -1,6 +1,7 @@
 package com.evcs.payment.service.reconciliation;
 
 import com.evcs.payment.dto.ReconciliationException;
+import com.evcs.payment.dto.ReconciliationExceptionCandidate;
 
 import java.util.List;
 
@@ -15,9 +16,11 @@ public interface ReconciliationExceptionService {
      * 检测对账异常
      *
      * @param reconciliationId 对账ID
+     * @param candidates 比对阶段记录的异常候选
      * @return 异常列表
      */
-    List<ReconciliationException> detectExceptions(String reconciliationId);
+    List<ReconciliationException> detectExceptions(String reconciliationId,
+                                                   List<ReconciliationExceptionCandidate> candidates);
 
     /**
      * 处理对账异常

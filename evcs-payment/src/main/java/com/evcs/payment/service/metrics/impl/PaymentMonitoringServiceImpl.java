@@ -1,5 +1,6 @@
 package com.evcs.payment.service.metrics.impl;
 
+import com.evcs.payment.config.MonitoringHealthProperties;
 import com.evcs.payment.dto.MetricsResponse;
 import com.evcs.payment.metrics.PaymentMetrics;
 import com.evcs.payment.service.metrics.PaymentMonitoringService;
@@ -10,15 +11,26 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.actuate.health.Health;
 import org.springframework.boot.actuate.health.HealthIndicator;
+import org.springframework.dao.DataAccessException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.jdbc.CannotGetJdbcConnectionException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 /**
  * 支付监控服务实现
@@ -30,6 +42,8 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
 
     private final PaymentMetrics paymentMetrics;
     private final MeterRegistry meterRegistry;
+    private final JdbcTemplate jdbcTemplate;
+    private final MonitoringHealthProperties monitoringHealthProperties;
 
     @Value("${evcs.payment.monitoring.enabled:true}")
     private boolean monitoringEnabled;
@@ -37,6 +51,7 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
     // 缓存实时统计数据
     // private final Map<String, Object> realTimeStatsCache = new ConcurrentHashMap<>();
     private final AtomicLong lastUpdateTime = new AtomicLong(System.currentTimeMillis());
+    private volatile RestTemplate apiHealthRestTemplate;
 
     @Override
     public MetricsResponse getOverallMetrics() {
@@ -313,23 +328,49 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
     }
 
     private MetricsResponse.Status checkDatabaseHealth() {
+        String validationQuery = monitoringHealthProperties.getDatabaseValidationQuery();
         try {
-            // 简单的数据库健康检查
-            // TODO: 实现真实的数据库连接检查
+            jdbcTemplate.queryForObject(validationQuery, Integer.class);
             return MetricsResponse.Status.HEALTHY;
-        } catch (Exception e) {
+        } catch (CannotGetJdbcConnectionException ex) {
+            log.error("数据库健康检查失败，无法获取连接: {}", ex.getMessage());
+            return MetricsResponse.Status.UNHEALTHY;
+        } catch (DataAccessException ex) {
+            log.warn("数据库健康检查执行异常: {}", ex.getMessage());
+            return MetricsResponse.Status.WARNING;
+        } catch (Exception ex) {
+            log.error("数据库健康检查出现未知错误", ex);
             return MetricsResponse.Status.UNHEALTHY;
         }
     }
 
     private MetricsResponse.Status checkExternalApiHealth() {
-        try {
-            // 检查外部API连通性
-            // TODO: 实现真实的API健康检查
-            return MetricsResponse.Status.HEALTHY;
-        } catch (Exception e) {
+        List<String> endpoints = getExternalApiEndpoints();
+        if (CollectionUtils.isEmpty(endpoints)) {
+            log.debug("未配置外部API健康检查端点，返回WARNING以提醒配置");
             return MetricsResponse.Status.WARNING;
         }
+
+        int healthyCount = 0;
+        RestTemplate restTemplate = getApiHealthRestTemplate();
+        for (String endpoint : endpoints) {
+            try {
+                ResponseEntity<String> response = restTemplate.getForEntity(endpoint, String.class);
+                if (response.getStatusCode().is2xxSuccessful() && responseMatchesExpectation(response.getBody())) {
+                    healthyCount++;
+                } else {
+                    log.warn("外部API健康检查返回异常: url={}, status={}, body={}",
+                        endpoint, response.getStatusCode(), response.getBody());
+                }
+            } catch (RestClientException ex) {
+                log.error("外部API健康检查请求失败: url={}, error={}", endpoint, ex.getMessage());
+            }
+        }
+
+        if (healthyCount == endpoints.size()) {
+            return MetricsResponse.Status.HEALTHY;
+        }
+        return healthyCount > 0 ? MetricsResponse.Status.WARNING : MetricsResponse.Status.UNHEALTHY;
     }
 
     private MetricsResponse.Status determineOverallHealth(MetricsResponse.Status... statuses) {
@@ -368,4 +409,38 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
     private Double getRequestsPerMinute() { return 45.0; }
     private Double getP95ResponseTime() { return 250.0; }
     private Double getErrorRate() { return 0.5; }
+
+    private List<String> getExternalApiEndpoints() {
+        List<String> endpoints = monitoringHealthProperties.getApi().getEndpoints();
+        if (endpoints == null) {
+            return java.util.Collections.emptyList();
+        }
+
+        return endpoints.stream()
+            .filter(StringUtils::hasText)
+            .map(String::trim)
+            .collect(Collectors.toList());
+    }
+
+    private RestTemplate getApiHealthRestTemplate() {
+        if (apiHealthRestTemplate == null) {
+            synchronized (this) {
+                if (apiHealthRestTemplate == null) {
+                    SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+                    factory.setConnectTimeout((int) monitoringHealthProperties.getApi().getTimeoutMs());
+                    factory.setReadTimeout((int) monitoringHealthProperties.getApi().getTimeoutMs());
+                    apiHealthRestTemplate = new RestTemplate(factory);
+                }
+            }
+        }
+        return apiHealthRestTemplate;
+    }
+
+    private boolean responseMatchesExpectation(String body) {
+        String keyword = monitoringHealthProperties.getApi().getExpectedResponseKeyword();
+        if (!StringUtils.hasText(keyword)) {
+            return true;
+        }
+        return body != null && body.contains(keyword);
+    }
 }

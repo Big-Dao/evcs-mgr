@@ -2,6 +2,8 @@ package com.evcs.payment.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.evcs.common.annotation.DataScope;
+import com.evcs.payment.dto.ReconciliationException;
+import com.evcs.payment.dto.ReconciliationExceptionCandidate;
 import com.evcs.payment.dto.ReconciliationRequest;
 import com.evcs.payment.dto.ReconciliationResult;
 import com.evcs.payment.entity.PaymentOrder;
@@ -88,7 +90,8 @@ public class ReconciliationServiceImpl implements IReconciliationService {
 
                 // 检测并处理异常
                 detectAndHandleExceptions(date.toString() + "_" + request.getChannel(),
-                    reconciliationDetails.getExceptions());
+                    reconciliationDetails.getExceptions(),
+                    reconciliationDetails.getExceptionCandidates());
 
             } else {
                 log.warn("对账单为空，使用系统数据: channel={}", request.getChannel());
@@ -167,6 +170,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
         int matched = 0;
         int mismatched = 0;
         List<String> exceptions = new ArrayList<>();
+        List<ReconciliationExceptionCandidate> exceptionCandidates = new ArrayList<>();
 
         // 使用更精确的匹配逻辑：交易号、时间、金额多重验证
         // 时间容差：允许5分钟的时间差（考虑到网络延迟、系统时间差异等）
@@ -203,16 +207,35 @@ public class ReconciliationServiceImpl implements IReconciliationService {
                             matchedTransactionIndices.add(i);
                             matchReason = String.format("交易号匹配: %s, 金额: %s, 时间: %s", 
                                 order.getTradeNo(), order.getAmount(), order.getPaidTime());
+
+                            if (!isStatusAligned(order, transaction.getTradeStatus())) {
+                                String msg = String.format("订单状态不一致: 订单号=%s, 系统状态=%s, 渠道状态=%s",
+                                    order.getTradeNo(),
+                                    order.getStatusEnum() != null ? order.getStatusEnum().name() : "UNKNOWN",
+                                    transaction.getTradeStatus());
+                                exceptions.add(msg);
+                                addExceptionCandidate(exceptionCandidates,
+                                    ReconciliationException.ExceptionType.STATUS_MISMATCH,
+                                    msg, order, transaction, null);
+                            }
                             break;
                         } else {
                             // 交易号匹配但时间超出容差
-                            exceptions.add(String.format("订单交易号匹配但时间差异过大: %s, 系统时间: %s, 对账单时间: %s",
-                                order.getTradeNo(), order.getPaidTime(), transaction.getTradeTime()));
+                            String message = String.format("订单交易号匹配但时间差异过大: %s, 系统时间: %s, 对账单时间: %s",
+                                order.getTradeNo(), order.getPaidTime(), transaction.getTradeTime());
+                            exceptions.add(message);
+                            addExceptionCandidate(exceptionCandidates,
+                                ReconciliationException.ExceptionType.TRADE_TIME_MISMATCH,
+                                message, order, transaction, null);
                         }
                     } else {
                         // 交易号匹配但金额不一致
-                        exceptions.add(String.format("订单交易号匹配但金额不一致: %s, 系统金额: %s, 对账单金额: %s, 差异: %s",
-                            order.getTradeNo(), order.getAmount(), transaction.getAmount(), amountDiff));
+                        String message = String.format("订单交易号匹配但金额不一致: %s, 系统金额: %s, 对账单金额: %s, 差异: %s",
+                            order.getTradeNo(), order.getAmount(), transaction.getAmount(), amountDiff);
+                        exceptions.add(message);
+                        addExceptionCandidate(exceptionCandidates,
+                            ReconciliationException.ExceptionType.AMOUNT_MISMATCH,
+                            message, order, transaction, amountDiff);
                     }
                 }
             }
@@ -252,6 +275,9 @@ public class ReconciliationServiceImpl implements IReconciliationService {
                 String reason = String.format("订单未在对账单中找到匹配项: 订单号=%s, 金额=%s, 时间=%s",
                     order.getTradeNo(), order.getAmount(), order.getPaidTime());
                 exceptions.add(reason);
+                addExceptionCandidate(exceptionCandidates,
+                    ReconciliationException.ExceptionType.TRADE_NOT_FOUND,
+                    reason, order, null, null);
                 log.warn(reason);
             } else if (log.isDebugEnabled()) {
                 log.debug("订单匹配成功: {}", matchReason);
@@ -264,8 +290,12 @@ public class ReconciliationServiceImpl implements IReconciliationService {
             for (int i = 0; i < statementTransactions.size(); i++) {
                 if (!matchedTransactionIndices.contains(i)) {
                     var transaction = statementTransactions.get(i);
-                    exceptions.add(String.format("对账单中存在但系统中未找到的交易: 订单号=%s, 金额=%s, 时间=%s",
-                        transaction.getOutTradeNo(), transaction.getAmount(), transaction.getTradeTime()));
+                    String message = String.format("对账单中存在但系统中未找到的交易: 订单号=%s, 金额=%s, 时间=%s",
+                        transaction.getOutTradeNo(), transaction.getAmount(), transaction.getTradeTime());
+                    exceptions.add(message);
+                    addExceptionCandidate(exceptionCandidates,
+                        ReconciliationException.ExceptionType.DUPLICATE_TRADE,
+                        message, null, transaction, null);
                 }
             }
             log.warn("对账单中存在{}笔未匹配的交易", unmatchedStatementCount);
@@ -274,6 +304,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
         details.setMatchedCount(matched);
         details.setMismatchCount(mismatched);
         details.setExceptions(exceptions);
+        details.setExceptionCandidates(exceptionCandidates);
 
         log.info("交易比对完成: total={}, matched={}, mismatched={}, unmatchedStatement={}",
                 details.getTotalCount(), matched, mismatched, unmatchedStatementCount);
@@ -313,16 +344,22 @@ public class ReconciliationServiceImpl implements IReconciliationService {
     /**
      * 检测并处理异常
      */
-    private void detectAndHandleExceptions(String reconciliationId, List<String> exceptionMessages) {
-        if (exceptionMessages.isEmpty()) {
+    private void detectAndHandleExceptions(String reconciliationId,
+                                           List<String> exceptionMessages,
+                                           List<ReconciliationExceptionCandidate> candidates) {
+        if ((exceptionMessages == null || exceptionMessages.isEmpty())
+            && (candidates == null || candidates.isEmpty())) {
             return;
         }
 
         try {
-            log.info("检测到对账异常: count={}", exceptionMessages.size());
+            int messageSize = exceptionMessages == null ? 0 : exceptionMessages.size();
+            int candidateSize = candidates == null ? 0 : candidates.size();
+            log.info("检测到对账异常: messages={}, candidates={}", messageSize, candidateSize);
 
             // 检测详细异常
-            var exceptions = exceptionService.detectExceptions(reconciliationId);
+            var exceptions = exceptionService.detectExceptions(reconciliationId,
+                candidates == null ? java.util.Collections.emptyList() : candidates);
 
             if (!exceptions.isEmpty()) {
                 // 尝试自动处理异常
@@ -349,6 +386,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
         private int matchedCount;
         private int mismatchCount;
         private List<String> exceptions;
+        private List<ReconciliationExceptionCandidate> exceptionCandidates;
 
         // Getters and setters
         public int getTotalCount() { return totalCount; }
@@ -359,5 +397,67 @@ public class ReconciliationServiceImpl implements IReconciliationService {
         public void setMismatchCount(int mismatchCount) { this.mismatchCount = mismatchCount; }
         public List<String> getExceptions() { return exceptions; }
         public void setExceptions(List<String> exceptions) { this.exceptions = exceptions; }
+        public List<ReconciliationExceptionCandidate> getExceptionCandidates() { return exceptionCandidates; }
+        public void setExceptionCandidates(List<ReconciliationExceptionCandidate> exceptionCandidates) { this.exceptionCandidates = exceptionCandidates; }
+    }
+
+    private void addExceptionCandidate(List<ReconciliationExceptionCandidate> candidates,
+                                       ReconciliationException.ExceptionType type,
+                                       String description,
+                                       PaymentOrder systemOrder,
+                                       com.evcs.payment.dto.ReconciliationStatement.StatementTransaction statementTransaction,
+                                       BigDecimal providedDiff) {
+        if (candidates == null) {
+            return;
+        }
+        BigDecimal systemAmount = systemOrder != null ? systemOrder.getAmount() : null;
+        BigDecimal statementAmount = statementTransaction != null ? statementTransaction.getAmount() : null;
+        BigDecimal diff = providedDiff;
+        if (diff == null && systemAmount != null && statementAmount != null) {
+            diff = systemAmount.subtract(statementAmount).abs();
+        }
+
+        String systemStatus = null;
+        if (systemOrder != null) {
+            PaymentStatus statusEnum = systemOrder.getStatusEnum();
+            systemStatus = statusEnum != null ? statusEnum.name() : null;
+        }
+
+        ReconciliationExceptionCandidate candidate = ReconciliationExceptionCandidate.builder()
+            .type(type)
+            .description(description)
+            .systemTradeNo(systemOrder != null ? systemOrder.getTradeNo() : null)
+            .channelTradeNo(statementTransaction != null ? statementTransaction.getOutTradeNo() : null)
+            .systemAmount(systemAmount)
+            .channelAmount(statementAmount)
+            .amountDifference(diff)
+            .systemTradeTime(systemOrder != null ? systemOrder.getPaidTime() : null)
+            .channelTradeTime(statementTransaction != null ? statementTransaction.getTradeTime() : null)
+            .systemStatus(systemStatus)
+            .channelStatus(statementTransaction != null ? statementTransaction.getTradeStatus() : null)
+            .remark(description)
+            .build();
+        candidates.add(candidate);
+    }
+
+    private boolean isStatusAligned(PaymentOrder order, String channelStatus) {
+        if (order == null || channelStatus == null) {
+            return true;
+        }
+        PaymentStatus status = order.getStatusEnum();
+        if (status == null) {
+            return true;
+        }
+        String normalizedChannel = channelStatus.trim().toUpperCase();
+        switch (status) {
+            case SUCCESS:
+                return normalizedChannel.contains("SUCCESS") || normalizedChannel.contains("FINISHED");
+            case FAILED:
+                return normalizedChannel.contains("FAILED") || normalizedChannel.contains("CLOSED");
+            case REFUNDED:
+                return normalizedChannel.contains("REFUND");
+            default:
+                return true;
+        }
     }
 }
