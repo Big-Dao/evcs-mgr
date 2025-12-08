@@ -400,14 +400,18 @@ Authorization: Bearer {token}
 
 ### 支付回调
 
-**接口**: `POST /api/payments/callback/{provider}`
+**接口（现行实现）**:
+- `POST /api/payment/callback/alipay`
+- `POST /api/payment/callback/wechat`
 
-**说明**: 由第三方支付平台回调，无需手动调用
+**说明**:
+- 路由以当前代码实现为准，暂不使用 `{provider}` 动态路径。
+- 由第三方支付平台回调，无需手动调用。
 
-**Provider参数**:
+**支持渠道**:
 - `wechat`: 微信支付
 - `alipay`: 支付宝
-- `union`: 银联支付
+- `union`: 银联支付（暂不支持，仅预留，如需启用需补齐渠道枚举与控制器入口）
 
 ---
 

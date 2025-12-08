@@ -188,3 +188,6 @@ hs_err_pid*.log
 **/credentials/
 # .claude
 .claude/
+
+# Personal local notes (keep out of repo)
+local-notes/

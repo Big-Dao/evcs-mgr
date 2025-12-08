@@ -262,6 +262,8 @@ monitoring/grafana/dashboards/business-metrics.json
 
 ### 支付服务
 - `PaymentServiceImpl.createPayment()` - 记录支付请求和响应时间指标
+- `PaymentCallbackServiceImpl.handleCallback()` - 记录支付回调接收/成功/失败指标
+- `PaymentServiceImpl.handlePaymentCallback()` - 简化回调通道的成功/失败指标
 
 ---
 
