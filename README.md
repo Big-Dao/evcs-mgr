@@ -139,7 +139,12 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 
 ## 📋 开发规划
 
-📚 **详细规划文档**: [发展路线图](docs/overview/NEXT-STEP-ACTION-PLAN.md) | [产品需求](docs/architecture/requirements.md)
+📚 **规划文档**: 
+- 🎯 **[下一步行动计划](docs/overview/NEXT-PLAN.md)** ⭐ - 最新规划（2025-12-07）
+- 📋 **[TODO项跟踪清单](docs/overview/TODO-ITEMS-TRACKING.md)** - 31个TODO项详细清单
+- ⚡ **[规划快速参考](docs/overview/PLANNING-QUICK-REFERENCE.md)** - 快速查看
+- 📚 **[发展路线图](docs/overview/NEXT-STEP-ACTION-PLAN.md)** - 历史规划（Week 4-8）
+- 📖 **[产品需求](docs/architecture/requirements.md)** - 产品需求文档
 
 ## 🔒 多租户数据隔离架构
 

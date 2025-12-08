@@ -82,7 +82,8 @@ class ReconciliationServiceIntegrationTest {
         systemOrders.add(order2);
 
         when(paymentOrderMapper.selectList(any())).thenReturn(systemOrders);
-        when(reconciliationExceptionService.detectExceptions(anyString())).thenReturn(Collections.emptyList());
+        when(reconciliationExceptionService.detectExceptions(anyString(), anyList()))
+            .thenReturn(Collections.emptyList());
         when(reconciliationExceptionService.handleExceptions(anyList()))
             .thenReturn(new ReconciliationExceptionService.ReconciliationExceptionHandleResult(0, 0, 0, Collections.emptyList()));
         when(reconciliationExceptionService.generateExceptionReport(anyString())).thenReturn("");
@@ -111,7 +112,8 @@ class ReconciliationServiceIntegrationTest {
         systemOrders.add(order);
 
         when(paymentOrderMapper.selectList(any())).thenReturn(systemOrders);
-        when(reconciliationExceptionService.detectExceptions(anyString())).thenReturn(Collections.emptyList());
+        when(reconciliationExceptionService.detectExceptions(anyString(), anyList()))
+            .thenReturn(Collections.emptyList());
         when(reconciliationExceptionService.handleExceptions(anyList()))
             .thenReturn(new ReconciliationExceptionService.ReconciliationExceptionHandleResult(0, 0, 0, Collections.emptyList()));
         when(reconciliationExceptionService.generateExceptionReport(anyString())).thenReturn("");
@@ -135,7 +137,8 @@ class ReconciliationServiceIntegrationTest {
         request.setReconciliationDate(reconciliationDate);
 
         when(paymentOrderMapper.selectList(any())).thenReturn(new ArrayList<>());
-        when(reconciliationExceptionService.detectExceptions(anyString())).thenReturn(Collections.emptyList());
+        when(reconciliationExceptionService.detectExceptions(anyString(), anyList()))
+            .thenReturn(Collections.emptyList());
         when(reconciliationExceptionService.handleExceptions(anyList()))
             .thenReturn(new ReconciliationExceptionService.ReconciliationExceptionHandleResult(0, 0, 0, Collections.emptyList()));
         when(reconciliationExceptionService.generateExceptionReport(anyString())).thenReturn("");
@@ -160,7 +163,8 @@ class ReconciliationServiceIntegrationTest {
 
         // 模拟数据库异常
         when(paymentOrderMapper.selectList(any())).thenThrow(new RuntimeException("Database error"));
-        when(reconciliationExceptionService.detectExceptions(anyString())).thenReturn(Collections.emptyList());
+        when(reconciliationExceptionService.detectExceptions(anyString(), anyList()))
+            .thenReturn(Collections.emptyList());
         when(reconciliationExceptionService.handleExceptions(anyList()))
             .thenReturn(new ReconciliationExceptionService.ReconciliationExceptionHandleResult(0, 0, 0, Collections.emptyList()));
         when(reconciliationExceptionService.generateExceptionReport(anyString())).thenReturn("");
