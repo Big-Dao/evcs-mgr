@@ -6,6 +6,10 @@ WORKDIR /app
 
 # Copy package files for better caching
 COPY package.json package-lock.json* ./
+
+# Set npm mirror
+RUN npm config set registry https://registry.npmmirror.com/
+
 # Install dependencies
 RUN npm ci --only=production || npm install
 

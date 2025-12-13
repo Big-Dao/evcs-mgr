@@ -1,6 +1,7 @@
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
-RUN apk add --no-cache curl && \
+RUN sed -i 's/dl-cdn.alpinelinux.org/mirrors.aliyun.com/g' /etc/apk/repositories && \
+    apk add --no-cache curl && \
     rm -rf /var/cache/apk/*
 COPY evcs-payment/build/libs/evcs-payment-*.jar app.jar
 EXPOSE 8084
