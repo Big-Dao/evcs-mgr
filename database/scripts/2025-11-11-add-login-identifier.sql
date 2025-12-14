@@ -7,4 +7,4 @@ SET login_identifier = COALESCE(NULLIF(email, ''), NULLIF(phone, ''), CONCAT(use
 WHERE login_identifier IS NULL OR login_identifier = '';
 
 ALTER TABLE sys_user ALTER COLUMN login_identifier SET NOT NULL;
-ALTER TABLE sys_user ADD CONSTRAINT uk_sys_user_login_identifier UNIQUE (login_identifier);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_sys_user_login_identifier ON sys_user(login_identifier) WHERE deleted = 0;

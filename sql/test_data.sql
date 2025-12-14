@@ -7,11 +7,11 @@
 -- ============================================
 -- 1. 添加测试用户
 -- ============================================
-INSERT INTO sys_user (id, username, password, real_name, phone, email, gender, status, user_type, tenant_id, create_by, update_by)
+INSERT INTO sys_user (id, username, login_identifier, password, real_name, phone, email, gender, status, user_type, tenant_id, create_by, update_by)
 VALUES 
-    (2, 'operator1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '运营员1', '13800138001', 'operator1@evcs.com', 1, 1, 2, 1, 1, 1),
-    (3, 'operator2', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '运营员2', '13800138002', 'operator2@evcs.com', 0, 1, 2, 1, 1, 1),
-    (4, 'testuser', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '测试用户', '13800138003', 'test@evcs.com', 2, 1, 2, 1, 1, 1)
+    (2, 'operator1', 'operator1@evcs.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '运营员1', '13800138001', 'operator1@evcs.com', 1, 1, 2, 1, 1, 1),
+    (3, 'operator2', 'operator2@evcs.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '运营员2', '13800138002', 'operator2@evcs.com', 0, 1, 2, 1, 1, 1),
+    (4, 'testuser', 'test@evcs.com', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '测试用户', '13800138003', 'test@evcs.com', 2, 1, 2, 1, 1, 1)
 ON CONFLICT DO NOTHING;
 
 -- ============================================

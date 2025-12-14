@@ -52,6 +52,7 @@ CREATE INDEX idx_tenant_status ON sys_tenant(status, deleted);
 CREATE TABLE sys_user (
     id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
     username VARCHAR(50) NOT NULL,
+    login_identifier VARCHAR(100) NOT NULL,
     password VARCHAR(100) NOT NULL,
     real_name VARCHAR(50),
     phone VARCHAR(20),
@@ -74,6 +75,8 @@ CREATE TABLE sys_user (
 
 -- 为用户表创建唯一索引（租户内用户名唯一）
 CREATE UNIQUE INDEX idx_user_tenant_username ON sys_user(tenant_id, username) WHERE deleted = 0;
+-- 全局唯一的登录标识（手机号/邮箱等）
+CREATE UNIQUE INDEX uk_sys_user_login_identifier ON sys_user(login_identifier) WHERE deleted = 0;
 CREATE INDEX idx_user_tenant ON sys_user(tenant_id, status, deleted);
 CREATE INDEX idx_user_phone ON sys_user(phone) WHERE phone IS NOT NULL;
 CREATE INDEX idx_user_email ON sys_user(email) WHERE email IS NOT NULL;
@@ -181,8 +184,8 @@ INSERT INTO sys_tenant (id, tenant_code, tenant_name, tenant_type, status, max_u
 VALUES (1, 'SYSTEM', '系统租户', 1, 1, 999999, 999999, 999999, 1);
 
 -- 插入默认系统管理员用户 (密码: password)
-INSERT INTO sys_user (id, username, password, real_name, user_type, status, tenant_id)
-VALUES (1, 'admin', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', '系统管理员', 0, 1, 1);
+INSERT INTO sys_user (id, username, login_identifier, password, real_name, user_type, status, tenant_id)
+VALUES (1, 'admin', 'admin@tenant1', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', '系统管理员', 0, 1, 1);
 
 -- 插入默认角色
 INSERT INTO sys_role (id, role_code, role_name, sort, data_scope, status, tenant_id, remark) 

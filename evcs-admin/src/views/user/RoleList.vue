@@ -194,7 +194,6 @@ const rules: FormRules = {
 
 const permissionVisible = ref(false)
 const permissionTab = ref('menu')
-const menuTreeRef = ref()
 
 const menuPermissions = ref([
   {

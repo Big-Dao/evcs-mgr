@@ -50,7 +50,7 @@ jwt:
 eureka:
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+      defaultZone: http://eureka.evcs.svc.cluster.local:8761/eureka/
 
 management:
   endpoints:

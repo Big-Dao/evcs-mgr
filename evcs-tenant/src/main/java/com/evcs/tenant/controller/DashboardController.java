@@ -29,7 +29,7 @@ public class DashboardController {
      * 获取Dashboard统计数据 (兼容前端 /statistics 路径)
      */
     @Operation(summary = "获取Dashboard统计", description = "获取租户维度的统计数据")
-    @GetMapping({"/stats", "/statistics"})
+    @GetMapping({"/stats", "/statistics", "/summary"})
     @DataScope(value = DataScope.DataScopeType.TENANT,
               description = "仅查看当前租户统计数据")
     public Result<DashboardStatsDTO> getDashboardStats() {

@@ -240,12 +240,13 @@ BEGIN
             v_user_id := v_tenant_id * 100 + i;
             
             INSERT INTO sys_user (
-                id, username, password, real_name, phone, email,
+                id, username, login_identifier, password, real_name, phone, email,
                 gender, status, user_type, tenant_id,
                 create_by, update_by
             ) VALUES (
                 v_user_id,
                 'user_' || v_tenant_id || '_' || i,
+                'user_' || v_tenant_id || '_' || i || '@evcs.com',
                 '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', -- password
                 '用户' || v_tenant_id || '-' || i,
                 '138' || LPAD((v_tenant_id * 100 + i)::TEXT, 8, '0'),

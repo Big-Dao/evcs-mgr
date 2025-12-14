@@ -19,7 +19,7 @@ spring:
       routes:
         # 认证服务路由（前端使用/api/auth/**）
         - id: evcs-auth-api
-          uri: lb://evcs-auth
+          uri: http://auth-service:8081
           predicates:
             - Path=/api/auth/**
           filters:
@@ -27,7 +27,7 @@ spring:
         
         # 租户/Dashboard服务路由
         - id: evcs-dashboard
-          uri: lb://evcs-tenant
+          uri: http://tenant-service:8086
           predicates:
             - Path=/api/dashboard/**
           filters:
@@ -35,7 +35,7 @@ spring:
         
         # 租户管理路由
         - id: evcs-tenant
-          uri: lb://evcs-tenant
+          uri: http://tenant-service:8086
           predicates:
             - Path=/api/tenant/**
           filters:
@@ -43,7 +43,7 @@ spring:
         
         # 用户管理路由（属于auth服务）
         - id: evcs-user
-          uri: lb://evcs-auth
+          uri: http://auth-service:8081
           predicates:
             - Path=/api/user/**
           filters:
@@ -51,7 +51,7 @@ spring:
         
         # 角色管理路由（属于auth服务）
         - id: evcs-role
-          uri: lb://evcs-auth
+          uri: http://auth-service:8081
           predicates:
             - Path=/api/role/**
           filters:
@@ -59,7 +59,7 @@ spring:
         
         # 菜单管理路由（属于auth服务）
         - id: evcs-menu
-          uri: lb://evcs-auth
+          uri: http://auth-service:8081
           predicates:
             - Path=/api/menu/**
           filters:
@@ -67,7 +67,7 @@ spring:
         
         # 站点服务路由
         - id: evcs-station
-          uri: lb://evcs-station
+          uri: http://station-service:8082
           predicates:
             - Path=/api/station/**
           filters:
@@ -75,7 +75,7 @@ spring:
         
         # 充电桩路由（属于station服务）
         - id: evcs-charger
-          uri: lb://evcs-station
+          uri: http://station-service:8082
           predicates:
             - Path=/api/charger/**
           filters:
@@ -83,7 +83,7 @@ spring:
         
         # 订单服务路由
         - id: evcs-order
-          uri: lb://evcs-order
+          uri: http://order-service:8083
           predicates:
             - Path=/api/order/**
           filters:
@@ -91,7 +91,7 @@ spring:
         
         # 计费方案路由（属于order服务）
         - id: evcs-billing
-          uri: lb://evcs-order
+          uri: http://order-service:8083
           predicates:
             - Path=/api/billing/**
           filters:
@@ -99,7 +99,7 @@ spring:
         
         # 支付服务路由
         - id: evcs-payment
-          uri: lb://evcs-payment
+          uri: http://payment-service:8084
           predicates:
             - Path=/api/payment/**
           filters:
