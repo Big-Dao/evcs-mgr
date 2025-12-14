@@ -49,6 +49,7 @@ public class ProtocolServiceConfiguration {
      * REST模板Bean（用于云快充协议的HTTP调用）
      */
     @Bean
+    @org.springframework.cloud.client.loadbalancer.LoadBalanced
     @ConditionalOnProperty(name = "evcs.protocol.cloud-charge.enabled", havingValue = "true", matchIfMissing = true)
     public RestTemplate restTemplate() {
         RestTemplate restTemplate = new RestTemplate();
@@ -89,6 +90,7 @@ public class ProtocolServiceConfiguration {
      * 协议服务初始化器
      * 负责在服务启动后执行初始化操作
      */
+    @Slf4j
     @RequiredArgsConstructor
     public static class ProtocolServiceInitializer {
 

@@ -52,6 +52,14 @@ public class ChargerServiceImpl
     @Autowired
     private StationMetrics stationMetrics;
 
+    @Override
+    public Charger getByCode(String code) {
+        if (StrUtil.isBlank(code)) {
+            return null;
+        }
+        return this.getOne(new QueryWrapper<Charger>().eq("charger_code", code));
+    }
+
     /**
      * 分页查询充电桩列表
      * 自动应用多租户数据隔离

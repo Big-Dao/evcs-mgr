@@ -1,12 +1,17 @@
 package com.evcs.protocol.controller;
 
+import com.evcs.common.result.Result;
 import com.evcs.protocol.dto.ProtocolRequest;
 import com.evcs.protocol.service.CloudChargeSignatureValidator;
 import com.evcs.protocol.mq.ProtocolEventPublisher;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -25,6 +30,7 @@ public class CloudChargeController {
 
     private final CloudChargeSignatureValidator signatureValidator;
     private final ProtocolEventPublisher eventPublisher;
+    private final RestTemplate restTemplate;
 
     /**
      * 处理心跳请求
@@ -45,7 +51,6 @@ public class CloudChargeController {
 
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "heartbeat");
-            protocolRequest.setChargerId(extractChargerId(request.getDeviceCode()));
 
             // 发布心跳事件
             eventPublisher.publishHeartbeat(
@@ -89,7 +94,6 @@ public class CloudChargeController {
 
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "status");
-            protocolRequest.setChargerId(extractChargerId(request.getDeviceCode()));
 
             Integer status = (Integer) request.getData().get("status");
 
@@ -137,7 +141,6 @@ public class CloudChargeController {
 
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "start");
-            protocolRequest.setChargerId(extractChargerId(request.getDeviceCode()));
 
             // 发布充电开始事件
             eventPublisher.publishChargingStart(
@@ -187,7 +190,6 @@ public class CloudChargeController {
 
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "stop");
-            protocolRequest.setChargerId(extractChargerId(request.getDeviceCode()));
 
             // 从请求数据中获取充电信息
             Map<String, Object> data = request.getData();
@@ -264,11 +266,46 @@ public class CloudChargeController {
         protocolRequest.setApiVersion(request.getApiVersion());
         protocolRequest.setTimestamp(LocalDateTime.parse(request.getTimestamp(), DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 
-        // TODO: 从请求中获取或从数据库查询租户ID和用户ID
-        protocolRequest.setTenantId(1L); // 临时硬编码
+        // 从设备服务查询设备信息
+        ChargerInfo info = fetchChargerInfo(request.getDeviceCode());
+        if (info != null) {
+            protocolRequest.setTenantId(info.getTenantId());
+            protocolRequest.setChargerId(info.getId());
+        } else {
+            log.warn("Unknown device code: {}", request.getDeviceCode());
+            protocolRequest.setTenantId(0L); // 默认租户
+            protocolRequest.setChargerId(extractChargerId(request.getDeviceCode())); // 尝试从编码提取
+        }
+        
         protocolRequest.setUserId(null); // 根据实际情况设置
 
         return protocolRequest;
+    }
+
+    /**
+     * 从设备服务获取充电桩信息
+     */
+    private ChargerInfo fetchChargerInfo(String deviceCode) {
+        try {
+            // 使用服务名 'evcs-station' 调用
+            String url = "http://evcs-station/charger/code/" + deviceCode;
+            ResponseEntity<Result<ChargerInfo>> response = restTemplate.exchange(
+                url, 
+                HttpMethod.GET, 
+                null, 
+                new ParameterizedTypeReference<Result<ChargerInfo>>() {}
+            );
+            
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                Result<ChargerInfo> result = response.getBody();
+                if (result.getCode() == 200) {
+                    return result.getData();
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to fetch charger info for code: {}", deviceCode, e);
+        }
+        return null;
     }
 
     /**
@@ -284,6 +321,14 @@ public class CloudChargeController {
             log.warn("Failed to extract charger ID from device code: {}", deviceCode);
             return 0L; // 临时返回0，实际应该从数据库查询
         }
+    }
+
+    @Data
+    static class ChargerInfo {
+        private Long id;
+        private Long tenantId;
+        private String chargerCode;
+        private String chargerName;
     }
 
     /**

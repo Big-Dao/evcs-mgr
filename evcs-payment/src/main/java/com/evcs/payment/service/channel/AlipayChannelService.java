@@ -10,8 +10,7 @@ import com.alipay.api.domain.AlipayTradeQueryModel;
 import com.alipay.api.domain.AlipayTradeRefundModel;
 import com.alipay.api.request.AlipayTradeAppPayRequest;
 import com.alipay.api.request.AlipayTradeCreateRequest;
-import com.alipay.api.request.AlipayTradePagePayRequest;
-import com.alipay.api.request.AlipayTradePrecreateRequest;
+import com.alipay.api.request.AlipayTradePagePayRequest;import com.alipay.api.internal.util.AlipaySignature;import com.alipay.api.request.AlipayTradePrecreateRequest;
 import com.alipay.api.request.AlipayTradeQueryRequest;
 import com.alipay.api.request.AlipayTradeRefundRequest;
 import com.alipay.api.response.AlipayTradeAppPayResponse;
@@ -204,9 +203,16 @@ public class AlipayChannelService implements IPaymentChannel {
 
     @Override
     public boolean verifySignature(String data, String signature) {
-        // TODO: 使用支付宝公钥验证签名
-        log.info("验证支付宝签名");
-        return true; // 模拟验证通过
+        log.info("验证支付宝签名: data={}, signature={}", data, signature);
+        try {
+            // 使用支付宝公钥验证签名
+            // data应该是待签名的内容（通常是排序后的参数字符串）
+            return AlipaySignature.rsaCheckContent(data, signature, 
+                alipayConfig.getAlipayPublicKey(), alipayConfig.getCharset());
+        } catch (AlipayApiException e) {
+            log.error("支付宝签名验证失败: {}", e.getMessage());
+            return false;
+        }
     }
 
     @Override

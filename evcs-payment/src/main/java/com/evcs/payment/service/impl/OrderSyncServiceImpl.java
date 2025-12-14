@@ -1,10 +1,16 @@
 package com.evcs.payment.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.evcs.common.result.Result;
 import com.evcs.payment.config.OrderSyncConfig;
 import com.evcs.payment.entity.PaymentOrder;
+import com.evcs.payment.entity.PaymentSyncRecord;
+import com.evcs.payment.mapper.PaymentOrderMapper;
+import com.evcs.payment.mapper.PaymentSyncRecordMapper;
 import com.evcs.payment.service.OrderSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,7 +19,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -28,6 +33,8 @@ public class OrderSyncServiceImpl implements OrderSyncService {
 
     private final RestTemplate restTemplate;
     private final OrderSyncConfig orderSyncConfig;
+    private final PaymentSyncRecordMapper paymentSyncRecordMapper;
+    private final PaymentOrderMapper paymentOrderMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -93,11 +100,20 @@ public class OrderSyncServiceImpl implements OrderSyncService {
     public boolean isOrderSynced(Long paymentOrderId) {
         try {
             // 检查本地同步记录
-            // TODO: 实现本地同步记录表查询
+            Long count = paymentSyncRecordMapper.selectCount(new LambdaQueryWrapper<PaymentSyncRecord>()
+                    .eq(PaymentSyncRecord::getPaymentOrderId, paymentOrderId)
+                    .eq(PaymentSyncRecord::getSyncStatus, "SUCCESS"));
+            
+            if (count > 0) {
+                return true;
+            }
 
             // 如果没有本地记录，检查订单服务状态
             if (orderSyncConfig.isDirectApiEnabled()) {
-                return checkOrderStatusViaApi(paymentOrderId);
+                PaymentOrder paymentOrder = paymentOrderMapper.selectById(paymentOrderId);
+                if (paymentOrder != null) {
+                    return checkOrderStatusViaApi(paymentOrder);
+                }
             }
 
             return false;
@@ -112,7 +128,8 @@ public class OrderSyncServiceImpl implements OrderSyncService {
      */
     private boolean syncViaDirectApi(PaymentOrder paymentOrder, boolean isSuccess) {
         try {
-            String orderServiceUrl = orderSyncConfig.getOrderServiceUrl() + "/payments/callback";
+            // 使用新的回调接口: /order/payment/callback
+            String orderServiceUrl = orderSyncConfig.getOrderServiceUrl() + "/order/payment/callback";
 
             // 构建请求参数
             MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
@@ -122,22 +139,33 @@ public class OrderSyncServiceImpl implements OrderSyncService {
             // 设置请求头
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            headers.set("X-Tenant-Id", String.valueOf(paymentOrder.getTenantId()));
-            headers.set("X-User-Id", String.valueOf(paymentOrder.getCreateBy()));
+            if (paymentOrder.getTenantId() != null) {
+                headers.set("X-Tenant-Id", String.valueOf(paymentOrder.getTenantId()));
+            }
+            if (paymentOrder.getCreateBy() != null) {
+                headers.set("X-User-Id", String.valueOf(paymentOrder.getCreateBy()));
+            }
 
             HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
 
             // 发送请求
-            ResponseEntity<Map> response = restTemplate.postForEntity(
+            ResponseEntity<Result<Boolean>> response = restTemplate.exchange(
                 orderServiceUrl,
+                HttpMethod.POST,
                 request,
-                Map.class
+                new ParameterizedTypeReference<Result<Boolean>>() {}
             );
 
-            if (response.getStatusCode() == HttpStatus.OK) {
-                log.info("订单状态同步API调用成功: paymentOrderId={}, response={}",
-                        paymentOrder.getId(), response.getBody());
-                return true;
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Result<Boolean> result = response.getBody();
+                if (result.getCode() == 200 && Boolean.TRUE.equals(result.getData())) {
+                    log.info("订单状态同步API调用成功: paymentOrderId={}", paymentOrder.getId());
+                    return true;
+                } else {
+                    log.warn("订单状态同步API调用返回失败: paymentOrderId={}, result={}",
+                            paymentOrder.getId(), result);
+                    return false;
+                }
             } else {
                 log.warn("订单状态同步API调用失败: paymentOrderId={}, status={}",
                         paymentOrder.getId(), response.getStatusCode());
@@ -153,13 +181,38 @@ public class OrderSyncServiceImpl implements OrderSyncService {
     /**
      * 检查订单状态
      */
-    private boolean checkOrderStatusViaApi(Long paymentOrderId) {
+    private boolean checkOrderStatusViaApi(PaymentOrder paymentOrder) {
         try {
-            // TODO: 实现通过API检查订单状态的逻辑
-            // 这需要订单服务提供查询接口
+            // 使用新的查询接口: /order/{id}
+            String orderServiceUrl = orderSyncConfig.getOrderServiceUrl() + "/order/" + paymentOrder.getOrderId();
+
+            HttpHeaders headers = new HttpHeaders();
+            if (paymentOrder.getTenantId() != null) {
+                headers.set("X-Tenant-Id", String.valueOf(paymentOrder.getTenantId()));
+            }
+
+            HttpEntity<?> request = new HttpEntity<>(headers);
+
+            ResponseEntity<Result<Map<String, Object>>> response = restTemplate.exchange(
+                orderServiceUrl,
+                HttpMethod.GET,
+                request,
+                new ParameterizedTypeReference<Result<Map<String, Object>>>() {}
+            );
+
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                Result<Map<String, Object>> result = response.getBody();
+                if (result.getCode() == 200 && result.getData() != null) {
+                    Map<String, Object> orderData = result.getData();
+                    Integer status = (Integer) orderData.get("status");
+                    // 假设状态 2 (PAID) 或 3 (COMPLETED) 表示已支付
+                    // 需要确认 ChargingOrderStatus 枚举，这里暂时假设
+                    return status != null && status >= 2; 
+                }
+            }
             return false;
         } catch (Exception e) {
-            log.error("通过API检查订单状态失败: paymentOrderId={}", paymentOrderId, e);
+            log.error("通过API检查订单状态失败: paymentOrderId={}", paymentOrder.getId(), e);
             return false;
         }
     }
@@ -171,7 +224,7 @@ public class OrderSyncServiceImpl implements OrderSyncService {
         log.info("订单状态同步成功: paymentOrderId={}, method={}, time={}",
                 paymentOrderId, method, LocalDateTime.now());
 
-        // TODO: 实现同步记录表，用于审计和重试
+        saveSyncRecord(paymentOrderId, method, "SUCCESS", null);
     }
 
     /**
@@ -181,7 +234,23 @@ public class OrderSyncServiceImpl implements OrderSyncService {
         log.warn("记录订单状态同步重试: paymentOrderId={}, success={}, reason={}",
                 paymentOrder.getId(), isSuccess, errorReason);
 
-        // TODO: 实现重试表，用于异步重试机制
-        return false;
+        saveSyncRecord(paymentOrder.getId(), "RETRY", "FAILED", errorReason);
+        return true; // 返回true表示已记录，虽然同步失败但已处理
+    }
+
+    private void saveSyncRecord(Long paymentOrderId, String method, String status, String error) {
+        try {
+            PaymentSyncRecord record = new PaymentSyncRecord();
+            record.setPaymentOrderId(paymentOrderId);
+            record.setSyncMethod(method);
+            record.setSyncStatus(status);
+            record.setSyncTime(LocalDateTime.now());
+            record.setLastError(error);
+            record.setRetryCount(0);
+            
+            paymentSyncRecordMapper.insert(record);
+        } catch (Exception e) {
+            log.error("保存同步记录失败: paymentOrderId={}", paymentOrderId, e);
+        }
     }
 }

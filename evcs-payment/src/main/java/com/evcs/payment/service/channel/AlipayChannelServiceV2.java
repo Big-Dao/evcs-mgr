@@ -14,6 +14,7 @@ import com.alipay.api.response.AlipayTradeAppPayResponse;
 import com.alipay.api.response.AlipayTradePagePayResponse;
 import com.alipay.api.response.AlipayTradeQueryResponse;
 import com.alipay.api.response.AlipayTradeRefundResponse;
+import com.alipay.api.internal.util.AlipaySignature;
 import com.evcs.payment.config.PaymentConfig;
 import com.evcs.payment.dto.PaymentRequest;
 import com.evcs.payment.dto.PaymentResponse;
@@ -287,12 +288,11 @@ public class AlipayChannelServiceV2 implements IPaymentChannel {
         }
 
         try {
-            // 简化签名验证逻辑
-            // 实际项目中需要根据支付宝回调参数格式进行具体实现
             if (StringUtils.hasText(data) && StringUtils.hasText(signature)) {
-                log.info("支付宝签名验证参数完整");
-                // TODO: 实现完整的支付宝签名验证逻辑
-                return true;
+                // 使用支付宝公钥验证签名
+                return AlipaySignature.rsaCheckContent(data, signature, 
+                    paymentConfig.getAlipay().getAlipayPublicKey(), 
+                    paymentConfig.getAlipay().getCharset());
             }
             log.warn("支付宝签名验证参数不完整");
             return false;

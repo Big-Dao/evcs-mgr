@@ -14,6 +14,11 @@ import java.util.Map;
 public interface IChargerService extends IService<Charger> {
 
     /**
+     * 根据编码查询充电桩
+     */
+    Charger getByCode(String code);
+
+    /**
      * 分页查询充电桩列表
      */
     IPage<Charger> queryChargerPage(Page<Charger> page, Charger queryParam);

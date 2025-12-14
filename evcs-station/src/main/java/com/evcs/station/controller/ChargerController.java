@@ -70,6 +70,23 @@ public class ChargerController {
     }
 
     /**
+     * 根据编码查询充电桩
+     */
+    @Operation(summary = "根据编码查询充电桩", description = "根据充电桩编码查询详细信息")
+    @GetMapping("/code/{code}")
+    @DataScope(value = DataScope.DataScopeType.USER)
+    public Result<Charger> getChargerByCode(
+            @Parameter(description = "充电桩编码") @PathVariable @NotNull String code) {
+        
+        Charger charger = chargerService.getByCode(code);
+        if (charger == null) {
+            return Result.fail("充电桩不存在");
+        }
+        
+        return Result.success(charger);
+    }
+
+    /**
      * 根据充电站ID查询充电桩列表
      */
     @Operation(summary = "查询充电站下的充电桩", description = "根据充电站ID查询所有充电桩")

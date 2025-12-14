@@ -22,6 +22,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import java.nio.charset.Charset;
 
 /**
  * 支付宝对账服务
@@ -100,19 +103,57 @@ public class AlipayReconciliationService {
         connection.setConnectTimeout(30000);
         connection.setReadTimeout(30000);
 
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+        int responseCode = connection.getResponseCode();
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            throw new IOException("下载对账单失败: responseCode=" + responseCode);
+        }
 
-            StringBuilder content = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                content.append(line).append("\n");
+        // 检查是否是ZIP文件
+        String contentType = connection.getContentType();
+        // 支付宝通常返回 application/zip 或 application/octet-stream，且URL通常以.zip结尾
+        boolean isZip = (contentType != null && contentType.contains("zip")) || billDownloadUrl.toLowerCase().endsWith(".zip");
+
+        try (java.io.InputStream inputStream = connection.getInputStream()) {
+            if (isZip) {
+                return readZipContent(inputStream);
+            } else {
+                // 假设是直接的文本内容（UTF-8）
+                return readTextContent(inputStream, StandardCharsets.UTF_8);
             }
-
-            return content.toString();
         } finally {
             connection.disconnect();
         }
+    }
+
+    private String readZipContent(java.io.InputStream inputStream) throws IOException {
+        // 支付宝ZIP通常包含一个CSV文件（明细）和一个汇总文件
+        // 我们需要读取明细文件，通常以 _业务明细.csv 结尾，或者直接读取第一个CSV
+        try (ZipInputStream zipInputStream = new ZipInputStream(inputStream)) {
+            ZipEntry entry;
+            while ((entry = zipInputStream.getNextEntry()) != null) {
+                if (!entry.isDirectory() && (entry.getName().toLowerCase().endsWith(".csv") || entry.getName().toLowerCase().endsWith(".txt"))) {
+                    // 排除汇总文件（通常包含 "汇总" 字样）
+                    if (!entry.getName().contains("汇总")) {
+                        log.info("找到对账单明细文件: {}", entry.getName());
+                        // 支付宝对账单通常使用GBK编码
+                        return readTextContent(zipInputStream, Charset.forName("GBK"));
+                    }
+                }
+            }
+        }
+        throw new IOException("ZIP文件中未找到有效的对账单明细文件");
+    }
+
+    private String readTextContent(java.io.InputStream inputStream, Charset charset) throws IOException {
+        StringBuilder content = new StringBuilder();
+        // 不关闭InputStream，由调用者关闭
+        // 注意：BufferedReader会缓冲读取，对于ZipInputStream这是必须的
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, charset));
+        String line;
+        while ((line = reader.readLine()) != null) {
+            content.append(line).append("\n");
+        }
+        return content.toString();
     }
 
     /**

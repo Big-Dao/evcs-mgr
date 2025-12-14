@@ -97,5 +97,19 @@ public class OrderController {
         return Result.success(orderService.markRefunded(orderId));
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "根据ID查询订单")
+    @DataScope
+    public Result<ChargingOrder> getById(@PathVariable Long id) {
+        return Result.success(orderService.getById(id));
+    }
+
+    @PostMapping("/payment/callback")
+    @Operation(summary = "支付回调通知")
+    @DataScope
+    public Result<Boolean> paymentCallback(@RequestParam String tradeId, @RequestParam boolean success) {
+        return Result.success(orderService.paymentCallback(tradeId, success));
+    }
+
 
 }
