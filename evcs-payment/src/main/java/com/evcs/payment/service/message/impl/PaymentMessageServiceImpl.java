@@ -6,6 +6,7 @@ import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.service.message.PaymentMessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -24,7 +25,7 @@ import java.util.UUID;
 public class PaymentMessageServiceImpl implements PaymentMessageService {
 
     private final RabbitTemplate rabbitTemplate;
-    private final RabbitMQConfig rabbitMQConfig;
+    private final ObjectProvider<RabbitMQConfig> rabbitMQConfigProvider;
 
     @Value("${evcs.payment.message.enabled:false}")
     private boolean messageEnabled;
@@ -44,6 +45,13 @@ public class PaymentMessageServiceImpl implements PaymentMessageService {
             PaymentMessage message = buildPaymentSuccessMessage(paymentOrder);
 
             if (rabbitmqEnabled) {
+                RabbitMQConfig rabbitMQConfig = rabbitMQConfigProvider.getIfAvailable();
+                if (rabbitMQConfig == null) {
+                    log.warn("RabbitMQ已启用但RabbitMQConfig未加载，降级为日志记录: orderId={}, tradeNo={}",
+                        paymentOrder.getOrderId(), paymentOrder.getTradeNo());
+                    log.info("RabbitMQ配置不可用，记录支付成功日志: {}", message.toString());
+                    return;
+                }
                 // 发送RabbitMQ消息
                 rabbitTemplate.convertAndSend(
                     rabbitMQConfig.getExchange().getPaymentDirect(),
@@ -75,6 +83,13 @@ public class PaymentMessageServiceImpl implements PaymentMessageService {
             PaymentMessage message = buildPaymentFailureMessage(paymentOrder);
 
             if (rabbitmqEnabled) {
+                RabbitMQConfig rabbitMQConfig = rabbitMQConfigProvider.getIfAvailable();
+                if (rabbitMQConfig == null) {
+                    log.warn("RabbitMQ已启用但RabbitMQConfig未加载，降级为日志记录: orderId={}, tradeNo={}",
+                        paymentOrder.getOrderId(), paymentOrder.getTradeNo());
+                    log.info("RabbitMQ配置不可用，记录支付失败日志: {}", message.toString());
+                    return;
+                }
                 // 发送RabbitMQ消息
                 rabbitTemplate.convertAndSend(
                     rabbitMQConfig.getExchange().getPaymentDirect(),
@@ -105,6 +120,13 @@ public class PaymentMessageServiceImpl implements PaymentMessageService {
             PaymentMessage message = buildRefundSuccessMessage(paymentOrder);
 
             if (rabbitmqEnabled) {
+                RabbitMQConfig rabbitMQConfig = rabbitMQConfigProvider.getIfAvailable();
+                if (rabbitMQConfig == null) {
+                    log.warn("RabbitMQ已启用但RabbitMQConfig未加载，降级为日志记录: orderId={}, tradeNo={}",
+                        paymentOrder.getOrderId(), paymentOrder.getTradeNo());
+                    log.info("RabbitMQ配置不可用，记录退款成功日志: {}", message.toString());
+                    return;
+                }
                 // 发送RabbitMQ消息
                 rabbitTemplate.convertAndSend(
                     rabbitMQConfig.getExchange().getPaymentDirect(),

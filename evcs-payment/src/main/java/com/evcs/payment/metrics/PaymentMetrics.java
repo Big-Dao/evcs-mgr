@@ -248,6 +248,9 @@ public class PaymentMetrics extends BusinessMetrics {
      * @param channel 支付渠道
      */
     private void incrementChannelSuccess(String channel) {
+        if (channel == null) {
+            channel = "unknown";
+        }
         Counter counter = channelSuccessCounters.computeIfAbsent(channel, 
             ch -> createCounter(
                 "evcs.payment.channel.success.total",

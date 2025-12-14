@@ -6,7 +6,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration;
 import com.evcs.protocol.api.ProtocolEventListener;
-import com.evcs.payment.config.RabbitMQConfig;
 import com.evcs.payment.service.channel.AlipayClientFactory;
 import com.alipay.api.request.AlipayTradeAppPayRequest;
 import com.alipay.api.response.AlipayTradeAppPayResponse;
@@ -41,12 +40,13 @@ public class TestConfig {
     @Primary
     public AlipayClient alipayClient() {
         AlipayClient client = Mockito.mock(AlipayClient.class);
+        AlipayTradeAppPayResponse response = new AlipayTradeAppPayResponse();
+        response.setBody("mock_pay_params");
         try {
-            AlipayTradeAppPayResponse response = new AlipayTradeAppPayResponse();
-            response.setBody("mock_pay_params");
-            Mockito.when(client.sdkExecute(Mockito.any(AlipayTradeAppPayRequest.class))).thenReturn(response);
+            Mockito.when(client.sdkExecute(Mockito.any(AlipayTradeAppPayRequest.class)))
+                .thenReturn(response);
         } catch (Exception e) {
-            e.printStackTrace();
+            throw new IllegalStateException("Stub AlipayClient.sdkExecute failed", e);
         }
         return client;
     }
@@ -111,8 +111,4 @@ public class TestConfig {
         };
     }
 
-    @Bean
-    public RabbitMQConfig rabbitMQConfig() {
-        return new RabbitMQConfig();
-    }
 }
