@@ -41,6 +41,11 @@ public class PaymentRequest {
     private String description;
 
     /**
+     * 外部交易号（可选，若提供则使用此作为交易号）
+     */
+    private String tradeNo;
+
+    /**
      * 微信支付专属参数
      */
     private WechatPaymentOptions wechatOptions;

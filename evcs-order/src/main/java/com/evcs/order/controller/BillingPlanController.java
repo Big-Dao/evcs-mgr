@@ -59,7 +59,9 @@ public class BillingPlanController {
         if (stationId != null) {
             qw.eq("station_id", stationId);
         }
-        return Result.success(planService.list(qw));
+        List<BillingPlan> list = planService.list(qw);
+        planService.fillPlanStats(list);
+        return Result.success(list);
     }
 
     @GetMapping("/page")
@@ -72,6 +74,7 @@ public class BillingPlanController {
         QueryWrapper<BillingPlan> qw = new QueryWrapper<>();
         if (stationId != null) qw.eq("station_id", stationId);
         IPage<BillingPlan> result = planService.page(page, qw);
+        planService.fillPlanStats(result.getRecords());
         return Result.success(result);
     }
 

@@ -6,16 +6,75 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration;
 import com.evcs.protocol.api.ProtocolEventListener;
+import com.evcs.payment.config.RabbitMQConfig;
+import com.evcs.payment.service.channel.AlipayClientFactory;
+import com.alipay.api.request.AlipayTradeAppPayRequest;
+import com.alipay.api.response.AlipayTradeAppPayResponse;
 
 import java.time.LocalDateTime;
+
+import com.alipay.api.AlipayClient;
+import org.mockito.Mockito;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
+
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
+
+import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 
 /**
  * Integration测试配置类
  * 排除Knife4j自动配置并提供Protocol mock beans
  */
 @TestConfiguration
-@EnableAutoConfiguration(exclude = {Knife4jAutoConfiguration.class})
+@EnableAutoConfiguration(exclude = {
+    Knife4jAutoConfiguration.class,
+    RedisAutoConfiguration.class,
+    RedisRepositoriesAutoConfiguration.class,
+    FlywayAutoConfiguration.class
+})
 public class TestConfig {
+
+    @Bean
+    @Primary
+    public AlipayClient alipayClient() {
+        AlipayClient client = Mockito.mock(AlipayClient.class);
+        try {
+            AlipayTradeAppPayResponse response = new AlipayTradeAppPayResponse();
+            response.setBody("mock_pay_params");
+            Mockito.when(client.sdkExecute(Mockito.any(AlipayTradeAppPayRequest.class))).thenReturn(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return client;
+    }
+
+    @Bean
+    @Primary
+    public AlipayClientFactory alipayClientFactory(AlipayClient alipayClient) {
+        AlipayClientFactory factory = Mockito.mock(AlipayClientFactory.class);
+        Mockito.when(factory.getAlipayClient()).thenReturn(alipayClient);
+        return factory;
+    }
+
+    @Bean
+    @Primary
+    public RabbitTemplate rabbitTemplate() {
+        return Mockito.mock(RabbitTemplate.class);
+    }
+
+    @Bean
+    @Primary
+    public RedisTemplate<String, Object> redisTemplate() {
+        RedisTemplate<String, Object> mock = Mockito.mock(RedisTemplate.class);
+        ValueOperations<String, Object> ops = Mockito.mock(ValueOperations.class);
+        Mockito.when(mock.opsForValue()).thenReturn(ops);
+        // Mock setIfAbsent for lock
+        Mockito.when(ops.setIfAbsent(Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.any())).thenReturn(true);
+        return mock;
+    }
     
     /**
      * 提供ProtocolEventListener mock实现用于测试环境
@@ -50,5 +109,10 @@ public class TestConfig {
                 // Test mock - do nothing
             }
         };
+    }
+
+    @Bean
+    public RabbitMQConfig rabbitMQConfig() {
+        return new RabbitMQConfig();
     }
 }

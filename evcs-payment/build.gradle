@@ -53,3 +53,7 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'ch.qos.logback:logback-classic'
 }
+
+jar {
+    enabled = true
+}

@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "支付(占位)", description = "创建支付与回调模拟")
-@RestController
+@RestController("orderPaymentController")
 @RequestMapping("/payments")
 @RequiredArgsConstructor
 public class PaymentController {

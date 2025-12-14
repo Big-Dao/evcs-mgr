@@ -29,3 +29,7 @@ dependencies {
     // Test dependencies
     testImplementation testFixtures(project(':evcs-common'))
 }
+
+jar {
+    enabled = true
+}

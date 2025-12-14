@@ -169,4 +169,19 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
         }
     }
 
+    @Override
+    public void fillPlanStats(List<BillingPlan> plans) {
+        if (plans == null || plans.isEmpty()) return;
+        
+        for (BillingPlan plan : plans) {
+            // 填充站点数
+            plan.setStationCount(plan.getStationId() != null ? 1 : 0);
+            
+            // 填充时段数
+            Long count = segmentMapper.selectCount(new QueryWrapper<BillingPlanSegment>()
+                    .eq("plan_id", plan.getId()));
+            plan.setSegmentCount(count != null ? count.intValue() : 0);
+        }
+    }
+
 }

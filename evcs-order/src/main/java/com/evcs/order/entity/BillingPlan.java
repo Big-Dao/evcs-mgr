@@ -17,4 +17,10 @@ public class BillingPlan extends BaseEntity {
     private Integer priority;   // 优先级，越大越优先
     private java.time.LocalDate effectiveStartDate; // 生效开始日期，可为空
     private java.time.LocalDate effectiveEndDate;   // 生效结束日期，可为空
+
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
+    private Integer segmentCount;
+
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
+    private Integer stationCount;
 }

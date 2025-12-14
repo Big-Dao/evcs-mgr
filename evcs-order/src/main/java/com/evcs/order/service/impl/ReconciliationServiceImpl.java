@@ -23,7 +23,7 @@ import java.time.LocalDateTime;
  * @since M4 - Week 4 Performance Optimization
  */
 @Slf4j
-@Service
+@Service("orderReconciliationServiceImpl")
 @RequiredArgsConstructor
 public class ReconciliationServiceImpl implements ReconciliationService {
     private final ChargingOrderMapper orderMapper;

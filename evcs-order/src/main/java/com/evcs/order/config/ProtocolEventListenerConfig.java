@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Primary;
 
 import java.time.LocalDateTime;
 
-@Configuration
+@Configuration("orderProtocolEventListenerConfig")
 public class ProtocolEventListenerConfig {
 
     private static final Logger log = LoggerFactory.getLogger(ProtocolEventListenerConfig.class);

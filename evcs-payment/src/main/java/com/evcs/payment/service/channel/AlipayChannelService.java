@@ -53,7 +53,10 @@ public class AlipayChannelService implements IPaymentChannel {
             request.getOrderId(), request.getAmount(), request.getPaymentMethod());
 
         PaymentResponse response = new PaymentResponse();
-        String tradeNo = generateTradeNo(request.getOrderId());
+        String tradeNo = request.getTradeNo();
+        if (tradeNo == null || tradeNo.isEmpty()) {
+            tradeNo = generateTradeNo(request.getOrderId());
+        }
         response.setTradeNo(tradeNo);
         response.setAmount(request.getAmount());
         response.setStatus(PaymentStatus.PENDING);

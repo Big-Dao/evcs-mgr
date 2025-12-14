@@ -137,9 +137,9 @@
 ## 后端API需求清单
 
 ### 角色与权限管理
-- [x] `GET /api/role/list` - 角色列表 (RoleList.vue) ✅ 已实现
-- [x] `GET /api/role/page` - 分页查询角色 ✅ 已实现
-- [x] `GET /api/role/{id}` - 角色详情 ✅ 已实现
+- [x] `GET /api/role/list` - 角色列表 (RoleList.vue) ✅ 已实现 (2025-12-14)
+- [x] `GET /api/role/page` - 分页查询角色 ✅ 已实现 (2025-12-14)
+- [x] `GET /api/role/{id}` - 角色详情 ✅ 已实现 (2025-12-14)
 - [x] `GET /api/menu/list` - 菜单权限树 (RoleList.vue) ✅ 已实现
 - [x] `GET /api/menu/user/{userId}` - 用户菜单权限 ✅ 已实现
 - [ ] `GET /api/user/{id}/permissions` - 用户菜单权限 (UserDetail.vue) ⏳ 待实现
@@ -147,7 +147,10 @@
 ### 订单统计与详情
 - [x] `GET /api/dashboard/station-ranking` - 充电站订单排名 (OrderDashboard.vue) ✅ 已实现
 - [x] `GET /api/dashboard/charger-utilization` - 充电桩利用率统计 (OrderDashboard.vue) ✅ 已实现
-- [ ] `GET /api/orders/{id}` - 完整订单详情（需包含时间轴、计费明细、日志） (OrderDetail.vue) ⏳ 待实现
+- [x] `GET /api/orders/{id}` - 完整订单详情（需包含时间轴、计费明细、日志） ✅ 已实现基础详情
+
+### 计费方案
+- [x] `GET /api/billing/plans` - 计费方案列表（含分段数、站点数统计） ✅ 已实现 (2025-12-14)
 
 ### 日志与事件
 - [ ] `GET /api/user/{id}/logs` - 用户操作日志 (UserDetail.vue) ⏳ 待实现
