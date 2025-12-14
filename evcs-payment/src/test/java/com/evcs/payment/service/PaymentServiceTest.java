@@ -1,5 +1,6 @@
 package com.evcs.payment.service;
 
+import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.test.base.BaseServiceTest;
 import com.evcs.payment.PaymentServiceApplication;
 import com.evcs.payment.config.TestConfig;
@@ -36,7 +37,7 @@ import static org.mockito.Mockito.*;
 @ActiveProfiles("test")
 @ContextConfiguration(classes = {TestConfig.class})
 @DisplayName("支付服务测试")
-class PaymentServiceTestTemplate extends BaseServiceTest {
+class PaymentServiceTest extends BaseServiceTest {
 
     @Resource
     private IPaymentService paymentService;
@@ -338,7 +339,12 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
     @Test
     @DisplayName("对账 - 每日对账")
     void testDailyReconciliation() {
-        // 1. 准备数据：创建多笔支付订单
+        // 1. 创建多笔支付订单
+        // 2. 下载支付宝/微信对账单
+        // 3. 比对系统订单与对账单
+        // 4. 生成对账报表
+        
+        // 现阶段：验证可以查询支付订单
         configureMocks();
         PaymentRequest request = new PaymentRequest();
         request.setOrderId(8L);
@@ -366,34 +372,35 @@ class PaymentServiceTestTemplate extends BaseServiceTest {
     void testTenantIsolation() {
         configureMocks();
         
-        // 1. 使用租户1创建订单
+        // 1. 使用租户1的上下文创建支付订单
         Long tenant1 = 1001L;
-        com.evcs.common.tenant.TenantContext.setTenantId(tenant1);
+        TenantContext.setTenantId(tenant1);
         
-        PaymentRequest request1 = new PaymentRequest();
-        request1.setOrderId(901L);
-        request1.setAmount(new BigDecimal("10.00"));
-        request1.setPaymentMethod(PaymentMethod.ALIPAY_APP);
-        request1.setUserId(1L);
-        request1.setIdempotentKey("tenant-test-1");
-        PaymentResponse response1 = paymentService.createPayment(request1);
+        PaymentRequest request = new PaymentRequest();
+        request.setOrderId(9L);
+        request.setAmount(new BigDecimal("66.00"));
+        request.setPaymentMethod(PaymentMethod.ALIPAY_APP);
+        request.setUserId(1L);
+        request.setIdempotentKey("test-idempotent-key-9");
+        PaymentResponse response = paymentService.createPayment(request);
         
-        // 2. 验证租户1能查询到
-        PaymentOrder order1 = paymentService.getById(response1.getPaymentId());
+        // 验证租户1能查到
+        PaymentOrder order1 = paymentService.getById(response.getPaymentId());
         assertNotNull(order1);
         assertEquals(tenant1, order1.getTenantId());
         
-        // 3. 切换到租户2
+        // 2. 切换到租户2的上下文
         Long tenant2 = 1002L;
-        com.evcs.common.tenant.TenantContext.setTenantId(tenant2);
+        TenantContext.setTenantId(tenant2);
         
-        // 4. 尝试查询租户1的订单 -> 应该查不到
-        // 注意：MyBatis Plus的多租户插件会自动过滤
-        PaymentOrder order2 = paymentService.getById(response1.getPaymentId());
-        assertNull(order2, "租户2不应查询到租户1的订单");
+        // 3. 尝试查询租户1的订单
+        PaymentOrder order2 = paymentService.getById(response.getPaymentId());
         
-        // 5. 恢复上下文
-        com.evcs.common.tenant.TenantContext.clear();
+        // 4. 验证查询不到（MyBatis Plus自动添加tenant_id过滤）
+        assertNull(order2, "租户2不应该能查询到租户1的订单");
+        
+        // 清理上下文
+        TenantContext.clear();
     }
 
     @Test
