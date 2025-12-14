@@ -130,7 +130,8 @@ class AlipayChannelServiceTest {
         boolean result = alipayChannelService.verifySignature(data, signature);
 
         // Assert
-        assertTrue(result); // 目前使用模拟实现
+        // 由于使用了真实的AlipaySignature.rsaCheckContent，无效的签名应该返回false
+        assertFalse(result); 
     }
 
     @Test
