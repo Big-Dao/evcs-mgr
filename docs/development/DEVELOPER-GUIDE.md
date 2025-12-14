@@ -5,9 +5,13 @@
 用途：描述项目开发流程、工具链与协作规范。通用编码/分层/异常/日志等规范集中维护于 `docs/overview/PROJECT-CODING-STANDARDS.md`（SSOT）。
 
 ## 快速开始
-- 环境准备：JDK 21、Gradle、Docker、Git
-- 克隆与构建：`./gradlew build`（可用 `-x test` 跳过测试）
-- 运行服务：`./gradlew :evcs-gateway:bootRun` 等
+- **环境准备**：
+  - **JDK**: 21 (LTS)
+  - **Gradle**: 8.11.1 (推荐配置 JVM 内存 4GB+)
+  - **Node.js**: v20 (LTS)
+  - **Docker**: Latest
+- **克隆与构建**：`./gradlew build`（可用 `-x test` 跳过测试）
+- **运行服务**：`./gradlew :evcs-gateway:bootRun` 等
 - 演示数据导入：参见 `docs/deployment/DEPLOYMENT-GUIDE.md` 的示例脚本
 
 ## 项目结构
