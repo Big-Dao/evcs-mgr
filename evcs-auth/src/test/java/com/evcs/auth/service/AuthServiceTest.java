@@ -205,4 +205,36 @@ class AuthServiceTest {
         // Assert
         verify(userService).resetPassword(eq(userId), eq("encodedNew"), eq(1001L), eq(userId));
     }
+
+    @Test
+    @DisplayName("刷新Token - 无效Token")
+    void testRefreshToken_WithInvalidToken() {
+        // Arrange
+        String invalidToken = "invalid-token";
+        when(jwtUtil.verifyToken(invalidToken)).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(BusinessException.class, () -> authService.refreshToken(invalidToken));
+    }
+
+    @Test
+    @DisplayName("修改密码 - 旧密码错误")
+    void testChangePassword_WithWrongOldPassword() {
+        // Arrange
+        Long userId = 1L;
+        String oldPassword = "wrongOldPassword";
+        String newPassword = "newPassword";
+        String encodedOldPass = "encodedOld";
+
+        SysUser user = new SysUser();
+        user.setId(userId);
+        user.setPassword(encodedOldPass);
+        user.setTenantId(1001L);
+
+        when(userService.getUserByIdWithTenant(eq(userId), any())).thenReturn(user);
+        when(passwordEncoder.matches(oldPassword, encodedOldPass)).thenReturn(false);
+
+        // Act & Assert
+        assertThrows(BusinessException.class, () -> authService.changePassword(userId, oldPassword, newPassword));
+    }
 }
