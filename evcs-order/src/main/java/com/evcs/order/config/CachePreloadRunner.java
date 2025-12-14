@@ -30,6 +30,9 @@ public class CachePreloadRunner implements ApplicationRunner {
 
     @Value("${evcs.tenant.default-tenant-id:1}")
     private Long defaultTenantId;
+
+    @Value("${evcs.order.cache.hot-stations:1,2,3,4,5}")
+    private List<Long> hotStationIds;
     
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -37,11 +40,13 @@ public class CachePreloadRunner implements ApplicationRunner {
         
         try {
             TenantContext.setCurrentTenantId(defaultTenantId);
-            // TODO: 从配置或数据库加载热点站点ID列表
-            // 这里使用示例站点ID，实际应该从配置文件或数据库统计中获取
-            List<Long> hotStationIds = Arrays.asList(1L, 2L, 3L, 4L, 5L);
             
-            billingPlanCacheService.preloadHotStations(hotStationIds);
+            if (hotStationIds != null && !hotStationIds.isEmpty()) {
+                log.info("Preloading {} hot stations: {}", hotStationIds.size(), hotStationIds);
+                billingPlanCacheService.preloadHotStations(hotStationIds);
+            } else {
+                log.info("No hot stations configured for preload");
+            }
             
             log.info("Cache preload completed successfully");
         } catch (Exception e) {
