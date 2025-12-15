@@ -26,10 +26,10 @@ import com.evcs.payment.dto.RefundRequest;
 import com.evcs.payment.dto.RefundResponse;
 import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import jakarta.annotation.Resource;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.UUID;
@@ -39,13 +39,12 @@ import java.util.UUID;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class AlipayChannelService implements IPaymentChannel {
 
-    @Resource
-    private AlipayClientFactory alipayClientFactory;
+    private final AlipayClientFactory alipayClientFactory;
 
-    @Resource
-    private AlipayConfig alipayConfig;
+    private final AlipayConfig alipayConfig;
 
     @Override
     public PaymentResponse createPayment(PaymentRequest request) {

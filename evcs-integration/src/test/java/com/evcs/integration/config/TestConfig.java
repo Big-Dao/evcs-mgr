@@ -2,6 +2,7 @@ package com.evcs.integration.config;
 
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration;
@@ -17,11 +18,7 @@ import org.mockito.Mockito;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
-
-import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration;
-
-import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 
 /**
  * Integration测试配置类
@@ -30,15 +27,13 @@ import org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration;
 @TestConfiguration
 @EnableAutoConfiguration(exclude = {
     Knife4jAutoConfiguration.class,
-    RedisAutoConfiguration.class,
-    RedisRepositoriesAutoConfiguration.class,
-    FlywayAutoConfiguration.class
+    RedisRepositoriesAutoConfiguration.class
 })
 public class TestConfig {
 
     @Bean
     @Primary
-    public AlipayClient alipayClient() {
+    public AlipayClient integrationTestAlipayClient() {
         AlipayClient client = Mockito.mock(AlipayClient.class);
         AlipayTradeAppPayResponse response = new AlipayTradeAppPayResponse();
         response.setBody("mock_pay_params");
@@ -53,9 +48,9 @@ public class TestConfig {
 
     @Bean
     @Primary
-    public AlipayClientFactory alipayClientFactory(AlipayClient alipayClient) {
+    public AlipayClientFactory integrationTestAlipayClientFactory(AlipayClient integrationTestAlipayClient) {
         AlipayClientFactory factory = Mockito.mock(AlipayClientFactory.class);
-        Mockito.when(factory.getAlipayClient()).thenReturn(alipayClient);
+        Mockito.when(factory.getAlipayClient()).thenReturn(integrationTestAlipayClient);
         return factory;
     }
 
@@ -82,6 +77,7 @@ public class TestConfig {
      */
     @Bean
     @Primary
+    @ConditionalOnMissingBean(ProtocolEventListener.class)
     public ProtocolEventListener protocolEventListener() {
         return new ProtocolEventListener() {
             @Override

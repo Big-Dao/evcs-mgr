@@ -38,7 +38,6 @@ import org.springframework.test.context.TestPropertySource;
     com.evcs.integration.config.TestConfig.class
 }, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {
-    "spring.main.allow-bean-definition-overriding=true",
     "evcs.payment.order-sync.direct-api-enabled=true",
     "evcs.payment.order-sync.order-service-url=http://localhost:8080", // Placeholder, will be mocked
     "spring.rabbitmq.listener.simple.auto-startup=false",
