@@ -56,18 +56,27 @@ public class TestConfig {
 
     @Bean
     @Primary
+    @ConditionalOnMissingBean(RabbitTemplate.class)
     public RabbitTemplate rabbitTemplate() {
         return Mockito.mock(RabbitTemplate.class);
     }
 
     @Bean
     @Primary
+    @ConditionalOnMissingBean(RedisTemplate.class)
     public RedisTemplate<String, Object> redisTemplate() {
-        RedisTemplate<String, Object> mock = Mockito.mock(RedisTemplate.class);
-        ValueOperations<String, Object> ops = Mockito.mock(ValueOperations.class);
+        @SuppressWarnings("unchecked")
+        RedisTemplate<String, Object> mock = (RedisTemplate<String, Object>) Mockito.mock(RedisTemplate.class);
+        @SuppressWarnings("unchecked")
+        ValueOperations<String, Object> ops = (ValueOperations<String, Object>) Mockito.mock(ValueOperations.class);
         Mockito.when(mock.opsForValue()).thenReturn(ops);
         // Mock setIfAbsent for lock
-        Mockito.when(ops.setIfAbsent(Mockito.anyString(), Mockito.any(), Mockito.anyLong(), Mockito.any())).thenReturn(true);
+        Mockito.when(ops.setIfAbsent(
+            Mockito.anyString(),
+            Mockito.any(),
+            Mockito.anyLong(),
+            Mockito.any(java.util.concurrent.TimeUnit.class)
+        )).thenReturn(true);
         return mock;
     }
     
