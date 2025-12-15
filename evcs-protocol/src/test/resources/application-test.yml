@@ -2,12 +2,14 @@ spring:
   application:
     name: evcs-protocol-test
 
+  # Disable Spring Cloud Config client in tests (avoid external dependency / long timeouts)
+  cloud:
+    config:
+      enabled: false
+
+  # Disable RabbitMQ in tests
   rabbitmq:
     enabled: false
-
-  # Disable config server import in tests
-  config:
-    import: "optional:"
 
   # Skip Rabbit auto configuration when running tests
   autoconfigure:
@@ -20,6 +22,12 @@ spring:
     url: jdbc:h2:mem:testdb
     username: sa
     password:
+
+eureka:
+  client:
+    enabled: false
+    register-with-eureka: false
+    fetch-registry: false
 
 logging:
   level:

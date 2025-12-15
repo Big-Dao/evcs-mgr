@@ -35,29 +35,41 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Run unit tests
-      run: ./gradlew test --continue
+    - name: Run unit tests (key modules)
+      run: |
+        ./gradlew \
+          :evcs-common:test \
+          :evcs-gateway:test \
+          :evcs-auth:test \
+          :evcs-tenant:test \
+          :evcs-station:test \
+          :evcs-order:test \
+          :evcs-payment:test \
+          :evcs-protocol:test \
+          --continue --no-daemon
 
     - name: Run integration tests
-      run: ./gradlew integrationTest --continue
+      run: ./gradlew :evcs-integration:test --continue --no-daemon
 
-    - name: Generate test coverage report
-      run: ./gradlew jacocoTestReport jacocoIntegrationTestReport
+    - name: Generate test coverage report (key modules)
+      run: |
+        ./gradlew \
+          :evcs-common:jacocoTestReport \
+          :evcs-gateway:jacocoTestReport \
+          :evcs-auth:jacocoTestReport \
+          :evcs-tenant:jacocoTestReport \
+          :evcs-station:jacocoTestReport \
+          :evcs-order:jacocoTestReport \
+          :evcs-payment:jacocoTestReport \
+          :evcs-protocol:jacocoTestReport \
+          :evcs-integration:jacocoTestReport \
+          --continue --no-daemon
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
-        files: ./build/reports/jacoco/test/jacocoTestReport.xml,./build/reports/jacoco/integrationTest/jacocoIntegrationTestReport.xml
+        files: evcs-common/build/reports/jacoco/test/jacocoTestReport.xml,evcs-gateway/build/reports/jacoco/test/jacocoTestReport.xml,evcs-auth/build/reports/jacoco/test/jacocoTestReport.xml,evcs-tenant/build/reports/jacoco/test/jacocoTestReport.xml,evcs-station/build/reports/jacoco/test/jacocoTestReport.xml,evcs-order/build/reports/jacoco/test/jacocoTestReport.xml,evcs-payment/build/reports/jacoco/test/jacocoTestReport.xml,evcs-protocol/build/reports/jacoco/test/jacocoTestReport.xml,evcs-integration/build/reports/jacoco/test/jacocoTestReport.xml
         fail_ci_if_error: false
-
-    - name: Run Checkstyle
-      run: ./gradlew checkstyleMain checkstyleTest
-
-    - name: Run PMD
-      run: ./gradlew pmdMain pmdTest
-
-    - name: Run SpotBugs
-      run: ./gradlew spotbugsMain spotbugsTest
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v3

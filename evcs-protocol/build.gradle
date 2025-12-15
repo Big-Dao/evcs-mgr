@@ -37,4 +37,7 @@ dependencies {
 
     // Structured logging encoder used by logback configuration
     implementation "net.logstash.logback:logstash-logback-encoder:${logstashLogbackVersion}"
+
+    // Test dependencies
+    testImplementation "com.h2database:h2:${h2Version}"  // 统一H2版本（测试环境DataSource驱动）
 }
