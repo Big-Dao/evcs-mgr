@@ -61,6 +61,17 @@ public interface ChargerMapper extends BaseMapper<Charger> {
                           @Param("heartbeat") LocalDateTime heartbeat);
 
     /**
+     * 仅更新心跳时间
+     */
+    @Update("""
+        UPDATE charger
+        SET last_heartbeat = #{heartbeat},
+            update_time = CURRENT_TIMESTAMP
+        WHERE charger_id = #{chargerId}
+        """)
+    int updateHeartbeat(@Param("chargerId") Long chargerId, @Param("heartbeat") LocalDateTime heartbeat);
+
+    /**
      * 开始充电会话
      */
     @Update("""

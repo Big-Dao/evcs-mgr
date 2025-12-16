@@ -61,6 +61,7 @@ class ProtocolEventIntegrationTest {
     void testStartEventModel() {
         StartEvent event = StartEvent.builder()
                 .eventId("test-003")
+            .stationId(10L)
                 .chargerId(1L)
                 .tenantId(1L)
                 .eventType(ProtocolEvent.EventType.CHARGING_START)
@@ -68,6 +69,7 @@ class ProtocolEventIntegrationTest {
                 .protocolType("OCPP")
                 .sessionId("session-001")
                 .userId(100L)
+            .billingPlanId(200L)
                 .orderNo("ORDER-001")
                 .initialEnergy(0.0)
                 .success(true)

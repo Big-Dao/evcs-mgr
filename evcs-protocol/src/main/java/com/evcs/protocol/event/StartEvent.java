@@ -17,6 +17,11 @@ public class StartEvent extends ProtocolEvent {
     private static final long serialVersionUID = 1L;
 
     /**
+     * 充电站ID
+     */
+    private Long stationId;
+
+    /**
      * 会话ID
      */
     private String sessionId;
@@ -25,6 +30,11 @@ public class StartEvent extends ProtocolEvent {
      * 用户ID
      */
     private Long userId;
+
+    /**
+     * 计费方案ID（可选）
+     */
+    private Long billingPlanId;
 
     /**
      * 订单号

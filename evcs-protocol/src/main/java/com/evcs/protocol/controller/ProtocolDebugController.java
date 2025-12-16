@@ -10,7 +10,6 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -27,7 +26,6 @@ public class ProtocolDebugController {
 
     private final ProtocolEventPublisher eventPublisher;
 
-    @Autowired
     public ProtocolDebugController(ProtocolEventPublisher eventPublisher) {
         this.eventPublisher = eventPublisher;
     }
@@ -112,11 +110,13 @@ public class ProtocolDebugController {
             String orderNo = "ORD" + System.currentTimeMillis();
 
             eventPublisher.publishChargingStart(
+                null,
                 request.getChargerId(),
                 request.getTenantId(),
                 request.getProtocolType(),
                 sessionId,
                 request.getUserId(),
+                null,
                 orderNo,
                 request.getInitialEnergy(),
                 true,

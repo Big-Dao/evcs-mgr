@@ -30,9 +30,20 @@ public class CloudChargeProtocolServiceImpl implements ICloudChargeProtocolServi
         if (listener != null) listener.onStartAck(chargerId, sessionId, true, "OK");
         
         // 发布到RabbitMQ
-        try {
-            eventPublisher.publishChargingStart(chargerId, 1L, "CloudCharge", sessionId, userId,
-                    null, 0.0, true, "OK");
+            try {
+                eventPublisher.publishChargingStart(
+                        null,
+                        chargerId,
+                        1L,
+                        "CloudCharge",
+                        sessionId,
+                        userId,
+                        null,
+                        null,
+                        0.0,
+                        true,
+                        "Charging started successfully"
+                );
         } catch (Exception e) {
             log.warn("Failed to publish charging start event to MQ", e);
         }

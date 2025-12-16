@@ -150,11 +150,13 @@ public class CloudChargeController {
 
             // 发布充电开始事件
             eventPublisher.publishChargingStart(
+                protocolRequest.getStationId(),
                 protocolRequest.getChargerId(),
                 protocolRequest.getTenantId(),
                 "CLOUD_CHARGE",
                 request.getSessionId(),
                 protocolRequest.getUserId(),
+                null,
                 null,
                 0.0,
                 true,
@@ -277,6 +279,7 @@ public class CloudChargeController {
         if (info != null) {
             protocolRequest.setTenantId(info.getTenantId());
             protocolRequest.setChargerId(info.getId());
+            protocolRequest.setStationId(info.getStationId());
         } else {
             log.warn("Unknown device code: {}", request.getDeviceCode());
             protocolRequest.setTenantId(0L); // 默认租户
@@ -380,6 +383,7 @@ public class CloudChargeController {
     static class ChargerInfo {
         private Long id;
         private Long tenantId;
+        private Long stationId;
         private String chargerCode;
         private String chargerName;
     }

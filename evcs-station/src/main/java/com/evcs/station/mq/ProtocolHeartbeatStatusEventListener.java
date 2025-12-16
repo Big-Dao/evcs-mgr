@@ -1,0 +1,111 @@
+package com.evcs.station.mq;
+
+import com.evcs.common.tenant.TenantContext;
+import com.evcs.protocol.config.RabbitMQConfig;
+import com.evcs.protocol.event.HeartbeatEvent;
+import com.evcs.protocol.event.StatusEvent;
+import com.evcs.station.service.IChargerService;
+import com.rabbitmq.client.Channel;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.stereotype.Component;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class ProtocolHeartbeatStatusEventListener {
+
+    private final IChargerService chargerService;
+
+    @RabbitListener(
+            queues = RabbitMQConfig.HEARTBEAT_QUEUE,
+            containerFactory = "protocolRabbitListenerContainerFactory"
+    )
+    public void onHeartbeat(HeartbeatEvent event, Message message, Channel channel) throws IOException {
+        long tag = message.getMessageProperties().getDeliveryTag();
+        if (event == null || event.getTenantId() == null || event.getChargerId() == null) {
+            log.warn("Invalid heartbeat event payload, reject to DLQ: event={}", event);
+            channel.basicReject(tag, false);
+            return;
+        }
+
+        try {
+            TenantContext.setCurrentTenantId(event.getTenantId());
+
+            LocalDateTime heartbeatTime = event.getLastHeartbeatTime() != null
+                    ? event.getLastHeartbeatTime()
+                    : event.getEventTime();
+            boolean ok = chargerService.updateHeartbeat(event.getChargerId(), heartbeatTime);
+            if (!ok) {
+                log.warn(
+                        "Failed to update charger heartbeat, reject to DLQ: tenantId={}, chargerId={}, eventId={}",
+                        event.getTenantId(),
+                        event.getChargerId(),
+                        event.getEventId()
+                );
+                channel.basicReject(tag, false);
+                return;
+            }
+
+            channel.basicAck(tag, false);
+        } catch (Exception ex) {
+            log.error(
+                    "Error handling heartbeat event, nack to DLQ: tenantId={}, chargerId={}, eventId={}",
+                    event.getTenantId(),
+                    event.getChargerId(),
+                    event.getEventId(),
+                    ex
+            );
+            channel.basicNack(tag, false, false);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @RabbitListener(
+            queues = RabbitMQConfig.STATUS_QUEUE,
+            containerFactory = "protocolRabbitListenerContainerFactory"
+    )
+    public void onStatus(StatusEvent event, Message message, Channel channel) throws IOException {
+        long tag = message.getMessageProperties().getDeliveryTag();
+        if (event == null || event.getTenantId() == null || event.getChargerId() == null || event.getNewStatus() == null) {
+            log.warn("Invalid status event payload, reject to DLQ: event={}", event);
+            channel.basicReject(tag, false);
+            return;
+        }
+
+        try {
+            TenantContext.setCurrentTenantId(event.getTenantId());
+
+            boolean ok = chargerService.updateStatus(event.getChargerId(), event.getNewStatus());
+            if (!ok) {
+                log.warn(
+                        "Failed to update charger status, reject to DLQ: tenantId={}, chargerId={}, newStatus={}, eventId={}",
+                        event.getTenantId(),
+                        event.getChargerId(),
+                        event.getNewStatus(),
+                        event.getEventId()
+                );
+                channel.basicReject(tag, false);
+                return;
+            }
+
+            channel.basicAck(tag, false);
+        } catch (Exception ex) {
+            log.error(
+                    "Error handling status event, nack to DLQ: tenantId={}, chargerId={}, eventId={}",
+                    event.getTenantId(),
+                    event.getChargerId(),
+                    event.getEventId(),
+                    ex
+            );
+            channel.basicNack(tag, false, false);
+        } finally {
+            TenantContext.clear();
+        }
+    }
+}

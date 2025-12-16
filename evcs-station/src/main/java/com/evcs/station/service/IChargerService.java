@@ -49,6 +49,11 @@ public interface IChargerService extends IService<Charger> {
     boolean updateStatus(Long chargerId, Integer status);
 
     /**
+     * 更新充电桩最后心跳时间（幂等）
+     */
+    boolean updateHeartbeat(Long chargerId, java.time.LocalDateTime heartbeatTime);
+
+    /**
      * 更新充电桩实时数据
      */
     boolean updateRealTimeData(Long chargerId, Double power, Double voltage, Double current, Double temperature);

@@ -32,6 +32,11 @@ public class ProtocolRequest {
     private Long chargerId;
 
     /**
+     * 充电站ID
+     */
+    private Long stationId;
+
+    /**
      * 会话ID
      */
     private String sessionId;

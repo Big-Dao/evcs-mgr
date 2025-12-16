@@ -313,6 +313,25 @@ public class ChargerServiceImpl
     }
 
     /**
+     * 更新充电桩心跳时间（幂等）
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean updateHeartbeat(Long chargerId, LocalDateTime heartbeatTime) {
+        try {
+            LocalDateTime hb = heartbeatTime != null ? heartbeatTime : LocalDateTime.now();
+            boolean ok = baseMapper.updateHeartbeat(chargerId, hb) > 0;
+            if (ok) {
+                stationMetrics.recordHeartbeatReceived();
+            }
+            return ok;
+        } catch (Exception e) {
+            log.error("Error updating charger heartbeat: chargerId={}", chargerId, e);
+            throw e;
+        }
+    }
+
+    /**
      * 开始充电会话
      */
     @Override

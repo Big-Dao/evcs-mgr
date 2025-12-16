@@ -256,11 +256,13 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
                 if (sent) {
                     // 发布充电开始事件
                     eventPublisher.publishChargingStart(
+                        null,
                         request.getChargerId(),
                         request.getTenantId(),
                         "OCPP",
                         sessionId,
                         request.getUserId(),
+                        null,
                         null,
                         0.0,
                         true,

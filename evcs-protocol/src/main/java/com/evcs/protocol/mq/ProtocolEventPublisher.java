@@ -82,11 +82,13 @@ public class ProtocolEventPublisher {
      * 发布开始充电事件
      */
     public StartEvent publishChargingStart(
+        Long stationId,
         Long chargerId,
         Long tenantId,
         String protocolType,
         String sessionId,
         Long userId,
+        Long billingPlanId,
         String orderNo,
         Double initialEnergy,
         Boolean success,
@@ -94,6 +96,7 @@ public class ProtocolEventPublisher {
     ) {
         StartEvent event = StartEvent.builder()
             .eventId(UUID.randomUUID().toString())
+            .stationId(stationId)
             .chargerId(chargerId)
             .tenantId(tenantId)
             .eventType(ProtocolEvent.EventType.CHARGING_START)
@@ -101,6 +104,7 @@ public class ProtocolEventPublisher {
             .protocolType(protocolType)
             .sessionId(sessionId)
             .userId(userId)
+            .billingPlanId(billingPlanId)
             .orderNo(orderNo)
             .initialEnergy(initialEnergy)
             .success(success)
