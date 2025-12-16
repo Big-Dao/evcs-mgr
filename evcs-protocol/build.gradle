@@ -40,4 +40,5 @@ dependencies {
 
     // Test dependencies
     testImplementation "com.h2database:h2:${h2Version}"  // 统一H2版本（测试环境DataSource驱动）
+    testImplementation testFixtures(project(':evcs-common'))
 }

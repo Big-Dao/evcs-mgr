@@ -142,6 +142,12 @@ public class CloudChargeController {
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "start");
 
+            // 云快充：userId 由协议上报携带，且必须在 data 内（确保签名覆盖），否则拒绝
+            if (protocolRequest.getUserId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(CloudChargeApiResponse.failure("400", "Missing userId (must be provided in data.userId)"));
+            }
+
             // 发布充电开始事件
             eventPublisher.publishChargingStart(
                 protocolRequest.getChargerId(),
@@ -276,10 +282,57 @@ public class CloudChargeController {
             protocolRequest.setTenantId(0L); // 默认租户
             protocolRequest.setChargerId(extractChargerId(request.getDeviceCode())); // 尝试从编码提取
         }
-        
-        protocolRequest.setUserId(null); // 根据实际情况设置
+
+        Long userIdFromData = extractUserIdFromData(request.getData());
+        Long userIdFromTopLevel = request.getUserId();
+
+        // 允许顶层同时携带，但要求与 data.userId 一致；避免未签名字段被篡改
+        if (userIdFromTopLevel != null && userIdFromData == null) {
+            log.warn("CloudCharge request includes top-level userId but data.userId is missing; rejecting unsigned userId. requestId={}", request.getRequestId());
+        }
+        if (userIdFromTopLevel != null && userIdFromData != null && !userIdFromTopLevel.equals(userIdFromData)) {
+            log.warn(
+                "CloudCharge request userId mismatch: topLevel={} data.userId={} requestId={}",
+                userIdFromTopLevel,
+                userIdFromData,
+                request.getRequestId()
+            );
+            // 不使用有歧义的 userId（start 会因此返回 400）
+            userIdFromData = null;
+        }
+
+        // 仅信任 data.userId（受签名保护）
+        protocolRequest.setUserId(userIdFromData);
 
         return protocolRequest;
+    }
+
+    private Long extractUserIdFromData(Map<String, Object> data) {
+        if (data == null || data.isEmpty()) {
+            return null;
+        }
+        return toLongValue(data.get("userId"));
+    }
+
+    private Long toLongValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value instanceof String) {
+            String s = ((String) value).trim();
+            if (s.isEmpty()) {
+                return null;
+            }
+            try {
+                return Long.parseLong(s);
+            } catch (NumberFormatException ex) {
+                return null;
+            }
+        }
+        return null;
     }
 
     /**
@@ -341,6 +394,7 @@ public class CloudChargeController {
         private String signature;
         private String deviceCode;
         private String sessionId;
+        private Long userId;
         private String action;
         private Map<String, Object> data;
 
@@ -357,6 +411,8 @@ public class CloudChargeController {
         public void setDeviceCode(String deviceCode) { this.deviceCode = deviceCode; }
         public String getSessionId() { return sessionId; }
         public void setSessionId(String sessionId) { this.sessionId = sessionId; }
+        public Long getUserId() { return userId; }
+        public void setUserId(Long userId) { this.userId = userId; }
         public String getAction() { return action; }
         public void setAction(String action) { this.action = action; }
         public Map<String, Object> getData() { return data; }
