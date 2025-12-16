@@ -5,6 +5,8 @@ param(
     [string]$Scenario = "all",
     [string]$BaseUrl = "http://192.168.20.235:30080",
     [int]$Duration = 600,
+    [int]$ConnectTimeoutMs = 5000,
+    [int]$ResponseTimeoutMs = 30000,
     [switch]$NoPrompt
 )
 
@@ -80,6 +82,8 @@ Write-Host "测试计划: $TestPlan" -ForegroundColor Gray
 Write-Host "目标地址: $BaseUrl" -ForegroundColor Gray
 Write-Host "测试场景: $Scenario" -ForegroundColor Gray
 Write-Host "测试时长: $Duration 秒" -ForegroundColor Gray
+Write-Host "连接超时: $ConnectTimeoutMs ms" -ForegroundColor Gray
+Write-Host "响应超时: $ResponseTimeoutMs ms" -ForegroundColor Gray
 Write-Host "报告目录: $ReportDir" -ForegroundColor Gray
 Write-Host ""
 
@@ -102,7 +106,9 @@ $JMeterCmd = @(
     "-JBASE_URL=$BaseUrl",  # 保留（兼容旧逻辑/未来扩展）
     "-JHOST=$HostName",
     "-JPORT=$Port",
-    "-JPROTOCOL=$Protocol"
+    "-JPROTOCOL=$Protocol",
+    "-JCONNECT_TIMEOUT_MS=$ConnectTimeoutMs",
+    "-JRESPONSE_TIMEOUT_MS=$ResponseTimeoutMs"
 )
 
 # 根据场景控制各线程组持续时间/爬坡时间（JMX 使用 __P(duration_*/ramp_*)）
@@ -142,8 +148,25 @@ switch ($Scenario) {
     }
 }
 
+# 根据场景控制各线程组并发数（JMX 使用 __P(threads_*)）
+$threadsS1 = 0
+$threadsS2 = 0
+$threadsS3 = 0
+
+switch ($Scenario) {
+    "scenario1" { $threadsS1 = 100 }
+    "scenario2" { $threadsS2 = 200 }
+    "scenario3" { $threadsS3 = 500 }
+    default {
+        $threadsS1 = 100
+        $threadsS2 = 200
+        $threadsS3 = 500
+    }
+}
+
 $JMeterCmd += "-Jduration_s1=$durationS1", "-Jduration_s2=$durationS2", "-Jduration_s3=$durationS3"
 $JMeterCmd += "-Jramp_s1=$rampS1", "-Jramp_s2=$rampS2", "-Jramp_s3=$rampS3"
+$JMeterCmd += "-Jthreads_s1=$threadsS1", "-Jthreads_s2=$threadsS2", "-Jthreads_s3=$threadsS3"
 
 Write-Host ""
 Write-Host "执行命令: jmeter $($JMeterCmd -join ' ')" -ForegroundColor Gray

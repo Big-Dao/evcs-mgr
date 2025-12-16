@@ -49,8 +49,8 @@
         <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
         <stringProp name="HTTPSampler.path"></stringProp>
         <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
-        <stringProp name="HTTPSampler.connect_timeout">5000</stringProp>
-        <stringProp name="HTTPSampler.response_timeout">10000</stringProp>
+        <stringProp name="HTTPSampler.connect_timeout">${__P(CONNECT_TIMEOUT_MS,5000)}</stringProp>
+        <stringProp name="HTTPSampler.response_timeout">${__P(RESPONSE_TIMEOUT_MS,30000)}</stringProp>
       </ConfigTestElement>
       <hashTree/>
 
@@ -80,7 +80,7 @@
           <boolProp name="LoopController.continue_forever">false</boolProp>
           <intProp name="LoopController.loops">-1</intProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">100</stringProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(threads_s1,100)}</stringProp>
         <stringProp name="ThreadGroup.ramp_time">${__P(ramp_s1,60)}</stringProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.duration">${__P(duration_s1,600)}</stringProp>
@@ -90,7 +90,7 @@
       <hashTree>
         <!-- Constant Throughput Timer - 500 TPS -->
         <ConstantThroughputTimer guiclass="TestBeanGUI" testclass="ConstantThroughputTimer" testname="恒定吞吐量定时器 - 500 TPS" enabled="true">
-          <intProp name="calcMode">0</intProp>
+          <intProp name="calcMode">3</intProp>
           <doubleProp>
             <name>throughput</name>
             <value>30000.0</value>
@@ -150,8 +150,8 @@
         <hashTree>
           <!-- 响应断言 -->
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="响应断言 - 成功" enabled="true">
-            <collectionProp name="Asserion.test_strings">
-              <stringProp name="49586">200</stringProp>
+            <collectionProp name="Assertion.test_strings">
+              <stringProp name="0">200</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message"></stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
@@ -169,7 +169,7 @@
           <boolProp name="LoopController.continue_forever">false</boolProp>
           <intProp name="LoopController.loops">-1</intProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">200</stringProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(threads_s2,200)}</stringProp>
         <stringProp name="ThreadGroup.ramp_time">${__P(ramp_s2,60)}</stringProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.duration">${__P(duration_s2,600)}</stringProp>
@@ -179,7 +179,7 @@
       <hashTree>
         <!-- Constant Throughput Timer - 1000 TPS -->
         <ConstantThroughputTimer guiclass="TestBeanGUI" testclass="ConstantThroughputTimer" testname="恒定吞吐量定时器 - 1000 TPS" enabled="true">
-          <intProp name="calcMode">0</intProp>
+          <intProp name="calcMode">3</intProp>
           <doubleProp>
             <name>throughput</name>
             <value>60000.0</value>
@@ -224,8 +224,8 @@
         <hashTree>
           <!-- 响应断言 -->
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="响应断言 - 成功" enabled="true">
-            <collectionProp name="Asserion.test_strings">
-              <stringProp name="49586">200</stringProp>
+            <collectionProp name="Assertion.test_strings">
+              <stringProp name="0">200</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message"></stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
@@ -243,7 +243,7 @@
           <boolProp name="LoopController.continue_forever">false</boolProp>
           <intProp name="LoopController.loops">-1</intProp>
         </elementProp>
-        <stringProp name="ThreadGroup.num_threads">500</stringProp>
+        <stringProp name="ThreadGroup.num_threads">${__P(threads_s3,500)}</stringProp>
         <stringProp name="ThreadGroup.ramp_time">${__P(ramp_s3,60)}</stringProp>
         <boolProp name="ThreadGroup.scheduler">true</boolProp>
         <stringProp name="ThreadGroup.duration">${__P(duration_s3,300)}</stringProp>
@@ -253,7 +253,7 @@
       <hashTree>
         <!-- Constant Throughput Timer - 2000 TPS -->
         <ConstantThroughputTimer guiclass="TestBeanGUI" testclass="ConstantThroughputTimer" testname="恒定吞吐量定时器 - 2000 TPS" enabled="true">
-          <intProp name="calcMode">0</intProp>
+          <intProp name="calcMode">3</intProp>
           <doubleProp>
             <name>throughput</name>
             <value>120000.0</value>
@@ -295,9 +295,9 @@
         <hashTree>
           <!-- 响应断言 - 允许 404 因为订单可能不存在 -->
           <ResponseAssertion guiclass="AssertionGui" testclass="ResponseAssertion" testname="响应断言 - 允许404" enabled="true">
-            <collectionProp name="Asserion.test_strings">
-              <stringProp name="49586">200</stringProp>
-              <stringProp name="51512">404</stringProp>
+            <collectionProp name="Assertion.test_strings">
+              <stringProp name="0">200</stringProp>
+              <stringProp name="1">404</stringProp>
             </collectionProp>
             <stringProp name="Assertion.custom_message"></stringProp>
             <stringProp name="Assertion.test_field">Assertion.response_code</stringProp>
