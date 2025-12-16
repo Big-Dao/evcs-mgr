@@ -4,11 +4,23 @@
 param(
     [string]$Scenario = "all",
     [string]$BaseUrl = "http://192.168.20.235:30080",
-    [int]$Duration = 600
+    [int]$Duration = 600,
+    [switch]$NoPrompt
 )
 
 Write-Host "=== EVCS JVM 性能测试 ===" -ForegroundColor Cyan
 Write-Host ""
+
+# 解析 BaseUrl -> HOST/PORT/PROTOCOL（JMX 使用 -JHOST/-JPORT/-JPROTOCOL）
+try {
+    $uri = [System.Uri]$BaseUrl
+    $HostName = $uri.Host
+    $Port = $uri.Port
+    $Protocol = $uri.Scheme
+} catch {
+    Write-Host "❌ 无效的 URL: $BaseUrl" -ForegroundColor Red
+    exit 1
+}
 
 # 检查 JMeter 是否可用
 try {
@@ -57,7 +69,7 @@ if (-not $envReady) {
 }
 
 # 设置测试参数
-$TestPlan = "jvm-tuning-test.jmx"
+$TestPlan = Join-Path $PSScriptRoot "jvm-tuning-test.jmx"
 $ResultsDir = "results"
 $Timestamp = Get-Date -Format "yyyyMMdd-HHmmss"
 $ReportDir = "$ResultsDir/report-$Timestamp"
@@ -72,8 +84,10 @@ Write-Host "报告目录: $ReportDir" -ForegroundColor Gray
 Write-Host ""
 
 # 等待用户确认
-Write-Host "按任意键开始测试，或 Ctrl+C 取消..." -ForegroundColor Yellow
-$null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+if (-not $NoPrompt) {
+    Write-Host "按任意键开始测试，或 Ctrl+C 取消..." -ForegroundColor Yellow
+    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
 
 Write-Host ""
 Write-Host "=== 开始执行测试 ===" -ForegroundColor Cyan
@@ -85,27 +99,51 @@ $JMeterCmd = @(
     "-l", "$ResultsDir/results-$Timestamp.jtl",  # 结果文件
     "-e",  # 生成报告
     "-o", $ReportDir,  # 报告输出目录
-    "-JBASE_URL=$BaseUrl"  # 设置基础 URL
+    "-JBASE_URL=$BaseUrl",  # 保留（兼容旧逻辑/未来扩展）
+    "-JHOST=$HostName",
+    "-JPORT=$Port",
+    "-JPROTOCOL=$Protocol"
 )
 
-# 根据场景禁用其他线程组
+# 根据场景控制各线程组持续时间/爬坡时间（JMX 使用 __P(duration_*/ramp_*)）
+$durationS1 = 1
+$durationS2 = 1
+$durationS3 = 1
+$rampS1 = 1
+$rampS2 = 1
+$rampS3 = 1
+
+$durationS3Default = [int][math]::Max(60, [math]::Round($Duration / 2.0))
+
 switch ($Scenario) {
     "scenario1" {
         Write-Host "仅执行场景1: 订单创建 (500 TPS)" -ForegroundColor Yellow
-        $JMeterCmd += "-Jscenario2.enabled=false", "-Jscenario3.enabled=false"
+        $durationS1 = $Duration
+        $rampS1 = [int][math]::Max(1, [math]::Min(60, [math]::Round($Duration / 6.0)))
     }
     "scenario2" {
         Write-Host "仅执行场景2: 订单查询 (1000 TPS)" -ForegroundColor Yellow
-        $JMeterCmd += "-Jscenario1.enabled=false", "-Jscenario3.enabled=false"
+        $durationS2 = $Duration
+        $rampS2 = [int][math]::Max(1, [math]::Min(60, [math]::Round($Duration / 6.0)))
     }
     "scenario3" {
         Write-Host "仅执行场景3: 状态更新 (2000 TPS)" -ForegroundColor Yellow
-        $JMeterCmd += "-Jscenario1.enabled=false", "-Jscenario2.enabled=false"
+        $durationS3 = $Duration
+        $rampS3 = [int][math]::Max(1, [math]::Min(60, [math]::Round($Duration / 6.0)))
     }
     default {
         Write-Host "执行全部场景" -ForegroundColor Yellow
+        $durationS1 = $Duration
+        $durationS2 = $Duration
+        $durationS3 = $durationS3Default
+        $rampS1 = 60
+        $rampS2 = 60
+        $rampS3 = 60
     }
 }
+
+$JMeterCmd += "-Jduration_s1=$durationS1", "-Jduration_s2=$durationS2", "-Jduration_s3=$durationS3"
+$JMeterCmd += "-Jramp_s1=$rampS1", "-Jramp_s2=$rampS2", "-Jramp_s3=$rampS3"
 
 Write-Host ""
 Write-Host "执行命令: jmeter $($JMeterCmd -join ' ')" -ForegroundColor Gray
@@ -128,8 +166,13 @@ Write-Host ""
 # 自动打开报告
 $ReportPath = Resolve-Path "$ReportDir/index.html" -ErrorAction SilentlyContinue
 if ($ReportPath) {
-    Write-Host "正在打开 HTML 报告..." -ForegroundColor Yellow
-    Start-Process $ReportPath
+    if ($IsWindows) {
+        Write-Host "正在打开 HTML 报告..." -ForegroundColor Yellow
+        Start-Process $ReportPath
+    } else {
+        Write-Host "HTML 报告已生成: $ReportPath" -ForegroundColor Gray
+        Write-Host "（Linux/WSL 环境不自动打开浏览器）" -ForegroundColor Gray
+    }
 } else {
     Write-Host "⚠️  报告生成失败，请检查测试日志" -ForegroundColor Yellow
 }

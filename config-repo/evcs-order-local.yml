@@ -87,6 +87,8 @@ evcs:
     default-tenant-id: 1
 
 eureka:
+  instance:
+    prefer-ip-address: true
   client:
     service-url:
       defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}

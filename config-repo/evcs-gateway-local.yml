@@ -84,7 +84,7 @@ spring:
         
         # 订单服务路由
         - id: evcs-order
-          uri: http://10.43.99.52:8083
+          uri: lb://EVCS-ORDER
           predicates:
             - Path=/api/order/**
           filters:
@@ -92,7 +92,7 @@ spring:
         
         # 计费方案路由（属于order服务）
         - id: evcs-billing
-          uri: http://10.43.99.52:8083
+          uri: lb://EVCS-ORDER
           predicates:
             - Path=/api/billing/**
           filters:
@@ -112,7 +112,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://eureka:8761/eureka/
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE:http://10.43.227.140:8761/eureka/}
 
 logging:
   level:
@@ -124,4 +124,8 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,prometheus
+
+  endpoint:
+    prometheus:
+      enabled: true

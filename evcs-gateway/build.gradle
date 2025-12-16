@@ -23,6 +23,7 @@ dependencies {
 
     // 监控
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // 工具类
     implementation 'org.apache.commons:commons-lang3:3.14.0'

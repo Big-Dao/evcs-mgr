@@ -192,3 +192,13 @@ hs_err_pid*.log
 
 # Personal local notes (keep out of repo)
 local-notes/
+
+# Performance tests / JMeter reports (do not commit)
+performance-tests/results/
+results/
+**/*.jtl
+**/*.jmeter.log
+**/jmeter.log
+**/report-*/
+**/aggregate-report.csv
+**/response-time-graph.csv

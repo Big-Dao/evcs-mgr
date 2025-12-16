@@ -15,10 +15,33 @@ spec:
     spec:
       nodeSelector:
         role: core
+      initContainers:
+      - name: wait-config-server
+        image: busybox:1.36
+        command:
+        - sh
+        - -c
+        - |
+          i=0
+          while true; do
+            i=$((i+1))
+            wget -q --spider http://evcs-config:8888/ && exit 0
+            rc=$?
+            # 4: Network failure (e.g. connection refused/timeout). Other codes mean the server is reachable.
+            if [ "$rc" -ne 4 ]; then
+              exit 0
+            fi
+            if [ "$i" -ge 60 ]; then
+              echo "config-server not reachable after 120s" >&2
+              exit 1
+            fi
+            echo "waiting for config-server (attempt ${i}/60)..."
+            sleep 2
+          done
       containers:
       - name: gateway
-        image: evcs/gateway:dev
-        imagePullPolicy: IfNotPresent
+        image: 192.168.20.235:5000/evcs/gateway:dev
+        imagePullPolicy: Always
         ports:
         - containerPort: 8080
         envFrom:
