@@ -1,0 +1,348 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: auth-service
+        image: evcs/auth-service:dev
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: evcs-common-config
+        - secretRef:
+            name: evcs-secrets
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+        resources:
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-auth
+  namespace: evcs
+spec:
+  selector:
+    app: auth-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tenant-service
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tenant-service
+  template:
+    metadata:
+      labels:
+        app: tenant-service
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: tenant-service
+        image: evcs/tenant-service:dev
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: evcs-common-config
+        - secretRef:
+            name: evcs-secrets
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+        resources:
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-tenant
+  namespace: evcs
+spec:
+  selector:
+    app: tenant-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: station-service
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: station-service
+  template:
+    metadata:
+      labels:
+        app: station-service
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: station-service
+        image: evcs/station-service:dev
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: evcs-common-config
+        - secretRef:
+            name: evcs-secrets
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+        resources:
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-station
+  namespace: evcs
+spec:
+  selector:
+    app: station-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-service
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: order-service
+  template:
+    metadata:
+      labels:
+        app: order-service
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: order-service
+        image: evcs/order-service:dev
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: evcs-common-config
+        - secretRef:
+            name: evcs-secrets
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+        resources:
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-order
+  namespace: evcs
+spec:
+  selector:
+    app: order-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payment-service
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: payment-service
+  template:
+    metadata:
+      labels:
+        app: payment-service
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: payment-service
+        image: evcs/payment-service:dev
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: evcs-common-config
+        - secretRef:
+            name: evcs-secrets
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+        resources:
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-payment
+  namespace: evcs
+spec:
+  selector:
+    app: payment-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: protocol-service
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: protocol-service
+  template:
+    metadata:
+      labels:
+        app: protocol-service
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: protocol-service
+        image: evcs/protocol-service:dev
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: evcs-common-config
+        - secretRef:
+            name: evcs-secrets
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+        resources:
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-protocol
+  namespace: evcs
+spec:
+  selector:
+    app: protocol-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: monitoring-service
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: monitoring-service
+  template:
+    metadata:
+      labels:
+        app: monitoring-service
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: monitoring-service
+        image: evcs/monitoring-service:dev
+        imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: evcs-common-config
+        - secretRef:
+            name: evcs-secrets
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+        resources:
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-monitoring
+  namespace: evcs
+spec:
+  selector:
+    app: monitoring-service
+  ports:
+  - port: 8080
+    targetPort: 8080

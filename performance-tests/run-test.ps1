@@ -3,7 +3,7 @@
 
 param(
     [string]$Scenario = "all",
-    [string]$BaseUrl = "http://localhost:8080",
+    [string]$BaseUrl = "http://192.168.20.235:30080",
     [int]$Duration = 600
 )
 
@@ -19,23 +19,41 @@ try {
     exit 1
 }
 
-# 检查 Docker 服务是否运行
+# 检查环境状态 (Docker 或 K8s)
 Write-Host ""
-Write-Host "检查 Docker 服务..." -ForegroundColor Yellow
-try {
-    $dockerStatus = docker ps --format "{{.Names}}" 2>&1 | Select-String "evcs-"
-    if ($dockerStatus) {
-        Write-Host "✅ Docker 服务运行中" -ForegroundColor Green
-        Write-Host "运行的服务:" -ForegroundColor Gray
-        docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | Select-String "evcs-"
-    } else {
-        Write-Host "⚠️  未检测到 EVCS 服务，请先启动 Docker 容器" -ForegroundColor Yellow
-        Write-Host "执行: docker-compose up -d" -ForegroundColor Gray
-        exit 1
+Write-Host "检查环境状态..." -ForegroundColor Yellow
+
+$envReady = $false
+
+# 1. 尝试检查 K8s
+if (Get-Command kubectl -ErrorAction SilentlyContinue) {
+    $k8sPods = kubectl get pods -n evcs --field-selector=status.phase=Running 2>&1
+    if ($LASTEXITCODE -eq 0 -and ($k8sPods | Select-String "evcs-")) {
+        Write-Host "✅ K8s 环境检测到运行中的 Pod" -ForegroundColor Green
+        $envReady = $true
     }
-} catch {
-    Write-Host "❌ Docker 未运行，请先启动 Docker Desktop" -ForegroundColor Red
-    exit 1
+}
+
+# 2. 如果 K8s 未就绪，检查 Docker
+if (-not $envReady) {
+    try {
+        $dockerStatus = docker ps --format "{{.Names}}" 2>&1 | Select-String "evcs-"
+        if ($dockerStatus) {
+            Write-Host "✅ Docker 环境检测到运行中的容器" -ForegroundColor Green
+            $envReady = $true
+        }
+    } catch {
+        # Docker 可能未安装或未运行
+    }
+}
+
+if (-not $envReady) {
+    Write-Host "⚠️  未检测到运行中的 EVCS 服务 (Docker 或 K8s)" -ForegroundColor Yellow
+    Write-Host "请确保环境已启动: " -ForegroundColor Gray
+    Write-Host "  - K8s: ./k8s/deploy.sh" -ForegroundColor Gray
+    Write-Host "  - Docker: docker-compose up -d" -ForegroundColor Gray
+    # 不强制退出，允许用户尝试连接远程环境
+    Write-Host "将尝试连接目标地址: $BaseUrl" -ForegroundColor Yellow
 }
 
 # 设置测试参数

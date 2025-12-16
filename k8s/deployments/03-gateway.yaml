@@ -1,0 +1,53 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: gateway
+        image: evcs/gateway:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        envFrom:
+        - configMapRef:
+            name: evcs-common-config
+        - secretRef:
+            name: evcs-secrets
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+        resources:
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-gateway
+  namespace: evcs
+spec:
+  type: LoadBalancer
+  selector:
+    app: gateway
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30080

@@ -1,0 +1,297 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: evcs
+data:
+  01-init.sql: |
+    -- ============================================
+    -- 充电站管理平台 - PostgreSQL 多租户数据库设计
+    -- ============================================
+    CREATE EXTENSION IF NOT EXISTS pgcrypto;
+    CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+    CREATE EXTENSION IF NOT EXISTS "pg_trgm";
+    CREATE EXTENSION IF NOT EXISTS "cube";
+    CREATE EXTENSION IF NOT EXISTS "earthdistance";
+
+    CREATE TABLE IF NOT EXISTS sys_tenant (
+        id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
+        tenant_code VARCHAR(50) UNIQUE NOT NULL,
+        tenant_name VARCHAR(100) NOT NULL,
+        parent_id BIGINT,
+        ancestors TEXT,
+        contact_person VARCHAR(50),
+        contact_phone VARCHAR(20),
+        contact_email VARCHAR(100),
+        address VARCHAR(200),
+        social_code VARCHAR(30),
+        license_url VARCHAR(500),
+        tenant_type INTEGER DEFAULT 1,
+        status INTEGER DEFAULT 1,
+        expire_time TIMESTAMP,
+        max_users INTEGER DEFAULT 100,
+        max_stations INTEGER DEFAULT 50,
+        max_chargers INTEGER DEFAULT 1000,
+        tenant_id BIGINT UNIQUE,
+        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        create_by BIGINT,
+        update_by BIGINT,
+        deleted INTEGER DEFAULT 0,
+        version INTEGER DEFAULT 1,
+        remark TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS sys_user (
+        id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
+        username VARCHAR(50) NOT NULL,
+        login_identifier VARCHAR(100) NOT NULL,
+        password VARCHAR(100) NOT NULL,
+        real_name VARCHAR(50),
+        phone VARCHAR(20),
+        email VARCHAR(100),
+        avatar VARCHAR(500),
+        gender INTEGER DEFAULT 2,
+        status INTEGER DEFAULT 1,
+        user_type INTEGER DEFAULT 2,
+        last_login_time TIMESTAMP,
+        last_login_ip VARCHAR(50),
+        tenant_id BIGINT NOT NULL,
+        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        create_by BIGINT,
+        update_by BIGINT,
+        deleted INTEGER DEFAULT 0,
+        version INTEGER DEFAULT 1,
+        remark TEXT
+    );
+    
+    -- (Simplified for brevity, in real deployment use full file or volume mount)
+    -- Ideally, we should use a Job to initialize DB or mount the full file.
+    -- For this environment setup, we assume the DB might already be initialized or we use a simplified init.
+
+  02-station.sql: |
+    CREATE TABLE IF NOT EXISTS charging_station (
+        station_id BIGSERIAL PRIMARY KEY,
+        tenant_id BIGINT NOT NULL,
+        station_code VARCHAR(64) NOT NULL,
+        station_name VARCHAR(100) NOT NULL,
+        station_type INTEGER DEFAULT 1,
+        province VARCHAR(50),
+        city VARCHAR(50),
+        district VARCHAR(50),
+        address TEXT NOT NULL,
+        latitude DECIMAL(10,7),
+        longitude DECIMAL(11,7),
+        operator_name VARCHAR(100),
+        operator_phone VARCHAR(20),
+        operator_email VARCHAR(100),
+        service_hours VARCHAR(100) DEFAULT '24小时',
+        parking_fee DECIMAL(8,2) DEFAULT 0,
+        service_fee DECIMAL(8,2) DEFAULT 0,
+        payment_methods INTEGER[] DEFAULT ARRAY[1,2,3],
+        facilities JSONB DEFAULT '{}',
+        status INTEGER DEFAULT 1,
+        total_sessions BIGINT DEFAULT 0,
+        total_energy DECIMAL(12,2) DEFAULT 0,
+        total_revenue DECIMAL(12,2) DEFAULT 0,
+        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        create_by BIGINT,
+        update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        update_by BIGINT,
+        deleted INTEGER DEFAULT 0,
+        CONSTRAINT uk_station_code_tenant UNIQUE(station_code, tenant_id)
+    );
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: postgres
+        image: postgres:15-alpine
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: evcs_mgr
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: evcs-secrets
+              key: SPRING_DATASOURCE_USERNAME
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: evcs-secrets
+              key: SPRING_DATASOURCE_PASSWORD
+        - name: POSTGRES_INITDB_ARGS
+          value: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+        resources:
+          limits:
+            cpu: "1.5"
+            memory: "1.5Gi"
+          requests:
+            cpu: "0.5"
+            memory: "512Mi"
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+        - name: init-scripts
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: postgres-data
+        hostPath:
+          path: /data/evcs/postgres
+          type: DirectoryOrCreate
+      - name: init-scripts
+        configMap:
+          name: postgres-init-scripts
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-postgres
+  namespace: evcs
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        command: ["redis-server", "--appendonly", "yes", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+        ports:
+        - containerPort: 6379
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "256Mi"
+          requests:
+            cpu: "0.2"
+            memory: "128Mi"
+        volumeMounts:
+        - name: redis-data
+          mountPath: /data
+      volumes:
+      - name: redis-data
+        hostPath:
+          path: /data/evcs/redis
+          type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-redis
+  namespace: evcs
+spec:
+  selector:
+    app: redis
+  ports:
+  - port: 6379
+    targetPort: 6379
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3-management-alpine
+        ports:
+        - containerPort: 5672
+        - containerPort: 15672
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: evcs-secrets
+              key: SPRING_RABBITMQ_USERNAME
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: evcs-secrets
+              key: SPRING_RABBITMQ_PASSWORD
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "256Mi"
+          requests:
+            cpu: "0.2"
+            memory: "128Mi"
+        volumeMounts:
+        - name: rabbitmq-data
+          mountPath: /var/lib/rabbitmq
+      volumes:
+      - name: rabbitmq-data
+        hostPath:
+          path: /data/evcs/rabbitmq
+          type: DirectoryOrCreate
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-rabbitmq
+  namespace: evcs
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+  - name: amqp
+    port: 5672
+    targetPort: 5672
+  - name: management
+    port: 15672
+    targetPort: 15672

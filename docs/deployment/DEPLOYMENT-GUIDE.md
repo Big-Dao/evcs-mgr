@@ -2,7 +2,7 @@
 
 版本：v1.3｜最后更新：2025-12-05｜维护：DevOps 团队｜状态：活跃
 
-本指南覆盖本地开发、测试与生产环境的统一部署流程。快速体验请参见 `docs/deployment/quick-start.md`。
+本指南覆盖本地开发、测试与生产环境的统一部署流程。快速体验请参见 `docs/deployment/QUICK-START.md`。
 
 ## 概述
 支持从小规模开发到生产环境的多场景部署：核心微服务、基础设施（PostgreSQL/Redis/RabbitMQ）、注册与配置中心。

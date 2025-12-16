@@ -3,6 +3,7 @@ plugins {
     id 'org.springframework.boot' version '3.2.12' apply false
     id 'io.spring.dependency-management' version '1.1.6' apply false
     id 'com.palantir.docker' version '0.35.0' apply false
+    id 'com.google.cloud.tools.jib' version '3.4.4' apply false
     id 'jacoco' // 代码覆盖率
     // id 'checkstyle' // 代码风格检查
     // id 'pmd' // 代码质量检查
@@ -189,4 +190,58 @@ configure(subprojects.findAll { !it.name.endsWith('-common') }) {
         buildArgs(['JAR_FILE': "${bootJar.archiveFileName}"])
         tag 'latest', "${registryHost}/${project.group}/${project.name}:latest"
     }
+}
+
+// K8s 内部测试环境：无需 Docker Daemon 的镜像构建/推送（Jib）
+// 用法示例：
+//   ./gradlew pushK8sImages -Devcs.k8s.registry=192.168.20.235:5000 -Devcs.k8s.tag=dev
+def evcsK8sRegistry = System.getProperty('evcs.k8s.registry') ?: System.getenv('EVCS_K8S_REGISTRY') ?: '192.168.20.235:5000'
+def evcsK8sTag = System.getProperty('evcs.k8s.tag') ?: System.getenv('EVCS_IMAGE_TAG') ?: 'dev'
+
+def evcsK8sImageMap = [
+        'evcs-auth'      : 'evcs/auth-service',
+        'evcs-config'    : 'evcs/config-server',
+        'evcs-eureka'    : 'evcs/eureka',
+        'evcs-gateway'   : 'evcs/gateway',
+        'evcs-monitoring': 'evcs/monitoring-service',
+        'evcs-order'     : 'evcs/order-service',
+        'evcs-payment'   : 'evcs/payment-service',
+        'evcs-protocol'  : 'evcs/protocol-service',
+        'evcs-station'   : 'evcs/station-service',
+        'evcs-tenant'    : 'evcs/tenant-service'
+]
+
+configure(subprojects.findAll { evcsK8sImageMap.containsKey(it.name) }) {
+    apply plugin: 'com.google.cloud.tools.jib'
+
+    def imageName = evcsK8sImageMap[project.name]
+
+    jib {
+        from {
+            // 避免访问 Docker Hub（内部环境可能超时/被拦截），使用镜像加速源
+            image = 'docker.m.daocloud.io/library/eclipse-temurin:21-jre-alpine'
+        }
+        to {
+            image = "${evcsK8sRegistry}/${imageName}:${evcsK8sTag}"
+        }
+        allowInsecureRegistries = true
+    }
+}
+
+tasks.register('pushK8sImages') {
+    group = 'distribution'
+    description = 'Build and push service images to the K8s private registry via Jib (no local Docker required).'
+
+    dependsOn(
+            ':evcs-auth:jib',
+            ':evcs-config:jib',
+            ':evcs-eureka:jib',
+            ':evcs-gateway:jib',
+            ':evcs-monitoring:jib',
+            ':evcs-order:jib',
+            ':evcs-payment:jib',
+            ':evcs-protocol:jib',
+            ':evcs-station:jib',
+            ':evcs-tenant:jib'
+    )
 }

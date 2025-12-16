@@ -1,0 +1,41 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: evcs-registry
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: evcs-registry
+  template:
+    metadata:
+      labels:
+        app: evcs-registry
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: registry
+        image: docker.m.daocloud.io/library/registry:2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - name: registry
+          containerPort: 5000
+          hostPort: 5000
+          protocol: TCP
+        volumeMounts:
+        - name: registry-data
+          mountPath: /var/lib/registry
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "256Mi"
+          requests:
+            cpu: "0.1"
+            memory: "64Mi"
+      volumes:
+      - name: registry-data
+        hostPath:
+          path: /var/lib/evcs-registry
+          type: DirectoryOrCreate

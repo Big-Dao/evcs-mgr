@@ -1,0 +1,110 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: eureka
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: eureka
+  template:
+    metadata:
+      labels:
+        app: eureka
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: eureka
+        image: evcs/eureka:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8761
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+        resources:
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-eureka
+  namespace: evcs
+spec:
+  selector:
+    app: eureka
+  ports:
+  - port: 8761
+    targetPort: 8761
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-server
+  template:
+    metadata:
+      labels:
+        app: config-server
+    spec:
+      nodeSelector:
+        role: core
+      containers:
+      - name: config-server
+        image: evcs/config-server:dev
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8888
+        env:
+        - name: JAVA_OPTS
+          value: "-Xms64m -Xmx192m -XX:+UseContainerSupport -XX:MaxRAMPercentage=60.0"
+        - name: SPRING_PROFILES_ACTIVE
+          value: "native"
+        - name: SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS
+          value: "file:/config-repo"
+        - name: EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: evcs-common-config
+              key: EUREKA_SERVER_URL
+        resources:
+          limits:
+            cpu: "0.8"
+            memory: "512Mi"
+          requests:
+            cpu: "0.3"
+            memory: "256Mi"
+        volumeMounts:
+        - name: config-repo
+          mountPath: /config-repo
+      volumes:
+      - name: config-repo
+        configMap:
+          name: evcs-config-repo
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: evcs-config
+  namespace: evcs
+spec:
+  selector:
+    app: config-server
+  ports:
+  - port: 8888
+    targetPort: 8888

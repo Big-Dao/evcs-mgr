@@ -59,7 +59,7 @@ x-common-deploy: &java-deploy
 services:
   # PostgreSQL - 优化内存使用
   postgres:
-    image: postgres:17-alpine
+    image: postgres:15-alpine
     container_name: evcs-postgres
     restart: unless-stopped
     environment:
@@ -149,8 +149,6 @@ services:
       RABBITMQ_DEFAULT_PASS: guest
       TZ: Asia/Shanghai
       # RabbitMQ 内存优化
-      RABBITMQ_VM_MEMORY_HIGH_WATERMARK: "0.6"
-      RABBITMQ_DISK_FREE_LIMIT: "1GB"
     ports:
       - "5672:5672"
       - "15672:15672"
@@ -500,4 +498,4 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.20.0.0/16
+        - subnet: 172.25.0.0/16

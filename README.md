@@ -2,7 +2,7 @@
 
 一个基于Spring Boot和微服务架构的电动汽车充电站管理平台，支持多租户、多协议充电桩管理。
 
-> 🚀 **[快速启动指南](docs/deployment/QUICK-START.md)** ⭐ | 📚 **[统一部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)** | [AI编程助手规范](docs/development/AI-ASSISTANTS-INDEX.md)** | [快速文档指南](docs/overview/QUICK-DOCUMENTATION-GUIDE.md)** | [服务参考](docs/operations/SERVICES-REFERENCE.md)** | [故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)
+> 🚀 **[快速启动指南](docs/deployment/QUICK-START.md)** ⭐ | 📚 **[统一部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)** | **[AI编程助手规范](docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md)** | **[快速文档指南](docs/overview/QUICK-DOCUMENTATION-GUIDE.md)** | **[服务参考](docs/operations/SERVICES-REFERENCE.md)** | **[故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)**
 
 ## 🎯 项目状态
 
@@ -135,18 +135,18 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 - 🔄 **缓存**: localhost:6379
 - 🐰 **消息队列**: http://localhost:15672 (guest/guest)
 
-📚 **完整部署指南**: [Docker部署指南](docs/03-deployment/docker-deployment.md)
+📚 **完整部署指南**: [统一部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)
 
 ### 本地开发
 
-**开发环境搭建**: 请参考 [开发环境搭建指南](docs/02-development/setup.md)（待创建）
+**开发环境搭建**: 请参考 [开发者指南](docs/development/DEVELOPER-GUIDE.md)
 **前端开发**: [前端部署指南](evcs-admin/DEPLOYMENT.md)
 
 ## 📋 开发规划
 
 📚 **规划文档**: 
 - 🎯 **[下一步行动计划](docs/overview/NEXT-PLAN.md)** ⭐ - 最新规划（2025-12-07）
-- 📋 **[TODO项跟踪清单](docs/overview/TODO-ITEMS-TRACKING.md)** - 31个TODO项详细清单
+- 📋 **[TODO项跟踪清单](docs/overview/TODO-ITEMS-TRACKING.md)** - 持续更新
 - ⚡ **[规划快速参考](docs/overview/PLANNING-QUICK-REFERENCE.md)** - 快速查看
 - 📚 **[发展路线图](docs/overview/NEXT-STEP-ACTION-PLAN.md)** - 历史规划（Week 4-8）
 - 📖 **[产品需求](docs/architecture/requirements.md)** - 产品需求文档
@@ -217,10 +217,10 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ## 🛠️ 部署指南
 
 ### 快速部署
-- **Docker 部署**: [Docker部署指南](docs/03-deployment/docker-deployment.md) ⭐
+- **Docker 部署**: [统一部署指南](docs/deployment/DEPLOYMENT-GUIDE.md) ⭐
 
 ### 生产环境部署
-详见：[部署指南](docs/03-deployment/docker-deployment.md)
+详见：[部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)
 1. 数据库配置与优化
 2. Redis 集群配置
 3. RabbitMQ 集群配置

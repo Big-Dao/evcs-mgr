@@ -2,16 +2,32 @@
 # 用途: 验证环境配置是否正确，不会对系统造成压力
 
 param(
-    [string]$BaseUrl = "http://localhost:8080"
+    [string]$BaseUrl = "http://192.168.20.235:30080"
 )
 
 Write-Host "=== JMeter 快速验证测试 ===" -ForegroundColor Cyan
+Write-Host "Target: $BaseUrl" -ForegroundColor Gray
 Write-Host ""
+
+# 解析 URL
+try {
+    $uri = [System.Uri]$BaseUrl
+    $HostName = $uri.Host
+    $Port = $uri.Port
+    $Protocol = $uri.Scheme
+} catch {
+    Write-Host "❌ 无效的 URL: $BaseUrl" -ForegroundColor Red
+    exit 1
+}
 
 # 创建临时测试计划
 $TempTestPlan = "quick-verify-test.jmx"
 
-$QuickTestContent = @'
+# 确保结果目录存在，并清理旧的结果文件（避免历史数据影响统计）
+New-Item -ItemType Directory -Force -Path "results" | Out-Null
+Remove-Item -Path "results/quick-verify.jtl" -ErrorAction SilentlyContinue
+
+$QuickTestContent = @"
 <?xml version="1.0" encoding="UTF-8"?>
 <jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
   <hashTree>
@@ -22,22 +38,23 @@ $QuickTestContent = @'
         <collectionProp name="Arguments.arguments">
           <elementProp name="BASE_URL" elementType="Argument">
             <stringProp name="Argument.name">BASE_URL</stringProp>
-            <stringProp name="Argument.value">http://localhost:8080</stringProp>
+            <stringProp name="Argument.value">$BaseUrl</stringProp>
           </elementProp>
         </collectionProp>
       </elementProp>
     </TestPlan>
     <hashTree>
       <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP默认配置" enabled="true">
-        <stringProp name="HTTPSampler.domain">localhost</stringProp>
-        <stringProp name="HTTPSampler.port">8080</stringProp>
-        <stringProp name="HTTPSampler.protocol">http</stringProp>
+        <stringProp name="HTTPSampler.domain">$HostName</stringProp>
+        <stringProp name="HTTPSampler.port">$Port</stringProp>
+        <stringProp name="HTTPSampler.protocol">$Protocol</stringProp>
         <stringProp name="HTTPSampler.connect_timeout">5000</stringProp>
         <stringProp name="HTTPSampler.response_timeout">10000</stringProp>
       </ConfigTestElement>
       <hashTree/>
       
       <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="HTTP头管理" enabled="true">
+
         <collectionProp name="HeaderManager.headers">
           <elementProp name="" elementType="Header">
             <stringProp name="Header.name">Content-Type</stringProp>
@@ -62,22 +79,11 @@ $QuickTestContent = @'
         <boolProp name="ThreadGroup.scheduler">false</boolProp>
       </ThreadGroup>
       <hashTree>
-        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET /orders/page" enabled="true">
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="GET /actuator/health" enabled="true">
           <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
-            <collectionProp name="Arguments.arguments">
-              <elementProp name="page" elementType="HTTPArgument">
-                <stringProp name="Argument.name">page</stringProp>
-                <stringProp name="Argument.value">1</stringProp>
-                <boolProp name="HTTPArgument.use_equals">true</boolProp>
-              </elementProp>
-              <elementProp name="size" elementType="HTTPArgument">
-                <stringProp name="Argument.name">size</stringProp>
-                <stringProp name="Argument.value">10</stringProp>
-                <boolProp name="HTTPArgument.use_equals">true</boolProp>
-              </elementProp>
-            </collectionProp>
+            <collectionProp name="Arguments.arguments"/>
           </elementProp>
-          <stringProp name="HTTPSampler.path">/orders/page</stringProp>
+          <stringProp name="HTTPSampler.path">/actuator/health</stringProp>
           <stringProp name="HTTPSampler.method">GET</stringProp>
           <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
         </HTTPSamplerProxy>
@@ -104,7 +110,7 @@ $QuickTestContent = @'
     </hashTree>
   </hashTree>
 </jmeterTestPlan>
-'@
+"@
 
 # 保存临时测试计划
 $QuickTestContent | Out-File -FilePath $TempTestPlan -Encoding UTF8
@@ -121,9 +127,13 @@ Write-Host ""
 
 # 分析结果
 if (Test-Path "results/quick-verify.jtl") {
-    $Results = Get-Content "results/quick-verify.jtl" | Select-Object -Skip 1
-    $TotalRequests = $Results.Count
-    $SuccessRequests = ($Results | Where-Object { $_ -match ",200," }).Count
+  # JTL 当前默认为 CSV 风格（不保证 responseMessage 不含逗号），这里仅依赖第 4 列 responseCode
+  $Results = Get-Content "results/quick-verify.jtl" | Where-Object { $_ -match '^\d+,' }
+  $TotalRequests = $Results.Count
+  $SuccessRequests = ($Results | Where-Object {
+    $parts = $_ -split ','
+    $parts.Length -ge 4 -and $parts[3] -eq '200'
+  }).Count
     
     Write-Host "总请求数: $TotalRequests" -ForegroundColor Gray
     Write-Host "成功请求: $SuccessRequests" -ForegroundColor Green
@@ -137,9 +147,9 @@ if (Test-Path "results/quick-verify.jtl") {
     } else {
         Write-Host ""
         Write-Host "⚠️  环境验证失败，请检查:" -ForegroundColor Yellow
-        Write-Host "1. Docker 服务是否运行" -ForegroundColor Gray
-        Write-Host "2. EVCS 服务是否启动完成" -ForegroundColor Gray
-        Write-Host "3. 端口 8080 是否可访问" -ForegroundColor Gray
+      Write-Host "1. 网关 /actuator/health 是否返回 200" -ForegroundColor Gray
+      Write-Host "2. K8s Pod 是否 Running/Ready" -ForegroundColor Gray
+      Write-Host "3. NodePort/LoadBalancer 地址是否可达" -ForegroundColor Gray
     }
 }
 

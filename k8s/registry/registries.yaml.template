@@ -1,0 +1,12 @@
+# /etc/rancher/k3s/registries.yaml
+# Configure k3s/containerd to allow pulling images from the private registry.
+
+mirrors:
+  "192.168.20.235:5000":
+    endpoint:
+      - "http://192.168.20.235:5000"
+
+configs:
+  "192.168.20.235:5000":
+    tls:
+      insecure_skip_verify: true
