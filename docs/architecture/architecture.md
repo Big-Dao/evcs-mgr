@@ -191,6 +191,15 @@ public void handlePaymentEvent(PaymentEvent event) {
 
 ## 🔒 多租户架构
 
+### 3.0 多层级多租户（分级治理口径）
+
+除 `tenant_id` 隔离外，EVCS 还需要支持“租户分级管理”（集团/区域/子公司等层级）。
+
+- 分级模型与管理规则（L0/L1/L2+、权限收敛、生命周期联动、跨层访问与审计）以需求口径为准：见 [docs/architecture/requirements.md](requirements.md)
+- 异步/消息中的租户上下文传播要求以 RFC 为准：见 [docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md](TENANT-CONTEXT-ASYNC-RFC.md)
+
+本架构文档在此只强调实现约束：跨层访问必须显式声明范围、默认只读并强制审计；跨层写入默认禁止。
+
 ### 3.1 四层数据隔离机制
 
 ```mermaid

@@ -7,6 +7,12 @@
 
 ## 📊 统计概览
 
+> 说明：本文件仅跟踪“代码中的 TODO 注释”对应的工程工作项。
+>
+> 多层级多租户等“产品/交付类需求”不以 TODO 注释作为权威追踪方式，统一以需求与计划文档为准：
+> - 需求边界：[docs/architecture/requirements.md](../architecture/requirements.md)
+> - 现行计划：[docs/overview/NEXT-PLAN.md](NEXT-PLAN.md)
+
 | 模块 | TODO数量 | 优先级 | 预计工时 |
 |------|---------|--------|---------|
 | evcs-payment | 17个 | P0/P2 | 0天 (已完成) |
