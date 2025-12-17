@@ -17,8 +17,8 @@ spec:
         role: core
       containers:
       - name: auth-service
-        image: evcs/auth-service:dev
-        imagePullPolicy: IfNotPresent
+        image: ${EVCS_K8S_REGISTRY}/evcs/auth-service:${EVCS_IMAGE_TAG}
+        imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: evcs-common-config
@@ -44,8 +44,8 @@ spec:
   selector:
     app: auth-service
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8081
+    targetPort: 8081
 
 ---
 apiVersion: apps/v1
@@ -67,8 +67,8 @@ spec:
         role: core
       containers:
       - name: tenant-service
-        image: evcs/tenant-service:dev
-        imagePullPolicy: IfNotPresent
+        image: ${EVCS_K8S_REGISTRY}/evcs/tenant-service:${EVCS_IMAGE_TAG}
+        imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: evcs-common-config
@@ -117,8 +117,8 @@ spec:
         role: core
       containers:
       - name: station-service
-        image: evcs/station-service:dev
-        imagePullPolicy: IfNotPresent
+        image: ${EVCS_K8S_REGISTRY}/evcs/station-service:${EVCS_IMAGE_TAG}
+        imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: evcs-common-config
@@ -167,8 +167,8 @@ spec:
         role: core
       containers:
       - name: order-service
-        image: evcs/order-service:dev
-        imagePullPolicy: IfNotPresent
+        image: ${EVCS_K8S_REGISTRY}/evcs/order-service:${EVCS_IMAGE_TAG}
+        imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: evcs-common-config
@@ -225,7 +225,7 @@ spec:
           i=0
           while true; do
             i=$((i+1))
-            wget -q --spider http://evcs-config:8888/ && exit 0
+            wget -q --spider http://${EVCS_CONFIG_IP}:8888/ && exit 0
             rc=$?
             # 4: Network failure (e.g. connection refused/timeout). Other codes mean the server is reachable.
             if [ "$rc" -ne 4 ]; then
@@ -240,7 +240,7 @@ spec:
           done
       containers:
       - name: payment-service
-        image: 192.168.20.235:5000/evcs/payment-service:dev
+        image: ${EVCS_K8S_REGISTRY}/evcs/payment-service:${EVCS_IMAGE_TAG}
         imagePullPolicy: Always
         envFrom:
         - configMapRef:
@@ -290,8 +290,8 @@ spec:
         role: core
       containers:
       - name: protocol-service
-        image: evcs/protocol-service:dev
-        imagePullPolicy: IfNotPresent
+        image: ${EVCS_K8S_REGISTRY}/evcs/protocol-service:${EVCS_IMAGE_TAG}
+        imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: evcs-common-config
@@ -340,8 +340,8 @@ spec:
         role: core
       containers:
       - name: monitoring-service
-        image: evcs/monitoring-service:dev
-        imagePullPolicy: IfNotPresent
+        image: ${EVCS_K8S_REGISTRY}/evcs/monitoring-service:${EVCS_IMAGE_TAG}
+        imagePullPolicy: Always
         envFrom:
         - configMapRef:
             name: evcs-common-config

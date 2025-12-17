@@ -17,8 +17,8 @@ spec:
         role: core
       containers:
       - name: eureka
-        image: evcs/eureka:dev
-        imagePullPolicy: IfNotPresent
+        image: ${EVCS_K8S_REGISTRY}/evcs/eureka:${EVCS_IMAGE_TAG}
+        imagePullPolicy: Always
         ports:
         - containerPort: 8761
         env:
@@ -65,8 +65,8 @@ spec:
         role: core
       containers:
       - name: config-server
-        image: evcs/config-server:dev
-        imagePullPolicy: IfNotPresent
+        image: ${EVCS_K8S_REGISTRY}/evcs/config-server:${EVCS_IMAGE_TAG}
+        imagePullPolicy: Always
         ports:
         - containerPort: 8888
         env:

@@ -16,13 +16,6 @@ data:
   # Flyway：本测试环境 DB 可能已被初始化脚本写入少量表结构，开启 baseline 避免启动失败。
   SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
   SPRING_FLYWAY_BASELINE_VERSION: "0"
-  CONFIG_SERVER_URL: "http://evcs-config:8888"
-  SPRING_CONFIG_IMPORT: "optional:configserver:http://evcs-config:8888"
-  EUREKA_SERVER_URL: "http://evcs-eureka:8761/eureka/"
-  EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://evcs-eureka:8761/eureka/"
-  SPRING_DATASOURCE_URL: "jdbc:postgresql://evcs-postgres:5432/evcs_mgr"
-  SPRING_DATA_REDIS_HOST: "evcs-redis"
-  SPRING_RABBITMQ_HOST: "evcs-rabbitmq"
   SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "20"
   SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "5"
   TZ: "Asia/Shanghai"

@@ -24,7 +24,11 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.14.0'
 
     // API Documentation
-    implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
+    // Boot 3 / Jakarta 兼容：避免引入 springdoc 1.x（与 Boot 3 不兼容）导致启动失败
+    implementation("com.github.xiaoymin:knife4j-openapi3-jakarta-spring-boot-starter:${knife4jVersion}")
+
+    // API Documentation: SpringDoc（Boot 3 兼容），提供 Knife4j 所需的 SpringDocConfigProperties
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
 
     // Test dependencies
     testImplementation 'org.springframework.boot:spring-boot-starter-test'

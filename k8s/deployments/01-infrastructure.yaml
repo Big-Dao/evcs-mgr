@@ -295,3 +295,40 @@ spec:
   - name: management
     port: 15672
     targetPort: 15672
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: registry
+  namespace: evcs
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: registry
+  template:
+    metadata:
+      labels:
+        app: registry
+    spec:
+      nodeSelector:
+        role: core
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+      - name: registry
+        image: registry:2
+        ports:
+        - containerPort: 5000
+        env:
+        - name: REGISTRY_HTTP_ADDR
+          value: "0.0.0.0:5000"
+        volumeMounts:
+        - name: registry-data
+          mountPath: /var/lib/registry
+      volumes:
+      - name: registry-data
+        hostPath:
+          path: /data/evcs/registry
+          type: DirectoryOrCreate
