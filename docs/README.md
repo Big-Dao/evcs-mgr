@@ -1,34 +1,24 @@
-# ÎÄµµµ¼º½ÖĞĞÄ
-> °æ±¾: v1.0 | ¸üĞÂÊ±¼ä: 2025-12-05 | Î¬»¤Õß: ¼¼Êõ¸ºÔğÈË
+# docs æ–‡æ¡£ä¸­å¿ƒï¼ˆå…¥å£ï¼‰
 
-»¶Ó­À´µ½ EVCS Manager ÎÄµµÖĞĞÄ¡£Çë°´ÕÕÏÂÊöÈë¿Ú¿ìËÙÕÒµ½ËùĞèĞÅÏ¢¡£
+> ä¸€å¥è¯è¯´æ˜ï¼šæœ¬ç›®å½•å­˜æ”¾é¡¹ç›®æ–‡æ¡£ï¼›ç»Ÿä¸€å¯¼èˆªå…¥å£ä»¥ [DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md) ä¸ºå‡†ã€‚
 
-## ¸ÅÀÀÓë¹æ·¶£¨SSOT£©
-- [docs/overview/PROJECT-CODING-STANDARDS.md](overview/PROJECT-CODING-STANDARDS.md) ¡ª ÏîÄ¿±àÂëÓë¼Ü¹¹¹æ·¶£¨µ¥Ò»À´Ô´£©
-- [docs/overview/README.md](overview/README.md) ¡ª ÏîÄ¿¸ÅÀÀÓëµ¼º½
-- [docs/overview/EXECUTIVE-SUMMARY.md](overview/EXECUTIVE-SUMMARY.md) ¡ª ¹ÜÀí²ãÕªÒª
-- [docs/overview/NEXT-STEP-ACTION-PLAN.md](overview/NEXT-STEP-ACTION-PLAN.md) ¡ª ĞĞ¶¯¼Æ»®£¨PMO£©
+**æœ€åæ›´æ–°**: 2025-12-17  \
+**ç»´æŠ¤è€…**: æŠ€æœ¯è´Ÿè´£äºº / å„é¢†åŸŸç»´æŠ¤å›¢é˜Ÿ  \
+**çŠ¶æ€**: å·²å‘å¸ƒ
 
-## ¿ª·¢Óë²âÊÔ
-- [docs/development/DEVELOPER-GUIDE.md](development/DEVELOPER-GUIDE.md) ¡ª ¿ª·¢ÕßÖ¸ÄÏ
-- [docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md](development/AI-ASSISTANT-UNIFIED-CONFIG.md) ¡ª AI ÖúÊÖÍ³Ò»ÅäÖÃ
-- [docs/testing/TEST-FIX-GUIDE.md](testing/TEST-FIX-GUIDE.md) ¡ª ²âÊÔĞŞ¸´ÓëÁ÷³ÌÖ¸ÄÏ
+---
 
-## ¼Ü¹¹Óë²Î¿¼
-- [docs/architecture/architecture.md](architecture/architecture.md) ¡ª ¼¼Êõ¼Ü¹¹
-- [docs/architecture/api-design.md](architecture/api-design.md) ¡ª API Éè¼Æ
-- [docs/architecture/data-model.md](architecture/data-model.md) ¡ª Êı¾İÄ£ĞÍ
-- [docs/references/API-DOCUMENTATION.md](references/API-DOCUMENTATION.md) ¡ª API ÎÄµµ
+## ç»Ÿä¸€å…¥å£ï¼ˆSSOTï¼‰
 
-## ²¿ÊğÓëÔËÎ¬
-- [docs/deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md) ¡ª ²¿Êğ×ÜÀÀ
-- [docs/deployment/TEST-ENVIRONMENT-GUIDE.md](deployment/TEST-ENVIRONMENT-GUIDE.md) ¡ª ²âÊÔ»·¾³²¿ÊğÖ¸ÄÏ
-- [docs/operations/MONITORING-GUIDE.md](operations/MONITORING-GUIDE.md) ¡ª ¼à¿ØÖ¸ÄÏ
-- [docs/operations/PROJECT-STRUCTURE.md](operations/PROJECT-STRUCTURE.md) ¡ª ÏîÄ¿½á¹¹ËµÃ÷
+- æ–‡æ¡£æ€»ç´¢å¼•ï¼ˆæ¨èä»è¿™é‡Œå¼€å§‹ï¼‰ï¼š[DOCUMENTATION-INDEX.md](DOCUMENTATION-INDEX.md)
 
-## ¹ÊÕÏÅÅ²é
-- [docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md](troubleshooting/ERROR_PREVENTION_CHECKLIST.md) ¡ª ´íÎóÔ¤·À¼ì²éÇåµ¥
-- [docs/troubleshooting/BUGFIX-CHARGER-API.md](troubleshooting/BUGFIX-CHARGER-API.md) ¡ª ³äµç×® API ĞŞ¸´¼ÇÂ¼
+## å¸¸ç”¨å…¥å£
 
-## ¹éµµË÷Òı
-- [docs/archive/documentation-docs-cleanup-2025-12-05/DOCUMENTATION-INDEX.md](archive/documentation-docs-cleanup-2025-12-05/DOCUMENTATION-INDEX.md) ¡ª ÀúÊ·ÎÄµµË÷Òı
+- éƒ¨ç½²ç´¢å¼•ï¼š[deployment/README.md](deployment/README.md)
+- è¿ç»´ç´¢å¼•ï¼š[operations/README.md](operations/README.md)
+- æµ‹è¯•ç´¢å¼•ï¼š[testing/README.md](testing/README.md)
+- å¼€å‘ç´¢å¼•ï¼š[development/README.md](development/README.md)
+
+## å½’æ¡£
+
+å†å²æ–‡æ¡£ä¸è¿›åº¦æŠ¥å‘Šè§ï¼š[archive/README.md](archive/README.md)

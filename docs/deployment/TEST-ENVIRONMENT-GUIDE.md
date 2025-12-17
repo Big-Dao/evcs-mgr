@@ -1,33 +1,133 @@
-# ²âÊÔ»·¾³²¿ÊğÖ¸ÄÏ
-> ×îºó¸üĞÂ: 2025-12-05 | Î¬»¤Õß: ¼¼Êõ¸ºÔğÈË
+# æµ‹è¯•ç¯å¢ƒéƒ¨ç½²æŒ‡å—
 
-±¾Ö¸ÄÏÎªÏÖĞĞ²âÊÔ»·¾³µÄÍ³Ò»Èë¿Ú¡£ÀúÊ· Quickstart Çë²Î¼û `docs/archive/TEST-ENVIRONMENT-QUICKSTART.md`¡£
+> ä¸€å¥è¯è¯´æ˜ï¼šç”¨äº CI/CD è‡ªåŠ¨åŒ–æµ‹è¯•ä¸äººå·¥é›†æˆæµ‹è¯•çš„ Docker Compose æµ‹è¯•ç¯å¢ƒï¼Œå…¥å£ä»¥è„šæœ¬ä¸ºå‡†ã€‚
 
-## »·¾³×¼±¸
-- Java `21`
-- Node.js `>=18`£¨ÈçĞèÇ°¶Ë¹¹½¨£©
-- Docker Óë Docker Compose£¨±¾µØ¼¯³É²âÊÔ£©
-- Gradle Wrapper£ºÊ¹ÓÃÏîÄ¿ÄÚµÄ `./gradlew`
+**æœ€åæ›´æ–°**: 2025-12-17  \
+**ç»´æŠ¤è€…**: DevOps å›¢é˜Ÿ  \
+**çŠ¶æ€**: å·²å‘å¸ƒ
 
-## ¿ìËÙÑéÖ¤
-1. ±¾µØ¹¹½¨£º`./gradlew clean build`
-2. ÔËĞĞºËĞÄ·şÎñ£¨Ê¾Àı£©£º`docker compose -f docker-compose.test.yml up -d`
-3. ½¡¿µ¼ì²é£º·ÃÎÊ¸÷·şÎñµÄ `/actuator/health`
+---
 
-## ÅäÖÃÓëÆ¾¾İ
-- ËùÓĞÃô¸ĞĞÅÏ¢Í¨¹ı»·¾³±äÁ¿»òÅäÖÃ Profile ÏÂ·¢£¬½ûÖ¹Ó²±àÂë¡£
-- Ä¬ÈÏÆ¾¾İ²Î¿¼£º`docs/operations/DEFAULT-CREDENTIALS.md`
+## é€‚ç”¨èŒƒå›´
 
-## ¶à×â»§ÓëÉÏÏÂÎÄ
-- ²âÊÔÖĞÉæ¼°Òì²½»òÏß³Ì³ØÊ±£¬ĞèÏÔÊ½´«µİ×â»§/ÇëÇóID/×·×ÙĞÅÏ¢¡£
-- ÍÆ¼öÊµÏÖ²Î¿¼£º`docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md`
+æœ¬æµ‹è¯•ç¯å¢ƒç”¨äºï¼š
 
-## ³£¼û¹ÊÕÏÅÅ²é
-- ¹¹½¨Ê§°Ü£ºÇåÀí»º´æºóÖØÊÔ `./gradlew clean build`
-- ÒÀÀµÀ­È¡Âı£ºÅäÖÃ¹úÄÚ¾µÏñÔ´»òÊ¹ÓÃÆóÒµÖÆÆ·¿â
-- API ÎÄµµ£º`docs/references/API-DOCUMENTATION.md`
+- åœ¨æœ¬æœº/CI ä¸Šå¿«é€Ÿæ‹‰èµ·â€œåŸºç¡€è®¾æ–½ + å°‘é‡ä¸šåŠ¡æœåŠ¡â€è¿›è¡Œé›†æˆéªŒè¯
+- è¿è¡Œå¥åº·æ£€æŸ¥ä¸å†’çƒŸæµ‹è¯•
 
-## ¹ØÁªÎÄµµ
-- ²¿Êğ×ÜÀÀ£º`docs/deployment/DEPLOYMENT-GUIDE.md`
-- ÀúÊ· Quickstart£º`docs/archive/TEST-ENVIRONMENT-QUICKSTART.md`
-- Í³Ò»±àÂë¹æ·¶£º`docs/overview/PROJECT-CODING-STANDARDS.md`
+ä¸é€‚ç”¨ï¼šéœ€è¦å®Œæ•´å¾®æœåŠ¡å½¢æ€ï¼ˆEureka/Config/Gateway + å…¨ä¸šåŠ¡æœåŠ¡ï¼‰æ—¶ï¼Œè¯·ä½¿ç”¨ [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md) ä¸­çš„å®Œæ•´éƒ¨ç½²æ–¹æ¡ˆã€‚
+
+---
+
+## å•ä¸€å…¥å£ï¼ˆSSOTï¼‰
+
+- å¯åŠ¨å…¥å£è„šæœ¬ï¼šscripts/start-test.sh
+- ç¼–æ’æ–‡ä»¶ï¼šdocker-compose.test.yml
+- å¥åº·æ£€æŸ¥è„šæœ¬ï¼šscripts/health-check.sh
+- åœæ­¢æ¸…ç†è„šæœ¬ï¼šscripts/stop-test.sh
+
+è¯´æ˜ï¼šCI å·¥ä½œæµä¹Ÿä½¿ç”¨åŒæ ·çš„è„šæœ¬ä¸ Composeï¼ˆè§ .github/workflows/test-environment.ymlï¼‰ã€‚
+
+---
+
+## ç¯å¢ƒå‡†å¤‡
+
+- Java 21ï¼ˆç”¨äºæ„å»º JARï¼‰
+- Docker + Docker Compose v2ï¼ˆæ¨èä½¿ç”¨ `docker compose`ï¼‰
+- Gradle Wrapperï¼ˆä»“åº“æ ¹ç›®å½•çš„ `./gradlew`ï¼‰
+
+ç«¯å£å ç”¨ï¼ˆé»˜è®¤ï¼‰ï¼š
+
+- PostgreSQLï¼š5432
+- Redisï¼š6379
+- RabbitMQï¼š5672 / 15672
+- Tenant Serviceï¼š8081
+- Station Serviceï¼š8082
+- Adminerï¼š8090
+
+---
+
+## ä¸€é”®å¯åŠ¨ï¼ˆæ¨èï¼‰
+
+åœ¨ä»“åº“æ ¹ç›®å½•æ‰§è¡Œï¼š
+
+```bash
+./scripts/start-test.sh
+```
+
+è„šæœ¬ä¼šï¼š
+
+1) æ„å»ºåº”ç”¨ JARï¼ˆé»˜è®¤ä¼š `./gradlew clean build -x test`ï¼‰
+2) `docker compose -f docker-compose.test.yml down` æ¸…ç†æ—§ç¯å¢ƒ
+3) `docker compose -f docker-compose.test.yml up --build -d` æ‹‰èµ·æµ‹è¯•ç¯å¢ƒ
+
+---
+
+## å¯åŠ¨éªŒè¯
+
+```bash
+./scripts/health-check.sh
+```
+
+å¥åº·æ£€æŸ¥åŒ…å«ï¼š
+
+- å®¹å™¨è¿è¡ŒçŠ¶æ€ï¼ˆpostgres/redis/rabbitmq/tenant/stationï¼‰
+- åŸºç¡€è®¾æ–½è¿é€šæ€§ï¼ˆPostgreSQL/Redis/RabbitMQï¼‰
+- åº”ç”¨å¥åº·ç«¯ç‚¹ï¼š
+
+  - [http://localhost:8081/actuator/health](http://localhost:8081/actuator/health)
+  - [http://localhost:8082/actuator/health](http://localhost:8082/actuator/health)
+
+---
+
+## å¸¸ç”¨æ“ä½œ
+
+æŸ¥çœ‹å®¹å™¨ï¼š
+
+```bash
+docker compose -f docker-compose.test.yml ps
+```
+
+æŸ¥çœ‹æ—¥å¿—ï¼š
+
+```bash
+docker compose -f docker-compose.test.yml logs -f
+docker compose -f docker-compose.test.yml logs -f tenant-service
+docker compose -f docker-compose.test.yml logs -f station-service
+```
+
+åœæ­¢ä¸æ¸…ç†ï¼š
+
+```bash
+./scripts/stop-test.sh
+```
+
+---
+
+## é»˜è®¤å‡­æ®
+
+æµ‹è¯•ç¯å¢ƒçš„é»˜è®¤å‡­æ®è¯·å‚è€ƒ docs/operations/DEFAULT-CREDENTIALS.mdã€‚
+
+æç¤ºï¼šæµ‹è¯•ç¯å¢ƒçš„æ•°æ®åº“/Redis/RabbitMQ å‡­æ®åœ¨ docker-compose.test.yml ä¸­ä»¥ç¯å¢ƒå˜é‡å½¢å¼é…ç½®ï¼Œä¾¿äº CI ä½¿ç”¨ã€‚
+
+---
+
+## å¤šç§Ÿæˆ·ä¸å¼‚æ­¥ï¼ˆæé†’ï¼‰
+
+æµ‹è¯•ç¯å¢ƒæ¶‰åŠæ¶ˆæ¯é˜Ÿåˆ—æˆ–å¼‚æ­¥æ‰§è¡Œæ—¶ï¼Œç§Ÿæˆ·ä¸Šä¸‹æ–‡å¿…é¡»æ˜¾å¼ä¼ æ’­ä¸æ¸…ç†ï¼Œå‚è€ƒï¼š
+
+- docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md
+
+---
+
+## å¸¸è§é—®é¢˜
+
+1) å¯åŠ¨å¤±è´¥æˆ–é•œåƒæ„å»ºå¤±è´¥
+
+- å…ˆæ‰§è¡Œï¼š`./gradlew clean build -x test --no-daemon`
+- å†æ‰§è¡Œï¼š`./scripts/start-test.sh`
+
+1) å¥åº·æ£€æŸ¥å¤±è´¥
+
+- å…ˆçœ‹å®¹å™¨çŠ¶æ€ï¼š`docker compose -f docker-compose.test.yml ps`
+- å†çœ‹æ—¥å¿—ï¼š`docker compose -f docker-compose.test.yml logs --tail=200 tenant-service station-service`

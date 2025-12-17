@@ -19,22 +19,26 @@
 **系统规模**: 281个Java文件 | 12个微服务 | 23个控制器 | 39个服务类 | 37个测试文件
 
 ### 最新完成（2025-12-14）✅
+
 - ✅ **工具链升级**: Gradle 8.11.1, Node.js 20, Spring Boot 3.2.12
 - ✅ **构建优化**: 提升Gradle构建内存至4GB，优化国内镜像配置
 - ✅ **前端修复**: 修正前端依赖版本，确保构建稳定性
 
 ### 历史完成（2025-11-08）✅
+
 - ✅ **资源优化**: 内存占用减少50-67%，CPU需求减少50-67%
 - ✅ **多级配置**: 最小配置(2-4GB)、优化配置(6-8GB)、完整配置(12-16GB)
 - ✅ **智能部署**: 根据系统资源自动选择最佳配置
 - ✅ **监控工具**: 实时资源监控和自动优化脚本
 
 ### 历史完成（2025-11-06）✅
+
 - ✅ **文档体系重构**: 彻底清理重复和冲突文档，建立清晰的文档架构
 - ✅ **配置管理优化**: 统一服务名配置，解决nginx与docker-compose不一致问题
 - ✅ **错误预防机制**: 建立Claude错误记忆库和检查流程
 
 ### 历史完成（2025-11-02）✅
+
 - ✅ **企业级监控基础设施**: 完整的可观测性体系
 - ✅ **JDK 21统一升级**: 现代化技术栈全面升级
 - ✅ **API网关安全加固**: 企业级安全防护体系
@@ -44,6 +48,7 @@
 📚 **详细架构文档**: [技术架构设计](docs/architecture/architecture.md) | [数据模型](docs/architecture/data-model.md) | [API设计](docs/architecture/api-design.md)
 
 ### 完整技术栈概览
+
 - **后端框架**：Spring Boot 3.2.12 + Spring Cloud 2023.0.6
 - **开发语言**：Java 21 (现代LTS版本)
 - **数据库**：PostgreSQL 15 + Redis 7
@@ -56,7 +61,8 @@
 - **前端框架**：Vue 3 + Element Plus
 
 ### 微服务架构
-```
+
+```text
 evcs-mgr/
 ├── evcs-common          # 🔧 公共组件 (JWT、Redis、工具类)
 ├── evcs-gateway         # 🚪 API网关 (安全防护、限流熔断)
@@ -75,67 +81,24 @@ evcs-mgr/
 
 ## 🚀 快速开始
 
-### 🎯 一键启动（推荐）
+部署文档已做“单一入口 + 场景分流”，建议从以下入口进入，避免在 README 与 docs 中重复维护同一套命令：
 
-#### 最小配置 - 2-4GB内存
+- 部署索引（按场景选入口）：[docs/deployment/README.md](docs/deployment/README.md)
+- 本地最少步骤启动：[docs/deployment/QUICK-START.md](docs/deployment/QUICK-START.md)
+- 统一部署指南（本地/测试/生产）：[docs/deployment/DEPLOYMENT-GUIDE.md](docs/deployment/DEPLOYMENT-GUIDE.md)
+
+最小配置启动示例（更多组合见快速启动指南）：
+
 ```bash
-# 快速启动核心服务，适合开发和测试
-docker-compose -f docker-compose.minimal.yml up -d
+docker compose -f docker-compose.minimal.yml up -d
 ```
 
-#### 优化配置 - 6-8GB内存（生产推荐）
+快速验证：
+
 ```bash
-# 启动完整服务栈，资源优化版本
-docker-compose -f docker-compose.optimized.yml up -d
+docker compose ps
+curl http://localhost:8080/actuator/health
 ```
-
-#### 智能部署 - 自动选择配置
-```bash
-# 根据系统资源自动选择最佳配置
-./scripts/deploy/optimized-deploy.sh auto
-```
-
-#### 1. 小规模开发环境
-```bash
-# 启动核心服务：基础设施 + 认证 + 网关
-docker-compose -f docker-compose.core-dev.yml up -d
-
-# 检查服务状态
-docker-compose -f docker-compose.core-dev.yml ps
-
-# 访问服务
-curl http://localhost:8080/api/auth/test
-```
-
-#### 2. 完整生产环境
-```bash
-# 启动所有服务
-docker-compose up -d
-
-# 添加监控服务
-docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
-```
-
-**核心服务访问**：
-- 🚪 **API网关**: http://localhost:8080
-- 🔐 **认证服务**: http://localhost:8081
-- 📡 **服务注册中心**: http://localhost:8761
-- ⚙️ **配置中心**: http://localhost:8888
-
-**扩展服务访问**：
-- ⚡ **充电站服务**: http://localhost:8082
-- 📋 **订单服务**: http://localhost:8083
-- 💳 **支付服务**: http://localhost:8084
-- 🔌 **协议服务**: http://localhost:8085
-- 🏢 **租户服务**: http://localhost:8086
-- 📊 **监控服务**: http://localhost:8087
-
-**基础设施访问**：
-- 🗄️ **数据库**: localhost:5432 (postgres/postgres)
-- 🔄 **缓存**: localhost:6379
-- 🐰 **消息队列**: http://localhost:15672 (guest/guest)
-
-📚 **完整部署指南**: [统一部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)
 
 ### 本地开发
 
@@ -144,7 +107,8 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 
 ## 📋 开发规划
 
-📚 **规划文档**: 
+📚 **规划文档**:
+
 - 🎯 **[下一步行动计划](docs/overview/NEXT-PLAN.md)** ⭐ - 最新规划（2025-12-07）
 - 📋 **[TODO项跟踪清单](docs/overview/TODO-ITEMS-TRACKING.md)** - 持续更新
 - ⚡ **[规划快速参考](docs/overview/PLANNING-QUICK-REFERENCE.md)** - 快速查看
@@ -154,12 +118,14 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ## 🔒 多租户数据隔离架构
 
 ### 隔离层级
+
 1. **数据库层**: PostgreSQL行级数据隔离（tenant_id字段）
 2. **SQL层**: MyBatis Plus自动添加租户条件到所有SQL
 3. **服务层**: AOP切面实现方法级权限控制
 4. **API层**: Spring Security + 自定义注解控制接口访问
 
 ### 核心组件
+
 - `TenantContext`: 线程本地租户上下文管理
 - `TenantInterceptor`: 自动提取和设置租户信息
 - `CustomTenantLineHandler`: SQL自动过滤插件
@@ -169,6 +135,7 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ## 💳 支付集成
 
 ### 核心功能
+
 - **支付宝SDK**: 官方集成，支持扫码支付、APP支付、沙箱环境
 - **微信支付SDK**: Native支付、小程序支付、平台证书校验
 - **退款功能**: 完整退款流程，异步通知处理，状态同步
@@ -178,11 +145,13 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ## 🔌 协议支持
 
 ### OCPP协议
+
 - 支持OCPP 1.6版本
 - WebSocket长连接通信
 - 标准充电流程管理
 
 ### 云快充协议
+
 - 支持国标云快充协议
 - HTTP RESTful API
 - 兼容主流充电桩厂商
@@ -197,15 +166,18 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ## 🧪 测试
 
 **当前测试状态**：
+
 - ✅ **168个测试用例** 全部通过 (100% pass rate)
 - ✅ **测试覆盖率**: 96% (超过80%目标)
 - ✅ **9个模块**: 全部测试通过，零失败
 
 **测试文档**：
+
 - 📖 [测试框架指南](docs/testing/TESTING-FRAMEWORK-GUIDE.md)
 - 📖 [测试指南](docs/testing/TESTING-GUIDE.md)
 
 ### 运行测试
+
 ```bash
 # 运行所有测试
 ./gradlew test --continue
@@ -217,10 +189,13 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 ## 🛠️ 部署指南
 
 ### 快速部署
+
 - **Docker 部署**: [统一部署指南](docs/deployment/DEPLOYMENT-GUIDE.md) ⭐
 
 ### 生产环境部署
+
 详见：[部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)
+
 1. 数据库配置与优化
 2. Redis 集群配置
 3. RabbitMQ 集群配置
@@ -229,34 +204,14 @@ docker-compose -f docker-compose.yml -f docker-compose.monitoring.yml up -d
 
 ## 📚 项目文档
 
-**完整文档导航**：[📚 DOCUMENTATION-INDEX.md](docs/operations/DOCUMENTATION-INDEX.md) ⭐
+文档已收敛为“单一入口 + 场景分流”，完整导航以文档总索引为准：
 
-### 快速开始
-- **项目概述**: [README.md](README.md) ⭐
-- **文档索引**: [DOCUMENTATION-INDEX.md](docs/operations/DOCUMENTATION-INDEX.md) ⭐
-- **产品需求**: [产品需求文档](docs/architecture/requirements.md)
-- **架构设计**: [技术架构设计](docs/architecture/architecture.md)
-
-### 开发文档
-- **🤖 AI编程助手配置**: [统一AI配置](docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md) ⭐
-- **📋 项目编码标准**: [编程规范总览](docs/overview/PROJECT-CODING-STANDARDS.md) ⭐
-- **🔧 API设计规范**: [API设计标准](docs/development/API-DESIGN-STANDARDS.md) ⭐
-- **🗄️ 数据库设计规范**: [数据库设计标准](docs/development/DATABASE-DESIGN-STANDARDS.md) ⭐
-- **🧪 统一测试指南**: [测试框架指南](docs/testing/UNIFIED-TESTING-GUIDE.md) ⭐
-- **📊 代码质量清单**: [代码质量检查](docs/development/CODE-QUALITY-CHECKLIST.md) ⭐
-- **编码规范**: [编码规范](docs/development/coding-standards.md)
-- **开发者指南**: [开发者指南](docs/development/DEVELOPER-GUIDE.md) ⭐
-
-### 部署与运维
-- **🚀 快速启动指南**: [快速启动指南](docs/deployment/QUICK-START.md) ⭐
-- **🚀 统一部署指南**: [Docker部署指南](docs/deployment/DEPLOYMENT-GUIDE.md) ⭐
-- **⚡ 资源优化指南**: [资源优化指南](docs/deployment/RESOURCE-OPTIMIZATION-GUIDE.md) ⭐
-- **🐳 Docker配置指南**: [Docker使用指南](docs/deployment/DOCKER-CONFIGURATION-GUIDE.md) ⭐
-- **运维手册**: [运维手册](docs/operations/user-manual.md)（待创建）
+- [docs/DOCUMENTATION-INDEX.md](docs/DOCUMENTATION-INDEX.md)
 
 ## 🤝 第三方对接
 
 提供标准RESTful API支持：
+
 - 订单数据同步
 - 设备状态推送
 - 用户信息对接
