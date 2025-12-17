@@ -415,8 +415,12 @@ docker run -d -p 9090:9090 \
 # 启动Grafana
 docker run -d -p 3000:3000 grafana/grafana
 
-# 启动ELK Stack（可选）
-docker-compose -f monitoring/elk/docker-compose.yml up -d
+# 启动监控/日志/链路追踪（可选，作为 overlay 叠加到主编排）
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml --profile monitoring up -d
+
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml --profile logging up -d
+
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml --profile tracing up -d
 ```
 
 ### 2. 验证指标收集

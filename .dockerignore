@@ -79,8 +79,8 @@ Dockerfile*
 !Dockerfile
 !evcs-*/Dockerfile
 !docker-compose.yml
-!docker-compose.core-dev.yml
 !docker-compose.monitoring.yml
+!docker-compose.test.yml
 .dockerignore
 
 # Scripts and config (if not needed for build)

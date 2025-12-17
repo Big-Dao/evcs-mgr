@@ -145,13 +145,10 @@ auto_select_config() {
 get_compose_file() {
     local env=$1
     case $env in
-        "minimal")
-            echo "$PROJECT_ROOT/docker-compose.minimal.yml"
-            ;;
-        "optimized")
-            echo "$PROJECT_ROOT/docker-compose.optimized.yml"
-            ;;
-        "full")
+        "minimal"|"optimized"|"full")
+            if [ "$env" != "full" ]; then
+                log_warning "已精简部署YAML：minimal/optimized 变体已移除，统一使用 docker-compose.yml"
+            fi
             echo "$PROJECT_ROOT/docker-compose.yml"
             ;;
         *)
@@ -196,8 +193,7 @@ backup_current_config() {
 
         # 备份配置文件
         cp "$PROJECT_ROOT/docker-compose.yml" "$backup_dir/" 2>/dev/null || true
-        cp "$PROJECT_ROOT/docker-compose.optimized.yml" "$backup_dir/" 2>/dev/null || true
-        cp "$PROJECT_ROOT/docker-compose.minimal.yml" "$backup_dir/" 2>/dev/null || true
+        cp "$PROJECT_ROOT/docker-compose.monitoring.yml" "$backup_dir/" 2>/dev/null || true
 
         log_success "配置已备份到: $backup_dir"
     fi
@@ -210,8 +206,7 @@ stop_current_services() {
     # 停止所有可能的配置
     local compose_files=(
         "$PROJECT_ROOT/docker-compose.yml"
-        "$PROJECT_ROOT/docker-compose.optimized.yml"
-        "$PROJECT_ROOT/docker-compose.minimal.yml"
+        "$PROJECT_ROOT/docker-compose.monitoring.yml"
     )
 
     for file in "${compose_files[@]}"; do
@@ -219,6 +214,11 @@ stop_current_services() {
             docker-compose -f "$file" down --remove-orphans 2>/dev/null || true
         fi
     done
+
+    # 若监控 overlay 以组合方式启动，额外尝试一次组合 down
+    if [ -f "$PROJECT_ROOT/docker-compose.yml" ] && [ -f "$PROJECT_ROOT/docker-compose.monitoring.yml" ]; then
+        docker-compose -f "$PROJECT_ROOT/docker-compose.yml" -f "$PROJECT_ROOT/docker-compose.monitoring.yml" down --remove-orphans 2>/dev/null || true
+    fi
 
     log_success "当前服务已停止"
 }

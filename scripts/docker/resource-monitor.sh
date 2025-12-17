@@ -15,8 +15,7 @@ NC='\033[0m' # No Color
 # 配置
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-COMPOSE_FILE="$PROJECT_ROOT/docker-compose.optimized.yml"
-MINIMAL_FILE="$PROJECT_ROOT/docker-compose.minimal.yml"
+COMPOSE_FILE="$PROJECT_ROOT/docker-compose.yml"
 
 # 显示帮助信息
 show_help() {
@@ -32,7 +31,7 @@ EVCS Manager Docker 资源监控工具
     optimize        自动优化容器资源配置
     scale [up|down] 扩容/缩容服务
     clean           清理未使用的Docker资源
-    switch [profile] 切换配置文件 (optimized|minimal|full)
+    switch [profile] 切换配置模式 (full)
 
 选项:
     -h, --help      显示帮助信息
@@ -46,7 +45,7 @@ EVCS Manager Docker 资源监控工具
     $0 analyze                    # 分析优化建议
     $0 optimize                   # 自动优化
     $0 scale down auth-service    # 缩容认证服务
-    $0 switch minimal             # 切换到最小配置
+    $0 switch full                # 切换到完整配置
     $0 clean                      # 清理资源
 
 EOF
@@ -224,13 +223,7 @@ analyze_resource_usage() {
 auto_optimize() {
     log_info "开始自动优化资源配置..."
 
-    # 检查当前使用的配置文件
-    local current_profile="optimized"
-    if [ -f "$MINIMAL_FILE" ] && docker-compose -f "$MINIMAL_FILE" ps | grep -q "Up"; then
-        current_profile="minimal"
-    fi
-
-    echo "当前配置模式: $current_profile"
+    echo "当前配置模式: full"
 
     # 根据系统可用资源建议配置
     local available_memory_gb=$(free -g | awk '/^Mem:/ {print $7}')
@@ -245,14 +238,8 @@ auto_optimize() {
     echo "优化建议:"
 
     if [ $available_memory_gb -lt 4 ]; then
-        log_warning "系统内存不足4GB，建议使用minimal配置"
-        echo "执行: $0 switch minimal"
-    elif [ $available_memory_gb -lt 8 ]; then
-        log_warning "系统内存4-8GB，建议使用optimized配置"
-        echo "当前配置已合适"
-    else
-        log_success "系统资源充足，可以使用full配置"
-        echo "考虑切换到完整配置以获得更好性能"
+        log_warning "系统可用内存不足4GB：建议减少启动服务数量或提升资源"
+        echo "当前仅保留 docker-compose.yml（已移除 minimal/optimized 变体）"
     fi
 
     # 清理建议
@@ -302,32 +289,13 @@ scale_service() {
 
 # 切换配置文件
 switch_profile() {
-    local profile=${1:-"optimized"}
+    local profile=${1:-"full"}
 
     log_info "停止当前服务..."
     docker-compose -f "$COMPOSE_FILE" down 2>/dev/null || true
-    docker-compose -f "$MINIMAL_FILE" down 2>/dev/null || true
     docker-compose down 2>/dev/null || true
 
     case $profile in
-        "minimal")
-            log_info "切换到最小配置模式..."
-            if [ -f "$MINIMAL_FILE" ]; then
-                docker-compose -f "$MINIMAL_FILE" up -d
-                log_success "已切换到minimal配置"
-            else
-                log_error "minimal配置文件不存在: $MINIMAL_FILE"
-            fi
-            ;;
-        "optimized")
-            log_info "切换到优化配置模式..."
-            if [ -f "$COMPOSE_FILE" ]; then
-                docker-compose -f "$COMPOSE_FILE" up -d
-                log_success "已切换到optimized配置"
-            else
-                log_error "optimized配置文件不存在: $COMPOSE_FILE"
-            fi
-            ;;
         "full")
             log_info "切换到完整配置模式..."
             docker-compose up -d
@@ -335,7 +303,7 @@ switch_profile() {
             ;;
         *)
             log_error "未知的配置模式: $profile"
-            echo "可用模式: minimal, optimized, full"
+            echo "可用模式: full"
             return 1
             ;;
     esac

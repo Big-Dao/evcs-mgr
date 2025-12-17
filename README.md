@@ -90,7 +90,7 @@ evcs-mgr/
 最小配置启动示例（更多组合与验收口径见部署规划文档）：
 
 ```bash
-docker compose -f docker-compose.minimal.yml up -d
+docker compose -f docker-compose.yml up -d
 ```
 
 快速验证：

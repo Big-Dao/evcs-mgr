@@ -29,6 +29,22 @@ log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
+# 统一 compose 命令（优先 docker compose，其次 docker-compose）
+COMPOSE_CMD=""
+detect_compose_cmd() {
+    if docker compose version &> /dev/null; then
+        COMPOSE_CMD="docker compose"
+        return 0
+    fi
+    if command -v docker-compose &> /dev/null; then
+        COMPOSE_CMD="docker-compose"
+        return 0
+    fi
+
+    log_error "未检测到 Docker Compose：请安装 docker compose 插件或 docker-compose"
+    exit 1
+}
+
 # 检查Docker和Docker Compose
 check_dependencies() {
     log_info "检查依赖..."
@@ -38,10 +54,7 @@ check_dependencies() {
         exit 1
     fi
 
-    if ! command -v docker-compose &> /dev/null; then
-        log_error "Docker Compose未安装，请先安装Docker Compose"
-        exit 1
-    fi
+    detect_compose_cmd
 
     log_success "依赖检查完成"
 }
@@ -77,8 +90,8 @@ build_applications() {
 start_infrastructure() {
     log_info "启动基础设施服务..."
 
-    # 启动Redis
-    docker-compose -f docker-compose.monitoring.yml up -d redis
+    # 启动基础设施（DB/Redis/RabbitMQ/注册中心/配置中心）
+    $COMPOSE_CMD -f docker-compose.yml up -d postgres redis rabbitmq eureka config-server
 
     # 等待Redis启动
     log_info "等待Redis启动..."
@@ -86,7 +99,7 @@ start_infrastructure() {
 
     # 检查Redis健康状态
     for i in {1..30}; do
-        if docker-compose -f docker-compose.monitoring.yml exec -T redis redis-cli ping | grep -q PONG; then
+        if $COMPOSE_CMD -f docker-compose.yml exec -T redis redis-cli ping | grep -q PONG; then
             log_success "Redis启动完成"
             break
         fi
@@ -102,8 +115,8 @@ start_infrastructure() {
 start_applications() {
     log_info "启动应用服务..."
 
-    # 启动EVCS网关
-    docker-compose -f docker-compose.monitoring.yml up -d evcs-gateway
+    # 启动主编排中的全部服务
+    $COMPOSE_CMD -f docker-compose.yml up -d
 
     # 等待应用启动
     log_info "等待应用启动..."
@@ -127,8 +140,8 @@ start_applications() {
 start_monitoring() {
     log_info "启动监控服务..."
 
-    # 启动监控组件
-    docker-compose -f docker-compose.monitoring.yml --profile monitoring up -d
+    # 以 overlay 叠加启动监控组件
+    $COMPOSE_CMD -f docker-compose.yml -f docker-compose.monitoring.yml --profile monitoring up -d
 
     log_success "监控服务启动完成"
 }
@@ -137,8 +150,8 @@ start_monitoring() {
 start_logging() {
     log_info "启动日志服务..."
 
-    # 启动日志组件
-    docker-compose -f docker-compose.monitoring.yml --profile logging up -d
+    # 以 overlay 叠加启动日志组件
+    $COMPOSE_CMD -f docker-compose.yml -f docker-compose.monitoring.yml --profile logging up -d
 
     log_success "日志服务启动完成"
 }
@@ -147,8 +160,8 @@ start_logging() {
 start_tracing() {
     log_info "启动链路追踪服务..."
 
-    # 启动Jaeger
-    docker-compose -f docker-compose.monitoring.yml --profile tracing up -d
+    # 以 overlay 叠加启动链路追踪
+    $COMPOSE_CMD -f docker-compose.yml -f docker-compose.monitoring.yml --profile tracing up -d
 
     log_success "链路追踪服务启动完成"
 }
@@ -159,7 +172,7 @@ verify_deployment() {
 
     # 检查所有服务状态
     echo "=== 服务状态 ==="
-    docker-compose -f docker-compose.monitoring.yml ps
+    $COMPOSE_CMD -f docker-compose.yml ps
 
     # 检查关键端点
     echo ""
@@ -216,7 +229,7 @@ show_access_info() {
 # 清理函数
 cleanup() {
     log_info "清理旧的容器和镜像..."
-    docker-compose -f docker-compose.monitoring.yml down -v
+    $COMPOSE_CMD -f docker-compose.yml -f docker-compose.monitoring.yml down -v
     docker system prune -f
     log_success "清理完成"
 }

@@ -1,25 +1,6 @@
 version: '3.8'
 
 services:
-  # Redis缓存和会话存储
-  redis:
-    image: redis:7-alpine
-    container_name: evcs-redis
-    restart: unless-stopped
-    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
-    volumes:
-      - redis_data:/data
-      - ./monitoring/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
-    ports:
-      - "6379:6379"
-    networks:
-      - evcs-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # Prometheus监控
   prometheus:
     image: prom/prometheus:latest
@@ -40,7 +21,7 @@ services:
     networks:
       - evcs-network
     depends_on:
-      - evcs-gateway
+      - gateway
     profiles:
       - monitoring
 
@@ -97,35 +78,6 @@ services:
       - redis
     profiles:
       - monitoring
-
-  # EVCS网关
-  evcs-gateway:
-    build:
-      context: .
-      dockerfile: evcs-gateway/Dockerfile
-    container_name: evcs-gateway
-    restart: unless-stopped
-    environment:
-      - SPRING_PROFILES_ACTIVE=docker
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - JAVA_OPTS=-Xms512m -Xmx1024m -XX:+UseG1GC
-    ports:
-      - "8080:8080"
-      - "8089:8089"  # OCPP WebSocket端口
-    networks:
-      - evcs-network
-    depends_on:
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./logs:/app/logs
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
   # Elasticsearch（日志存储）
   elasticsearch:
@@ -204,18 +156,9 @@ services:
       - tracing
 
 volumes:
-  redis_data:
-    driver: local
   prometheus_data:
     driver: local
   grafana_data:
     driver: local
   elasticsearch_data:
     driver: local
-
-networks:
-  evcs-network:
-    driver: bridge
-    ipam:
-      config:
-        - subnet: 172.20.0.0/16

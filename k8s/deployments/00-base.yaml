@@ -16,15 +16,13 @@ data:
   # Flyway：本测试环境 DB 可能已被初始化脚本写入少量表结构，开启 baseline 避免启动失败。
   SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
   SPRING_FLYWAY_BASELINE_VERSION: "0"
-  # NOTE: 当前集群 CoreDNS 对 *.svc.cluster.local 解析异常（返回 198.18.*），
-  # 为保证测试环境可用，这里临时直接使用 Service ClusterIP（10.43.*）。
-  CONFIG_SERVER_URL: "http://10.43.97.154:8888"
-  SPRING_CONFIG_IMPORT: "optional:configserver:http://10.43.97.154:8888"
-  EUREKA_SERVER_URL: "http://10.43.227.140:8761/eureka/"
-  EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://10.43.227.140:8761/eureka/"
-  SPRING_DATASOURCE_URL: "jdbc:postgresql://10.43.127.221:5432/evcs_mgr"
-  SPRING_DATA_REDIS_HOST: "10.43.218.191"
-  SPRING_RABBITMQ_HOST: "10.43.183.25"
+  CONFIG_SERVER_URL: "http://evcs-config:8888"
+  SPRING_CONFIG_IMPORT: "optional:configserver:http://evcs-config:8888"
+  EUREKA_SERVER_URL: "http://evcs-eureka:8761/eureka/"
+  EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://evcs-eureka:8761/eureka/"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://evcs-postgres:5432/evcs_mgr"
+  SPRING_DATA_REDIS_HOST: "evcs-redis"
+  SPRING_RABBITMQ_HOST: "evcs-rabbitmq"
   SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: "20"
   SPRING_DATASOURCE_HIKARI_MINIMUM_IDLE: "5"
   TZ: "Asia/Shanghai"

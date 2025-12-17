@@ -21,7 +21,7 @@ scrape_configs:
   # EVCS网关指标
   - job_name: 'evcs-gateway'
     static_configs:
-      - targets: ['evcs-gateway:8080']
+      - targets: ['gateway:8080']
     metrics_path: '/actuator/prometheus'
     scrape_interval: 10s
     scrape_timeout: 5s
@@ -41,18 +41,18 @@ scrape_configs:
     metrics_path: '/actuator/prometheus'
     static_configs:
       - targets:
-        - 'evcs-gateway:8080'
+        - 'gateway:8080'
     relabel_configs:
       - source_labels: [__address__]
         target_label: instance
-        replacement: 'evcs-gateway'
+        replacement: 'gateway'
 
   # 健康检查监控
   - job_name: 'health-checks'
     metrics_path: '/actuator/health'
     static_configs:
       - targets:
-        - 'evcs-gateway:8080'
+        - 'gateway:8080'
     scrape_interval: 30s
     metric_relabel_configs:
       - source_labels: [__name__]
@@ -64,7 +64,7 @@ scrape_configs:
   - job_name: 'business-metrics'
     metrics_path: '/actuator/prometheus'
     static_configs:
-      - targets: ['evcs-gateway:8080']
+      - targets: ['gateway:8080']
     params:
       format: ['prometheus']
     scrape_interval: 30s

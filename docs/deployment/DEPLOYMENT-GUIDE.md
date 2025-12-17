@@ -111,10 +111,10 @@ curl -fsS http://localhost:8080/actuator/health
 
 ```bash
 # 生产资源优化组合
-docker compose -f docker-compose.optimized.yml up -d
+docker compose -f docker-compose.yml up -d
 
 # 叠加监控（可选）
-docker compose -f docker-compose.optimized.yml -f docker-compose.monitoring.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.monitoring.yml --profile monitoring up -d
 ```
 
 ### 演示数据导入（可选，仅用于本地/预发）
