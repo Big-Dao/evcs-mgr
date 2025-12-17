@@ -36,9 +36,8 @@
 
 ## 部署（deployment）
 
-- 本地快速启动（最少步骤）：[docs/deployment/QUICK-START.md](deployment/QUICK-START.md)
-- 统一部署指南（本地/测试/生产）：[docs/deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md)
-- 测试环境（CI/CD 与集成验证）：[docs/deployment/TEST-ENVIRONMENT-GUIDE.md](deployment/TEST-ENVIRONMENT-GUIDE.md)
+- 生产部署规划（发布/回滚/验收基线）：[docs/deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md)
+- 测试部署规划（CI/CD 与集成验证）：[docs/deployment/TEST-ENVIRONMENT-GUIDE.md](deployment/TEST-ENVIRONMENT-GUIDE.md)
 
 ## 运维（operations）
 

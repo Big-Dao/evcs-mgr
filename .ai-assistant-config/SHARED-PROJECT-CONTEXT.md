@@ -93,7 +93,7 @@ EVCS系统包含以下核心功能模块：
 - **[架构设计](../../docs/architecture/architecture.md)** - 系统架构设计
 
 ### 部署运维
-- **[部署指南](../../docs/deployment/DEPLOYMENT-GUIDE.md)** - 部署和运维指南
+- **[生产部署规划](../../docs/deployment/DEPLOYMENT-GUIDE.md)** - 发布/回滚/验收基线（Day-0/Day-1）
 - **[监控指南](../../docs/operations/MONITORING-GUIDE.md)** - 监控配置指南
 
 ## ⚠️ 重要提醒

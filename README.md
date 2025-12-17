@@ -2,7 +2,7 @@
 
 一个基于Spring Boot和微服务架构的电动汽车充电站管理平台，支持多租户、多协议充电桩管理。
 
-> 🚀 **[快速启动指南](docs/deployment/QUICK-START.md)** ⭐ | 📚 **[统一部署指南](docs/deployment/DEPLOYMENT-GUIDE.md)** | **[AI编程助手规范](docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md)** | **[快速文档指南](docs/overview/QUICK-DOCUMENTATION-GUIDE.md)** | **[服务参考](docs/operations/SERVICES-REFERENCE.md)** | **[故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)**
+> 📚 **[生产部署规划](docs/deployment/DEPLOYMENT-GUIDE.md)** ⭐ | 🧪 **[测试部署规划](docs/deployment/TEST-ENVIRONMENT-GUIDE.md)** | **[AI编程助手规范](docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md)** | **[快速文档指南](docs/overview/QUICK-DOCUMENTATION-GUIDE.md)** | **[服务参考](docs/operations/SERVICES-REFERENCE.md)** | **[故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)**
 
 ## 🎯 项目状态
 
@@ -84,10 +84,10 @@ evcs-mgr/
 部署文档建议从统一索引进入，避免在多个入口重复维护同一套命令：
 
 - 文档总索引：[docs/DOCUMENTATION-INDEX.md](docs/DOCUMENTATION-INDEX.md)
-- 本地最少步骤启动：[docs/deployment/QUICK-START.md](docs/deployment/QUICK-START.md)
-- 统一部署指南（本地/测试/生产）：[docs/deployment/DEPLOYMENT-GUIDE.md](docs/deployment/DEPLOYMENT-GUIDE.md)
+- 生产部署规划（含本地/预发演练）：[docs/deployment/DEPLOYMENT-GUIDE.md](docs/deployment/DEPLOYMENT-GUIDE.md)
+- 测试部署规划（CI/CD 与集成验证）：[docs/deployment/TEST-ENVIRONMENT-GUIDE.md](docs/deployment/TEST-ENVIRONMENT-GUIDE.md)
 
-最小配置启动示例（更多组合见快速启动指南）：
+最小配置启动示例（更多组合与验收口径见部署规划文档）：
 
 ```bash
 docker compose -f docker-compose.minimal.yml up -d
