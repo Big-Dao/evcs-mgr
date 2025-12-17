@@ -10,7 +10,7 @@
 
 ## 近期重点
 - 架构与规范统一：参考 [PROJECT-CODING-STANDARDS.md](./PROJECT-CODING-STANDARDS.md)
-- 文档统一入口：参考 [README.md](./README.md)
+- 文档统一入口：参考 [DOCUMENTATION-INDEX.md](../DOCUMENTATION-INDEX.md)
 - 部署与测试：参考 [DEPLOYMENT-GUIDE.md](../deployment/DEPLOYMENT-GUIDE.md) 与 [TEST-ENVIRONMENT-GUIDE.md](../deployment/TEST-ENVIRONMENT-GUIDE.md)
 
 ## 下一步行动
@@ -20,4 +20,4 @@
 
 ## 参考链接
 - AI 助手统一配置： [AI-ASSISTANT-UNIFIED-CONFIG.md](../development/AI-ASSISTANT-UNIFIED-CONFIG.md)
-- 文档导航中心： [../README.md](../README.md)
+- 文档导航中心： [DOCUMENTATION-INDEX.md](../DOCUMENTATION-INDEX.md)

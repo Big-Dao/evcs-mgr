@@ -11,10 +11,10 @@
 ## 30 秒定位入口
 
 - 文档总索引（推荐）：[docs/DOCUMENTATION-INDEX.md](../DOCUMENTATION-INDEX.md)
-- 部署（按场景选入口）：[docs/deployment/README.md](../deployment/README.md)
+- 部署： [docs/deployment/QUICK-START.md](../deployment/QUICK-START.md) / [docs/deployment/DEPLOYMENT-GUIDE.md](../deployment/DEPLOYMENT-GUIDE.md)
 - 开发： [docs/development/DEVELOPER-GUIDE.md](../development/DEVELOPER-GUIDE.md)
-- 测试： [docs/testing/README.md](../testing/README.md)
-- 故障排查： [docs/troubleshooting/README.md](../troubleshooting/README.md)
+- 测试： [docs/testing/UNIFIED-TESTING-GUIDE.md](../testing/UNIFIED-TESTING-GUIDE.md)
+- 故障排查： [docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md](../troubleshooting/ERROR_PREVENTION_CHECKLIST.md)
 
 ## 常见问题（最短答案）
 

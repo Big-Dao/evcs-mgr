@@ -34,7 +34,7 @@
 
 ### 4️⃣ 完整文档体系
 - ✅ `docs/deployment/DEPLOYMENT-GUIDE.md` - 统一部署指南
-- ✅ `docs/README.md` - 项目文档导航中心
+- ✅ `docs/DOCUMENTATION-INDEX.md` - 项目文档导航中心（统一入口）
 - ✅ 相关文档已归档至 `docs/archive/` 目录
 
 ---
@@ -125,7 +125,7 @@ BUILD SUCCESSFUL in 29s
 ### 更新文档
 1. `README.md` - 添加测试环境章节
 2. `DOCKER-DEPLOYMENT.md` - 添加测试环境方式
-3. `docs/README.md` - 更新文档索引
+3. `docs/DOCUMENTATION-INDEX.md` - 更新文档索引
 
 ---
 

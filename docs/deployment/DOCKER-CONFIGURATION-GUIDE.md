@@ -10,7 +10,7 @@
 
 ## 权威入口（SSOT）
 
-- 场景入口索引（推荐从这里开始）：[README.md](README.md)
+- 文档总索引（推荐从这里开始）：[docs/DOCUMENTATION-INDEX.md](../DOCUMENTATION-INDEX.md)
 - 统一部署指南（本地/测试/生产）：[DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)
 - 本地快速启动（最少步骤）：[QUICK-START.md](QUICK-START.md)
 - 测试环境（CI/CD 与集成验证）：[TEST-ENVIRONMENT-GUIDE.md](TEST-ENVIRONMENT-GUIDE.md)

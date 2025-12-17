@@ -9,7 +9,6 @@
 ```
 .github/
 ├── copilot-instructions.md           ⭐ GitHub Copilot 项目级指令
-├── README.md                          📝 本目录说明文档
 ├── pull-request-template-deployment.md  PR 模板
 │
 ├── instructions/                      🎯 模块级 Copilot 指令
@@ -77,19 +76,7 @@
 
 ### P1 - 重要文件（定期更新）
 
-#### 4. README.md 📝
-**作用**: .github 目录的说明文档
-- 解释目录结构和文件作用
-- 提供快速参考
-
-**维护时机**:
-- ✅ 目录结构变化时
-- ✅ 新增重要文件时
-- ✅ 季度检查更新日期
-
-**当前状态**: ✅ 已更新 (2025-10-20)
-
-#### 5. pull-request-template-deployment.md
+#### 4. pull-request-template-deployment.md
 **作用**: 部署相关 PR 的模板
 - 标准化 PR 描述格式
 - 确保必要信息完整
@@ -135,7 +122,7 @@
 
 ### 项目文档
 - [../README.md](../README.md) - 项目主 README
-- [../docs/README.md](../docs/README.md) - 文档导航中心
+- [../docs/DOCUMENTATION-INDEX.md](../docs/DOCUMENTATION-INDEX.md) - 文档导航中心
 - [../docs/development/DEVELOPER-GUIDE.md](../docs/development/DEVELOPER-GUIDE.md) - 开发者指南
 
 ### GitHub 官方文档

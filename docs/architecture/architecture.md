@@ -1198,4 +1198,4 @@ public class PaymentProperties {
 - [产品需求文档](./requirements.md)
 - [API接口设计](./api-design.md)
 - [数据模型设计](./data-model.md)
-- [开发计划](../archive/planning-docs/)
+- [开发计划（概览入口）](../overview/NEXT-PLAN.md)

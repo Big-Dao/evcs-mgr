@@ -38,9 +38,9 @@ curl http://localhost:8080/actuator/health
 
 ## 常用访问入口
 
-请参考部署索引中的统一清单：[README.md](README.md)。
+请参考文档总索引（部署章节）：[docs/DOCUMENTATION-INDEX.md](../DOCUMENTATION-INDEX.md)。
 
 ## 下一步
 
 - 完整部署与环境变量：`docs/deployment/DEPLOYMENT-GUIDE.md`
-- 部署索引：`docs/deployment/README.md`
+- 文档总索引：`docs/DOCUMENTATION-INDEX.md`

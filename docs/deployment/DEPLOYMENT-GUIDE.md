@@ -157,9 +157,10 @@ docker compose up -d --no-deps evcs-gateway
 ```
 
 ## 支持与参考
-- 文档首页：`docs/README.md`
-- 运维索引：`docs/operations/README.md`
-- 故障排查：`docs/troubleshooting/README.md`
+- 文档总索引：`docs/DOCUMENTATION-INDEX.md`
+- 运维参考：`docs/operations/SERVICES-REFERENCE.md`
+- 监控指南：`docs/operations/MONITORING-GUIDE.md`
+- 故障排查：`docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md`
 
 ## 优化建议（合并摘要）
 - Docker：镜像分层与缓存、multi-stage 构建、按需裁剪依赖、基础镜像及时拉取

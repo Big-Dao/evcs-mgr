@@ -11,8 +11,8 @@
 ## 权威入口（SSOT）
 
 - 文档总索引：[docs/DOCUMENTATION-INDEX.md](../DOCUMENTATION-INDEX.md)
-- 开发文档索引：[docs/development/README.md](README.md)
-- 部署入口索引（Compose/脚本）：[docs/deployment/README.md](../deployment/README.md)
+- 开发者指南：[docs/development/DEVELOPER-GUIDE.md](DEVELOPER-GUIDE.md)
+- 部署指南：[docs/deployment/DEPLOYMENT-GUIDE.md](../deployment/DEPLOYMENT-GUIDE.md)
 
 ## 历史修复细节（已归档）
 

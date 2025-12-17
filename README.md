@@ -81,9 +81,9 @@ evcs-mgr/
 
 ## 🚀 快速开始
 
-部署文档已做“单一入口 + 场景分流”，建议从以下入口进入，避免在 README 与 docs 中重复维护同一套命令：
+部署文档建议从统一索引进入，避免在多个入口重复维护同一套命令：
 
-- 部署索引（按场景选入口）：[docs/deployment/README.md](docs/deployment/README.md)
+- 文档总索引：[docs/DOCUMENTATION-INDEX.md](docs/DOCUMENTATION-INDEX.md)
 - 本地最少步骤启动：[docs/deployment/QUICK-START.md](docs/deployment/QUICK-START.md)
 - 统一部署指南（本地/测试/生产）：[docs/deployment/DEPLOYMENT-GUIDE.md](docs/deployment/DEPLOYMENT-GUIDE.md)
 
@@ -103,7 +103,6 @@ curl http://localhost:8080/actuator/health
 ### 本地开发
 
 **开发环境搭建**: 请参考 [开发者指南](docs/development/DEVELOPER-GUIDE.md)
-**前端开发**: [前端部署指南](evcs-admin/DEPLOYMENT.md)
 
 ## 📋 开发规划
 
@@ -173,8 +172,8 @@ curl http://localhost:8080/actuator/health
 
 **测试文档**：
 
-- 📖 [测试框架指南](docs/testing/TESTING-FRAMEWORK-GUIDE.md)
-- 📖 [测试指南](docs/testing/TESTING-GUIDE.md)
+- 📖 [统一测试指南](docs/testing/UNIFIED-TESTING-GUIDE.md)
+- 📖 [集成测试指南](docs/testing/INTEGRATION-TEST-GUIDE.md)
 
 ### 运行测试
 
@@ -219,4 +218,4 @@ curl http://localhost:8080/actuator/health
 
 ## 📄 许可证
 
-本项目采用MIT许可证，详情请参阅 [LICENSE](LICENSE) 文件。
+许可证信息以仓库声明为准（当前徽标显示 MIT）。

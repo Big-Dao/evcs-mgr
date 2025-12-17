@@ -16,14 +16,12 @@
 
 ## 概览（overview）
 
-- 概览索引：[docs/overview/README.md](overview/README.md)
 - 管理层摘要：[docs/overview/EXECUTIVE-SUMMARY.md](overview/EXECUTIVE-SUMMARY.md)
 - 规划/路线图：[docs/overview/NEXT-PLAN.md](overview/NEXT-PLAN.md)、[docs/overview/NEXT-STEP-ACTION-PLAN.md](overview/NEXT-STEP-ACTION-PLAN.md)
 - 文档快速导航（指针）：[docs/overview/QUICK-DOCUMENTATION-GUIDE.md](overview/QUICK-DOCUMENTATION-GUIDE.md)
 
 ## 架构（architecture）
 
-- 架构索引：[docs/architecture/README.md](architecture/README.md)
 - 总体架构：[docs/architecture/architecture.md](architecture/architecture.md)
 - API 设计：[docs/architecture/api-design.md](architecture/api-design.md)
 - 数据模型：[docs/architecture/data-model.md](architecture/data-model.md)
@@ -31,7 +29,6 @@
 
 ## 开发（development）
 
-- 开发索引：[docs/development/README.md](development/README.md)
 - 开发者指南：[docs/development/DEVELOPER-GUIDE.md](development/DEVELOPER-GUIDE.md)
 - API 设计规范：[docs/development/API-DESIGN-STANDARDS.md](development/API-DESIGN-STANDARDS.md)
 - 数据库设计规范：[docs/development/DATABASE-DESIGN-STANDARDS.md](development/DATABASE-DESIGN-STANDARDS.md)
@@ -39,14 +36,12 @@
 
 ## 部署（deployment）
 
-- 部署索引（按场景选入口）：[docs/deployment/README.md](deployment/README.md)
 - 本地快速启动（最少步骤）：[docs/deployment/QUICK-START.md](deployment/QUICK-START.md)
 - 统一部署指南（本地/测试/生产）：[docs/deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md)
 - 测试环境（CI/CD 与集成验证）：[docs/deployment/TEST-ENVIRONMENT-GUIDE.md](deployment/TEST-ENVIRONMENT-GUIDE.md)
 
 ## 运维（operations）
 
-- 运维索引：[docs/operations/README.md](operations/README.md)
 - 默认凭据（演示/测试）：[docs/operations/DEFAULT-CREDENTIALS.md](operations/DEFAULT-CREDENTIALS.md)
 - 服务参考：[docs/operations/SERVICES-REFERENCE.md](operations/SERVICES-REFERENCE.md)
 - 服务映射：[docs/operations/SERVICE_NAMES_MAPPING.md](operations/SERVICE_NAMES_MAPPING.md)
@@ -55,23 +50,20 @@
 
 ## 测试（testing）
 
-- 测试索引：[docs/testing/README.md](testing/README.md)
 - 统一测试指南：[docs/testing/UNIFIED-TESTING-GUIDE.md](testing/UNIFIED-TESTING-GUIDE.md)
 - 集成测试指南：[docs/testing/INTEGRATION-TEST-GUIDE.md](testing/INTEGRATION-TEST-GUIDE.md)
 - 测试修复指南：[docs/testing/TEST-FIX-GUIDE.md](testing/TEST-FIX-GUIDE.md)
 
 ## 故障排查（troubleshooting）
 
-- 故障排查索引：[docs/troubleshooting/README.md](troubleshooting/README.md)
 - 错误预防清单：[docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md](troubleshooting/ERROR_PREVENTION_CHECKLIST.md)
 
 ## 参考（references）
 
-- 参考索引：[docs/references/README.md](references/README.md)
 - API 文档：[docs/references/API-DOCUMENTATION.md](references/API-DOCUMENTATION.md)
 
 ## 归档（archive）
 
-- 归档总入口（历史文档/进度报告/旧版本）：[docs/archive/README.md](archive/README.md)
+- 归档目录（历史文档/进度报告/旧版本）：[docs/archive/](archive/)
 
 备注：归档区可能包含重复内容，这是为了保留历史快照；非归档区以本索引为准。

@@ -56,34 +56,27 @@ priority: high
 
 ```
 docs/
-├── README.md                    # docs 目录说明
+├── DOCUMENTATION-INDEX.md       # 文档导航总索引（唯一入口）
 ├── deployment/                  # 🚢 部署相关
-│   ├── README.md
 │   ├── DEPLOYMENT-GUIDE.md      # 完整部署指南
 │   └── TEST-ENVIRONMENT-GUIDE.md
 │
 ├── testing/                     # 🧪 测试相关
-│   ├── README.md
-│   ├── TESTING-FRAMEWORK-GUIDE.md
-│   ├── TESTING-GUIDE.md
+│   ├── UNIFIED-TESTING-GUIDE.md
 │   └── TEST-*-REPORT.md         # 测试报告
 │
 ├── development/                 # 👨‍💻 开发相关
-│   ├── README.md
 │   ├── DEVELOPER-GUIDE.md
 │   └── [其他开发文档...]
 │
 ├── architecture/                # 🏗️ 架构设计（可选）
-│   ├── README.md
 │   ├── TECHNICAL-DESIGN.md
 │   └── *.puml / *.drawio        # 架构图
 │
 ├── api/                         # 📡 API 文档（可选）
-│   ├── README.md
 │   └── API-DOCUMENTATION.md
 │
 ├── archive/                     # 📦 归档区
-│   ├── README.md
 │   ├── documentation-history/   # 文档维护历史
 │   │   └── YYYY-MM-DD-*.md
 │   └── progress-reports/        # 进度报告归档
@@ -97,7 +90,8 @@ docs/
 ```
 
 **目录原则**：
-- 每个子目录必须有 `README.md` 说明目录用途
+- 不在子目录维护 `README.md`（避免重复入口与长期漂移）
+- 统一从 `docs/DOCUMENTATION-INDEX.md` 进入
 - 按主题分类，不按时间或人员分类
 - 归档目录按时间组织（YYYY-MM 格式）
 
@@ -190,7 +184,7 @@ docs/
 
 5. **提供交叉引用**
    ```markdown
-   详见 [部署指南](../../../docs/deployment/DEPLOYMENT-GUIDE.md)
+   详见 [部署指南](../../docs/deployment/DEPLOYMENT-GUIDE.md)
    ```
 
 6. **包含具体示例**
@@ -455,9 +449,9 @@ docs: 归档 P3 阶段文档
 
 ### 项目相关
 
-- [../docs/README.md](../../../docs/README.md) - 文档导航中心
+- [../docs/DOCUMENTATION-INDEX.md](../../docs/DOCUMENTATION-INDEX.md) - 文档导航中心
 - [../MAINTENANCE.md](../MAINTENANCE.md) - .github 维护指南
-- [docs/archive/documentation-history/](../../../docs/archive/documentation-history/) - 文档维护历史
+- [docs/archive/documentation-history/](../../docs/archive/documentation-history/) - 文档维护历史
 
 ---
 
