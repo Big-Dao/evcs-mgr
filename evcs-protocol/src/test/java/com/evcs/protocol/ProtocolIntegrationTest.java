@@ -173,6 +173,7 @@ class ProtocolIntegrationTest {
         ProtocolRequest startRequest = new ProtocolRequest(ProtocolType.OCPP, "TEST_DEVICE_006", "start");
         startRequest.setChargerId(1L);
         startRequest.setTenantId(1L);
+        startRequest.setStationId(11L);
         startRequest.setSessionId("SESSION_001");
         startRequest.setUserId(100L);
 

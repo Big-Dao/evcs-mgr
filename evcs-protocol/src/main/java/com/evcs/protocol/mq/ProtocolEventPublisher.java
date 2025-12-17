@@ -94,6 +94,11 @@ public class ProtocolEventPublisher {
         Boolean success,
         String message
     ) {
+        if (stationId == null) {
+            throw new IllegalArgumentException(
+                "stationId is required for charging start event"
+            );
+        }
         StartEvent event = StartEvent.builder()
             .eventId(UUID.randomUUID().toString())
             .stationId(stationId)

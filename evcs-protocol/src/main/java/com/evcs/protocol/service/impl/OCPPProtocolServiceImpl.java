@@ -1,18 +1,24 @@
 package com.evcs.protocol.service.impl;
 
-import com.evcs.protocol.api.ProtocolEventListener;
+import com.evcs.common.result.Result;
 import com.evcs.protocol.config.ProtocolProperties;
+import com.evcs.protocol.dto.ChargerBasicInfo;
 import com.evcs.protocol.dto.ProtocolRequest;
 import com.evcs.protocol.dto.ProtocolResponse;
 import com.evcs.protocol.enums.ProtocolType;
 import com.evcs.protocol.mq.ProtocolEventPublisher;
 import com.evcs.protocol.websocket.OCPPSessionManager;
 import com.evcs.protocol.websocket.OCPPWebSocketSession;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -26,6 +32,9 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
 
     private final ProtocolEventPublisher eventPublisher;
     private final OCPPSessionManager sessionManager;
+
+    @Autowired(required = false)
+    private RestTemplate restTemplate;
 
     public OCPPProtocolServiceImpl(ProtocolProperties protocolProperties,
                                   ProtocolEventPublisher eventPublisher,
@@ -248,6 +257,29 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
         }
 
         try {
+            // 强制发布端必须携带 stationId：如果请求没带，尝试通过 chargerCode 从站点服务补齐
+            if (request.getStationId() == null) {
+                ChargerBasicInfo info = fetchChargerInfoByCode(deviceCode);
+                if (info != null) {
+                    if (request.getChargerId() == null) {
+                        request.setChargerId(info.getId());
+                    }
+                    if (request.getTenantId() == null) {
+                        request.setTenantId(info.getTenantId());
+                    }
+                    request.setStationId(info.getStationId());
+                }
+            }
+
+            if (request.getStationId() == null) {
+                log.warn(
+                    "Missing stationId for OCPP start charging, refuse to publish start event. deviceCode={} sessionId={}",
+                    deviceCode,
+                    sessionId
+                );
+                return false;
+            }
+
             OCPPWebSocketSession session = sessionManager.getSession(deviceCode);
             if (session != null && session.isActive()) {
                 // 发送RemoteStartTransaction请求
@@ -256,7 +288,7 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
                 if (sent) {
                     // 发布充电开始事件
                     eventPublisher.publishChargingStart(
-                        null,
+                        request.getStationId(),
                         request.getChargerId(),
                         request.getTenantId(),
                         "OCPP",
@@ -283,6 +315,48 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
             log.error("Error starting OCPP charging: {}", deviceCode, e);
             return false;
         }
+    }
+
+    private ChargerBasicInfo fetchChargerInfoByCode(String chargerCode) {
+        if (chargerCode == null) {
+            return null;
+        }
+        if (restTemplate == null) {
+            log.warn("RestTemplate not available, cannot fetch charger info by code: {}", chargerCode);
+            return null;
+        }
+        try {
+            String url = "http://evcs-station/charger/code/" + chargerCode;
+            ParameterizedTypeReference<Result<ChargerBasicInfo>> typeRef = new ParameterizedTypeReference<>() {};
+            RequestEntity<Void> requestEntity = RequestEntity.get(requiredUri(url)).build();
+            ResponseEntity<Result<ChargerBasicInfo>> response = restTemplate.exchange(requestEntity, typeRef);
+
+            if (!response.getStatusCode().is2xxSuccessful()) {
+                return null;
+            }
+
+            Result<ChargerBasicInfo> result = response.getBody();
+            if (result == null) {
+                return null;
+            }
+
+            Integer code = result.getCode();
+            if (code != null && code == 200) {
+                return result.getData();
+            }
+        } catch (Exception e) {
+            log.warn("Failed to fetch charger info from station service, chargerCode={}", chargerCode, e);
+        }
+        return null;
+    }
+
+    @NonNull
+    private static URI requiredUri(String url) {
+        URI uri = URI.create(url);
+        if (uri == null) {
+            throw new IllegalStateException("URI.create returned null");
+        }
+        return uri;
     }
 
     @Override
@@ -380,7 +454,11 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
             payload.put("firmwareVersion", "1.0.0");
 
             String message = buildOCPPMessage("Call", UUID.randomUUID().toString(), "BootNotification", payload);
-            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(message));
+            String messageToSend = message;
+            if (messageToSend == null) {
+                messageToSend = "";
+            }
+            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(messageToSend));
 
         } catch (Exception e) {
             log.error("Error sending BootNotification request to charger: {}", session.getChargerCode(), e);
@@ -397,7 +475,11 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
             payload.put("idTag", userId != null ? "USER_" + userId : "DEFAULT_TAG");
 
             String message = buildOCPPMessage("Call", UUID.randomUUID().toString(), "RemoteStartTransaction", payload);
-            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(message));
+            String messageToSend = message;
+            if (messageToSend == null) {
+                messageToSend = "";
+            }
+            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(messageToSend));
 
             return true;
         } catch (Exception e) {
@@ -416,7 +498,11 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
             payload.put("transactionId", 1); // 临时使用固定值
 
             String message = buildOCPPMessage("Call", UUID.randomUUID().toString(), "RemoteStopTransaction", payload);
-            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(message));
+            String messageToSend = message;
+            if (messageToSend == null) {
+                messageToSend = "";
+            }
+            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(messageToSend));
 
             return true;
         } catch (Exception e) {

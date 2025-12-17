@@ -2,6 +2,7 @@ package com.evcs.protocol.controller;
 
 import com.evcs.common.test.base.BaseControllerTest;
 import com.evcs.protocol.ProtocolServiceApplication;
+import com.evcs.protocol.dto.ChargerBasicInfo;
 import com.evcs.protocol.event.StartEvent;
 import com.evcs.protocol.mq.ProtocolEventPublisher;
 import com.evcs.protocol.service.CloudChargeSignatureValidator;
@@ -14,7 +15,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpMethod;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
@@ -39,12 +41,18 @@ class CloudChargeControllerUserIdTest extends BaseControllerTest {
     void testStartCharging_shouldPublishStartEventWithUserId_whenUserIdProvidedInData() throws Exception {
         // Arrange
         Mockito.when(signatureValidator.validateSignature(Mockito.any())).thenReturn(true);
+
+        ChargerBasicInfo chargerInfo = new ChargerBasicInfo();
+        chargerInfo.setId(1L);
+        chargerInfo.setTenantId(1L);
+        chargerInfo.setStationId(11L);
+        chargerInfo.setChargerCode("DEVICE_1");
+        chargerInfo.setChargerName("TEST");
+
         Mockito.when(restTemplate.exchange(
-                Mockito.anyString(),
-                Mockito.eq(HttpMethod.GET),
-                Mockito.isNull(),
+                Mockito.any(RequestEntity.class),
                 Mockito.<ParameterizedTypeReference<Object>>any()
-        )).thenThrow(new RuntimeException("mock station service unavailable"));
+        )).thenReturn(ResponseEntity.ok(com.evcs.common.result.Result.success(chargerInfo)));
 
         Long userId = 100L;
         Map<String, Object> body = new HashMap<>();
@@ -76,6 +84,7 @@ class CloudChargeControllerUserIdTest extends BaseControllerTest {
         assertTrue(events.size() >= beforeSize + 1, "Event history should grow after publishing start event");
         assertTrue(events.get(0) instanceof StartEvent, "Latest event should be StartEvent");
         assertEquals(userId, ((StartEvent) events.get(0)).getUserId(), "StartEvent.userId should match reported userId");
+                assertEquals(11L, ((StartEvent) events.get(0)).getStationId(), "StartEvent.stationId should be provided by publishing side");
     }
 
     @Test
@@ -84,9 +93,7 @@ class CloudChargeControllerUserIdTest extends BaseControllerTest {
         // Arrange
         Mockito.when(signatureValidator.validateSignature(Mockito.any())).thenReturn(true);
         Mockito.when(restTemplate.exchange(
-                Mockito.anyString(),
-                Mockito.eq(HttpMethod.GET),
-                Mockito.isNull(),
+                Mockito.any(RequestEntity.class),
                 Mockito.<ParameterizedTypeReference<Object>>any()
         )).thenThrow(new RuntimeException("mock station service unavailable"));
 

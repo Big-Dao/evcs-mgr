@@ -105,12 +105,16 @@ public class ProtocolDebugController {
             request.getUserId()
         );
 
+        if (request.getStationId() == null) {
+            return Result.failure("Missing stationId");
+        }
+
         try {
             String sessionId = UUID.randomUUID().toString();
             String orderNo = "ORD" + System.currentTimeMillis();
 
             eventPublisher.publishChargingStart(
-                null,
+                request.getStationId(),
                 request.getChargerId(),
                 request.getTenantId(),
                 request.getProtocolType(),
@@ -379,6 +383,7 @@ public class ProtocolDebugController {
 
     public static class ChargingStartRequest {
 
+        private Long stationId;
         private Long chargerId;
         private Long tenantId = 1L;
         private Long userId;
@@ -386,6 +391,14 @@ public class ProtocolDebugController {
         private Double initialEnergy = 0.0;
 
         public ChargingStartRequest() {}
+
+        public Long getStationId() {
+            return stationId;
+        }
+
+        public void setStationId(Long stationId) {
+            this.stationId = stationId;
+        }
 
         public Long getChargerId() {
             return chargerId;
