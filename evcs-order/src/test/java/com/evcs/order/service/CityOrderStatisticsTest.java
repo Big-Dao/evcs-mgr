@@ -1,27 +1,29 @@
 package com.evcs.order.service;
 
-import com.evcs.order.domain.CityOrderStatistics;
-import com.evcs.order.mapper.CityOrderStatisticsMapper;
+import com.evcs.order.dto.CityOrderStatistics;
+import com.evcs.order.mapper.ChargingOrderMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/**
+ * Test class for City Order Statistics functionality
+ */
 class CityOrderStatisticsTest {
 
     @Mock
-    private CityOrderStatisticsMapper cityOrderStatisticsMapper;
+    private ChargingOrderMapper chargingOrderMapper;
 
     @InjectMocks
-    private CityOrderStatisticsService cityOrderStatisticsService;
+    private IChargingOrderService chargingOrderService;
 
     @BeforeEach
     void setUp() {
@@ -29,82 +31,103 @@ class CityOrderStatisticsTest {
     }
 
     @Test
-    void testGetCityOrderStatistics() {
+    void testGetCityOrderStatistics_Success() {
         // Arrange
         CityOrderStatistics stats1 = new CityOrderStatistics();
         stats1.setCity("Beijing");
-        stats1.setTotalOrders(100);
-        stats1.setTotalRevenue(new BigDecimal("10000.00"));
-        stats1.setTotalEnergy(500.0);
+        stats1.setTotalOrders(100L);
+        stats1.setTotalRevenue(10000.0);
+        stats1.setTotalEnergy(5000.0);
 
         CityOrderStatistics stats2 = new CityOrderStatistics();
         stats2.setCity("Shanghai");
-        stats2.setTotalOrders(150);
-        stats2.setTotalRevenue(new BigDecimal("15000.00"));
-        stats2.setTotalEnergy(750.0);
+        stats2.setTotalOrders(150L);
+        stats2.setTotalRevenue(15000.0);
+        stats2.setTotalEnergy(7500.0);
 
-        List<CityOrderStatistics> expectedStats = Arrays.asList(stats1, stats2);
-        when(cityOrderStatisticsMapper.selectCityOrderStatistics()).thenReturn(expectedStats);
+        List<CityOrderStatistics> mockStatistics = Arrays.asList(stats1, stats2);
+
+        when(chargingOrderMapper.getCityOrderStatistics()).thenReturn(mockStatistics);
 
         // Act
-        List<CityOrderStatistics> actualStats = cityOrderStatisticsService.getCityOrderStatistics();
+        List<CityOrderStatistics> result = chargingOrderMapper.getCityOrderStatistics();
 
         // Assert
-        assertNotNull(actualStats);
-        assertEquals(2, actualStats.size());
-        assertEquals("Beijing", actualStats.get(0).getCity());
-        assertEquals(100, actualStats.get(0).getTotalOrders());
-        assertEquals(new BigDecimal("10000.00"), actualStats.get(0).getTotalRevenue());
-        assertEquals(500.0, actualStats.get(0).getTotalEnergy());
+        assertNotNull(result);
+        assertEquals(2, result.size());
+        
+        CityOrderStatistics firstCity = result.get(0);
+        assertEquals("Beijing", firstCity.getCity());
+        assertEquals(100L, firstCity.getTotalOrders());
+        assertEquals(10000.0, firstCity.getTotalRevenue());
+        assertEquals(5000.0, firstCity.getTotalEnergy());
+        
+        CityOrderStatistics secondCity = result.get(1);
+        assertEquals("Shanghai", secondCity.getCity());
+        assertEquals(150L, secondCity.getTotalOrders());
+        assertEquals(15000.0, secondCity.getTotalRevenue());
+        assertEquals(7500.0, secondCity.getTotalEnergy());
 
-        assertEquals("Shanghai", actualStats.get(1).getCity());
-        assertEquals(150, actualStats.get(1).getTotalOrders());
-        assertEquals(new BigDecimal("15000.00"), actualStats.get(1).getTotalRevenue());
-        assertEquals(750.0, actualStats.get(1).getTotalEnergy());
-
-        verify(cityOrderStatisticsMapper, times(1)).selectCityOrderStatistics();
+        verify(chargingOrderMapper, times(1)).getCityOrderStatistics();
     }
 
     @Test
-    void testGetCityOrderStatisticsEmpty() {
+    void testGetCityOrderStatistics_EmptyResult() {
         // Arrange
-        when(cityOrderStatisticsMapper.selectCityOrderStatistics()).thenReturn(Arrays.asList());
+        when(chargingOrderMapper.getCityOrderStatistics()).thenReturn(Arrays.asList());
 
         // Act
-        List<CityOrderStatistics> actualStats = cityOrderStatisticsService.getCityOrderStatistics();
+        List<CityOrderStatistics> result = chargingOrderMapper.getCityOrderStatistics();
 
         // Assert
-        assertNotNull(actualStats);
-        assertTrue(actualStats.isEmpty());
-        verify(cityOrderStatisticsMapper, times(1)).selectCityOrderStatistics();
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+        verify(chargingOrderMapper, times(1)).getCityOrderStatistics();
     }
 
     @Test
-    void testGetCityOrderStatisticsNull() {
-        // Arrange
-        when(cityOrderStatisticsMapper.selectCityOrderStatistics()).thenReturn(null);
-
-        // Act
-        List<CityOrderStatistics> actualStats = cityOrderStatisticsService.getCityOrderStatistics();
-
-        // Assert
-        assertNull(actualStats);
-        verify(cityOrderStatisticsMapper, times(1)).selectCityOrderStatistics();
-    }
-
-    @Test
-    void testCityOrderStatisticsValues() {
+    void testGetCityOrderStatistics_NullValues() {
         // Arrange
         CityOrderStatistics stats = new CityOrderStatistics();
         stats.setCity("Guangzhou");
-        stats.setTotalOrders(200);
-        stats.setTotalRevenue(new BigDecimal("20000.00"));
-        stats.setTotalEnergy(1000.0);
+        stats.setTotalOrders(0L);
+        stats.setTotalRevenue(0.0);
+        stats.setTotalEnergy(0.0);
+
+        when(chargingOrderMapper.getCityOrderStatistics()).thenReturn(Arrays.asList(stats));
+
+        // Act
+        List<CityOrderStatistics> result = chargingOrderMapper.getCityOrderStatistics();
 
         // Assert
-        assertEquals("Guangzhou", stats.getCity());
-        assertEquals(200, stats.getTotalOrders());
-        assertEquals(new BigDecimal("20000.00"), stats.getTotalRevenue());
-        assertEquals(1000.0, stats.getTotalEnergy());
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("Guangzhou", result.get(0).getCity());
+        assertEquals(0L, result.get(0).getTotalOrders());
+        assertEquals(0.0, result.get(0).getTotalRevenue());
+        assertEquals(0.0, result.get(0).getTotalEnergy());
+    }
+
+    @Test
+    void testCityOrderStatistics_DataTypes() {
+        // Arrange
+        CityOrderStatistics stats = new CityOrderStatistics();
+        
+        // Act
+        stats.setCity("Shenzhen");
+        stats.setTotalOrders(200L);
+        stats.setTotalRevenue(25000.0);
+        stats.setTotalEnergy(12500.0);
+
+        // Assert
+        assertInstanceOf(String.class, stats.getCity());
+        assertInstanceOf(Long.class, stats.getTotalOrders());
+        assertInstanceOf(Double.class, stats.getTotalRevenue());
+        assertInstanceOf(Double.class, stats.getTotalEnergy());
+        
+        assertEquals("Shenzhen", stats.getCity());
+        assertEquals(200L, stats.getTotalOrders());
+        assertEquals(25000.0, stats.getTotalRevenue());
+        assertEquals(12500.0, stats.getTotalEnergy());
     }
 }
