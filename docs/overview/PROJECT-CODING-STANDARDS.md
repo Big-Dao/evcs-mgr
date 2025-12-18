@@ -1,6 +1,6 @@
 # EVCS 充电站管理系统 — 编程与架构规范（SSOT）
 
-版本：v1.1｜最后更新：2025-11-10｜维护：技术负责人｜状态：活跃
+版本：v1.2｜最后更新：2025-12-18｜维护：技术负责人｜状态：活跃
 
 本文件为“单一来源”（Single Source of Truth，SSOT）编码与架构规范。助手使用说明请参见 `docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md`，不要在本文件重复助手指令。
 

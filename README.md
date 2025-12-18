@@ -1,8 +1,8 @@
-# 充电站管理平台 (EVCS Manager)
+# 充电站管理平台
 
 一个基于Spring Boot和微服务架构的电动汽车充电站管理平台，支持多租户、多协议充电桩管理。
 
-> 📚 **[生产部署规划](docs/deployment/DEPLOYMENT-GUIDE.md)** ⭐ | 🧪 **[测试部署规划](docs/deployment/TEST-ENVIRONMENT-GUIDE.md)** | **[AI编程助手规范](docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md)** | **[快速文档指南](docs/overview/QUICK-DOCUMENTATION-GUIDE.md)** | **[服务参考](docs/operations/SERVICES-REFERENCE.md)** | **[故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)**
+> 📚 **[生产部署规划](docs/deployment/DEPLOYMENT-GUIDE.md)** ⭐ | 🧪 **[测试部署规划](docs/deployment/TEST-ENVIRONMENT-GUIDE.md)** | **[AI编程助手规范](docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md)** | **[版本历史](docs/overview/VERSION-HISTORY.md)** | **[服务参考](docs/operations/SERVICES-REFERENCE.md)** | **[故障排除](docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md)**
 
 ## 🎯 项目状态
 
@@ -12,13 +12,19 @@
 ![JDK](https://img.shields.io/badge/JDK-21-orange)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-**当前阶段**: 🟢 生产就绪 - 资源优化版本
-**最近更新**: 2025-12-14
-**整体完成度**: 约90% - 核心功能完整 + 资源优化
+**当前阶段**: 🟢 生产就绪 - 文档规范化版本
+**最近更新**: 2025-12-18
+**整体完成度**: 约90% - 核心功能完整 + 文档统一
 
 **系统规模**: 281个Java文件 | 12个微服务 | 23个控制器 | 39个服务类 | 37个测试文件
 
-### 最新完成（2025-12-14）✅
+### 最新完成（2025-12-18）✅
+
+- ✅ **文档统一规范化**: 全面刷新项目文档，统一为中文表述
+- ✅ **版本历史记录**: 创建统一的版本历史记录文档
+- ✅ **文档索引优化**: 整合变更记录，优化文档导航结构
+
+### 历史完成（2025-12-14）✅
 
 - ✅ **工具链升级**: Gradle 8.11.1, Node.js 20, Spring Boot 3.2.12
 - ✅ **构建优化**: 提升Gradle构建内存至4GB，优化国内镜像配置
