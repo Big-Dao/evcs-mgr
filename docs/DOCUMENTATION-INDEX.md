@@ -2,7 +2,7 @@
 
 > 一句话说明：本文件是当前仓库“非归档文档”的统一导航入口；各主题只保留一个权威 SSOT，其它文档尽量通过链接引用避免重复维护。
 
-**最后更新**: 2025-12-17  \
+**最后更新**: 2025-12-18  \
 **维护者**: 技术负责人 / 各领域维护团队  \
 **状态**: 已发布
 
@@ -17,6 +17,7 @@
 ## 概览（overview）
 
 - 管理层摘要：[docs/overview/EXECUTIVE-SUMMARY.md](overview/EXECUTIVE-SUMMARY.md)
+- 版本历史记录：[docs/overview/VERSION-HISTORY.md](overview/VERSION-HISTORY.md)
 - 规划/路线图：[docs/overview/NEXT-PLAN.md](overview/NEXT-PLAN.md)、[docs/overview/NEXT-STEP-ACTION-PLAN.md](overview/NEXT-STEP-ACTION-PLAN.md)
 - 文档快速导航（指针）：[docs/overview/QUICK-DOCUMENTATION-GUIDE.md](overview/QUICK-DOCUMENTATION-GUIDE.md)
 
@@ -60,6 +61,7 @@
 ## 参考（references）
 
 - API 文档：[docs/references/API-DOCUMENTATION.md](references/API-DOCUMENTATION.md)
+- 变更日志（已归档，请查看版本历史）：[docs/references/CHANGELOG.md](references/CHANGELOG.md)
 
 ## 归档（archive）
 
