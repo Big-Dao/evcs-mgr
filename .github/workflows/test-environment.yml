@@ -1,211 +1,147 @@
-name: Test Environment Deployment
+name: Test Environment CI/CD
 
 on:
   push:
-    branches: [ main, develop ]
+    branches:
+      - develop
+      - 'feature/**'
+      - 'hotfix/**'
   pull_request:
-    branches: [ main, develop ]
-  workflow_dispatch:
-    inputs:
-      skip_tests:
-        description: 'Skip smoke tests'
-        required: false
-        default: 'false'
+    branches:
+      - develop
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME_TENANT: ${{ github.repository }}-tenant
+  IMAGE_NAME_STATION: ${{ github.repository }}-station
 
 jobs:
-  test-deployment:
+  build-and-test:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    permissions:
+      contents: read
+      packages: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up JDK 21
+    - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
-        java-version: '21'
+        java-version: '17'
         distribution: 'temurin'
         cache: gradle
 
-    - name: Ensure JAVA_HOME is set correctly
-      run: echo "JAVA_HOME=$JAVA_HOME" >> $GITHUB_ENV
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
 
-    - name: Show system information
-      run: |
-        echo "=== System Information ==="
-        echo "Docker version:"
-        docker --version
-        docker compose version
-        echo "Available disk space:"
-        df -h
-        echo "Memory:"
-        free -h
+    - name: Run tests
+      run: ./gradlew test --no-daemon
 
-    - name: Grant execute permission for scripts
-      run: |
-        chmod +x gradlew
-        chmod +x scripts/*.sh
-
-    - name: Free up disk space
-      run: |
-        echo "Disk space before cleanup:"
-        df -h
-        echo "Removing unnecessary files..."
-        sudo rm -rf /usr/share/dotnet
-        sudo rm -rf /opt/ghc
-        sudo rm -rf "/usr/local/share/boost"
-        # Do NOT remove $AGENT_TOOLSDIRECTORY: it contains hosted tool cache items (including Java) used by the runner
-        echo "Disk space after cleanup:"
-        df -h
-
-    - name: Build application
-      run: |
-        echo "Building application with Gradle..."
-        ./gradlew build -x test --no-daemon
-        echo "Build completed successfully"
-
-    - name: Start test environment
-      timeout-minutes: 20
-      run: |
-        export CI=true
-        echo "Starting test environment deployment..."
-        echo "This will build Docker images and start all services..."
-        echo "Current disk usage:"
-        df -h /
-        ./scripts/start-test.sh
-        echo "Test environment started successfully"
-
-    - name: Wait for services to be ready
-      run: |
-        echo "Waiting for services to start..."
-        echo "Initial wait (30s)..."
-        sleep 30
-        echo "Checking container status after 30s..."
-        docker compose -f docker-compose.test.yml ps
-        echo "Continuing wait (additional 60s)..."
-        sleep 60
-        echo "Final container status:"
-        docker compose -f docker-compose.test.yml ps
-        echo "Checking service health status..."
-        docker compose -f docker-compose.test.yml ps --format json | grep -q '"Health":"healthy"' && echo "Some services are healthy" || echo "Waiting for services to become healthy..."
-
-    - name: Run health checks
-      run: |
-        echo "Running health checks..."
-        MAX_RETRIES=3
-        RETRY_COUNT=0
-        while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-          if ./scripts/health-check.sh; then
-            echo "All health checks passed"
-            exit 0
-          else
-            RETRY_COUNT=$((RETRY_COUNT + 1))
-            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-              echo "Health check failed (attempt $RETRY_COUNT/$MAX_RETRIES). Waiting 30s before retry..."
-              sleep 30
-            else
-              echo "Health check failed after $MAX_RETRIES attempts! Showing service logs..."
-              docker compose -f docker-compose.test.yml logs --tail=50
-              exit 1
-            fi
-          fi
-        done
-      timeout-minutes: 10
-
-    - name: Show container status after health check
+    - name: Upload test results
       if: always()
-      run: |
-        echo "=== Container Status ==="
-        docker compose -f docker-compose.test.yml ps
-        echo "=== Container Resource Usage ==="
-        docker stats --no-stream --format "table {{.Container}}	{{.CPUPerc}}	{{.MemUsage}}"
-
-    - name: Run smoke tests
-      if: github.event.inputs.skip_tests != 'true'
-      run: ./scripts/smoke-test.sh
-      timeout-minutes: 10
-
-    - name: Collect service logs on failure
-      if: failure()
-      run: |
-        echo "=== Container Status ==="
-        docker compose -f docker-compose.test.yml ps
-        echo ""
-        echo "=== Tenant Service Logs (last 200 lines) ==="
-        docker compose -f docker-compose.test.yml logs --tail=200 tenant-service
-        echo ""
-        echo "=== Station Service Logs (last 200 lines) ==="
-        docker compose -f docker-compose.test.yml logs --tail=200 station-service
-        echo ""
-        echo "=== PostgreSQL Logs (last 100 lines) ==="
-        docker compose -f docker-compose.test.yml logs --tail=100 postgres
-        echo ""
-        echo "=== Redis Logs (last 50 lines) ==="
-        docker compose -f docker-compose.test.yml logs --tail=50 redis
-        echo ""
-        echo "=== RabbitMQ Logs (last 50 lines) ==="
-        docker compose -f docker-compose.test.yml logs --tail=50 rabbitmq
-
-    - name: Upload logs as artifact on failure
-      if: failure()
       uses: actions/upload-artifact@v4
       with:
-        name: test-environment-logs
-        path: |
-          **/*.log
-        retention-days: 7
+        name: test-results
+        path: '**/build/test-results/test/*.xml'
 
-    - name: Stop test environment
-      if: always()
-      run: |
-        export CI=true
-        ./scripts/stop-test.sh
-
-    - name: Clean up Docker resources
-      if: always()
-      run: |
-        docker system prune -f
-        docker volume prune -f
-
-  build-docker-images:
+  build-and-push-images:
+    needs: build-and-test
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: write
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    # 1. 这里插入 JDK 步骤
-    - name: Set up JDK 21
+    - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
-        java-version: '21'
+        java-version: '17'
         distribution: 'temurin'
+        cache: gradle
 
-    # 2. 这里插入 jar 构建步骤
-    - name: Build evcs-tenant jar
-      run: ./gradlew :evcs-tenant:build
+    - name: Grant execute permission for gradlew
+      run: chmod +x gradlew
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build tenant service image
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata for tenant service
+      id: meta-tenant
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_TENANT }}
+        tags: |
+          type=ref,event=branch
+          type=sha,prefix={{branch}}-
+          type=raw,value=test-latest,enable={{is_default_branch}}
+
+    - name: Extract metadata for station service
+      id: meta-station
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_STATION }}
+        tags: |
+          type=ref,event=branch
+          type=sha,prefix={{branch}}-
+          type=raw,value=test-latest,enable={{is_default_branch}}
+
+    # 1. 先构建 common 模块（其他模块的依赖）
+    - name: Build common module
+      run: ./gradlew :evcs-common:build -x test --no-daemon
+
+    # 2. 构建所有需要的 jar 包
+    - name: Build service jars
+      run: ./gradlew :evcs-tenant:build :evcs-station:build -x test --no-daemon
+
+    # 3. 构建并推送 tenant 服务镜像
+    - name: Build and push tenant Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./evcs-tenant/Dockerfile
-        push: false
-        tags: evcs-tenant:test
+        push: true
+        tags: ${{ steps.meta-tenant.outputs.tags }}
+        labels: ${{ steps.meta-tenant.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Build station service image
+    # 4. 构建并推送 station 服务镜像
+    - name: Build and push station Docker image
       uses: docker/build-push-action@v5
       with:
         context: .
         file: ./evcs-station/Dockerfile
-        push: false
-        tags: evcs-station:test
+        push: true
+        tags: ${{ steps.meta-station.outputs.tags }}
+        labels: ${{ steps.meta-station.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+
+  deploy-to-test:
+    needs: build-and-push-images
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment:
+      name: test
+      url: https://test.evcs.example.com
+
+    steps:
+    - name: Deploy to test environment
+      run: |
+        echo "Deploying to test environment..."
+        echo "Tenant image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_TENANT }}:${{ github.ref_name }}-${{ github.sha }}"
+        echo "Station image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_STATION }}:${{ github.ref_name }}-${{ github.sha }}"
+        # Add actual deployment commands here
