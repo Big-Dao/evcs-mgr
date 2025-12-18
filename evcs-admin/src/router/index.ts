@@ -122,6 +122,36 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '编辑计费方案', icon: 'Coin', hidden: true }
       },
       {
+        path: 'payments',
+        name: 'Payments',
+        component: () => import('@/views/payment/PaymentList.vue'),
+        meta: { title: '支付管理', icon: 'Wallet' }
+      },
+      {
+        path: 'payments/:id',
+        name: 'PaymentDetail',
+        component: () => import('@/views/payment/PaymentDetail.vue'),
+        meta: { title: '支付详情', icon: 'Wallet', hidden: true }
+      },
+      {
+        path: 'reconciliation',
+        name: 'Reconciliation',
+        component: () => import('@/views/reconciliation/ReconciliationList.vue'),
+        meta: { title: '对账管理', icon: 'Files' }
+      },
+      {
+        path: 'reconciliation/exceptions',
+        name: 'ReconciliationExceptions',
+        component: () => import('@/views/reconciliation/ReconciliationException.vue'),
+        meta: { title: '对账异常', icon: 'Files', hidden: true }
+      },
+      {
+        path: 'monitoring',
+        name: 'Monitoring',
+        component: () => import('@/views/monitoring/SystemMonitor.vue'),
+        meta: { title: '系统监控', icon: 'Monitor' }
+      },
+      {
         path: 'test',
         name: 'Test',
         component: () => import('@/views/Test.vue'),
