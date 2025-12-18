@@ -14,7 +14,7 @@ COPY package.json package-lock.json* ./
 RUN npm config set registry https://registry.npmmirror.com/
 
 # Install dependencies
-RUN npm ci --only=production || npm install
+RUN npm ci || npm install
 
 # Copy source files
 COPY . .

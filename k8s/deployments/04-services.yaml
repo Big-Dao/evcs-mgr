@@ -1,3 +1,7 @@
+# NOTE: This manifest contains placeholders like ${EVCS_K8S_REGISTRY}/${EVCS_IMAGE_TAG}.
+# Apply via k8s/deploy.sh (preferred). It runs envsubst with the required variables.
+# Do NOT run: kubectl apply -f k8s/deployments/<file>.yaml
+
 apiVersion: apps/v1
 kind: Deployment
 metadata:

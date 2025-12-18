@@ -2,7 +2,7 @@
 
 > 一句话说明：EVCS Manager 的生产部署与发布基线（Day-0/Day-1），以现有 Compose/K8s 资产为准，本文件只做规划与验收口径。
 
-**最后更新**: 2025-12-17  \
+**最后更新**: 2025-12-18  \
 **维护者**: DevOps 团队  \
 **状态**: 已发布
 
@@ -37,6 +37,44 @@
 
 - **Docker Compose**：适用于单机/小规模环境或演示型生产（以 [docker-compose.yml](../../docker-compose.yml) 与变体文件为准）。
 - **Kubernetes**：适用于需要弹性扩缩容、滚动升级与更强隔离的生产环境（以 [k8s/](../../k8s/) 为准）。
+
+#### Kubernetes 部署清单（重要：占位符渲染）
+
+仓库内的 K8s manifests（见 [k8s/deployments/](../../k8s/deployments/)）包含镜像相关占位符，例如 `${EVCS_K8S_REGISTRY}` / `${EVCS_IMAGE_TAG}`。
+这些文件**不能直接**执行 `kubectl apply -f k8s/deployments/*.yaml`，否则会产生 `InvalidImageName`（占位符未被替换）。
+
+推荐做法（SSOT）：使用脚本渲染并应用：
+
+```bash
+# 以脚本实现为准（会 envsubst 渲染占位符后再 apply）
+./k8s/deploy.sh
+
+# 如仅构建/部署前端（以脚本实现为准）
+./k8s/deploy-admin-frontend.sh
+```
+
+手工渲染（仅用于排障/演练，不作为推荐路径）：
+
+```bash
+export EVCS_K8S_REGISTRY=192.168.20.235:5000
+export EVCS_IMAGE_TAG=dev
+
+# 将渲染结果输出到临时目录，再 apply
+mkdir -p /tmp/evcs-k8s-rendered
+for f in k8s/deployments/*.yaml; do
+  envsubst < "$f" > /tmp/evcs-k8s-rendered/"$(basename "$f")"
+done
+kubectl apply -f /tmp/evcs-k8s-rendered
+```
+
+最低验收建议（发布后 5 分钟内）：
+
+```bash
+kubectl -n evcs get pods
+kubectl -n evcs get svc
+# 网关健康检查（示例；端口与暴露方式以实际为准）
+curl -fsS http://<gateway-host>:8080/actuator/health
+```
 
 说明：本仓库当前同时存在多套 Compose 变体（如 minimal/optimized/core-dev/monitoring），生产环境建议优先使用“optimized + 必要的 monitoring 叠加”，以减少资源浪费与误配置概率。
 

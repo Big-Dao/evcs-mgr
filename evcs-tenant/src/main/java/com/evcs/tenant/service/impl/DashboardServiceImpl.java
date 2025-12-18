@@ -18,6 +18,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -134,14 +138,13 @@ public class DashboardServiceImpl implements IDashboardService {
                 
                 for (Map<String, Object> order : orders) {
                     RecentOrderDTO dto = RecentOrderDTO.builder()
-                            .orderId(String.valueOf(order.get("order_no")))
-                            .stationName(String.valueOf(order.get("station_name")))
-                            .chargerCode(String.valueOf(order.get("charger_code")))
-                            .userName(String.valueOf(order.get("user_name")))
-                            .amount((BigDecimal) order.get("total_amount"))
+                            .orderId(toStringOrEmpty(order.get("order_no")))
+                            .stationName(toStringOrEmpty(order.get("station_name")))
+                            .chargerCode(toStringOrEmpty(order.get("charger_code")))
+                            .userName(toStringOrEmpty(order.get("user_name")))
+                            .amount(toBigDecimal(order.get("total_amount")))
                             .status(convertOrderStatus(String.valueOf(order.get("status"))))
-                            .createTime(order.get("create_time") != null ? 
-                                        ((LocalDateTime) order.get("create_time")).format(formatter) : "")
+                            .createTime(formatCreateTime(order.get("create_time"), formatter))
                             .build();
                     result.add(dto);
                 }
@@ -394,4 +397,47 @@ public class DashboardServiceImpl implements IDashboardService {
             return new ArrayList<>();
         }
     }
+
+    static String toStringOrEmpty(Object value) {
+        return value == null ? "" : String.valueOf(value);
+    }
+
+    static BigDecimal toBigDecimal(Object value) {
+        if (value == null) {
+            return BigDecimal.ZERO;
+        }
+        if (value instanceof BigDecimal bd) {
+            return bd;
+        }
+        if (value instanceof Number number) {
+            // Avoid BigDecimal(double) constructor; use string for precision when possible
+            return new BigDecimal(String.valueOf(number));
+        }
+        try {
+            return new BigDecimal(String.valueOf(value));
+        } catch (Exception ex) {
+            return BigDecimal.ZERO;
+        }
+    }
+
+    static String formatCreateTime(Object createTime, DateTimeFormatter formatter) {
+        if (createTime == null) {
+            return "";
+        }
+        if (createTime instanceof LocalDateTime localDateTime) {
+            return localDateTime.format(formatter);
+        }
+        if (createTime instanceof Timestamp timestamp) {
+            return timestamp.toLocalDateTime().format(formatter);
+        }
+        if (createTime instanceof Date date) {
+            return Instant.ofEpochMilli(date.getTime())
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime()
+                    .format(formatter);
+        }
+        // Fallback: best-effort string
+        return String.valueOf(createTime);
+    }
+
 }

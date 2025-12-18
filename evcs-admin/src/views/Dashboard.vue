@@ -66,7 +66,7 @@
             <el-table-column prop="stationName" label="充电站" />
             <el-table-column prop="amount" label="金额" width="100">
               <template #default="{ row }">
-                ¥{{ row.amount.toFixed(2) }}
+                ¥{{ Number(row.amount ?? 0).toFixed(2) }}
               </template>
             </el-table-column>
             <el-table-column prop="status" label="状态" width="80">
@@ -86,7 +86,7 @@
 <script setup lang="ts">
 import { reactive, ref, onMounted, onBeforeUnmount } from 'vue'
 import * as echarts from 'echarts'
-import { type DashboardStats, type RecentOrder, getChargerStatusStats } from '@/api/dashboard'
+import { type DashboardStats, type RecentOrder, getChargerStatusStats, getDashboardStats, getRecentOrders } from '@/api/dashboard'
 
 const loading = ref(false)
 
@@ -142,19 +142,12 @@ const resizeChart = () => statusChart?.resize()
 const loadStats = async () => {
   loading.value = true
   try {
-    // 临时禁用API调用以避免401错误，直接使用mock数据
-    // const response = await getDashboardStats()
-    // if (response.data) {
-    //   Object.assign(stats, response.data)
-    // }
-    console.log('Dashboard API暂时禁用，使用mock数据')
+    const response = await getDashboardStats()
+    if (response.data) {
+      Object.assign(stats, response.data)
+    }
   } catch (error: any) {
     console.error('加载统计数据失败:', error)
-    // API不存在时使用mock数据
-    stats.tenantCount = 12
-    stats.stationCount = 48
-    stats.chargerCount = 256
-    stats.todayOrderCount = 89
   } finally {
     loading.value = false
   }
@@ -163,20 +156,12 @@ const loadStats = async () => {
 // 加载最近订单
 const loadRecentOrders = async () => {
   try {
-    // 临时禁用API调用以避免401错误，直接使用mock数据
-    // const response = await getRecentOrders(5)
-    // if (response.data) {
-    //   recentOrders.value = response.data
-    // }
-    console.log('Recent orders API暂时禁用，使用mock数据')
+    const response = await getRecentOrders(5)
+    if (response.data) {
+      recentOrders.value = response.data
+    }
   } catch (error: any) {
     console.error('加载最近订单失败:', error)
-    // API不存在时使用mock数据
-    recentOrders.value = [
-      { orderId: 'ORD001', stationName: '市中心站', chargerCode: 'CH001', userName: '张三', amount: 45.80, status: '已完成', createTime: '2025-10-27 10:30:00' },
-      { orderId: 'ORD002', stationName: '高新区站', chargerCode: 'CH002', userName: '李四', amount: 32.50, status: '充电中', createTime: '2025-10-27 11:15:00' },
-      { orderId: 'ORD003', stationName: '机场站', chargerCode: 'CH003', userName: '王五', amount: 67.20, status: '已完成', createTime: '2025-10-27 12:00:00' }
-    ]
   }
 }
 
