@@ -292,4 +292,19 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
         wrapper.orderByDesc("id");
         return this.page(page, wrapper);
     }
+
+    @Override
+    @DataScope
+    public java.util.List<com.evcs.order.dto.CityOrderStatistics> getCityOrderStatistics(LocalDateTime startTime, LocalDateTime endTime) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        if (tenantId == null) {
+            log.warn("TenantContext is null when getting city order statistics");
+            return java.util.Collections.emptyList();
+        }
+        
+        log.info("Getting city order statistics for tenant: {}, startTime: {}, endTime: {}", 
+            tenantId, startTime, endTime);
+        
+        return baseMapper.getCityOrderStatistics(tenantId, startTime, endTime);
+    }
 }
