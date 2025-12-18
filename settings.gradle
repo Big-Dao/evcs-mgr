@@ -8,6 +8,15 @@ pluginManagement {
 	}
 }
 
+dependencyResolutionManagement {
+	repositories {
+		gradlePluginPortal()
+		maven { url 'https://maven.aliyun.com/repository/public' }
+		mavenCentral()
+		maven { url 'https://repo1.maven.org/maven2' }
+	}
+}
+
 plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
 }
