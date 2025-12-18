@@ -28,6 +28,11 @@
 - 数据模型：[docs/architecture/data-model.md](architecture/data-model.md)
 - 多租户异步上下文 RFC：[docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md](architecture/TENANT-CONTEXT-ASYNC-RFC.md)
 
+## 核心概念（concepts）
+
+- **异步上下文传播**：[docs/concepts/ASYNC-CONTEXT-PROPAGATION.md](concepts/ASYNC-CONTEXT-PROPAGATION.md) ⭐  
+  解释什么是异步上下文传播、为什么需要它，以及如何在项目中使用
+
 ## 开发（development）
 
 - 开发者指南：[docs/development/DEVELOPER-GUIDE.md](development/DEVELOPER-GUIDE.md)
