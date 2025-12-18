@@ -264,6 +264,28 @@ Authorization: Bearer {token}
 
 ## 订单管理
 
+### 订单状态说明（关键业务过程）
+
+订单状态字段 `status` 用于描述充电订单的生命周期（常量定义在订单服务实体 `ChargingOrder` 中）。常见流转为：
+
+`0(已创建/充电中)` → `1(已结束/已完成计量)` → `10(待支付)` → `11(已支付)`
+
+退款相关：`12(退款中)` → `13(已退款)`；取消：`2(已取消)`。
+
+| status | 含义 |
+|---:|---|
+| 0 | 已创建（通常在收到“开始充电”事件后创建，代表本次充电会话进行中） |
+| 1 | 已完成（收到“停止充电”事件后完成计量与金额计算） |
+| 10 | 待支付 |
+| 11 | 已支付 |
+| 12 | 退款中 |
+| 13 | 已退款 |
+| 2 | 已取消 |
+
+支付相关的简易字段（占位/兼容）：
+- `paymentTradeId`: 第三方支付交易号（tradeId/tradeNo 等）
+- `paidTime`: 支付完成时间
+
 ### 创建充电订单
 
 **接口**: `POST /api/orders`
@@ -398,20 +420,118 @@ Authorization: Bearer {token}
 }
 ```
 
+> ⚠️ 说明：仓库内同时存在“网关聚合路径/历史示例路径”和“服务直连路径”。
+> - 业务流程与回调/退款交互以当前支付服务实现为准（见下方“支付回调/退款回调/退款/对账”接口）。
+> - 对外统一入口最终以 Swagger/Knife4j（`/doc.html`）展示为准。
+
+### 查询支付状态
+
+**接口（支付服务现行实现）**: `GET /api/payment/query/{tradeNo}`
+
+**权限**: `payment:query`
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "查询成功",
+  "data": {
+    "paymentId": 1001,
+    "tradeNo": "PAY-202510120001",
+    "payParams": "{...}",
+    "payUrl": "weixin://wxpay/bizpayurl?pr=xxx",
+    "amount": 78.32,
+    "status": "PENDING"
+  }
+}
+```
+
 ### 支付回调
 
 **接口（现行实现）**:
 - `POST /api/payment/callback/alipay`
 - `POST /api/payment/callback/wechat`
 
+**退款回调（现行实现）**:
+- `POST /api/payment/callback/alipay/refund`
+- `POST /api/payment/callback/wechat/refund`
+
 **说明**:
 - 路由以当前代码实现为准，暂不使用 `{provider}` 动态路径。
 - 由第三方支付平台回调，无需手动调用。
+
+**回调处理要点（现行实现口径）**:
+- **验签/解密**：微信回调包含加密字段，需按平台规范解密；支付宝按签名字段验签。
+- **幂等**：同一笔交易回调可能重复投递，服务端需要幂等处理。
+- **金额校验**：回调金额与本地订单金额不一致时应拒绝或标记异常（对应错误码 `4003`）。
+- **订单状态同步**：支付服务在处理回调后，会尝试通知订单服务更新支付结果（内部回调见“调用时序图-支付回调处理流程”）。
 
 **支持渠道**:
 - `wechat`: 微信支付
 - `alipay`: 支付宝
 - `union`: 银联支付（暂不支持，仅预留，如需启用需补齐渠道枚举与控制器入口）
+
+### 退款
+
+**接口（支付服务现行实现）**: `POST /api/payment/refund`
+
+**权限**: `payment:refund`
+
+**请求示例**:
+```json
+{
+  "paymentId": 1001,
+  "refundAmount": 50.00,
+  "refundReason": "用户申请退款"
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "退款受理成功",
+  "data": {
+    "refundNo": "WXRF202510120001",
+    "refundAmount": 50.00,
+    "refundStatus": "PROCESSING"
+  }
+}
+```
+
+### 对账
+
+**接口（支付服务现行实现）**:
+- `POST /api/reconciliation/execute`
+- `POST /api/reconciliation/daily/{channel}`
+
+**请求示例（手工对账）**:
+```json
+{
+  "reconciliationDate": "2025-12-16",
+  "channel": "alipay"
+}
+```
+
+**响应示例**:
+```json
+{
+  "code": 200,
+  "message": "对账完成",
+  "data": {
+    "reconciliationDate": "2025-12-16",
+    "channel": "alipay",
+    "totalCount": 100,
+    "matchedCount": 98,
+    "mismatchCount": 2,
+    "systemTotalAmount": 8888.88,
+    "channelTotalAmount": 8888.88,
+    "amountDifference": 0.00,
+    "successRate": 98.00,
+    "status": "PARTIAL"
+  }
+}
+```
 
 ---
 
@@ -599,6 +719,106 @@ MP --> Service: 返回结果
 Service --> Gateway: 返回响应
 Gateway -> Context: 清除租户上下文
 Gateway --> UserA: 返回数据（仅租户A数据）
+
+@enduml
+```
+
+### 支付回调处理流程（现行实现）
+
+> 目的：补齐“第三方回调 → 支付服务验签/幂等 → 同步订单状态”的关键链路。
+
+```plantuml
+@startuml
+actor "第三方支付平台" as PSP
+participant "支付回调入口\nPaymentCallbackController" as Callback
+participant "支付回调服务\nPaymentCallbackService" as CallbackSvc
+participant "支付服务\n(evcs-payment)" as Payment
+participant "订单同步\nOrderSyncService" as Sync
+participant "订单服务\n(evcs-order)" as Order
+
+PSP -> Callback: POST /api/payment/callback/{channel}
+Callback -> Callback: 解析参数/验签/（微信）解密
+Callback -> CallbackSvc: handleCallback(channel, request)
+CallbackSvc -> Payment: 更新支付订单（幂等/金额校验/状态落库）
+CallbackSvc -> Sync: syncPaymentSuccess/Failure(paymentOrder)
+Sync -> Order: POST /order/payment/callback\n(tradeId, success)
+Order --> Sync: Result<Boolean>
+Callback --> PSP: 按渠道规范返回 success/FAIL
+
+note right of Sync
+优先直接 API 同步；失败则降级为消息队列/重试记录（由支付服务内部策略决定）
+end note
+
+@enduml
+```
+
+### 退款流程（提交 + 异步退款回调）
+
+```plantuml
+@startuml
+actor "调用方" as Caller
+participant "支付服务\n(evcs-payment)" as Payment
+participant "第三方支付平台" as PSP
+participant "退款回调入口\n/api/payment/callback/*/refund" as RefundCb
+
+Caller -> Payment: POST /api/payment/refund
+Payment -> PSP: 发起退款（可能返回处理中）
+PSP --> Payment: 退款受理结果
+Payment --> Caller: RefundResponse(refundNo, refundStatus)
+
+PSP -> RefundCb: POST /api/payment/callback/{channel}/refund
+RefundCb -> Payment: 验签/解密 -> 更新退款状态
+
+note right of Payment
+当前实现会在退款成功后发送“退款成功消息”(RabbitMQ)。
+如需与订单状态联动（REFUNDING/REFUNDED），需在订单侧消费该消息或接入内部同步接口。
+end note
+
+@enduml
+```
+
+### 对账流程（手工/每日自动）
+
+```plantuml
+@startuml
+actor "运营人员/定时任务" as Trigger
+participant "对账接口\n/api/reconciliation" as ReconApi
+participant "对账服务\nReconciliationService" as ReconSvc
+database "支付订单库" as DB
+participant "渠道账单下载/解析" as Channel
+
+Trigger -> ReconApi: POST /api/reconciliation/execute\n(or /daily/{channel})
+ReconApi -> ReconSvc: reconcile(date, channel)
+ReconSvc -> DB: 查询当日支付成功订单
+ReconSvc -> Channel: 下载并解析对账单
+ReconSvc -> ReconSvc: 比对交易/统计差异/计算成功率
+ReconSvc --> ReconApi: ReconciliationResult
+ReconApi --> Trigger: 返回对账汇总
+
+@enduml
+```
+
+### 协议事件驱动的订单流转（Start/Stop，幂等）
+
+> 说明：协议侧事件模型与消息流转详见 [docs/architecture/PROTOCOL-EVENT-MODEL.md](../architecture/PROTOCOL-EVENT-MODEL.md)。
+
+```plantuml
+@startuml
+actor "充电桩设备" as Charger
+participant "协议服务\n(evcs-protocol)" as Protocol
+participant "消息队列\nRabbitMQ" as MQ
+participant "订单服务\n(evcs-order)" as Order
+
+Charger -> Protocol: 上报开始/停止事件
+Protocol -> MQ: 发布协议事件（protocol.* routingKey）
+
+alt 订单侧通过 MQ 消费
+  MQ -> Order: 消费 StartEvent/StopEvent
+else 订单侧通过 HTTP 入口（兼容/联调）
+  MQ -> Order: 触发 /order/start 或 /order/stop
+end
+
+Order -> Order: 按 sessionId 幂等创建/完成订单
 
 @enduml
 ```
