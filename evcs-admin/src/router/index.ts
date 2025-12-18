@@ -146,6 +146,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '对账异常', icon: 'Files', hidden: true }
       },
       {
+        path: 'monitoring',
+        name: 'Monitoring',
+        component: () => import('@/views/monitoring/SystemMonitor.vue'),
+        meta: { title: '系统监控', icon: 'Monitor' }
+      },
+      {
         path: 'test',
         name: 'Test',
         component: () => import('@/views/Test.vue'),
