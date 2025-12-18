@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import jakarta.servlet.http.HttpServletResponse;
 import java.util.stream.Collectors;
 
 /**
@@ -38,11 +39,25 @@ public class GlobalExceptionHandler {
      * 业务异常处理
      */
     @ExceptionHandler(BusinessException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
     @Order(2)
-    public Result<Void> handleBusinessException(BusinessException e) {
+    public Result<Void> handleBusinessException(BusinessException e, HttpServletResponse response) {
         log.warn("业务异常: {}", e.getMessage());
+        response.setStatus(resolveHttpStatus(e.getCode()));
         return Result.failure(e.getCode(), e.getMessage());
+    }
+
+    private int resolveHttpStatus(Integer code) {
+        if (code == null) {
+            return HttpStatus.BAD_REQUEST.value();
+        }
+
+        // 标准 HTTP 4xx/5xx 直接映射
+        if (code >= 400 && code < 600) {
+            return code;
+        }
+
+        // 非标准业务码（如 4xxx/5xxx）：统一返回 400，由 body.code 传递业务码
+        return HttpStatus.BAD_REQUEST.value();
     }
     
     /**

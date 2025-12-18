@@ -6,6 +6,7 @@ import com.evcs.auth.entity.SysUser;
 import com.evcs.auth.service.IAuthService;
 import com.evcs.auth.service.ISysUserService;
 import com.evcs.common.exception.BusinessException;
+import com.evcs.common.result.ResultCode;
 import com.evcs.common.tenant.CustomTenantLineHandler;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.util.JwtUtil;
@@ -47,11 +48,11 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         if (user == null || user.getTenantId() == null || (user.getStatus() != null && user.getStatus() == 0)) {
-            throw new BusinessException(401, "账号或密码错误");
+            throw new BusinessException(ResultCode.USER_PASSWORD_ERROR, "账号或密码错误");
         }
 
         if (!passwordEncoder.matches(password, user.getPassword())) {
-            throw new BusinessException(401, "账号或密码错误");
+            throw new BusinessException(ResultCode.USER_PASSWORD_ERROR, "账号或密码错误");
         }
 
         TenantContext.setTenantId(user.getTenantId());
@@ -60,17 +61,7 @@ public class AuthServiceImpl implements IAuthService {
         String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getTenantId());
         List<String> roles = userService.listRoleCodes(user.getId());
 
-        Map<String, Object> userInfo = new HashMap<>();
-        userInfo.put("id", user.getId());
-        userInfo.put("tenantId", user.getTenantId());
-        userInfo.put("username", user.getUsername());
-        userInfo.put("identifier", user.getLoginIdentifier());
-        userInfo.put("realName", user.getRealName());
-        userInfo.put("status", user.getStatus());
-        userInfo.put("userType", user.getUserType());
-        if (!CollectionUtils.isEmpty(roles)) {
-            userInfo.put("roles", roles);
-        }
+        Map<String, Object> userInfo = buildUserInfo(user, roles);
 
         long expiresIn = jwtExpireSeconds;
         Instant expiresAt = jwtUtil.getExpiration(token);
@@ -84,6 +75,36 @@ public class AuthServiceImpl implements IAuthService {
                 .expiresIn(expiresIn)
                 .user(userInfo)
                 .build();
+    }
+
+    @Override
+    public Map<String, Object> getUserInfo(Long userId, Long tenantId) {
+        if (userId == null || tenantId == null) {
+            throw new BusinessException(401, "未登录");
+        }
+
+        SysUser user = userService.getUserByIdWithTenant(userId, tenantId);
+        if (user == null) {
+            throw new BusinessException(404, "用户不存在");
+        }
+
+        List<String> roles = userService.listRoleCodes(userId);
+        return buildUserInfo(user, roles);
+    }
+
+    private Map<String, Object> buildUserInfo(SysUser user, List<String> roles) {
+        Map<String, Object> userInfo = new HashMap<>();
+        userInfo.put("id", user.getId());
+        userInfo.put("tenantId", user.getTenantId());
+        userInfo.put("username", user.getUsername());
+        userInfo.put("identifier", user.getLoginIdentifier());
+        userInfo.put("realName", user.getRealName());
+        userInfo.put("status", user.getStatus());
+        userInfo.put("userType", user.getUserType());
+        if (!CollectionUtils.isEmpty(roles)) {
+            userInfo.put("roles", roles);
+        }
+        return userInfo;
     }
 
     @Override

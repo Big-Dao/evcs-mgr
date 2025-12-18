@@ -3,6 +3,8 @@ package com.evcs.auth.service;
 import com.evcs.auth.controller.dto.LoginResponse;
 import com.evcs.auth.controller.dto.UserCreateRequest;
 
+import java.util.Map;
+
 public interface IAuthService {
     /**
      * 用户登录
@@ -39,4 +41,12 @@ public interface IAuthService {
      * @return 是否有效
      */
     boolean validateToken(String token);
+
+    /**
+     * 获取当前用户信息
+     * @param userId 用户ID
+     * @param tenantId 租户ID
+     * @return 用户信息（字段结构与登录返回中的 user 一致）
+     */
+    Map<String, Object> getUserInfo(Long userId, Long tenantId);
 }

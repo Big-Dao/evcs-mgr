@@ -18,6 +18,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -215,6 +216,64 @@ class AuthServiceTest {
 
         // Act & Assert
         assertThrows(BusinessException.class, () -> authService.refreshToken(invalidToken));
+    }
+
+    @Test
+    @DisplayName("获取用户信息 - 有效用户应返回用户信息")
+    void testGetUserInfo_shouldReturnUserInfo_whenUserExists() {
+        // Arrange
+        Long userId = 1L;
+        Long tenantId = 1001L;
+
+        SysUser user = new SysUser();
+        user.setId(userId);
+        user.setTenantId(tenantId);
+        user.setUsername("testuser");
+        user.setLoginIdentifier("testuser");
+        user.setStatus(1);
+
+        when(userService.getUserByIdWithTenant(userId, tenantId)).thenReturn(user);
+        when(userService.listRoleCodes(userId)).thenReturn(Collections.singletonList("ADMIN"));
+
+        // Act
+        Map<String, Object> userInfo = authService.getUserInfo(userId, tenantId);
+
+        // Assert
+        assertNotNull(userInfo);
+        assertEquals(userId, userInfo.get("id"));
+        assertEquals(tenantId, userInfo.get("tenantId"));
+        assertEquals("testuser", userInfo.get("username"));
+        assertEquals("testuser", userInfo.get("identifier"));
+        assertEquals(Collections.singletonList("ADMIN"), userInfo.get("roles"));
+
+        verify(userService).getUserByIdWithTenant(userId, tenantId);
+        verify(userService).listRoleCodes(userId);
+    }
+
+    @Test
+    @DisplayName("获取用户信息 - 缺少上下文应抛出未登录异常")
+    void testGetUserInfo_shouldThrowBusinessException_whenMissingContext() {
+        // Arrange
+        Long userId = null;
+        Long tenantId = 1001L;
+
+        // Act & Assert
+        assertThrows(BusinessException.class, () -> authService.getUserInfo(userId, tenantId));
+    }
+
+    @Test
+    @DisplayName("获取用户信息 - 用户不存在应抛出异常")
+    void testGetUserInfo_shouldThrowBusinessException_whenUserNotFound() {
+        // Arrange
+        Long userId = 1L;
+        Long tenantId = 1001L;
+
+        when(userService.getUserByIdWithTenant(userId, tenantId)).thenReturn(null);
+
+        // Act & Assert
+        assertThrows(BusinessException.class, () -> authService.getUserInfo(userId, tenantId));
+        verify(userService).getUserByIdWithTenant(userId, tenantId);
+        verify(userService, never()).listRoleCodes(anyLong());
     }
 
     @Test

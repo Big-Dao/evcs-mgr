@@ -14,6 +14,7 @@ export interface OrderQueryParams {
   startTime?: string
   endTime?: string
   current?: number
+  page?: number
   size?: number
 }
 
@@ -66,10 +67,15 @@ export interface OrderStatistics {
  * 获取订单列表
  */
 export function getOrderList(params: OrderQueryParams) {
+  const { current, page, ...rest } = params || {}
+
   return request<PageResult<Order>>({
     url: '/order/list',
     method: 'get',
-    params
+    params: {
+      ...rest,
+      page: page ?? current
+    }
   })
 }
 

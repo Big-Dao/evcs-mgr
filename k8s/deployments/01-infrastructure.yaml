@@ -14,6 +14,10 @@ data:
     CREATE EXTENSION IF NOT EXISTS "cube";
     CREATE EXTENSION IF NOT EXISTS "earthdistance";
 
+    -- ============================================
+    -- 1. 系统管理模块（租户 / 用户 / RBAC）
+    -- ============================================
+
     CREATE TABLE IF NOT EXISTS sys_tenant (
         id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
         tenant_code VARCHAR(50) UNIQUE NOT NULL,
@@ -42,6 +46,10 @@ data:
         remark TEXT
     );
 
+    CREATE INDEX IF NOT EXISTS idx_tenant_code ON sys_tenant(tenant_code);
+    CREATE INDEX IF NOT EXISTS idx_tenant_parent ON sys_tenant(parent_id);
+    CREATE INDEX IF NOT EXISTS idx_tenant_status ON sys_tenant(status, deleted);
+
     CREATE TABLE IF NOT EXISTS sys_user (
         id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
         username VARCHAR(50) NOT NULL,
@@ -65,12 +73,136 @@ data:
         version INTEGER DEFAULT 1,
         remark TEXT
     );
-    
-    -- (Simplified for brevity, in real deployment use full file or volume mount)
-    -- Ideally, we should use a Job to initialize DB or mount the full file.
-    -- For this environment setup, we assume the DB might already be initialized or we use a simplified init.
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_user_tenant_username ON sys_user(tenant_id, username) WHERE deleted = 0;
+    CREATE UNIQUE INDEX IF NOT EXISTS uk_sys_user_login_identifier ON sys_user(login_identifier) WHERE deleted = 0;
+    CREATE INDEX IF NOT EXISTS idx_user_tenant ON sys_user(tenant_id, status, deleted);
+    CREATE INDEX IF NOT EXISTS idx_user_phone ON sys_user(phone) WHERE phone IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_user_email ON sys_user(email) WHERE email IS NOT NULL;
+
+    CREATE TABLE IF NOT EXISTS sys_role (
+        id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
+        role_code VARCHAR(50) NOT NULL,
+        role_name VARCHAR(100) NOT NULL,
+        sort INTEGER DEFAULT 0,
+        data_scope INTEGER DEFAULT 1,
+        status INTEGER DEFAULT 1,
+        tenant_id BIGINT NOT NULL,
+        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        create_by BIGINT,
+        update_by BIGINT,
+        deleted INTEGER DEFAULT 0,
+        version INTEGER DEFAULT 1,
+        remark TEXT
+    );
+
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_role_tenant_code ON sys_role(tenant_id, role_code) WHERE deleted = 0;
+
+    CREATE TABLE IF NOT EXISTS sys_permission (
+        id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
+        permission_code VARCHAR(100) NOT NULL,
+        permission_name VARCHAR(100) NOT NULL,
+        parent_id BIGINT,
+        type INTEGER DEFAULT 1,
+        path VARCHAR(200),
+        component VARCHAR(200),
+        perms VARCHAR(100),
+        icon VARCHAR(100),
+        sort INTEGER DEFAULT 0,
+        status INTEGER DEFAULT 1,
+        is_frame INTEGER DEFAULT 0,
+        is_cache INTEGER DEFAULT 0,
+        visible INTEGER DEFAULT 1,
+        tenant_id BIGINT NOT NULL,
+        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        create_by BIGINT,
+        update_by BIGINT,
+        deleted INTEGER DEFAULT 0,
+        version INTEGER DEFAULT 1,
+        remark TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS sys_user_role (
+        id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
+        user_id BIGINT NOT NULL,
+        role_id BIGINT NOT NULL,
+        tenant_id BIGINT NOT NULL,
+        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        create_by BIGINT
+    );
+
+    CREATE TABLE IF NOT EXISTS sys_role_permission (
+        id BIGINT PRIMARY KEY DEFAULT (extract(epoch from now()) * 1000000 + floor(random() * 1000000)::bigint),
+        role_id BIGINT NOT NULL,
+        permission_id BIGINT NOT NULL,
+        tenant_id BIGINT NOT NULL,
+        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        create_by BIGINT
+    );
+
+    -- ============================================
+    -- 触发器：自动更新时间戳
+    -- ============================================
+
+    CREATE OR REPLACE FUNCTION update_updated_time_column()
+    RETURNS TRIGGER AS $$
+    BEGIN
+        NEW.update_time = CURRENT_TIMESTAMP;
+        RETURN NEW;
+    END;
+    $$ language 'plpgsql';
+
+    DROP TRIGGER IF EXISTS update_tenant_updated_time ON sys_tenant;
+    CREATE TRIGGER update_tenant_updated_time BEFORE UPDATE ON sys_tenant
+      FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
+
+    DROP TRIGGER IF EXISTS update_user_updated_time ON sys_user;
+    CREATE TRIGGER update_user_updated_time BEFORE UPDATE ON sys_user
+      FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
+
+    DROP TRIGGER IF EXISTS update_role_updated_time ON sys_role;
+    CREATE TRIGGER update_role_updated_time BEFORE UPDATE ON sys_role
+      FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
+
+    DROP TRIGGER IF EXISTS update_permission_updated_time ON sys_permission;
+    CREATE TRIGGER update_permission_updated_time BEFORE UPDATE ON sys_permission
+      FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
+
+    -- ============================================
+    -- 初始化数据（租户 / 管理员 / 默认角色）
+    -- ============================================
+
+    INSERT INTO sys_tenant (id, tenant_code, tenant_name, tenant_type, status, max_users, max_stations, max_chargers, tenant_id)
+    VALUES (1, 'SYSTEM', '系统租户', 1, 1, 999999, 999999, 999999, 1)
+    ON CONFLICT (id) DO NOTHING;
+
+    -- 默认系统管理员 (密码: password)
+    INSERT INTO sys_user (id, username, login_identifier, password, real_name, user_type, status, tenant_id)
+    VALUES (1, 'admin', 'admin@tenant1', '$2a$10$dXJ3SW6G7P50lGmMkkmwe.20cQQubK3.HZWzG3YB1tlRy.fqvM/BG', '系统管理员', 0, 1, 1)
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO sys_role (id, role_code, role_name, sort, data_scope, status, tenant_id, remark)
+    VALUES
+      (1, 'SUPER_ADMIN', '超级管理员', 1, 1, 1, 1, '拥有所有权限'),
+      (2, 'PLATFORM_ADMIN', '平台管理员', 2, 2, 1, 1, '平台运营管理'),
+      (3, 'OPERATOR_ADMIN', '运营商管理员', 3, 3, 1, 1, '运营商管理'),
+      (4, 'STATION_MANAGER', '站点管理员', 4, 4, 1, 1, '充电站管理')
+    ON CONFLICT (id) DO NOTHING;
+
+    INSERT INTO sys_user_role (user_id, role_id, tenant_id)
+    SELECT 1, 1, 1
+    WHERE NOT EXISTS (
+      SELECT 1 FROM sys_user_role WHERE user_id = 1 AND role_id = 1 AND tenant_id = 1
+    );
+
 
   02-station.sql: |
+    -- ============================================
+    -- 2. 充电站 / 充电桩模块
+    -- ============================================
+
     CREATE TABLE IF NOT EXISTS charging_station (
         station_id BIGSERIAL PRIMARY KEY,
         tenant_id BIGINT NOT NULL,
@@ -90,7 +222,7 @@ data:
         parking_fee DECIMAL(8,2) DEFAULT 0,
         service_fee DECIMAL(8,2) DEFAULT 0,
         payment_methods INTEGER[] DEFAULT ARRAY[1,2,3],
-        facilities JSONB DEFAULT '{}',
+        facilities JSONB DEFAULT '{}'::jsonb,
         status INTEGER DEFAULT 1,
         total_sessions BIGINT DEFAULT 0,
         total_energy DECIMAL(12,2) DEFAULT 0,
@@ -102,6 +234,91 @@ data:
         deleted INTEGER DEFAULT 0,
         CONSTRAINT uk_station_code_tenant UNIQUE(station_code, tenant_id)
     );
+
+    CREATE INDEX IF NOT EXISTS idx_station_tenant_id ON charging_station(tenant_id);
+    CREATE INDEX IF NOT EXISTS idx_station_status ON charging_station(status);
+    CREATE INDEX IF NOT EXISTS idx_station_location ON charging_station(latitude, longitude);
+
+    CREATE TABLE IF NOT EXISTS charger (
+        charger_id BIGSERIAL PRIMARY KEY,
+        tenant_id BIGINT NOT NULL,
+        station_id BIGINT NOT NULL,
+        charger_code VARCHAR(64) NOT NULL,
+        charger_name VARCHAR(100) NOT NULL,
+
+        charger_type INTEGER NOT NULL,
+        brand VARCHAR(50),
+        model VARCHAR(100),
+        manufacturer VARCHAR(100),
+        production_date DATE,
+        operation_date DATE,
+
+        rated_power DECIMAL(8,2) NOT NULL,
+        input_voltage INTEGER,
+        output_voltage_range VARCHAR(50),
+        output_current_range VARCHAR(50),
+
+        gun_count INTEGER DEFAULT 1,
+        gun_types VARCHAR(100),
+        supported_protocols JSONB DEFAULT '{"ocpp": "1.6"}'::jsonb,
+
+        status INTEGER DEFAULT 0,
+        fault_code VARCHAR(20),
+        fault_description TEXT,
+        last_heartbeat TIMESTAMP,
+
+        total_charging_sessions BIGINT DEFAULT 0,
+        total_charging_energy DECIMAL(12,2) DEFAULT 0,
+        total_charging_time BIGINT DEFAULT 0,
+
+        current_session_id VARCHAR(64),
+        current_user_id BIGINT,
+        charging_start_time TIMESTAMP,
+        charged_energy DECIMAL(8,2) DEFAULT 0,
+        charged_duration INTEGER DEFAULT 0,
+
+        current_power DECIMAL(8,2),
+        current_voltage DECIMAL(8,2),
+        current_current DECIMAL(8,2),
+        temperature DECIMAL(5,2),
+        signal_strength INTEGER,
+
+        firmware_version VARCHAR(50),
+        last_maintenance_time TIMESTAMP,
+        next_maintenance_time TIMESTAMP,
+
+        enabled INTEGER DEFAULT 1,
+        billing_plan_id BIGINT,
+        last_session_time TIMESTAMP,
+        remark TEXT,
+
+        create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        create_by BIGINT,
+        update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        update_by BIGINT,
+        deleted INTEGER DEFAULT 0,
+        version INTEGER DEFAULT 0,
+
+        CONSTRAINT uk_charger_code_tenant UNIQUE(charger_code, tenant_id),
+        CONSTRAINT fk_charger_station FOREIGN KEY (station_id) REFERENCES charging_station(station_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_charger_tenant_id ON charger(tenant_id);
+    CREATE INDEX IF NOT EXISTS idx_charger_station_id ON charger(station_id);
+    CREATE INDEX IF NOT EXISTS idx_charger_status ON charger(status);
+    CREATE INDEX IF NOT EXISTS idx_charger_station_status ON charger(station_id, status);
+
+    -- 充电桩 + 充电站更新时间触发器（沿用 01-init.sql 中的 update_updated_time_column）
+    DROP TRIGGER IF EXISTS update_station_modtime ON charging_station;
+    CREATE TRIGGER update_station_modtime
+      BEFORE UPDATE ON charging_station
+      FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
+
+    DROP TRIGGER IF EXISTS update_charger_modtime ON charger;
+    CREATE TRIGGER update_charger_modtime
+      BEFORE UPDATE ON charger
+      FOR EACH ROW EXECUTE PROCEDURE update_updated_time_column();
+
 
 ---
 apiVersion: apps/v1

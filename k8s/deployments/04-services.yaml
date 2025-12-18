@@ -218,6 +218,9 @@ spec:
       initContainers:
       - name: wait-config-server
         image: busybox:1.36
+        envFrom:
+        - configMapRef:
+            name: evcs-common-config
         command:
         - sh
         - -c
@@ -225,7 +228,7 @@ spec:
           i=0
           while true; do
             i=$((i+1))
-            wget -q --spider http://${EVCS_CONFIG_IP}:8888/ && exit 0
+            wget -q --spider ${CONFIG_SERVER_URL}/actuator/health
             rc=$?
             # 4: Network failure (e.g. connection refused/timeout). Other codes mean the server is reachable.
             if [ "$rc" -ne 4 ]; then

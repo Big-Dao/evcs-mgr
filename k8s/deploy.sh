@@ -46,11 +46,21 @@ EVCS_EUREKA_IP="$(get_cluster_ip evcs-eureka)"
 EVCS_CONFIG_IP="$(get_cluster_ip evcs-config)"
 export EVCS_CONFIG_IP
 
+# Microservice ClusterIPs (for gateway route URIs; DNS workaround)
+EVCS_AUTH_IP="$(get_cluster_ip evcs-auth)"
+EVCS_TENANT_IP="$(get_cluster_ip evcs-tenant)"
+EVCS_STATION_IP="$(get_cluster_ip evcs-station)"
+EVCS_PAYMENT_IP="$(get_cluster_ip evcs-payment)"
+
 echo "  evcs-postgres:  ${EVCS_POSTGRES_IP}"
 echo "  evcs-redis:     ${EVCS_REDIS_IP}"
 echo "  evcs-rabbitmq:  ${EVCS_RABBIT_IP}"
 echo "  evcs-eureka:    ${EVCS_EUREKA_IP}"
 echo "  evcs-config:    ${EVCS_CONFIG_IP}"
+echo "  evcs-auth:      ${EVCS_AUTH_IP}"
+echo "  evcs-tenant:    ${EVCS_TENANT_IP}"
+echo "  evcs-station:   ${EVCS_STATION_IP}"
+echo "  evcs-payment:   ${EVCS_PAYMENT_IP}"
 
 kubectl patch configmap -n evcs evcs-common-config --type merge --patch "$(cat <<EOF
 {"data":{
@@ -60,7 +70,11 @@ kubectl patch configmap -n evcs evcs-common-config --type merge --patch "$(cat <
     "EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE":"http://${EVCS_EUREKA_IP}:8761/eureka/",
     "SPRING_DATASOURCE_URL":"jdbc:postgresql://${EVCS_POSTGRES_IP}:5432/evcs_mgr?sslmode=disable",
     "SPRING_DATA_REDIS_HOST":"${EVCS_REDIS_IP}",
-    "SPRING_RABBITMQ_HOST":"${EVCS_RABBIT_IP}"
+    "SPRING_RABBITMQ_HOST":"${EVCS_RABBIT_IP}",
+    "EVCS_AUTH_IP":"${EVCS_AUTH_IP}",
+    "EVCS_TENANT_IP":"${EVCS_TENANT_IP}",
+    "EVCS_STATION_IP":"${EVCS_STATION_IP}",
+    "EVCS_PAYMENT_IP":"${EVCS_PAYMENT_IP}"
 }}
 EOF
 )"

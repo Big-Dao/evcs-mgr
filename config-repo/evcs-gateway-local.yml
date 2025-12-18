@@ -19,8 +19,8 @@ spring:
       routes:
         # 认证服务路由（前端使用/api/auth/**）
         - id: evcs-auth-api
-          # NOTE: 内测集群 CoreDNS 解析异常时可能返回 198.18.*，这里临时直连 Service ClusterIP。
-          uri: http://10.43.175.191:8081
+          # NOTE: 内测集群 CoreDNS 解析异常时可能返回 198.18.*，这里通过注入 Service ClusterIP 直连。
+          uri: http://${EVCS_AUTH_IP}:8081
           predicates:
             - Path=/api/auth/**
           filters:
@@ -28,7 +28,7 @@ spring:
         
         # 租户/Dashboard服务路由
         - id: evcs-dashboard
-          uri: http://10.43.76.196:8086
+          uri: http://${EVCS_TENANT_IP}:8080
           predicates:
             - Path=/api/dashboard/**
           filters:
@@ -36,7 +36,7 @@ spring:
         
         # 租户管理路由
         - id: evcs-tenant
-          uri: http://10.43.76.196:8086
+          uri: http://${EVCS_TENANT_IP}:8080
           predicates:
             - Path=/api/tenant/**
           filters:
@@ -44,7 +44,7 @@ spring:
         
         # 用户管理路由（属于auth服务）
         - id: evcs-user
-          uri: http://10.43.175.191:8081
+          uri: http://${EVCS_AUTH_IP}:8081
           predicates:
             - Path=/api/user/**
           filters:
@@ -52,7 +52,7 @@ spring:
         
         # 角色管理路由（属于auth服务）
         - id: evcs-role
-          uri: http://10.43.175.191:8081
+          uri: http://${EVCS_AUTH_IP}:8081
           predicates:
             - Path=/api/role/**
           filters:
@@ -60,7 +60,7 @@ spring:
         
         # 菜单管理路由（属于auth服务）
         - id: evcs-menu
-          uri: http://10.43.175.191:8081
+          uri: http://${EVCS_AUTH_IP}:8081
           predicates:
             - Path=/api/menu/**
           filters:
@@ -68,7 +68,7 @@ spring:
         
         # 站点服务路由
         - id: evcs-station
-          uri: http://10.43.12.37:8082
+          uri: http://${EVCS_STATION_IP}:8080
           predicates:
             - Path=/api/station/**
           filters:
@@ -76,7 +76,7 @@ spring:
         
         # 充电桩路由（属于station服务）
         - id: evcs-charger
-          uri: http://10.43.12.37:8082
+          uri: http://${EVCS_STATION_IP}:8080
           predicates:
             - Path=/api/charger/**
           filters:
@@ -84,7 +84,7 @@ spring:
         
         # 订单服务路由
         - id: evcs-order
-          uri: lb://EVCS-ORDER
+          uri: http://${EVCS_ORDER_IP}:8080
           predicates:
             - Path=/api/order/**
           filters:
@@ -92,7 +92,7 @@ spring:
         
         # 计费方案路由（属于order服务）
         - id: evcs-billing
-          uri: lb://EVCS-ORDER
+          uri: http://${EVCS_ORDER_IP}:8080
           predicates:
             - Path=/api/billing/**
           filters:
@@ -100,7 +100,7 @@ spring:
         
         # 支付服务路由
         - id: evcs-payment
-          uri: http://10.43.178.61:8084
+          uri: http://${EVCS_PAYMENT_IP}:8080
           predicates:
             - Path=/api/payment/**
           filters:

@@ -74,6 +74,12 @@ service.interceptors.response.use(
           console.error('401错误 - API调用失败:', error.config?.method?.toUpperCase(), error.config?.url)
           console.error('401错误 - 响应数据:', error.response.data)
 
+          // 登录接口：直接展示后端错误（如“账号或密码错误”），不做重定向
+          if (error.config?.url?.includes('/auth/login')) {
+            ElMessage.error(message)
+            break
+          }
+
           // 对于可能不存在的API（开发中的功能），不自动退出，而是显示友好错误
           const problematicApis = ['/dashboard/', '/tenant/', '/user/', '/station/', '/charger/', '/order/']
           const isProblematicApi = problematicApis.some(api => error.config?.url?.includes(api))
@@ -83,7 +89,7 @@ service.interceptors.response.use(
             ElMessage.warning('该功能正在开发中，暂不可用')
           } else {
             console.error('401错误 - 即将清除token并重定向')
-            ElMessage.error('未授权，请重新登录')
+            ElMessage.error(message || '未授权，请重新登录')
             localStorage.removeItem('token')
             console.error('401错误 - token已清除，即将重定向到登录页')
             window.location.href = '/login'
