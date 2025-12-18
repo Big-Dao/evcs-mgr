@@ -72,9 +72,23 @@ kubectl rollout restart deployment -n evcs config-server || true
 echo "Applying Gateway..."
 envsubst '${EVCS_K8S_REGISTRY} ${EVCS_IMAGE_TAG} ${EVCS_CONFIG_IP}' < k8s/deployments/03-gateway.yaml | kubectl apply -f -
 
+# 7b. Patch Common Config with Gateway ClusterIP (for frontend nginx proxy; DNS workaround)
+EVCS_GATEWAY_IP="$(get_cluster_ip evcs-gateway)"
+echo "  evcs-gateway:   ${EVCS_GATEWAY_IP}"
+kubectl patch configmap -n evcs evcs-common-config --type merge --patch "$(cat <<EOF
+{"data":{
+    "EVCS_GATEWAY_IP":"${EVCS_GATEWAY_IP}"
+}}
+EOF
+)"
+
 # 8. Apply Microservices
 echo "Applying Microservices..."
 envsubst '${EVCS_K8S_REGISTRY} ${EVCS_IMAGE_TAG} ${EVCS_CONFIG_IP}' < k8s/deployments/04-services.yaml | kubectl apply -f -
+
+# 9. Apply Frontend
+echo "Applying Frontend (evcs-admin)..."
+envsubst '${EVCS_K8S_REGISTRY} ${EVCS_IMAGE_TAG}' < k8s/deployments/05-frontend.yaml | kubectl apply -f -
 
 echo "=== Deployment Submitted ==="
 echo "Check status with: kubectl get pods -n evcs"

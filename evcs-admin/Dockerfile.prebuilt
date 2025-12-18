@@ -1,0 +1,27 @@
+# Runtime-only image for k8s builds when dist/ is already built locally.
+# This avoids any outbound network access inside the cluster (no npm install).
+
+ARG BASE_REGISTRY=192.168.20.235:5000
+FROM ${BASE_REGISTRY}/base/nginx:alpine
+
+WORKDIR /usr/share/nginx/html
+
+# Remove default nginx static assets and config
+RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/default.conf
+
+# Copy custom nginx configuration template
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
+
+# Render template at startup (no envsubst/gettext required)
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+# Copy prebuilt assets (includes version.json)
+COPY dist/ .
+
+EXPOSE 80
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+        CMD wget --no-verbose --tries=1 --spider http://127.0.0.1/ || exit 1
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
