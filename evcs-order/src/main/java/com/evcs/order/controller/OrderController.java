@@ -111,5 +111,23 @@ public class OrderController {
         return Result.success(orderService.paymentCallback(tradeId, success));
     }
 
+    @GetMapping("/statistics/city")
+    @Operation(summary = "获取城市级别订单统计", description = "用于地图可视化分析")
+    @DataScope
+    public Result<java.util.List<com.evcs.order.dto.CityOrderStatistics>> getCityStatistics(
+            @Parameter(description = "开始时间") @RequestParam(required = false) String startTime,
+            @Parameter(description = "结束时间") @RequestParam(required = false) String endTime) {
+        java.time.LocalDateTime start = null;
+        java.time.LocalDateTime end = null;
+        
+        if (startTime != null && !startTime.isEmpty()) {
+            start = java.time.LocalDateTime.parse(startTime);
+        }
+        if (endTime != null && !endTime.isEmpty()) {
+            end = java.time.LocalDateTime.parse(endTime);
+        }
+        
+        return Result.success(orderService.getCityOrderStatistics(start, end));
+    }
 
 }

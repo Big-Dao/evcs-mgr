@@ -122,3 +122,25 @@ export function exportOrders(params: OrderQueryParams) {
     responseType: 'blob'
   })
 }
+
+// 城市订单统计（用于地图可视化）
+export interface CityOrderStatistics {
+  province: string
+  city: string
+  orderCount: number
+  stationCount: number
+  totalEnergy: number
+  totalAmount: number
+}
+
+/**
+ * 获取城市级别订单统计
+ * 用于地图可视化分析
+ */
+export function getCityOrderStatistics(startTime?: string, endTime?: string) {
+  return request<CityOrderStatistics[]>({
+    url: '/order/statistics/city',
+    method: 'get',
+    params: { startTime, endTime }
+  })
+}
