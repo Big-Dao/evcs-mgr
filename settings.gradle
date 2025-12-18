@@ -1,37 +1,23 @@
 pluginManagement {
-	repositories {
-		gradlePluginPortal()
-		mavenCentral()
-		maven { url 'https://maven.aliyun.com/repository/gradle-plugin' }
-		maven { url 'https://maven.aliyun.com/repository/public' }
-		maven { url 'https://repo1.maven.org/maven2' }
-	}
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
 }
 
 dependencyResolutionManagement {
-	repositories {
-		gradlePluginPortal()
-		maven { url 'https://maven.aliyun.com/repository/public' }
-		mavenCentral()
-		maven { url 'https://repo1.maven.org/maven2' }
-	}
+    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositories {
+        google()
+        mavenCentral()
+    }
 }
 
 plugins {
-    id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
+    id 'com.android.application' version '8.1.0' apply false
+    id 'org.jetbrains.kotlin.android' version '1.9.0' apply false
 }
 
 rootProject.name = 'evcs-mgr'
-
-include 'evcs-common'
-include 'evcs-gateway'
-include 'evcs-auth'
-include 'evcs-tenant'
-include 'evcs-station'
-include 'evcs-order'
-include 'evcs-payment'
-include 'evcs-protocol'
-include 'evcs-monitoring'
-include 'evcs-integration'
-include 'evcs-config'
-include 'evcs-eureka'
+include ':app'
