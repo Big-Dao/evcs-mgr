@@ -74,6 +74,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '充电站详情', icon: 'Location', hidden: true }
       },
       {
+        path: 'stations/map-analytics',
+        name: 'StationMapAnalytics',
+        component: () => import('@/views/station/StationMapAnalytics.vue'),
+        meta: { title: '地图分析', icon: 'Map' }
+      },
+      {
         path: 'chargers',
         name: 'Chargers',
         component: () => import('@/views/charger/ChargerList.vue'),
