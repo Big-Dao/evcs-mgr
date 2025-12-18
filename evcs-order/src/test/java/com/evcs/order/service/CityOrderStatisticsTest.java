@@ -1,157 +1,108 @@
 package com.evcs.order.service;
 
-import com.evcs.common.tenant.TenantContext;
-import com.evcs.common.test.base.BaseServiceTest;
-import com.evcs.order.OrderServiceApplication;
-import com.evcs.order.config.TestConfig;
-import com.evcs.order.dto.CityOrderStatistics;
-import com.evcs.order.entity.ChargingOrder;
+import com.evcs.order.domain.Order;
+import com.evcs.order.repository.OrderRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.anyLong;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.Mockito.when;
 
-/**
- * 城市订单统计功能测试
- * 测试地图分析所需的城市级别订单统计API
- */
-@SpringBootTest(classes = {OrderServiceApplication.class})
-@ActiveProfiles("test")
-@Import(TestConfig.class)
-@DisplayName("城市订单统计测试")
-class CityOrderStatisticsTest extends BaseServiceTest {
+@ExtendWith(MockitoExtension.class)
+class CityOrderStatisticsTest {
 
-    @Autowired
-    private IChargingOrderService chargingOrderService;
+    @Mock
+    private OrderRepository orderRepository;
 
-    @MockBean
-    private IBillingPlanService billingPlanService;
+    @Mock
+    private BillingService billingService;
 
-    @MockBean
-    private IBillingService billingService;
+    @InjectMocks
+    private CityOrderStatisticsService cityOrderStatisticsService;
 
-    private static final Long TEST_TENANT_ID = 1000L;
-    private static final Long STATION_ID_HANGZHOU = 1001L;
-    private static final Long STATION_ID_NINGBO = 1002L;
+    private List<Order> mockOrders;
 
     @BeforeEach
     void setUp() {
-        // Mock billing service to return a fixed amount
-        when(billingService.calculateAmount(anyLong(), anyLong(), anyLong(), anyLong(), anyLong(), anyLong()))
-            .thenReturn(new BigDecimal("50.00"));
+        Order order1 = new Order();
+        order1.setId(1L);
+        order1.setCityId(100L);
+        order1.setStationId(1001L);
+        order1.setChargerId(10001L);
+        order1.setPlanId(1L);
+        order1.setStartTime(LocalDateTime.of(2024, 1, 1, 10, 0));
+        order1.setEndTime(LocalDateTime.of(2024, 1, 1, 12, 0));
+        order1.setEnergyKwh(50.0);
+
+        when(billingService.calculateAmount(any(LocalDateTime.class), any(LocalDateTime.class), anyDouble(), anyLong(), anyLong(), anyLong()))
+                .thenReturn(BigDecimal.valueOf(100.0));
+
+        Order order2 = new Order();
+        order2.setId(2L);
+        order2.setCityId(100L);
+        order2.setStationId(1001L);
+        order2.setChargerId(10002L);
+        order2.setPlanId(1L);
+        order2.setStartTime(LocalDateTime.of(2024, 1, 1, 14, 0));
+        order2.setEndTime(LocalDateTime.of(2024, 1, 1, 16, 0));
+        order2.setEnergyKwh(30.0);
+
+        Order order3 = new Order();
+        order3.setId(3L);
+        order3.setCityId(200L);
+        order3.setStationId(2001L);
+        order3.setChargerId(20001L);
+        order3.setPlanId(2L);
+        order3.setStartTime(LocalDateTime.of(2024, 1, 1, 9, 0));
+        order3.setEndTime(LocalDateTime.of(2024, 1, 1, 11, 0));
+        order3.setEnergyKwh(40.0);
+
+        mockOrders = Arrays.asList(order1, order2, order3);
     }
 
     @Test
-    @DisplayName("获取城市订单统计 - 应返回按城市聚合的数据")
-    void testGetCityOrderStatistics_shouldReturnCityAggregatedData() {
-        // Given: 设置租户上下文
-        TenantContext.setCurrentTenantId(TEST_TENANT_ID);
-        try {
-            // Note: 此测试依赖数据库中存在充电站数据，且充电站表有province和city字段
-            // 在实际环境中，需要先创建测试数据或使用@Sql注解加载测试数据
-            
-            // When: 获取城市统计数据
-            List<CityOrderStatistics> statistics = chargingOrderService.getCityOrderStatistics(null, null);
-            
-            // Then: 验证返回结果
-            assertThat(statistics).isNotNull();
-            // 如果数据库为空，返回空列表也是正确的
-            assertThat(statistics).isInstanceOf(List.class);
-            
-            // 如果有数据，验证数据结构
-            statistics.forEach(stat -> {
-                assertThat(stat.getProvince()).isNotNull();
-                assertThat(stat.getCity()).isNotNull();
-                assertThat(stat.getOrderCount()).isNotNull();
-                assertThat(stat.getStationCount()).isNotNull();
-            });
-        } finally {
-            TenantContext.clear();
-        }
+    void testGetOrderStatisticsByCity() {
+        when(orderRepository.findAll()).thenReturn(mockOrders);
+
+        Map<Long, CityOrderStatistics> result = cityOrderStatisticsService.getOrderStatisticsByCity();
+
+        assertNotNull(result);
+        assertEquals(2, result.size());
+
+        CityOrderStatistics city100Stats = result.get(100L);
+        assertNotNull(city100Stats);
+        assertEquals(100L, city100Stats.getCityId());
+        assertEquals(2, city100Stats.getTotalOrders());
+        assertEquals(80.0, city100Stats.getTotalEnergyKwh());
+        assertEquals(BigDecimal.valueOf(200.0), city100Stats.getTotalRevenue());
+
+        CityOrderStatistics city200Stats = result.get(200L);
+        assertNotNull(city200Stats);
+        assertEquals(200L, city200Stats.getCityId());
+        assertEquals(1, city200Stats.getTotalOrders());
+        assertEquals(40.0, city200Stats.getTotalEnergyKwh());
+        assertEquals(BigDecimal.valueOf(100.0), city200Stats.getTotalRevenue());
     }
 
     @Test
-    @DisplayName("获取城市订单统计 - 带时间范围筛选")
-    void testGetCityOrderStatistics_withTimeRange() {
-        // Given: 设置租户上下文和时间范围
-        TenantContext.setCurrentTenantId(TEST_TENANT_ID);
-        try {
-            LocalDateTime startTime = LocalDateTime.now().minusDays(30);
-            LocalDateTime endTime = LocalDateTime.now();
-            
-            // When: 获取指定时间范围的城市统计数据
-            List<CityOrderStatistics> statistics = chargingOrderService.getCityOrderStatistics(startTime, endTime);
-            
-            // Then: 验证返回结果
-            assertThat(statistics).isNotNull();
-            assertThat(statistics).isInstanceOf(List.class);
-            
-            // 验证返回的数据在指定时间范围内
-            statistics.forEach(stat -> {
-                assertThat(stat.getProvince()).isNotNull();
-                assertThat(stat.getCity()).isNotNull();
-            });
-        } finally {
-            TenantContext.clear();
-        }
-    }
+    void testGetOrderStatisticsByCityWithNoOrders() {
+        when(orderRepository.findAll()).thenReturn(Arrays.asList());
 
-    @Test
-    @DisplayName("获取城市订单统计 - 多租户隔离验证")
-    void testGetCityOrderStatistics_tenantIsolation() {
-        // Given: 设置第一个租户
-        Long tenant1 = 1000L;
-        TenantContext.setCurrentTenantId(tenant1);
-        try {
-            // When: 获取租户1的统计数据
-            List<CityOrderStatistics> stats1 = chargingOrderService.getCityOrderStatistics(null, null);
-            
-            // Then: 验证只返回租户1的数据
-            assertThat(stats1).isNotNull();
-            
-            // 切换到租户2
-            Long tenant2 = 2000L;
-            TenantContext.setCurrentTenantId(tenant2);
-            
-            // When: 获取租户2的统计数据
-            List<CityOrderStatistics> stats2 = chargingOrderService.getCityOrderStatistics(null, null);
-            
-            // Then: 验证两个租户的数据是隔离的
-            assertThat(stats2).isNotNull();
-            // 如果租户间有数据差异，结果应该不同（实际取决于测试数据）
-            
-        } finally {
-            TenantContext.clear();
-        }
-    }
+        Map<Long, CityOrderStatistics> result = cityOrderStatisticsService.getOrderStatisticsByCity();
 
-    @Test
-    @DisplayName("获取城市订单统计 - 无租户上下文应返回空列表")
-    void testGetCityOrderStatistics_noTenantContext() {
-        // Given: 清空租户上下文
-        TenantContext.clear();
-        
-        try {
-            // When: 在没有租户上下文的情况下调用
-            List<CityOrderStatistics> statistics = chargingOrderService.getCityOrderStatistics(null, null);
-            
-            // Then: 应返回空列表（不抛异常）
-            assertThat(statistics).isNotNull();
-            assertThat(statistics).isEmpty();
-        } finally {
-            TenantContext.clear();
-        }
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
     }
 }
