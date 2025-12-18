@@ -122,6 +122,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '编辑计费方案', icon: 'Coin', hidden: true }
       },
       {
+        path: 'payments',
+        name: 'Payments',
+        component: () => import('@/views/payment/PaymentList.vue'),
+        meta: { title: '支付管理', icon: 'Wallet' }
+      },
+      {
+        path: 'payments/:id',
+        name: 'PaymentDetail',
+        component: () => import('@/views/payment/PaymentDetail.vue'),
+        meta: { title: '支付详情', icon: 'Wallet', hidden: true }
+      },
+      {
         path: 'test',
         name: 'Test',
         component: () => import('@/views/Test.vue'),
