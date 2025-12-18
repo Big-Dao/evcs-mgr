@@ -134,6 +134,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '支付详情', icon: 'Wallet', hidden: true }
       },
       {
+        path: 'reconciliation',
+        name: 'Reconciliation',
+        component: () => import('@/views/reconciliation/ReconciliationList.vue'),
+        meta: { title: '对账管理', icon: 'Files' }
+      },
+      {
+        path: 'reconciliation/exceptions',
+        name: 'ReconciliationExceptions',
+        component: () => import('@/views/reconciliation/ReconciliationException.vue'),
+        meta: { title: '对账异常', icon: 'Files', hidden: true }
+      },
+      {
         path: 'test',
         name: 'Test',
         component: () => import('@/views/Test.vue'),
