@@ -51,7 +51,14 @@
       </el-row>
 
       <!-- 地图可视化 -->
-      <div ref="mapChartRef" class="map-chart" v-loading="loading"></div>
+      <div v-if="cityStatistics.length === 0 && !loading" class="empty-state">
+        <el-empty description="暂无数据">
+          <template #image>
+            <el-icon :size="80" color="#c0c4cc"><DataAnalysis /></el-icon>
+          </template>
+        </el-empty>
+      </div>
+      <div v-else ref="mapChartRef" class="map-chart" v-loading="loading"></div>
 
       <!-- 城市排行榜 -->
       <el-card class="ranking-card" shadow="never">
@@ -136,38 +143,14 @@ const loadData = async () => {
   } catch (error: any) {
     console.error('加载城市订单统计失败:', error)
     ElMessage.error('加载数据失败: ' + (error.message || '未知错误'))
-    // 使用模拟数据用于演示
-    cityStatistics.value = generateMockData()
-    renderMap()
+    // 清空数据，不使用模拟数据
+    cityStatistics.value = []
   } finally {
     loading.value = false
   }
 }
 
-// 生成模拟数据
-const generateMockData = (): CityOrderStatistics[] => {
-  const cities = [
-    { province: '浙江省', city: '杭州市' },
-    { province: '浙江省', city: '宁波市' },
-    { province: '浙江省', city: '温州市' },
-    { province: '江苏省', city: '南京市' },
-    { province: '江苏省', city: '苏州市' },
-    { province: '上海市', city: '上海市' },
-    { province: '广东省', city: '广州市' },
-    { province: '广东省', city: '深圳市' },
-    { province: '北京市', city: '北京市' },
-    { province: '四川省', city: '成都市' }
-  ]
-  
-  return cities.map(({ province, city }) => ({
-    province,
-    city,
-    orderCount: Math.floor(Math.random() * 1000) + 100,
-    stationCount: Math.floor(Math.random() * 20) + 5,
-    totalEnergy: Math.random() * 10000 + 1000,
-    totalAmount: Math.random() * 50000 + 10000
-  }))
-}
+
 
 // 渲染地图 - 使用柱状图和饼图可视化（不依赖地图GeoJSON）
 const renderMap = () => {
@@ -416,5 +399,15 @@ onBeforeUnmount(() => {
 
 .ranking-card {
   margin-top: 20px;
+}
+
+.empty-state {
+  height: 600px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fafafa;
+  border-radius: 4px;
+  margin-bottom: 20px;
 }
 </style>
