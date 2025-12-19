@@ -34,7 +34,7 @@
         <el-card class="metric-card">
           <div class="metric-content">
             <div class="metric-icon" style="background: #e6a23c;">
-              <el-icon :size="30"><Pie /></el-icon>
+              <el-icon :size="30"><PieChart /></el-icon>
             </div>
             <div class="metric-info">
               <div class="metric-label">内存使用</div>
@@ -218,7 +218,7 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Monitor, TrendCharts, Pie, Warning, Refresh } from '@element-plus/icons-vue'
+import { Monitor, TrendCharts, PieChart, Warning, Refresh } from '@element-plus/icons-vue'
 import { 
   getSystemOverview,
   getAllServicesHealth,
