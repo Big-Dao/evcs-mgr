@@ -202,3 +202,7 @@ results/
 **/report-*/
 **/aggregate-report.csv
 **/response-time-graph.csv
+.codex/
+
+# Build artifacts (auto-generated during build)
+META-INF/
