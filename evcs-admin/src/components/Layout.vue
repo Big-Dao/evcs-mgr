@@ -30,10 +30,14 @@
           <el-menu-item index="/users">用户列表</el-menu-item>
           <el-menu-item index="/roles">角色管理</el-menu-item>
         </el-sub-menu>
-        <el-menu-item index="/stations">
-          <el-icon><Location /></el-icon>
-          <span>充电站管理</span>
-        </el-menu-item>
+        <el-sub-menu index="/stations">
+          <template #title>
+            <el-icon><Location /></el-icon>
+            <span>充电站管理</span>
+          </template>
+          <el-menu-item index="/stations">充电站列表</el-menu-item>
+          <el-menu-item index="/stations/map-analytics">地图分析</el-menu-item>
+        </el-sub-menu>
         <el-menu-item index="/chargers">
           <el-icon><Monitor /></el-icon>
           <span>充电桩管理</span>

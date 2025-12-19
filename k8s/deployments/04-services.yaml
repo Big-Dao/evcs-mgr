@@ -50,6 +50,7 @@ spec:
   ports:
   - port: 8081
     targetPort: 8081
+    name: http
 
 ---
 apiVersion: apps/v1
@@ -98,8 +99,9 @@ spec:
   selector:
     app: tenant-service
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8086
+    targetPort: 8086
+    name: http
 
 ---
 apiVersion: apps/v1
@@ -148,8 +150,9 @@ spec:
   selector:
     app: station-service
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8082
+    targetPort: 8082
+    name: http
 
 ---
 apiVersion: apps/v1
@@ -198,8 +201,9 @@ spec:
   selector:
     app: order-service
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8083
+    targetPort: 8083
+    name: http
 
 ---
 apiVersion: apps/v1
@@ -274,8 +278,9 @@ spec:
   selector:
     app: payment-service
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8084
+    targetPort: 8084
+    name: http
 
 ---
 apiVersion: apps/v1
@@ -324,8 +329,9 @@ spec:
   selector:
     app: protocol-service
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8085
+    targetPort: 8085
+    name: http
 
 ---
 apiVersion: apps/v1
@@ -374,5 +380,6 @@ spec:
   selector:
     app: monitoring-service
   ports:
-  - port: 8080
-    targetPort: 8080
+  - port: 8087
+    targetPort: 8087
+    name: http

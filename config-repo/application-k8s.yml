@@ -1,0 +1,25 @@
+# K8s环境通用配置 - 覆盖local profile的默认值
+eureka:
+  client:
+    service-url:
+      defaultZone: http://evcs-eureka:8761/eureka/
+    registry-fetch-interval-seconds: 5
+  instance:
+    prefer-ip-address: true
+    lease-renewal-interval-in-seconds: 10
+    lease-expiration-duration-in-seconds: 30
+
+spring:
+  datasource:
+    url: jdbc:postgresql://evcs-postgres:5432/evcs_mgr?sslmode=disable
+    username: postgres
+    password: postgres
+  data:
+    redis:
+      host: evcs-redis
+      port: 6379
+  rabbitmq:
+    host: evcs-rabbitmq
+    port: 5672
+    username: guest
+    password: guest
