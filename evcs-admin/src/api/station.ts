@@ -17,7 +17,8 @@ export interface StationQueryParams {
 
 // 充电站信息
 export interface Station {
-  id: number
+  id?: number
+  stationId?: number
   stationCode: string
   stationName: string
   province: string
