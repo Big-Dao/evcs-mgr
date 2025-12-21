@@ -20,5 +20,6 @@
 - 角色与关联（`sys_role`、`sys_user_role`）：租户内权限模型与映射。
 - 充电站（`charging_station`）：站点基础信息、地理位置与运营信息。
 - 订单/支付（`evcs_order`、`evcs_payment` 等）：订单与支付流水的核心表。
+- 枪口（`charger_connector`）：枪口维度状态/告警/会话字段（按枪口启停相关边界见 `docs/features/CHARGER-CONNECTOR-CONTROL.md`）。
 
 备注：此页仅保留概要与原则，规范变更请在 SSOT 更新；详细 DDL 与索引请查阅归档文档。

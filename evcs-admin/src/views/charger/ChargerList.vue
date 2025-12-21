@@ -15,12 +15,20 @@
         <el-form-item label="充电桩编号">
           <el-input v-model="searchForm.chargerCode" placeholder="请输入充电桩编号" clearable />
         </el-form-item>
+        <el-form-item label="桩类型">
+          <el-select v-model="searchForm.chargerType" placeholder="请选择" clearable style="width: 120px;">
+            <el-option label="直流快充" :value="1" />
+            <el-option label="交流慢充" :value="2" />
+          </el-select>
+        </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="searchForm.status" placeholder="请选择" clearable>
             <el-option label="空闲" :value="1" />
             <el-option label="充电中" :value="2" />
             <el-option label="故障" :value="3" />
             <el-option label="离线" :value="0" />
+            <el-option label="维护" :value="4" />
+            <el-option label="预约中" :value="5" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -30,15 +38,44 @@
       </el-form>
 
       <el-table :data="tableData" v-loading="loading" style="width: 100%">
-        <el-table-column prop="id" label="桩ID" width="80" />
-        <el-table-column prop="chargerCode" label="桩编号" width="120" />
-        <el-table-column prop="stationId" label="充电站ID" width="100" />
-        <el-table-column prop="chargerType" label="桩类型" width="100">
+        <el-table-column type="expand">
           <template #default="{ row }">
-            <el-tag size="small">{{ row.chargerType }}</el-tag>
+            <el-descriptions :column="2" border style="margin: 10px 0;">
+              <el-descriptions-item label="桩名称">{{ row.chargerName || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="站点">{{ row.stationCode || row.stationId || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="额定功率">{{ row.ratedPower ?? '-' }} kW</el-descriptions-item>
+              <el-descriptions-item label="输入电压">{{ row.inputVoltage ?? '-' }} V</el-descriptions-item>
+              <el-descriptions-item label="枪头数量">{{ row.gunCount ?? 1 }}</el-descriptions-item>
+              <el-descriptions-item label="枪头类型">
+                <el-tag v-for="t in parseGunTypes(row.gunTypes)" :key="t" size="small" style="margin-right: 6px;">
+                  {{ t }}
+                </el-tag>
+                <span v-if="parseGunTypes(row.gunTypes).length === 0">-</span>
+              </el-descriptions-item>
+              <el-descriptions-item label="枪口(Connector)" :span="2">
+                <el-tag
+                  v-for="gun in buildGunList(row.gunCount, row.gunTypes)"
+                  :key="gun.connectorId"
+                  size="small"
+                  style="margin-right: 6px; margin-bottom: 6px;"
+                >
+                  枪口 {{ gun.connectorId }}<span v-if="gun.gunType">（{{ gun.gunType }}）</span>
+                </el-tag>
+              </el-descriptions-item>
+            </el-descriptions>
           </template>
         </el-table-column>
-        <el-table-column prop="power" label="功率(kW)" width="100" />
+        <el-table-column prop="id" label="桩ID" width="90" />
+        <el-table-column prop="chargerCode" label="桩编号" width="160" />
+        <el-table-column prop="chargerName" label="桩名称" min-width="160" />
+        <el-table-column prop="stationId" label="充电站ID" width="110" />
+        <el-table-column prop="chargerType" label="桩类型" width="110">
+          <template #default="{ row }">
+            <el-tag size="small">{{ getChargerTypeText(row.chargerType) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="ratedPower" label="额定功率(kW)" width="130" />
+        <el-table-column prop="gunCount" label="枪头数" width="90" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)" size="small">
@@ -49,8 +86,14 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="voltage" label="电压(V)" width="100" />
-        <el-table-column prop="current" label="电流(A)" width="100" />
+        <el-table-column prop="lastHeartbeat" label="最后心跳" width="180" />
+        <el-table-column prop="enabled" label="启用" width="90">
+          <template #default="{ row }">
+            <el-tag :type="row.enabled === 1 ? 'success' : 'info'" size="small">
+              {{ row.enabled === 1 ? '启用' : '停用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="handleView(row)">详情</el-button>
@@ -86,6 +129,7 @@ const loading = ref(false)
 
 const searchForm = reactive<ChargerQueryParams>({
   chargerCode: '',
+  chargerType: undefined,
   status: undefined,
   current: 1,
   size: 10
@@ -105,6 +149,7 @@ const loadChargerList = async () => {
   try {
     const params: ChargerQueryParams = {
       chargerCode: searchForm.chargerCode,
+      chargerType: searchForm.chargerType,
       status: searchForm.status,
       current: pagination.currentPage,
       size: pagination.pageSize
@@ -121,33 +166,68 @@ const loadChargerList = async () => {
     tableData.value = [
       {
         id: 1,
-        chargerCode: 'CH001',
+        chargerCode: 'ST001-DC-001',
+        chargerName: '1号快充桩',
         stationId: 1,
-        chargerType: 'DC',
-        power: 120,
-        voltage: 380,
-        current: 250,
+        stationCode: 'ST001',
+        chargerType: 1,
+        ratedPower: 120,
+        inputVoltage: 380,
+        gunCount: 2,
+        gunTypes: 'CCS,CHAdeMO',
         status: 1,
-        connectorType: 'GB/T',
-        tenantId: 1
+        enabled: 1,
+        tenantId: 1,
+        lastHeartbeat: '-'
       },
       {
         id: 2,
-        chargerCode: 'CH002',
+        chargerCode: 'ST001-AC-001',
+        chargerName: '4号慢充桩',
         stationId: 1,
-        chargerType: 'AC',
-        power: 7,
-        voltage: 220,
-        current: 32,
+        stationCode: 'ST001',
+        chargerType: 2,
+        ratedPower: 7,
+        inputVoltage: 220,
+        gunCount: 1,
+        gunTypes: 'Type2',
         status: 2,
-        connectorType: 'GB/T',
-        tenantId: 1
+        enabled: 1,
+        tenantId: 1,
+        lastHeartbeat: '-'
       }
     ] as Charger[]
     pagination.total = 2
   } finally {
     loading.value = false
   }
+}
+
+const getChargerTypeText = (chargerType?: number) => {
+  const textMap: Record<number, string> = {
+    1: '直流快充',
+    2: '交流慢充'
+  }
+  if (typeof chargerType !== 'number') return '未知'
+  return textMap[chargerType] || '未知'
+}
+
+const parseGunTypes = (gunTypes?: string) => {
+  if (!gunTypes) return []
+  return gunTypes
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+}
+
+const buildGunList = (gunCount?: number, gunTypes?: string) => {
+  const count = typeof gunCount === 'number' && gunCount > 0 ? gunCount : 1
+  const types = parseGunTypes(gunTypes)
+  return Array.from({ length: count }).map((_, idx) => {
+    const connectorId = idx + 1
+    const gunType = types.length === count ? types[idx] : (types.length === 1 ? types[0] : undefined)
+    return { connectorId, gunType }
+  })
 }
 
 const getStatusType = (status: number) => {
@@ -165,6 +245,8 @@ const getStatusText = (status: number) => {
     1: '空闲',
     2: '充电中',
     3: '故障',
+    4: '维护',
+    5: '预约中',
     0: '离线'
   }
   return textMap[status] || '未知'
@@ -175,6 +257,8 @@ const getStatusIcon = (status: number) => {
     1: 'CircleCheck',
     2: 'Loading',
     3: 'CircleClose',
+    4: 'Tools',
+    5: 'Bell',
     0: 'WarningFilled'
   }
   return iconMap[status] || 'QuestionFilled'
@@ -187,6 +271,7 @@ const handleSearch = () => {
 
 const handleReset = () => {
   searchForm.chargerCode = ''
+  searchForm.chargerType = undefined
   searchForm.status = undefined
   loadChargerList()
 }

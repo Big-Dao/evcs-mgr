@@ -1,13 +1,11 @@
 package com.evcs.station.controller;
 
 import com.evcs.common.result.Result;
-import com.evcs.station.service.IChargerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -22,9 +20,6 @@ import org.springframework.web.bind.annotation.*;
 @RestController("stationProtocolDebugController")
 @RequestMapping("/debug/protocol")
 public class ProtocolDebugController {
-
-    @Autowired
-    private IChargerService chargerService;
 
     @PostMapping("/{chargerId}/heartbeat")
     @Operation(summary = "触发心跳", description = "根据充电桩协议触发一次心跳")
@@ -52,47 +47,4 @@ public class ProtocolDebugController {
         return Result.fail("协议调试功能暂时禁用，将在Week 9重新启用");
     }
 
-    @PostMapping("/{chargerId}/start")
-    @Operation(
-        summary = "开始充电(服务链路)",
-        description = "调用业务服务开始充电，内部联动协议"
-    )
-    public Result<Void> start(
-        @Parameter(
-            description = "充电桩ID"
-        ) @PathVariable @NotNull Long chargerId,
-        @Parameter(description = "会话ID") @RequestParam String sessionId,
-        @Parameter(description = "用户ID") @RequestParam Long userId
-    ) {
-        boolean ok = chargerService.startChargingSession(
-            chargerId,
-            sessionId,
-            userId
-        );
-        return ok
-            ? Result.success("开始充电成功")
-            : Result.fail("开始充电失败");
-    }
-
-    @PostMapping("/{chargerId}/stop")
-    @Operation(
-        summary = "停止充电(服务链路)",
-        description = "调用业务服务停止充电，内部联动协议"
-    )
-    public Result<Void> stop(
-        @Parameter(
-            description = "充电桩ID"
-        ) @PathVariable @NotNull Long chargerId,
-        @Parameter(description = "充电量kWh") @RequestParam Double energy,
-        @Parameter(description = "时长分钟") @RequestParam Long duration
-    ) {
-        boolean ok = chargerService.endChargingSession(
-            chargerId,
-            energy,
-            duration
-        );
-        return ok
-            ? Result.success("停止充电成功")
-            : Result.fail("停止充电失败");
-    }
 }

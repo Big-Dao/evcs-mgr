@@ -30,6 +30,13 @@ public abstract class ProtocolEvent implements Serializable {
     private Long chargerId;
 
     /**
+     * 枪口编号（OCPP connectorId / 云快充枪号）
+     * - null：事件不区分枪口（桩级）
+     * - >= 1：对应具体枪口
+     */
+    private Integer connectorId;
+
+    /**
      * 租户ID
      */
     private Long tenantId;

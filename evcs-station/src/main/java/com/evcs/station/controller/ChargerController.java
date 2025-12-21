@@ -6,6 +6,8 @@ import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.service.IChargerService;
+import com.evcs.station.entity.ChargerConnector;
+import com.evcs.station.service.IChargerConnectorService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -32,6 +35,7 @@ import java.util.Map;
 public class ChargerController {
 
     private final IChargerService chargerService;
+    private final IChargerConnectorService chargerConnectorService;
 
     /**
      * 分页查询充电桩列表
@@ -67,6 +71,20 @@ public class ChargerController {
         }
         
         return Result.success(charger);
+    }
+
+    /**
+     * 查询充电桩枪口列表
+     */
+    @Operation(summary = "查询枪口列表", description = "查询指定充电桩下所有枪口（Connector）信息")
+    @GetMapping("/{chargerId}/connectors")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
+    @DataScope
+    public Result<java.util.List<ChargerConnector>> listConnectors(
+            @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId) {
+
+        java.util.List<ChargerConnector> connectors = chargerConnectorService.ensureConnectors(chargerId);
+        return Result.success(connectors);
     }
 
     /**
@@ -205,47 +223,55 @@ public class ChargerController {
     }
 
     /**
-     * 开始充电会话
+     * 开始充电会话（指定枪口）
      */
-    @Operation(summary = "开始充电", description = "开始充电会话")
-    @PostMapping("/{chargerId}/start")
+    @Operation(summary = "开始充电(按枪口)", description = "开始指定枪口的充电会话（仅落库会话字段；实际协议启动由协议服务负责）")
+    @PostMapping("/{chargerId}/connectors/{connectorNo}/start")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:charge')")
-    @DataScope(value = DataScope.DataScopeType.USER)
-    public Result<Void> startCharging(
+    @DataScope
+    public Result<Void> startChargingByConnector(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
+            @Parameter(description = "枪口号(从1开始)") @PathVariable("connectorNo") @NotNull Integer connectorNo,
             @Parameter(description = "会话ID") @RequestParam String sessionId,
-            @Parameter(description = "用户ID") @RequestParam Long userId) {
-        
-        try {
-            boolean success = chargerService.startChargingSession(chargerId, sessionId, userId);
-            if (success) {
-                return Result.success("开始充电成功");
-            } else {
-                return Result.fail("开始充电失败");
-            }
-        } catch (RuntimeException e) {
-            return Result.fail(e.getMessage());
-        }
+            @Parameter(description = "用户ID") @RequestParam Long userId,
+            @Parameter(description = "起始电量(kWh)") @RequestParam(required = false) Double initialEnergy) {
+
+        boolean ok = chargerConnectorService.updateSessionStart(
+                chargerId,
+                connectorNo,
+                sessionId,
+                userId,
+                LocalDateTime.now(),
+                initialEnergy
+        );
+        return ok ? Result.success("开始充电成功") : Result.fail("开始充电失败");
     }
 
     /**
-     * 结束充电会话
+     * 结束充电会话（指定枪口）
      */
-    @Operation(summary = "结束充电", description = "结束充电会话")
-    @PostMapping("/{chargerId}/stop")
+    @Operation(summary = "结束充电(按枪口)", description = "结束指定枪口的充电会话（仅落库会话字段；实际协议停止由协议服务负责）")
+    @PostMapping("/{chargerId}/connectors/{connectorNo}/stop")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:charge')")
-    @DataScope(value = DataScope.DataScopeType.USER)
-    public Result<Void> stopCharging(
+    @DataScope
+    public Result<Void> stopChargingByConnector(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
-            @Parameter(description = "充电量(kWh)") @RequestParam Double energy,
-            @Parameter(description = "充电时长(分钟)") @RequestParam Long duration) {
-        
-        boolean success = chargerService.endChargingSession(chargerId, energy, duration);
-        if (success) {
-            return Result.success("结束充电成功");
-        } else {
-            return Result.fail("结束充电失败");
-        }
+            @Parameter(description = "枪口号(从1开始)") @PathVariable("connectorNo") @NotNull Integer connectorNo,
+            @Parameter(description = "会话ID（可选，存在时用于校验）") @RequestParam(required = false) String sessionId,
+            @Parameter(description = "充电量(kWh)") @RequestParam(required = false) Double energy,
+            @Parameter(description = "充电时长(分钟)") @RequestParam(required = false) Long duration) {
+
+        Double energyValue = energy != null ? energy : 0.0;
+        Long durationValue = duration != null ? duration : 0L;
+
+        boolean ok = chargerConnectorService.updateSessionStop(
+                chargerId,
+                connectorNo,
+                sessionId,
+                energyValue,
+                durationValue
+        );
+        return ok ? Result.success("结束充电成功") : Result.fail("结束充电失败");
     }
 
     /**

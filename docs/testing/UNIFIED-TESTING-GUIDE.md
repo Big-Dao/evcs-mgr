@@ -22,6 +22,10 @@
 
 - [测试修复指南](TEST-FIX-GUIDE.md)
 
+专题测试报告：
+
+- [按枪口（Connector）控制 - 测试报告](CHARGER-CONNECTOR-CONTROL-TEST-REPORT.md)
+
 ---
 
 ## 推荐运行方式

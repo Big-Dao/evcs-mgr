@@ -1,11 +1,14 @@
 package com.evcs.protocol.websocket;
 
 import com.evcs.protocol.api.ProtocolEventListener;
+import com.evcs.protocol.dto.ChargerBasicInfo;
 import com.evcs.protocol.dto.ocpp.OCPPMessage;
 import com.evcs.protocol.dto.ocpp.OCPPCallMessage;
 import com.evcs.protocol.dto.ocpp.OCPPBootNotificationRequest;
 import com.evcs.protocol.dto.ocpp.OCPPMessageParser;
 import com.evcs.protocol.dto.ocpp.OCPPErrorCode;
+import com.evcs.protocol.mq.ProtocolEventPublisher;
+import com.evcs.protocol.service.ChargerInfoResolver;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -25,6 +28,8 @@ public class OCPPMessageProcessor {
 
     private final ProtocolEventListener eventListener;
     private final OCPPMessageParser messageParser;
+    private final ProtocolEventPublisher eventPublisher;
+    private final ChargerInfoResolver chargerInfoResolver;
 
     /**
      * 处理OCPP消息（从JSON字符串）
@@ -199,6 +204,22 @@ public class OCPPMessageProcessor {
                 log.debug("Error triggering heartbeat event", e);
             }
         }
+
+        // 发布到RabbitMQ（用于站点服务落库/离线检测）
+        try {
+            ChargerBasicInfo info = chargerInfoResolver.resolveByChargerCode(session.getChargerCode());
+            if (info != null && info.getId() != null && info.getTenantId() != null) {
+                eventPublisher.publishHeartbeat(
+                    info.getId(),
+                    null,
+                    info.getTenantId(),
+                    "OCPP",
+                    LocalDateTime.now()
+                );
+            }
+        } catch (Exception e) {
+            log.debug("Failed to publish OCPP heartbeat event to MQ, chargerCode={}", session.getChargerCode(), e);
+        }
     }
 
     /**
@@ -225,6 +246,29 @@ public class OCPPMessageProcessor {
                     eventListener.onStatusChange(chargerId, statusCode);
                 } catch (Exception e) {
                     log.debug("Error triggering status change event", e);
+                }
+            }
+
+            // 发布到RabbitMQ（带 connectorId / faultCode）
+            if (connectorId != null && status != null) {
+                try {
+                    ChargerBasicInfo info = chargerInfoResolver.resolveByChargerCode(session.getChargerCode());
+                    if (info != null && info.getId() != null && info.getTenantId() != null) {
+                        Integer statusCode = parseStatus(status);
+                        eventPublisher.publishStatusChange(
+                            info.getId(),
+                            connectorId,
+                            info.getTenantId(),
+                            "OCPP",
+                            null,
+                            statusCode,
+                            status,
+                            errorCode,
+                            errorCode
+                        );
+                    }
+                } catch (Exception e) {
+                    log.debug("Failed to publish OCPP status event to MQ, chargerCode={}", session.getChargerCode(), e);
                 }
             }
 
@@ -265,9 +309,9 @@ public class OCPPMessageProcessor {
      */
     private void processStartTransaction(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
         try {
-            Integer connectorId = (Integer) payload.get("connectorId");
+            Integer connectorId = toIntegerValue(payload.get("connectorId"));
             String idTag = (String) payload.get("idTag");
-            Integer meterStart = (Integer) payload.get("meterStart");
+            Integer meterStart = toIntegerValue(payload.get("meterStart"));
             // timestamp is available in payload but not currently used
 
             log.info("Received StartTransaction from charger {}: connectorId={}, idTag={}, meterStart={}",
@@ -285,11 +329,43 @@ public class OCPPMessageProcessor {
 
             sendResponse(session, message, responsePayload);
 
+            // Persist minimal mapping for StopTransaction (OCPP 1.6 stop does not carry connectorId)
+            session.setAttribute("ocpp.txn.connector." + transactionId, connectorId);
+            session.setAttribute("ocpp.txn.meterStart." + transactionId, meterStart);
+
+            // Publish charging start to MQ (connector session tracking). Mark success=false to prevent order service side-effects
+            try {
+                ChargerBasicInfo info = chargerInfoResolver.resolveByChargerCode(session.getChargerCode());
+                if (info != null && info.getId() != null && info.getTenantId() != null) {
+                    String sessionId = "OCPP_TXN_" + transactionId;
+                    Double initialEnergy = meterStart != null ? (meterStart / 1000.0) : 0.0;
+                    eventPublisher.publishChargingStart(
+                        info.getStationId(),
+                        info.getId(),
+                        connectorId,
+                        info.getTenantId(),
+                        "OCPP",
+                        sessionId,
+                        null,
+                        null,
+                        null,
+                        initialEnergy,
+                        false,
+                        "OCPP StartTransaction received (order creation skipped: no user/station mapping)"
+                    );
+                }
+            } catch (Exception e) {
+                log.debug("Failed to publish OCPP charging start event to MQ, chargerCode={}", session.getChargerCode(), e);
+            }
+
             // 触发充电开始事件
             if (eventListener != null) {
                 try {
-                    Long chargerId = Long.valueOf(session.getChargerCode().replaceAll("[^0-9]", ""));
-                    eventListener.onStartAck(chargerId, "TXN_" + transactionId, true, "Transaction started");
+                    ChargerBasicInfo info = chargerInfoResolver.resolveByChargerCode(session.getChargerCode());
+                    Long chargerId = info != null && info.getId() != null
+                            ? info.getId()
+                            : Long.valueOf(session.getChargerCode().replaceAll("[^0-9]", ""));
+                    eventListener.onStartAck(chargerId, "OCPP_TXN_" + transactionId, true, "Transaction started");
                 } catch (Exception e) {
                     log.debug("Error triggering start transaction event", e);
                 }
@@ -306,9 +382,9 @@ public class OCPPMessageProcessor {
      */
     private void processStopTransaction(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
         try {
-            Integer transactionId = (Integer) payload.get("transactionId");
+            Integer transactionId = toIntegerValue(payload.get("transactionId"));
             String idTag = (String) payload.get("idTag");
-            Integer meterStop = (Integer) payload.get("meterStop");
+            Integer meterStop = toIntegerValue(payload.get("meterStop"));
             // timestamp is available in payload but not currently used
 
             log.info("Received StopTransaction from charger {}: transactionId={}, idTag={}, meterStop={}",
@@ -321,10 +397,42 @@ public class OCPPMessageProcessor {
 
             sendResponse(session, message, responsePayload);
 
+            // Publish charging stop to MQ. Try to recover connectorId/meterStart from StartTransaction mapping.
+            try {
+                ChargerBasicInfo info = chargerInfoResolver.resolveByChargerCode(session.getChargerCode());
+                if (info != null && info.getId() != null && info.getTenantId() != null && transactionId != null) {
+                    Integer connectorId = session.getAttribute("ocpp.txn.connector." + transactionId, Integer.class);
+                    Integer meterStart = session.getAttribute("ocpp.txn.meterStart." + transactionId, Integer.class);
+                    Double energy = null;
+                    if (meterStart != null && meterStop != null && meterStop >= meterStart) {
+                        energy = (meterStop - meterStart) / 1000.0;
+                    }
+                    String sessionId = "OCPP_TXN_" + transactionId;
+                    eventPublisher.publishChargingStop(
+                        info.getId(),
+                        connectorId,
+                        info.getTenantId(),
+                        "OCPP",
+                        sessionId,
+                        null,
+                        energy,
+                        null,
+                        "StopTransaction",
+                        false,
+                        "OCPP StopTransaction received (order completion skipped: no user/station mapping)"
+                    );
+                }
+            } catch (Exception e) {
+                log.debug("Failed to publish OCPP charging stop event to MQ, chargerCode={}", session.getChargerCode(), e);
+            }
+
             // 触发充电停止事件
             if (eventListener != null) {
                 try {
-                    Long chargerId = Long.valueOf(session.getChargerCode().replaceAll("[^0-9]", ""));
+                    ChargerBasicInfo info = chargerInfoResolver.resolveByChargerCode(session.getChargerCode());
+                    Long chargerId = info != null && info.getId() != null
+                            ? info.getId()
+                            : Long.valueOf(session.getChargerCode().replaceAll("[^0-9]", ""));
                     eventListener.onStopAck(chargerId, true, "Transaction stopped");
                 } catch (Exception e) {
                     log.debug("Error triggering stop transaction event", e);
@@ -375,6 +483,27 @@ public class OCPPMessageProcessor {
             case "faulted": return 7;
             default: return 0;
         }
+    }
+
+    private Integer toIntegerValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            String s = ((String) value).trim();
+            if (s.isEmpty()) {
+                return null;
+            }
+            try {
+                return Integer.parseInt(s);
+            } catch (NumberFormatException ex) {
+                return null;
+            }
+        }
+        return null;
     }
 
     /**

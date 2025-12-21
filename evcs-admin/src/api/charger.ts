@@ -8,8 +8,11 @@ import type { PageResult } from './types'
 // 充电桩列表查询参数
 export interface ChargerQueryParams {
   chargerCode?: string
+  chargerName?: string
   stationId?: number
   status?: number
+  chargerType?: number
+  enabled?: number
   current?: number
   size?: number
 }
@@ -18,16 +21,68 @@ export interface ChargerQueryParams {
 export interface Charger {
   id: number
   chargerCode: string
+  chargerName?: string
   stationId: number
-  stationName?: string
-  chargerType: string
-  power: number
-  voltage: number
-  current: number
+  stationCode?: string
+  chargerType: number
+  brand?: string
+  model?: string
+  manufacturer?: string
+  productionDate?: string
+  operationDate?: string
+  ratedPower?: number
+  inputVoltage?: number
+  outputVoltageRange?: string
+  outputCurrentRange?: string
+  gunCount?: number
+  gunTypes?: string
+  supportedProtocols?: string
   status: number
-  connectorType: string
-  price: number
-  tenantId: number
+  faultCode?: string
+  faultDescription?: string
+  lastHeartbeat?: string
+  totalChargingSessions?: number
+  totalChargingEnergy?: number
+  totalChargingTime?: number
+  currentSessionId?: string
+  currentUserId?: number
+  chargingStartTime?: string
+  chargedEnergy?: number
+  chargedDuration?: number
+  currentPower?: number
+  currentVoltage?: number
+  currentCurrent?: number
+  temperature?: number
+  signalStrength?: number
+  firmwareVersion?: string
+  lastMaintenanceTime?: string
+  nextMaintenanceTime?: string
+  enabled?: number
+  billingPlanId?: number
+  remark?: string
+
+  tenantId?: number
+  createTime?: string
+  updateTime?: string
+}
+
+// 充电枪口（Connector）信息
+export interface ChargerConnector {
+  id: number
+  chargerId: number
+  connectorNo: number
+  connectorType?: string
+  status: number
+  faultCode?: string
+  faultDescription?: string
+  lastHeartbeat?: string
+  currentSessionId?: string
+  currentUserId?: number
+  chargingStartTime?: string
+  chargedEnergy?: number | string
+  chargedDuration?: number
+
+  tenantId?: number
   createTime?: string
   updateTime?: string
 }
@@ -35,13 +90,23 @@ export interface Charger {
 // 充电桩表单数据
 export interface ChargerForm {
   chargerCode: string
+  chargerName?: string
   stationId: number
-  chargerType: string
-  power: number
-  voltage: number
-  current: number
-  connectorType: string
-  price: number
+  chargerType: number
+  brand?: string
+  model?: string
+  manufacturer?: string
+  productionDate?: string
+  operationDate?: string
+  ratedPower?: number
+  inputVoltage?: number
+  outputVoltageRange?: string
+  outputCurrentRange?: string
+  gunCount?: number
+  gunTypes?: string
+  supportedProtocols?: string
+  firmwareVersion?: string
+  enabled?: number
   status: number
 }
 
@@ -67,6 +132,16 @@ export function getChargerDetail(id: number) {
 }
 
 /**
+ * 获取充电桩枪口列表（后端落库的真实枪口状态）
+ */
+export function getChargerConnectors(chargerId: number) {
+  return request<ChargerConnector[]>({
+    url: `/charger/${chargerId}/connectors`,
+    method: 'get'
+  })
+}
+
+/**
  * 新增充电桩
  */
 export function createCharger(data: ChargerForm) {
@@ -82,9 +157,12 @@ export function createCharger(data: ChargerForm) {
  */
 export function updateCharger(id: number, data: ChargerForm) {
   return request<void>({
-    url: `/charger/${id}`,
+    url: `/charger`,
     method: 'put',
-    data
+    data: {
+      ...data,
+      id
+    }
   })
 }
 
@@ -103,18 +181,83 @@ export function deleteCharger(id: number) {
  */
 export function getChargerStatus(id: number) {
   return request({
-    url: `/charger/${id}/status`,
+    url: `/charger/${id}`,
     method: 'get'
   })
 }
 
 /**
- * 远程控制充电桩（启动/停止）
+ * 按枪口启动充电（仅更新枪口会话字段，实际协议启动由协议服务负责）
  */
-export function controlCharger(id: number, action: 'start' | 'stop') {
-  return request({
-    url: `/charger/${id}/control`,
+export function startChargerConnectorSession(
+  chargerId: number,
+  connectorNo: number,
+  params: { sessionId: string; userId: number; initialEnergy?: number }
+) {
+  return request<void>({
+    url: `/charger/${chargerId}/connectors/${connectorNo}/start`,
     method: 'post',
-    data: { action }
+    params
+  })
+}
+
+/**
+ * 按枪口停止充电（仅更新枪口会话字段，实际协议停止由协议服务负责）
+ */
+export function stopChargerConnectorSession(
+  chargerId: number,
+  connectorNo: number,
+  params: { sessionId?: string; energy?: number; duration?: number }
+) {
+  return request<void>({
+    url: `/charger/${chargerId}/connectors/${connectorNo}/stop`,
+    method: 'post',
+    params
+  })
+}
+
+/**
+ * 更新充电桩状态（0离线，1空闲，2充电中，3故障，4维护，5预约中）
+ */
+export function updateChargerStatus(id: number, status: number) {
+  return request<void>({
+    url: `/charger/${id}/status`,
+    method: 'put',
+    params: { status }
+  })
+}
+
+/**
+ * 更新充电桩实时数据
+ */
+export function updateChargerRealtime(
+  id: number,
+  data: { power?: number; voltage?: number; current?: number; temperature?: number }
+) {
+  return request<void>({
+    url: `/charger/${id}/realtime`,
+    method: 'put',
+    params: data
+  })
+}
+
+/**
+ * 重置充电桩
+ */
+export function resetCharger(id: number) {
+  return request<void>({
+    url: `/charger/${id}/reset`,
+    method: 'post'
+  })
+}
+
+/**
+ * 启用/停用充电桩（enabled=1启用，0停用）
+ */
+export function enableCharger(id: number, enabled: 0 | 1) {
+  return request<void>({
+    url: `/charger/${id}/enable`,
+    method: 'put',
+    params: { enabled }
   })
 }

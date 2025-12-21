@@ -6,14 +6,6 @@
           <el-icon><Edit /></el-icon>
           编辑配置
         </el-button>
-        <el-button type="success" @click="handleStartCharge">
-          <el-icon><VideoPlay /></el-icon>
-          启动充电
-        </el-button>
-        <el-button type="danger" @click="handleStopCharge">
-          <el-icon><VideoPause /></el-icon>
-          停止充电
-        </el-button>
       </template>
     </el-page-header>
 
@@ -31,16 +23,24 @@
           </template>
 
           <el-descriptions :column="2" border>
-            <el-descriptions-item label="充电桩ID">{{ detail.chargerId }}</el-descriptions-item>
+            <el-descriptions-item label="充电桩ID">{{ detail.id }}</el-descriptions-item>
             <el-descriptions-item label="充电桩编码">{{ detail.chargerCode }}</el-descriptions-item>
-            <el-descriptions-item label="所属充电站">{{ detail.stationName }}</el-descriptions-item>
-            <el-descriptions-item label="充电桩类型">{{ detail.chargerType }}</el-descriptions-item>
-            <el-descriptions-item label="额定功率">{{ detail.power }} kW</el-descriptions-item>
-            <el-descriptions-item label="额定电压">{{ detail.ratedVoltage }} V</el-descriptions-item>
-            <el-descriptions-item label="额定电流">{{ detail.ratedCurrent }} A</el-descriptions-item>
-            <el-descriptions-item label="充电接口">{{ detail.connectorType }}</el-descriptions-item>
+            <el-descriptions-item label="桩名称">{{ detail.chargerName || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="所属充电站">{{ detail.stationCode || detail.stationId || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="充电桩类型">{{ getChargerTypeText(detail.chargerType) }}</el-descriptions-item>
+            <el-descriptions-item label="额定功率">{{ detail.ratedPower ?? '-' }} kW</el-descriptions-item>
+            <el-descriptions-item label="输入电压">{{ detail.inputVoltage ?? '-' }} V</el-descriptions-item>
+            <el-descriptions-item label="输出电压范围">{{ detail.outputVoltageRange || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="输出电流范围">{{ detail.outputCurrentRange || '-' }}</el-descriptions-item>
+            <el-descriptions-item label="枪头数量">{{ detail.gunCount ?? 1 }}</el-descriptions-item>
+            <el-descriptions-item label="枪头类型">
+              <el-tag v-for="t in parseGunTypes(detail.gunTypes)" :key="t" size="small" style="margin-right: 6px;">
+                {{ t }}
+              </el-tag>
+              <span v-if="parseGunTypes(detail.gunTypes).length === 0">-</span>
+            </el-descriptions-item>
             <el-descriptions-item label="支持协议">
-              <el-tag v-for="protocol in detail.supportedProtocols" :key="protocol" size="small" style="margin-right: 5px;">
+              <el-tag v-for="protocol in parseSupportedProtocols(detail.supportedProtocols)" :key="protocol" size="small" style="margin-right: 5px;">
                 {{ protocol }}
               </el-tag>
             </el-descriptions-item>
@@ -48,6 +48,67 @@
             <el-descriptions-item label="最后心跳">{{ detail.lastHeartbeat }}</el-descriptions-item>
             <el-descriptions-item label="创建时间">{{ detail.createTime }}</el-descriptions-item>
           </el-descriptions>
+        </el-card>
+
+        <el-card class="detail-card" style="margin-top: 20px;">
+          <template #header>
+            <span>枪口信息</span>
+          </template>
+
+          <el-table :data="connectorTableRows" style="width: 100%">
+            <el-table-column prop="connectorNo" label="枪口(ConnectorId)" width="160" />
+            <el-table-column prop="connectorType" label="枪头类型" />
+            <el-table-column label="状态" width="140">
+              <template #default="scope">
+                <el-tag :type="getStatusType(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
+              </template>
+            </el-table-column>
+            <el-table-column prop="faultCode" label="故障码" width="160" />
+            <el-table-column prop="faultDescription" label="故障描述" min-width="200" />
+            <el-table-column prop="lastHeartbeat" label="最后心跳" width="200" />
+            <el-table-column prop="currentSessionId" label="当前会话" width="180" />
+            <el-table-column prop="currentUserId" label="当前用户" width="120" />
+            <el-table-column label="开始时间" width="200">
+              <template #default="scope">
+                {{ formatDateTime(scope.row.chargingStartTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="已充电量(kWh)" width="140">
+              <template #default="scope">
+                {{ formatNumber(scope.row.chargedEnergy) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="已充电时长(分钟)" width="160">
+              <template #default="scope">
+                {{ formatNumber(scope.row.chargedDuration) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="说明" min-width="220">
+              <template #default>
+                <span style="color: #909399;">按 OCPP/云快充通常用桩编码 + 枪口号定位</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="220" fixed="right">
+              <template #default="scope">
+                <el-button
+                  size="small"
+                  type="success"
+                  :disabled="!!scope.row.currentSessionId"
+                  @click="handleStartConnector(scope.row)"
+                >
+                  启动
+                </el-button>
+                <el-button
+                  size="small"
+                  type="danger"
+                  :disabled="!scope.row.currentSessionId"
+                  @click="handleStopConnector(scope.row)"
+                >
+                  停止
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
         </el-card>
 
         <el-card class="detail-card" style="margin-top: 20px;">
@@ -165,38 +226,137 @@
       </el-col>
     </el-row>
   </div>
+
+  <el-dialog v-model="stopDialogVisible" :title="stopDialogTitle" width="420px" destroy-on-close>
+    <el-form :model="stopDialogForm" label-width="120px">
+      <el-form-item label="充电量(kWh)">
+        <el-input v-model="stopDialogForm.energy" placeholder="例如 12.5" />
+      </el-form-item>
+      <el-form-item label="充电时长(分钟)">
+        <el-input v-model="stopDialogForm.duration" placeholder="例如 30" />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <el-button @click="stopDialogVisible = false">取消</el-button>
+      <el-button type="danger" :loading="stopDialogSubmitting" @click="submitStopDialog">确定停止</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import {
+  getChargerConnectors,
+  getChargerDetail,
+  startChargerConnectorSession,
+  stopChargerConnectorSession
+} from '@/api/charger'
+import type { Charger, ChargerConnector } from '@/api/charger'
 
 const router = useRouter()
+const route = useRoute()
 
-const detail = ref({
-  chargerId: 1,
-  chargerCode: 'CH001',
-  stationName: '市中心充电站',
-  chargerType: 'DC快充',
-  power: 120,
-  ratedVoltage: 380,
-  ratedCurrent: 250,
-  connectorType: 'GB/T 27930-2015',
-  supportedProtocols: ['OCPP 1.6', 'CloudCharge'],
-  firmwareVersion: 'v2.3.1',
-  lastHeartbeat: '2024-10-12 10:30:00',
-  createTime: '2024-01-15 14:20:00',
-  status: 2
+const loading = ref(false)
+
+const stopDialogVisible = ref(false)
+const stopDialogSubmitting = ref(false)
+const stopDialogConnectorNo = ref<number | null>(null)
+const stopDialogSessionId = ref<string | undefined>(undefined)
+const stopDialogForm = ref({
+  energy: '0',
+  duration: '0'
+})
+
+const stopDialogTitle = computed(() => {
+  return `停止充电(按枪口${stopDialogConnectorNo.value ?? '-'})`
+})
+
+const parseGunTypes = (gunTypes?: string) => {
+  if (!gunTypes) return []
+  return gunTypes
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+}
+
+const buildGunList = (gunCount?: number, gunTypes?: string) => {
+  const count = typeof gunCount === 'number' && gunCount > 0 ? gunCount : 1
+  const types = parseGunTypes(gunTypes)
+  return Array.from({ length: count }).map((_, idx) => {
+    const connectorNo = idx + 1
+    const gunType = types.length === count ? types[idx] : (types.length === 1 ? types[0] : (types.length > 0 ? types.join(', ') : undefined))
+    return {
+      id: 0,
+      chargerId: detail.value.id,
+      connectorNo,
+      connectorType: gunType,
+      status: detail.value.status,
+      lastHeartbeat: detail.value.lastHeartbeat
+    } as ChargerConnector
+  })
+}
+
+const parseSupportedProtocols = (supportedProtocols?: string) => {
+  if (!supportedProtocols) return []
+  try {
+    const parsed = JSON.parse(supportedProtocols)
+    if (parsed && typeof parsed === 'object') {
+      return Object.entries(parsed).map(([k, v]) => `${k}${v ? ` ${String(v)}` : ''}`)
+    }
+    return []
+  } catch {
+    return []
+  }
+}
+
+const formatDateTime = (v?: string) => {
+  if (!v) return '-'
+  return String(v)
+}
+
+const formatNumber = (v?: number | string) => {
+  if (v === null || v === undefined) return '-'
+  const n = Number(v)
+  if (Number.isNaN(n)) return String(v)
+  return String(n)
+}
+
+const getChargerTypeText = (chargerType?: number) => {
+  const textMap: Record<number, string> = {
+    1: '直流快充',
+    2: '交流慢充'
+  }
+  if (typeof chargerType !== 'number') return '未知'
+  return textMap[chargerType] || '未知'
+}
+
+const detail = ref<Charger>({
+  id: 0,
+  chargerCode: '',
+  stationId: 0,
+  chargerType: 1,
+  status: 0
+})
+
+const connectors = ref<ChargerConnector[]>([])
+
+const connectorTableRows = computed(() => {
+  if (connectors.value.length > 0) {
+    return connectors.value
+  }
+  return buildGunList(detail.value.gunCount, detail.value.gunTypes)
 })
 
 const realtimeData = ref({
-  voltage: 375.5,
-  current: 185.2,
-  power: 69.5,
-  soc: 68,
-  energy: 32.5,
-  duration: 28
+  voltage: 0,
+  current: 0,
+  power: 0,
+  soc: 0,
+  energy: 0,
+  duration: 0
 })
 
 const statusEvents = ref([
@@ -235,11 +395,57 @@ const todayStats = ref({
   revenue: 684.50
 })
 
+const loadDetail = async () => {
+  const chargerId = Number(route.params.id || route.query.id)
+  if (!chargerId) {
+    ElMessage.error('充电桩ID不能为空')
+    return
+  }
+  loading.value = true
+  try {
+    const response = await getChargerDetail(chargerId)
+    if (response.code === 200 && response.data) {
+      detail.value = response.data as Charger
+      try {
+        const connectorResp = await getChargerConnectors(chargerId)
+        if (connectorResp.code === 200 && Array.isArray(connectorResp.data)) {
+          connectors.value = connectorResp.data
+        } else {
+          connectors.value = []
+        }
+      } catch (e) {
+        connectors.value = []
+      }
+      realtimeData.value = {
+        voltage: Number(detail.value.currentVoltage || 0),
+        current: Number(detail.value.currentCurrent || 0),
+        power: Number(detail.value.currentPower || 0),
+        soc: 0,
+        energy: Number(detail.value.chargedEnergy || 0),
+        duration: Number(detail.value.chargedDuration || 0)
+      }
+    } else {
+      ElMessage.error(response.message || '加载充电桩详情失败')
+    }
+  } catch (e) {
+    console.error('加载充电桩详情失败:', e)
+    ElMessage.error('加载充电桩详情失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  loadDetail()
+})
+
 const getStatusType = (status: number) => {
   const typeMap: Record<number, string> = {
     1: 'success',
     2: 'warning',
     3: 'danger',
+    4: 'info',
+    5: 'info',
     0: 'info'
   }
   return typeMap[status] || 'info'
@@ -250,6 +456,8 @@ const getStatusText = (status: number) => {
     1: '空闲',
     2: '充电中',
     3: '故障',
+    4: '维护',
+    5: '预约中',
     0: '离线'
   }
   return textMap[status] || '未知'
@@ -273,24 +481,102 @@ const handleEdit = () => {
   ElMessage.info('编辑充电桩配置功能')
 }
 
-const handleStartCharge = () => {
-  ElMessageBox.confirm('确定要启动充电吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    ElMessage.success('充电已启动')
-  })
+const handleStartConnector = async (row: ChargerConnector) => {
+  const chargerId = Number(detail.value.id)
+  if (!chargerId) {
+    ElMessage.error('充电桩ID不能为空')
+    return
+  }
+
+  if (row.currentSessionId) {
+    ElMessage.warning('该枪口已有进行中的会话')
+    return
+  }
+
+  const currentUserId = Number(localStorage.getItem('userId') || '0')
+  if (!currentUserId) {
+    ElMessage.error('未获取到当前登录用户，请重新登录')
+    return
+  }
+
+  try {
+    const sessionId = `ADMIN_${Date.now()}`
+
+    await startChargerConnectorSession(chargerId, row.connectorNo, {
+      sessionId,
+      userId: currentUserId,
+      initialEnergy: 0
+    })
+    ElMessage.success(`已启动：枪口${row.connectorNo}，会话${sessionId}`)
+    await loadDetail()
+  } catch (e) {
+    // cancel or request failed
+  }
 }
 
-const handleStopCharge = () => {
-  ElMessageBox.confirm('确定要停止充电吗？', '提示', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    ElMessage.success('充电已停止')
-  })
+const handleStopConnector = async (row: ChargerConnector) => {
+  const chargerId = Number(detail.value.id)
+  if (!chargerId) {
+    ElMessage.error('充电桩ID不能为空')
+    return
+  }
+
+  if (!row.currentSessionId) {
+    ElMessage.warning('该枪口当前没有进行中的会话')
+    return
+  }
+
+  stopDialogConnectorNo.value = row.connectorNo
+  stopDialogSessionId.value = row.currentSessionId
+  stopDialogForm.value = { energy: '0', duration: '0' }
+  stopDialogVisible.value = true
+}
+
+const submitStopDialog = async () => {
+  const chargerId = Number(detail.value.id)
+  if (!chargerId) {
+    ElMessage.error('充电桩ID不能为空')
+    return
+  }
+
+  const energy = Number(stopDialogForm.value.energy)
+  const duration = Number(stopDialogForm.value.duration)
+  if (!Number.isFinite(energy) || energy < 0) {
+    ElMessage.error('充电量(kWh)必须为非负数字')
+    return
+  }
+  if (!Number.isFinite(duration) || duration < 0 || !Number.isInteger(duration)) {
+    ElMessage.error('充电时长(分钟)必须为非负整数')
+    return
+  }
+
+  try {
+    await ElMessageBox.confirm('确定要停止充电吗？', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+
+    stopDialogSubmitting.value = true
+    const connectorNo = stopDialogConnectorNo.value
+    if (!connectorNo) {
+      ElMessage.error('枪口号不能为空')
+      return
+    }
+    await stopChargerConnectorSession(chargerId, connectorNo, {
+      sessionId: stopDialogSessionId.value,
+      energy,
+      duration
+    })
+    ElMessage.success(`已停止：枪口${connectorNo}`)
+
+    stopDialogVisible.value = false
+    await loadDetail()
+  } catch (e) {
+    // cancel or request failed
+  } finally {
+    stopDialogSubmitting.value = false
+  }
 }
 </script>
 

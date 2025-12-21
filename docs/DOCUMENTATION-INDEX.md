@@ -28,6 +28,11 @@
 - 数据模型：[docs/architecture/data-model.md](architecture/data-model.md)
 - 多租户异步上下文 RFC：[docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md](architecture/TENANT-CONTEXT-ASYNC-RFC.md)
 
+## 功能（features）
+
+- 站点地图分析：[docs/features/STATION-MAP-ANALYTICS.md](features/STATION-MAP-ANALYTICS.md)
+- 按枪口（Connector）控制与会话落库：[docs/features/CHARGER-CONNECTOR-CONTROL.md](features/CHARGER-CONNECTOR-CONTROL.md)
+
 ## 开发（development）
 
 - 开发者指南：[docs/development/DEVELOPER-GUIDE.md](development/DEVELOPER-GUIDE.md)
@@ -53,6 +58,7 @@
 - 统一测试指南：[docs/testing/UNIFIED-TESTING-GUIDE.md](testing/UNIFIED-TESTING-GUIDE.md)
 - 集成测试指南：[docs/testing/INTEGRATION-TEST-GUIDE.md](testing/INTEGRATION-TEST-GUIDE.md)
 - 测试修复指南：[docs/testing/TEST-FIX-GUIDE.md](testing/TEST-FIX-GUIDE.md)
+- 按枪口控制测试报告：[docs/testing/CHARGER-CONNECTOR-CONTROL-TEST-REPORT.md](testing/CHARGER-CONNECTOR-CONTROL-TEST-REPORT.md)
 
 ## 故障排查（troubleshooting）
 

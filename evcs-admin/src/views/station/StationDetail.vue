@@ -80,9 +80,42 @@
       </template>
 
       <el-table :data="chargers" style="width: 100%">
-        <el-table-column prop="chargerCode" label="桩编号" width="120" />
-        <el-table-column prop="chargerType" label="桩类型" width="100" />
-        <el-table-column prop="power" label="功率(kW)" width="100" />
+        <el-table-column type="expand">
+          <template #default="{ row }">
+            <el-descriptions :column="2" border style="margin: 10px 0;">
+              <el-descriptions-item label="桩名称">{{ row.chargerName || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="桩编码">{{ row.chargerCode || '-' }}</el-descriptions-item>
+              <el-descriptions-item label="额定功率">{{ row.ratedPower ?? '-' }} kW</el-descriptions-item>
+              <el-descriptions-item label="输入电压">{{ row.inputVoltage ?? '-' }} V</el-descriptions-item>
+              <el-descriptions-item label="枪头数量">{{ row.gunCount ?? 1 }}</el-descriptions-item>
+              <el-descriptions-item label="枪头类型">
+                <el-tag v-for="t in parseGunTypes(row.gunTypes)" :key="t" size="small" style="margin-right: 6px;">
+                  {{ t }}
+                </el-tag>
+                <span v-if="parseGunTypes(row.gunTypes).length === 0">-</span>
+              </el-descriptions-item>
+              <el-descriptions-item label="枪口(Connector)" :span="2">
+                <el-tag
+                  v-for="gun in buildGunList(row.gunCount, row.gunTypes)"
+                  :key="gun.connectorId"
+                  size="small"
+                  style="margin-right: 6px; margin-bottom: 6px;"
+                >
+                  枪口 {{ gun.connectorId }}<span v-if="gun.gunType">（{{ gun.gunType }}）</span>
+                </el-tag>
+              </el-descriptions-item>
+            </el-descriptions>
+          </template>
+        </el-table-column>
+        <el-table-column prop="chargerCode" label="桩编号" width="160" />
+        <el-table-column prop="chargerName" label="桩名称" min-width="160" />
+        <el-table-column prop="chargerType" label="桩类型" width="110">
+          <template #default="{ row }">
+            <el-tag size="small">{{ getChargerTypeText(row.chargerType) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="ratedPower" label="额定功率(kW)" width="130" />
+        <el-table-column prop="gunCount" label="枪头数" width="90" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
             <el-tag :type="getChargerStatusType(row.status)" size="small">
@@ -90,8 +123,6 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="voltage" label="电压(V)" width="100" />
-        <el-table-column prop="current" label="电流(A)" width="100" />
         <el-table-column prop="lastHeartbeat" label="最后心跳" />
         <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
@@ -124,6 +155,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getStationDetail } from '@/api/station'
 import { getChargerList } from '@/api/charger'
+import type { Charger } from '@/api/charger'
 
 const router = useRouter()
 const route = useRoute()
@@ -149,7 +181,7 @@ const detail = ref({
   todayRevenue: 0
 })
 
-const chargers = ref<any[]>([])
+const chargers = ref<Charger[]>([])
 
 // 加载充电站详情
 const loadStationDetail = async () => {
@@ -203,11 +235,38 @@ const loadChargers = async (stationId: number) => {
     const response = await getChargerList({ stationId, current: 1, size: 100 })
     if (response.code === 200 && response.data) {
       const records = (response.data as any).records || response.data
-      chargers.value = Array.isArray(records) ? records : []
+      chargers.value = Array.isArray(records) ? (records as Charger[]) : []
     }
   } catch (error) {
     console.error('加载充电桩列表失败:', error)
   }
+}
+
+const getChargerTypeText = (chargerType?: number) => {
+  const textMap: Record<number, string> = {
+    1: '直流快充',
+    2: '交流慢充'
+  }
+  if (typeof chargerType !== 'number') return '未知'
+  return textMap[chargerType] || '未知'
+}
+
+const parseGunTypes = (gunTypes?: string) => {
+  if (!gunTypes) return []
+  return gunTypes
+    .split(',')
+    .map((t) => t.trim())
+    .filter(Boolean)
+}
+
+const buildGunList = (gunCount?: number, gunTypes?: string) => {
+  const count = typeof gunCount === 'number' && gunCount > 0 ? gunCount : 1
+  const types = parseGunTypes(gunTypes)
+  return Array.from({ length: count }).map((_, idx) => {
+    const connectorId = idx + 1
+    const gunType = types.length === count ? types[idx] : (types.length === 1 ? types[0] : undefined)
+    return { connectorId, gunType }
+  })
 }
 
 onMounted(() => {
@@ -247,6 +306,8 @@ const getChargerStatusText = (status: number) => {
     1: '空闲',
     2: '充电中',
     3: '故障',
+    4: '维护',
+    5: '预约中',
     0: '离线'
   }
   return textMap[status] || '未知'
