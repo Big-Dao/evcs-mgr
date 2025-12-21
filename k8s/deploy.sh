@@ -3,9 +3,14 @@ set -e
 
 echo "=== Deploying EVCS to K8s (Internal Test Environment) ==="
 
-# 镜像构建/推送：推荐使用 Jib（无需本地 Docker Daemon）
-# 示例：
-#   ./gradlew pushK8sImages -Devcs.k8s.registry=$EVCS_K8S_REGISTRY -Devcs.k8s.tag=$EVCS_IMAGE_TAG
+# 镜像构建/推送建议（SSOT 见 docs/deployment/DEPLOYMENT-GUIDE.md）：
+# - 内部测试环境常见“集群无外网”，不要在集群内做 git clone / npm install。
+# - 推荐在开发机本地构建后，通过 port-forward 推送到集群内置 registry：
+#     kubectl -n evcs port-forward deploy/registry 5000:5000
+#     ./gradlew pushK8sImages -Devcs.k8s.registry=127.0.0.1:5000 -Devcs.k8s.tag=$EVCS_IMAGE_TAG
+# - 前端镜像：使用 k8s/push-images-from-local.sh。
+#
+# 本脚本只负责：渲染占位符并 apply manifests。
 export EVCS_K8S_REGISTRY="${EVCS_K8S_REGISTRY:-192.168.20.235:5000}"
 export EVCS_IMAGE_TAG="${EVCS_IMAGE_TAG:-dev}"
 

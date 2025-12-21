@@ -29,9 +29,14 @@ fi
 kubectl patch configmap -n evcs evcs-common-config --type merge -p "{\"data\":{\"EVCS_GATEWAY_IP\":\"${GATEWAY_CLUSTER_IP}\"}}" >/dev/null
 echo "EVCS_GATEWAY_IP=${GATEWAY_CLUSTER_IP}"
 
-# Build image (no local Docker required)
+# Build image
+# - local: build dist + docker build/push on dev machine, push via port-forwarded registry
+# - git:   build/push inside cluster via Kaniko (requires cluster network access to Git)
 if [ "${BUILD_MODE}" = "local" ]; then
-	bash "${REPO_ROOT}/k8s/build-admin-frontend-from-local.sh"
+	EVCS_PUSH_JAVA_IMAGES=false \
+	EVCS_PUSH_ADMIN_FRONTEND=true \
+	EVCS_IMAGE_TAG="${EVCS_IMAGE_TAG}" \
+	bash "${REPO_ROOT}/k8s/push-images-from-local.sh"
 else
 	bash "${REPO_ROOT}/k8s/build-admin-frontend.sh"
 fi

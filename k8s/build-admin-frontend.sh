@@ -80,7 +80,8 @@ spec:
         args:
         - --dockerfile=Dockerfile
         - --context=dir:///workspace/${EVCS_GIT_SUBDIR}
-        - --build-arg=BASE_REGISTRY=${EVCS_K8S_REGISTRY}
+        - --build-arg=NODE_IMAGE=${EVCS_K8S_REGISTRY}/base/node:20-alpine
+        - --build-arg=NGINX_IMAGE=${EVCS_K8S_REGISTRY}/base/nginx:alpine
         - --destination=${EVCS_K8S_REGISTRY}/evcs/admin-frontend:${EVCS_IMAGE_TAG}
         - --cache=true
         - --cache-repo=${KANIKO_CACHE_REPO}
@@ -115,7 +116,8 @@ spec:
         args:
         - --dockerfile=Dockerfile
         - --context=dir:///workspace/${EVCS_GIT_SUBDIR}
-        - --build-arg=BASE_REGISTRY=${EVCS_K8S_REGISTRY}
+        - --build-arg=NODE_IMAGE=${EVCS_K8S_REGISTRY}/base/node:20-alpine
+        - --build-arg=NGINX_IMAGE=${EVCS_K8S_REGISTRY}/base/nginx:alpine
         - --destination=${EVCS_K8S_REGISTRY}/evcs/admin-frontend:${EVCS_IMAGE_TAG}
         - --cache=true
         - --cache-repo=${KANIKO_CACHE_REPO}

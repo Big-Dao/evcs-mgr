@@ -2,7 +2,7 @@
 
 > 一句话说明：EVCS Manager 的生产部署与发布基线（Day-0/Day-1），以现有 Compose/K8s 资产为准，本文件只做规划与验收口径。
 
-**最后更新**: 2025-12-18  \
+**最后更新**: 2025-12-21  \
 **维护者**: DevOps 团队  \
 **状态**: 已发布
 
@@ -77,6 +77,64 @@ curl -fsS http://<gateway-host>:8080/actuator/health
 ```
 
 说明：本仓库当前同时存在多套 Compose 变体（如 minimal/optimized/core-dev/monitoring），生产环境建议优先使用“optimized + 必要的 monitoring 叠加”，以减少资源浪费与误配置概率。
+
+---
+
+## K3S 内部测试环境（无外网）发布流程（推荐）
+
+> 适用场景：集群内无法访问 GitHub / npm / DockerHub（或访问不稳定）。
+> 结论：**构建在开发机本地完成**，然后通过 `kubectl port-forward` 将镜像推送进集群内置 registry，最后再执行 `deploy.sh` 渲染并发布。
+
+### 为什么不在集群内构建
+
+- 集群内构建（Kaniko + git clone / npm install）对外网依赖强，极易因网络/证书/镜像源限制失败。
+- 失败常见症状：`vue-tsc not found`（devDependencies 被跳过）、npm registry 超时、git clone 失败、基础镜像拉取失败。
+- 本仓库已提供“本地构建 + 上传”的标准脚本，避免重复踩坑。
+
+### 1) 推送后端服务镜像（推荐：Jib，无需 Docker）
+
+说明：根目录 Gradle 已集成 `pushK8sImages`，默认允许 HTTP registry（`allowInsecureRegistries = true`）。
+
+```bash
+# 将集群内 registry 端口转发到本机（避免 Docker/客户端配置 insecure registry）
+kubectl -n evcs port-forward deploy/registry 5000:5000
+
+# 另开终端：推送 Java 服务镜像到 localhost:5000
+./gradlew pushK8sImages -Devcs.k8s.registry=127.0.0.1:5000 -Devcs.k8s.tag=dev
+```
+
+### 2) 推送管理后台前端镜像（本地 npm build + docker build/push）
+
+推荐使用仓库脚本一键完成（包含 port-forward、npm build、docker build/push）：
+
+```bash
+EVCS_IMAGE_TAG=dev \
+EVCS_PUSH_JAVA_IMAGES=false \
+bash k8s/push-images-from-local.sh
+```
+
+### 3) 部署到 K3S
+
+```bash
+export EVCS_K8S_REGISTRY=192.168.20.235:5000
+export EVCS_IMAGE_TAG=dev
+
+bash k8s/deploy.sh
+```
+
+### 4) 只刷新部分服务（更快）
+
+当只更新了前端或 station 服务时，优先只滚动重启相关 deployment：
+
+```bash
+kubectl -n evcs rollout restart deploy/admin-frontend
+kubectl -n evcs rollout restart deploy/station-service
+```
+
+### 验证建议
+
+- 前端版本：`http://<node-ip>:30090/version.json`
+- 网关健康：`http://<node-ip>:30080/actuator/health`
 
 ## 配置来源与环境分层
 

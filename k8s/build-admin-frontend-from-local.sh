@@ -139,7 +139,8 @@ spec:
         args:
         - --dockerfile=${EVCS_ADMIN_DOCKERFILE}
         - --context=dir:///workspace/evcs-admin
-        - --build-arg=BASE_REGISTRY=${EVCS_K8S_REGISTRY}
+        - --build-arg=NODE_IMAGE=${EVCS_K8S_REGISTRY}/base/node:20-alpine
+        - --build-arg=NGINX_IMAGE=${EVCS_K8S_REGISTRY}/base/nginx:alpine
         - --destination=${EVCS_K8S_REGISTRY}/evcs/admin-frontend:${EVCS_IMAGE_TAG}
         - --cache=true
         - --cache-repo=${KANIKO_CACHE_REPO}

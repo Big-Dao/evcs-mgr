@@ -43,7 +43,8 @@
 - RabbitMQ：5672 / 15672
 - Tenant Service：8081
 - Station Service：8082
-- Adminer：8090
+
+说明：测试环境默认不包含 Adminer（避免额外镜像拉取依赖）。
 
 提示：端口占用冲突是最常见失败原因之一，启动前建议先检查占用。
 

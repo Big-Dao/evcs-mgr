@@ -1,8 +1,12 @@
 # Stage 1: Build frontend
-# NOTE: Kaniko running inside the cluster cannot reliably access public registries.
-# Use base images mirrored into the in-cluster registry.
-ARG BASE_REGISTRY=192.168.20.235:5000
-FROM ${BASE_REGISTRY}/base/node:20-alpine AS build
+# Default base images are public.
+# For in-cluster Kaniko builds (air-gapped), override at build time, e.g.:
+#   --build-arg NODE_IMAGE=192.168.20.235:5000/base/node:20-alpine
+#   --build-arg NGINX_IMAGE=192.168.20.235:5000/base/nginx:alpine
+ARG NODE_IMAGE=node:20-alpine
+ARG NGINX_IMAGE=nginx:alpine
+
+FROM ${NODE_IMAGE} AS build
 ARG BUILD_NUMBER=0
 ENV BUILD_NUMBER=${BUILD_NUMBER}
 WORKDIR /app
@@ -14,7 +18,9 @@ COPY package.json package-lock.json* ./
 RUN npm config set registry https://registry.npmmirror.com/
 
 # Install dependencies
-RUN npm ci || npm install
+# IMPORTANT: `vue-tsc` is a devDependency, but the build step requires it.
+# Some base images / environments may default to production-only installs.
+RUN npm ci --include=dev || npm install --include=dev
 
 # Copy source files
 COPY . .
@@ -22,7 +28,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Runtime with Nginx
-FROM ${BASE_REGISTRY}/base/nginx:alpine
+FROM ${NGINX_IMAGE}
 WORKDIR /usr/share/nginx/html
 
 # Remove default nginx static assets and config
