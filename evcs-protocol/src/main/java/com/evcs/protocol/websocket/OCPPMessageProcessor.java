@@ -13,9 +13,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 /**
  * OCPP消息处理器
@@ -312,7 +316,7 @@ public class OCPPMessageProcessor {
             Integer connectorId = toIntegerValue(payload.get("connectorId"));
             String idTag = (String) payload.get("idTag");
             Integer meterStart = toIntegerValue(payload.get("meterStart"));
-            // timestamp is available in payload but not currently used
+            LocalDateTime startTime = parseOcppTimestamp(payload.get("timestamp"));
 
             log.info("Received StartTransaction from charger {}: connectorId={}, idTag={}, meterStart={}",
                     session.getChargerCode(), connectorId, idTag, meterStart);
@@ -332,6 +336,10 @@ public class OCPPMessageProcessor {
             // Persist minimal mapping for StopTransaction (OCPP 1.6 stop does not carry connectorId)
             session.setAttribute("ocpp.txn.connector." + transactionId, connectorId);
             session.setAttribute("ocpp.txn.meterStart." + transactionId, meterStart);
+            session.setAttribute("ocpp.txn.startTime." + transactionId, startTime != null ? startTime : LocalDateTime.now());
+            if (connectorId != null && connectorId > 0) {
+                session.setAttribute("ocpp.connector.txn." + connectorId, transactionId);
+            }
 
             // Publish charging start to MQ (connector session tracking). Mark success=false to prevent order service side-effects
             try {
@@ -385,7 +393,7 @@ public class OCPPMessageProcessor {
             Integer transactionId = toIntegerValue(payload.get("transactionId"));
             String idTag = (String) payload.get("idTag");
             Integer meterStop = toIntegerValue(payload.get("meterStop"));
-            // timestamp is available in payload but not currently used
+            LocalDateTime stopTime = parseOcppTimestamp(payload.get("timestamp"));
 
             log.info("Received StopTransaction from charger {}: transactionId={}, idTag={}, meterStop={}",
                     session.getChargerCode(), transactionId, idTag, meterStop);
@@ -403,9 +411,16 @@ public class OCPPMessageProcessor {
                 if (info != null && info.getId() != null && info.getTenantId() != null && transactionId != null) {
                     Integer connectorId = session.getAttribute("ocpp.txn.connector." + transactionId, Integer.class);
                     Integer meterStart = session.getAttribute("ocpp.txn.meterStart." + transactionId, Integer.class);
+                    LocalDateTime startTime = session.getAttribute("ocpp.txn.startTime." + transactionId, LocalDateTime.class);
                     Double energy = null;
                     if (meterStart != null && meterStop != null && meterStop >= meterStart) {
                         energy = (meterStop - meterStart) / 1000.0;
+                    }
+                    Long durationMinutes = null;
+                    if (startTime != null) {
+                        LocalDateTime effectiveStop = stopTime != null ? stopTime : LocalDateTime.now();
+                        long minutes = Duration.between(startTime, effectiveStop).toMinutes();
+                        durationMinutes = minutes >= 0 ? minutes : null;
                     }
                     String sessionId = "OCPP_TXN_" + transactionId;
                     eventPublisher.publishChargingStop(
@@ -416,11 +431,19 @@ public class OCPPMessageProcessor {
                         sessionId,
                         null,
                         energy,
-                        null,
+                        durationMinutes,
                         "StopTransaction",
                         false,
                         "OCPP StopTransaction received (order completion skipped: no user/station mapping)"
                     );
+
+                    // cleanup mappings (best-effort)
+                    if (connectorId != null && connectorId > 0) {
+                        session.removeAttribute("ocpp.connector.txn." + connectorId);
+                    }
+                    session.removeAttribute("ocpp.txn.connector." + transactionId);
+                    session.removeAttribute("ocpp.txn.meterStart." + transactionId);
+                    session.removeAttribute("ocpp.txn.startTime." + transactionId);
                 }
             } catch (Exception e) {
                 log.debug("Failed to publish OCPP charging stop event to MQ, chargerCode={}", session.getChargerCode(), e);
@@ -450,8 +473,11 @@ public class OCPPMessageProcessor {
      */
     private void processMeterValues(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
         try {
-            Integer connectorId = (Integer) payload.get("connectorId");
-            Integer transactionId = (Integer) payload.get("transactionId");
+            Integer connectorId = toIntegerValue(payload.get("connectorId"));
+            Integer transactionId = toIntegerValue(payload.get("transactionId"));
+            if (transactionId == null && connectorId != null && connectorId > 0) {
+                transactionId = session.getAttribute("ocpp.connector.txn." + connectorId, Integer.class);
+            }
 
             log.debug("Received MeterValues from charger {}: connectorId={}, transactionId={}",
                     session.getChargerCode(), connectorId, transactionId);
@@ -460,9 +486,290 @@ public class OCPPMessageProcessor {
             Map<String, Object> responsePayload = new HashMap<>();
             sendResponse(session, message, responsePayload);
 
+            // Publish telemetry to MQ for station persistence (curve/session diagnostics)
+            if (connectorId == null || connectorId <= 0) {
+                return;
+            }
+
+            ChargerBasicInfo info = null;
+            try {
+                info = chargerInfoResolver.resolveByChargerCode(session.getChargerCode());
+            } catch (Exception e) {
+                log.debug("Failed to resolve charger info for MeterValues, chargerCode={}", session.getChargerCode(), e);
+            }
+            if (info == null || info.getId() == null || info.getTenantId() == null) {
+                return;
+            }
+
+            String sessionId = transactionId != null ? ("OCPP_TXN_" + transactionId) : null;
+            LocalDateTime startTime = transactionId != null
+                ? session.getAttribute("ocpp.txn.startTime." + transactionId, LocalDateTime.class)
+                : null;
+
+            List<?> meterValues = asList(payload.get("meterValue"));
+            if (meterValues == null || meterValues.isEmpty()) {
+                return;
+            }
+
+            for (Object mvObj : meterValues) {
+                if (!(mvObj instanceof Map<?, ?>)) {
+                    continue;
+                }
+                @SuppressWarnings("unchecked")
+                Map<String, Object> mv = (Map<String, Object>) mvObj;
+
+                LocalDateTime sampleTime = parseOcppTimestamp(mv.get("timestamp"));
+                if (sampleTime == null) {
+                    sampleTime = LocalDateTime.now();
+                }
+
+                TelemetrySample sample = parseTelemetrySample(mv.get("sampledValue"));
+                if (sample == null || sample.isEmpty()) {
+                    continue;
+                }
+
+                Long durationSeconds = null;
+                if (startTime != null) {
+                    long seconds = Duration.between(startTime, sampleTime).getSeconds();
+                    durationSeconds = seconds >= 0 ? seconds : null;
+                }
+
+                try {
+                    eventPublisher.publishTelemetry(
+                        info.getId(),
+                        connectorId,
+                        info.getTenantId(),
+                        "OCPP",
+                        sessionId,
+                        transactionId,
+                        sampleTime,
+                        sample.voltage,
+                        sample.current,
+                        sample.powerKw,
+                        sample.soc,
+                        sample.energyKwh,
+                        durationSeconds
+                    );
+                } catch (Exception e) {
+                    log.debug(
+                        "Failed to publish telemetry event, chargerCode={}, chargerId={}, connectorId={}, sessionId={}, transactionId={}",
+                        session.getChargerCode(),
+                        info.getId(),
+                        connectorId,
+                        sessionId,
+                        transactionId,
+                        e
+                    );
+                }
+            }
+
         } catch (Exception e) {
             log.error("Error processing MeterValues from charger: {}", session.getChargerCode(), e);
             sendErrorResponse(session, message, "FormationViolation", "Invalid MeterValues format");
+        }
+    }
+
+    private static List<?> asList(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof List<?>) {
+            return (List<?>) value;
+        }
+        return null;
+    }
+
+    private static LocalDateTime parseOcppTimestamp(Object timestamp) {
+        if (timestamp == null) {
+            return null;
+        }
+        if (timestamp instanceof LocalDateTime) {
+            return (LocalDateTime) timestamp;
+        }
+        String s = String.valueOf(timestamp).trim();
+        if (s.isEmpty()) {
+            return null;
+        }
+        try {
+            // Typical OCPP: 2025-01-01T00:00:00Z or with offset
+            return OffsetDateTime.parse(s).toLocalDateTime();
+        } catch (Exception ignored) {
+            // fallthrough
+        }
+        try {
+            return Instant.parse(s).atOffset(java.time.ZoneOffset.UTC).toLocalDateTime();
+        } catch (Exception ignored) {
+            // fallthrough
+        }
+        try {
+            return LocalDateTime.parse(s);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private static TelemetrySample parseTelemetrySample(Object sampledValueObj) {
+        List<?> sampledValues = asList(sampledValueObj);
+        if (sampledValues == null || sampledValues.isEmpty()) {
+            return null;
+        }
+
+        double voltageSum = 0.0;
+        int voltageCount = 0;
+        double currentSum = 0.0;
+        int currentCount = 0;
+        Double powerKw = null;
+        Double soc = null;
+        Double energyKwh = null;
+
+        for (Object svObj : sampledValues) {
+            if (!(svObj instanceof Map<?, ?>)) {
+                continue;
+            }
+            @SuppressWarnings("unchecked")
+            Map<String, Object> sv = (Map<String, Object>) svObj;
+
+            String measurand = sv.get("measurand") == null ? null : String.valueOf(sv.get("measurand")).trim();
+            String unit = sv.get("unit") == null ? null : String.valueOf(sv.get("unit")).trim();
+            Double value = toDoubleValue(sv.get("value"));
+            if (value == null) {
+                continue;
+            }
+
+            String m = measurand == null || measurand.isEmpty() ? "Energy.Active.Import.Register" : measurand;
+            switch (m) {
+                case "Voltage": {
+                    Double v = normalizeVoltage(value, unit);
+                    if (v != null) {
+                        voltageSum += v;
+                        voltageCount++;
+                    }
+                    break;
+                }
+                case "Current.Import":
+                case "Current.Offered":
+                case "Current.Export": {
+                    Double a = normalizeCurrent(value, unit);
+                    if (a != null) {
+                        currentSum += a;
+                        currentCount++;
+                    }
+                    break;
+                }
+                case "Power.Active.Import":
+                case "Power.Active.Export":
+                case "Power.Active.Net": {
+                    Double kw = normalizePowerKw(value, unit);
+                    if (kw != null) {
+                        powerKw = kw;
+                    }
+                    break;
+                }
+                case "SoC": {
+                    soc = value;
+                    break;
+                }
+                case "Energy.Active.Import.Register":
+                case "Energy.Active.Import.Interval": {
+                    Double kwh = normalizeEnergyKwh(value, unit);
+                    if (kwh != null) {
+                        energyKwh = kwh;
+                    }
+                    break;
+                }
+                default:
+                    // ignore other measurands for now
+                    break;
+            }
+        }
+
+        Double voltage = voltageCount > 0 ? (voltageSum / voltageCount) : null;
+        Double current = currentCount > 0 ? (currentSum / currentCount) : null;
+
+        return new TelemetrySample(voltage, current, powerKw, soc, energyKwh);
+    }
+
+    private static Double toDoubleValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        String s = String.valueOf(value).trim();
+        if (s.isEmpty()) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(s);
+        } catch (NumberFormatException e) {
+            return null;
+        }
+    }
+
+    private static Double normalizeVoltage(Double value, String unit) {
+        if (value == null) {
+            return null;
+        }
+        if (unit == null || unit.isBlank() || "V".equalsIgnoreCase(unit)) {
+            return value;
+        }
+        return value;
+    }
+
+    private static Double normalizeCurrent(Double value, String unit) {
+        if (value == null) {
+            return null;
+        }
+        if (unit == null || unit.isBlank() || "A".equalsIgnoreCase(unit)) {
+            return value;
+        }
+        return value;
+    }
+
+    private static Double normalizePowerKw(Double value, String unit) {
+        if (value == null) {
+            return null;
+        }
+        if (unit == null || unit.isBlank()) {
+            // OCPP defaults to W for power if unit omitted in some implementations
+            return value / 1000.0;
+        }
+        if ("W".equalsIgnoreCase(unit)) {
+            return value / 1000.0;
+        }
+        if ("kW".equalsIgnoreCase(unit)) {
+            return value;
+        }
+        return value;
+    }
+
+    private static Double normalizeEnergyKwh(Double value, String unit) {
+        if (value == null) {
+            return null;
+        }
+        if (unit == null || unit.isBlank()) {
+            // Most devices report Wh without unit
+            return value / 1000.0;
+        }
+        if ("Wh".equalsIgnoreCase(unit)) {
+            return value / 1000.0;
+        }
+        if ("kWh".equalsIgnoreCase(unit)) {
+            return value;
+        }
+        return value;
+    }
+
+    private record TelemetrySample(
+        Double voltage,
+        Double current,
+        Double powerKw,
+        Double soc,
+        Double energyKwh
+    ) {
+        boolean isEmpty() {
+            return voltage == null && current == null && powerKw == null && soc == null && energyKwh == null;
         }
     }
 

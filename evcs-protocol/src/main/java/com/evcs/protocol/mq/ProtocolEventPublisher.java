@@ -266,6 +266,47 @@ public class ProtocolEventPublisher {
     }
 
     /**
+     * 发布实时遥测/计量事件（用于实时展示与会话曲线）
+     */
+    public TelemetryEvent publishTelemetry(
+        Long chargerId,
+        Integer connectorId,
+        Long tenantId,
+        String protocolType,
+        String sessionId,
+        Integer transactionId,
+        LocalDateTime sampleTime,
+        Double voltage,
+        Double current,
+        Double power,
+        Double soc,
+        Double energy,
+        Long durationSeconds
+    ) {
+        TelemetryEvent event = TelemetryEvent.builder()
+            .eventId(UUID.randomUUID().toString())
+            .chargerId(chargerId)
+            .connectorId(connectorId)
+            .tenantId(tenantId)
+            .eventType(ProtocolEvent.EventType.TELEMETRY)
+            .eventTime(LocalDateTime.now())
+            .protocolType(protocolType)
+            .sessionId(sessionId)
+            .transactionId(transactionId)
+            .sampleTime(sampleTime)
+            .voltage(voltage)
+            .current(current)
+            .power(power)
+            .soc(soc)
+            .energy(energy)
+            .durationSeconds(durationSeconds)
+            .build();
+
+        publishEvent(event);
+        return event;
+    }
+
+    /**
      * 获取最近的事件历史（用于调试/测试）
      * 返回的是事件列表的快照；修改返回列表不会影响内部缓冲。
      */

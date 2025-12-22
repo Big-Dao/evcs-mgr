@@ -73,4 +73,34 @@ public class ChargerConnector extends BaseEntity {
      * 已充电时长（分钟，可选）
      */
     private Integer chargedDuration;
+
+    /**
+     * 最新一次计量上报时间（可选）
+     */
+    private LocalDateTime lastMeterTime;
+
+    /**
+     * 最新电压（V，可选）
+     */
+    private BigDecimal lastVoltage;
+
+    /**
+     * 最新电流（A，可选）
+     */
+    private BigDecimal lastCurrent;
+
+    /**
+     * 最新功率（kW，可选）
+     */
+    private BigDecimal lastPower;
+
+    /**
+     * 最新SOC（%，可选）
+     */
+    private BigDecimal lastSoc;
+
+    /**
+     * 最新累计电量（kWh，可选）
+     */
+    private BigDecimal lastEnergy;
 }

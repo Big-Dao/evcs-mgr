@@ -106,6 +106,13 @@
                 >
                   停止
                 </el-button>
+                <el-button
+                  size="small"
+                  type="primary"
+                  @click="openSessionDrawer(scope.row)"
+                >
+                  历史
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -242,19 +249,136 @@
       <el-button type="danger" :loading="stopDialogSubmitting" @click="submitStopDialog">确定停止</el-button>
     </template>
   </el-dialog>
+
+  <el-drawer
+    v-model="sessionDrawerVisible"
+    :title="sessionDrawerTitle"
+    size="80%"
+    destroy-on-close
+  >
+    <div style="display: flex; gap: 16px; height: 100%;">
+      <div style="flex: 1; min-width: 520px;">
+        <el-card shadow="never">
+          <template #header>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+              <span>会话列表</span>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <el-button size="small" @click="reloadSessions">刷新</el-button>
+              </div>
+            </div>
+          </template>
+
+          <el-table
+            :data="sessionTableRows"
+            style="width: 100%"
+            height="520"
+            v-loading="sessionDrawerLoading"
+            @row-click="handleSessionRowClick"
+          >
+            <el-table-column prop="sessionId" label="会话ID" min-width="220" />
+            <el-table-column prop="protocolType" label="协议" width="110" />
+            <el-table-column label="开始时间" width="190">
+              <template #default="scope">
+                {{ formatDateTime(scope.row.startTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="结束时间" width="190">
+              <template #default="scope">
+                {{ formatDateTime(scope.row.stopTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="电量(kWh)" width="120">
+              <template #default="scope">
+                {{ formatNumber(scope.row.totalEnergy) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="时长(s)" width="100">
+              <template #default="scope">
+                {{ formatNumber(scope.row.durationSeconds) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120" fixed="right">
+              <template #default="scope">
+                <el-button size="small" type="primary" @click.stop="selectSession(scope.row.sessionId)">
+                  曲线
+                </el-button>
+              </template>
+            </el-table-column>
+          </el-table>
+
+          <div style="display: flex; justify-content: flex-end; margin-top: 12px;">
+            <el-pagination
+              background
+              layout="prev, pager, next, sizes, total"
+              :total="sessionTotal"
+              :page-size="sessionPageSize"
+              :current-page="sessionCurrentPage"
+              @current-change="(p:number)=>{ sessionCurrentPage = p; reloadSessions(); }"
+              @size-change="(s:number)=>{ sessionPageSize = s; sessionCurrentPage = 1; reloadSessions(); }"
+            />
+          </div>
+        </el-card>
+      </div>
+
+      <div style="flex: 1; min-width: 520px;">
+        <el-card shadow="never" style="height: 100%;">
+          <template #header>
+            <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+              <span>会话曲线</span>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <el-date-picker
+                  v-model="curveTimeRange"
+                  type="datetimerange"
+                  range-separator="至"
+                  start-placeholder="起始时间"
+                  end-placeholder="结束时间"
+                  value-format="YYYY-MM-DDTHH:mm:ss"
+                  style="width: 360px;"
+                />
+                <el-button
+                  size="small"
+                  type="primary"
+                  :disabled="!selectedSessionId"
+                  :loading="curveLoading"
+                  @click="reloadCurve"
+                >
+                  加载
+                </el-button>
+              </div>
+            </div>
+          </template>
+
+          <div v-if="!selectedSessionId" style="height: 560px; display: flex; align-items: center; justify-content: center; color: #909399;">
+            请选择一个会话查看曲线
+          </div>
+          <div v-else style="height: 560px;" v-loading="curveLoading">
+            <div ref="curveChartRef" style="width: 100%; height: 100%;" />
+          </div>
+        </el-card>
+      </div>
+    </div>
+  </el-drawer>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import * as echarts from 'echarts'
 import {
   getChargerConnectors,
   getChargerDetail,
+  getChargerConnectorSessions,
+  getChargerConnectorSessionCurve,
   startChargerConnectorSession,
   stopChargerConnectorSession
 } from '@/api/charger'
-import type { Charger, ChargerConnector } from '@/api/charger'
+import type {
+  Charger,
+  ChargerConnector,
+  ChargerConnectorCurvePoint,
+  ChargerConnectorSession
+} from '@/api/charger'
 
 const router = useRouter()
 const route = useRoute()
@@ -395,6 +519,28 @@ const todayStats = ref({
   revenue: 684.50
 })
 
+// 历史会话/曲线 drawer
+const sessionDrawerVisible = ref(false)
+const sessionDrawerLoading = ref(false)
+const sessionDrawerConnectorNo = ref<number | null>(null)
+const sessionCurrentPage = ref(1)
+const sessionPageSize = ref(10)
+const sessionTotal = ref(0)
+const sessionTableRows = ref<ChargerConnectorSession[]>([])
+const selectedSessionId = ref<string | null>(null)
+
+const curveLoading = ref(false)
+const curveTimeRange = ref<[string, string] | null>(null)
+const curvePoints = ref<ChargerConnectorCurvePoint[]>([])
+const curveChartRef = ref<HTMLDivElement | null>(null)
+const curveChart = shallowRef<echarts.ECharts | null>(null)
+
+const sessionDrawerTitle = computed(() => {
+  const cid = detail.value?.id ? String(detail.value.id) : '-'
+  const cno = sessionDrawerConnectorNo.value ?? '-'
+  return `历史会话/曲线（充电桩${cid} - 枪口${cno}）`
+})
+
 const loadDetail = async () => {
   const chargerId = Number(route.params.id || route.query.id)
   if (!chargerId) {
@@ -480,6 +626,142 @@ const handleBack = () => {
 const handleEdit = () => {
   ElMessage.info('编辑充电桩配置功能')
 }
+
+const openSessionDrawer = async (row: ChargerConnector) => {
+  sessionDrawerConnectorNo.value = row.connectorNo
+  sessionCurrentPage.value = 1
+  sessionPageSize.value = 10
+  selectedSessionId.value = null
+  curveTimeRange.value = null
+  curvePoints.value = []
+  sessionDrawerVisible.value = true
+
+  await reloadSessions()
+}
+
+const reloadSessions = async () => {
+  const chargerId = Number(detail.value.id)
+  const connectorNo = sessionDrawerConnectorNo.value
+  if (!chargerId || !connectorNo) return
+  sessionDrawerLoading.value = true
+  try {
+    const resp = await getChargerConnectorSessions(chargerId, connectorNo, {
+      current: sessionCurrentPage.value,
+      size: sessionPageSize.value
+    })
+    if (resp.code === 200 && resp.data) {
+      sessionTableRows.value = resp.data.records || []
+      sessionTotal.value = resp.data.total || 0
+    } else {
+      sessionTableRows.value = []
+      sessionTotal.value = 0
+    }
+  } catch (e) {
+    sessionTableRows.value = []
+    sessionTotal.value = 0
+  } finally {
+    sessionDrawerLoading.value = false
+  }
+}
+
+const handleSessionRowClick = (row: ChargerConnectorSession) => {
+  if (row?.sessionId) {
+    selectSession(row.sessionId)
+  }
+}
+
+const selectSession = async (sessionId: string) => {
+  selectedSessionId.value = sessionId
+  await reloadCurve()
+}
+
+const reloadCurve = async () => {
+  const chargerId = Number(detail.value.id)
+  const connectorNo = sessionDrawerConnectorNo.value
+  const sessionId = selectedSessionId.value
+  if (!chargerId || !connectorNo || !sessionId) return
+
+  const from = curveTimeRange.value?.[0]
+  const to = curveTimeRange.value?.[1]
+
+  curveLoading.value = true
+  try {
+    const resp = await getChargerConnectorSessionCurve(chargerId, connectorNo, sessionId, {
+      from,
+      to,
+      current: 1,
+      size: 2000
+    })
+    if (resp.code === 200 && resp.data) {
+      curvePoints.value = resp.data.records || []
+    } else {
+      curvePoints.value = []
+    }
+  } catch (e) {
+    curvePoints.value = []
+  } finally {
+    curveLoading.value = false
+  }
+
+  await nextTick()
+  renderCurveChart()
+}
+
+const renderCurveChart = () => {
+  const el = curveChartRef.value
+  if (!el) return
+  if (!curveChart.value) {
+    curveChart.value = echarts.init(el)
+  }
+
+  const x = curvePoints.value.map((p) => p.sampleTime)
+  const voltage = curvePoints.value.map((p) => (p.voltage ?? null) as any)
+  const current = curvePoints.value.map((p) => (p.current ?? null) as any)
+  const power = curvePoints.value.map((p) => (p.power ?? null) as any)
+  const soc = curvePoints.value.map((p) => (p.soc ?? null) as any)
+  const energy = curvePoints.value.map((p) => (p.energy ?? null) as any)
+
+  curveChart.value.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['电压(V)', '电流(A)', '功率(kW)', 'SOC(%)', '电量(kWh)'] },
+    grid: { left: 60, right: 60, top: 40, bottom: 50 },
+    xAxis: {
+      type: 'category',
+      data: x,
+      axisLabel: { formatter: (v: string) => (v ? String(v).replace('T', ' ') : '') }
+    },
+    yAxis: [
+      { type: 'value', name: 'V', position: 'left' },
+      { type: 'value', name: 'A', position: 'right' },
+      { type: 'value', name: 'kW', position: 'right', offset: 40 },
+      { type: 'value', name: '%', position: 'left', offset: 40, min: 0, max: 100 },
+      { type: 'value', name: 'kWh', position: 'left', offset: 80 }
+    ],
+    series: [
+      { name: '电压(V)', type: 'line', yAxisIndex: 0, showSymbol: false, data: voltage },
+      { name: '电流(A)', type: 'line', yAxisIndex: 1, showSymbol: false, data: current },
+      { name: '功率(kW)', type: 'line', yAxisIndex: 2, showSymbol: false, data: power },
+      { name: 'SOC(%)', type: 'line', yAxisIndex: 3, showSymbol: false, data: soc },
+      { name: '电量(kWh)', type: 'line', yAxisIndex: 4, showSymbol: false, data: energy }
+    ]
+  })
+  curveChart.value.resize()
+}
+
+watch(sessionDrawerVisible, async (visible) => {
+  if (!visible) {
+    curveChart.value?.dispose()
+    curveChart.value = null
+    return
+  }
+  await nextTick()
+  renderCurveChart()
+})
+
+onBeforeUnmount(() => {
+  curveChart.value?.dispose()
+  curveChart.value = null
+})
 
 const handleStartConnector = async (row: ChargerConnector) => {
   const chargerId = Number(detail.value.id)

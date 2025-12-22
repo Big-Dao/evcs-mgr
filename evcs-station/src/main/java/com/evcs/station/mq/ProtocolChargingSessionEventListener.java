@@ -5,6 +5,7 @@ import com.evcs.protocol.event.StartEvent;
 import com.evcs.protocol.event.StopEvent;
 import com.evcs.station.config.StationProtocolChargingQueueConfig;
 import com.evcs.station.service.IChargerConnectorService;
+import com.evcs.station.service.IChargerConnectorSessionCurveService;
 import com.rabbitmq.client.Channel;
 import java.io.IOException;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import org.springframework.stereotype.Component;
 public class ProtocolChargingSessionEventListener {
 
     private final IChargerConnectorService chargerConnectorService;
+    private final IChargerConnectorSessionCurveService sessionCurveService;
 
     @RabbitHandler
     public void onChargingStart(StartEvent event, Message message, Channel channel) throws IOException {
@@ -56,6 +58,22 @@ public class ProtocolChargingSessionEventListener {
                 event.getEventTime(),
                 event.getInitialEnergy()
             );
+
+            // Best-effort: record session history for later curve browsing.
+            try {
+                if (sessionCurveService != null) {
+                    sessionCurveService.recordSessionStart(event);
+                }
+            } catch (Exception e) {
+                log.debug(
+                    "Failed to record connector session history on start: tenantId={}, chargerId={}, connectorId={}, sessionId={}",
+                    event.getTenantId(),
+                    event.getChargerId(),
+                    event.getConnectorId(),
+                    event.getSessionId(),
+                    e
+                );
+            }
 
             if (!ok) {
                 log.warn(
@@ -115,6 +133,22 @@ public class ProtocolChargingSessionEventListener {
                 event.getEnergy(),
                 event.getDuration()
             );
+
+            // Best-effort: record session history completion.
+            try {
+                if (sessionCurveService != null) {
+                    sessionCurveService.recordSessionStop(event);
+                }
+            } catch (Exception e) {
+                log.debug(
+                    "Failed to record connector session history on stop: tenantId={}, chargerId={}, connectorId={}, sessionId={}",
+                    event.getTenantId(),
+                    event.getChargerId(),
+                    event.getConnectorId(),
+                    event.getSessionId(),
+                    e
+                );
+            }
 
             if (!ok) {
                 log.warn(

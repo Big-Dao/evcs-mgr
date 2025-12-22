@@ -64,6 +64,7 @@ public abstract class ProtocolEvent implements Serializable {
         STATUS_CHANGE,  // 状态变更
         CHARGING_START, // 开始充电
         CHARGING_STOP,  // 停止充电
+        TELEMETRY,      // 实时遥测/计量数据
         ERROR           // 错误
     }
 

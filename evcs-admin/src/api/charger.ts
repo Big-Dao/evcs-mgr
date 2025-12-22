@@ -82,6 +82,58 @@ export interface ChargerConnector {
   chargedEnergy?: number | string
   chargedDuration?: number
 
+  // latest telemetry snapshot (per connector)
+  lastMeterTime?: string
+  lastVoltage?: number
+  lastCurrent?: number
+  lastPower?: number
+  lastSoc?: number
+  lastEnergy?: number
+
+  tenantId?: number
+  createTime?: string
+  updateTime?: string
+}
+
+// 枪口会话历史（会话维度）
+export interface ChargerConnectorSession {
+  id: number
+  chargerId: number
+  connectorNo: number
+  sessionId: string
+  protocolType?: string
+  startTime?: string
+  stopTime?: string
+  initialEnergy?: number
+  totalEnergy?: number
+  durationSeconds?: number
+  lastSampleTime?: string
+  lastVoltage?: number
+  lastCurrent?: number
+  lastPower?: number
+  lastSoc?: number
+  lastEnergy?: number
+  status?: number
+
+  tenantId?: number
+  createTime?: string
+  updateTime?: string
+}
+
+// 枪口会话曲线点（时间序列）
+export interface ChargerConnectorCurvePoint {
+  id: number
+  chargerId: number
+  connectorNo: number
+  sessionId: string
+  sampleTime: string
+  voltage?: number
+  current?: number
+  power?: number
+  soc?: number
+  energy?: number
+  durationSeconds?: number
+
   tenantId?: number
   createTime?: string
   updateTime?: string
@@ -138,6 +190,37 @@ export function getChargerConnectors(chargerId: number) {
   return request<ChargerConnector[]>({
     url: `/charger/${chargerId}/connectors`,
     method: 'get'
+  })
+}
+
+/**
+ * 查询枪口历史会话列表（按会话分页）
+ */
+export function getChargerConnectorSessions(
+  chargerId: number,
+  connectorNo: number,
+  params: { current?: number; size?: number } = {}
+) {
+  return request<PageResult<ChargerConnectorSession>>({
+    url: `/charger/${chargerId}/connectors/${connectorNo}/sessions`,
+    method: 'get',
+    params
+  })
+}
+
+/**
+ * 查询某会话的曲线点（支持时间范围与分页）
+ */
+export function getChargerConnectorSessionCurve(
+  chargerId: number,
+  connectorNo: number,
+  sessionId: string,
+  params: { from?: string; to?: string; current?: number; size?: number } = {}
+) {
+  return request<PageResult<ChargerConnectorCurvePoint>>({
+    url: `/charger/${chargerId}/connectors/${connectorNo}/sessions/${encodeURIComponent(sessionId)}/curve`,
+    method: 'get',
+    params
   })
 }
 

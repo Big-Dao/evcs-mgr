@@ -5,6 +5,7 @@ import com.evcs.protocol.event.ProtocolEvent;
 import com.evcs.protocol.event.StartEvent;
 import com.evcs.protocol.event.StopEvent;
 import com.evcs.station.service.IChargerConnectorService;
+import com.evcs.station.service.IChargerConnectorSessionCurveService;
 import com.rabbitmq.client.Channel;
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -30,8 +31,9 @@ class ProtocolChargingSessionEventListenerTest {
     void testOnChargingStart_shouldAck_whenConnectorProvidedAndUpdateSucceeded() throws IOException {
         // Arrange
         IChargerConnectorService connectorService = Mockito.mock(IChargerConnectorService.class);
+        IChargerConnectorSessionCurveService sessionCurveService = Mockito.mock(IChargerConnectorSessionCurveService.class);
         Channel channel = Mockito.mock(Channel.class);
-        ProtocolChargingSessionEventListener listener = new ProtocolChargingSessionEventListener(connectorService);
+        ProtocolChargingSessionEventListener listener = new ProtocolChargingSessionEventListener(connectorService, sessionCurveService);
 
         StartEvent event = StartEvent.builder()
             .eventId("s-1")
@@ -73,8 +75,9 @@ class ProtocolChargingSessionEventListenerTest {
     void testOnChargingStop_shouldAck_whenConnectorProvidedAndUpdateSucceeded() throws IOException {
         // Arrange
         IChargerConnectorService connectorService = Mockito.mock(IChargerConnectorService.class);
+        IChargerConnectorSessionCurveService sessionCurveService = Mockito.mock(IChargerConnectorSessionCurveService.class);
         Channel channel = Mockito.mock(Channel.class);
-        ProtocolChargingSessionEventListener listener = new ProtocolChargingSessionEventListener(connectorService);
+        ProtocolChargingSessionEventListener listener = new ProtocolChargingSessionEventListener(connectorService, sessionCurveService);
 
         StopEvent event = StopEvent.builder()
             .eventId("t-1")
@@ -115,8 +118,9 @@ class ProtocolChargingSessionEventListenerTest {
     void testOnChargingStart_shouldAckAndSkip_whenConnectorMissing() throws IOException {
         // Arrange
         IChargerConnectorService connectorService = Mockito.mock(IChargerConnectorService.class);
+        IChargerConnectorSessionCurveService sessionCurveService = Mockito.mock(IChargerConnectorSessionCurveService.class);
         Channel channel = Mockito.mock(Channel.class);
-        ProtocolChargingSessionEventListener listener = new ProtocolChargingSessionEventListener(connectorService);
+        ProtocolChargingSessionEventListener listener = new ProtocolChargingSessionEventListener(connectorService, sessionCurveService);
 
         StartEvent event = StartEvent.builder()
             .eventId("s-2")
@@ -137,6 +141,7 @@ class ProtocolChargingSessionEventListenerTest {
             // Assert
             Mockito.verify(channel).basicAck(3L, false);
             Mockito.verifyNoInteractions(connectorService);
+            Mockito.verifyNoInteractions(sessionCurveService);
             assertNull(TenantContext.getCurrentTenantId(), "TenantContext should be cleared");
         } finally {
             TenantContext.clear();

@@ -122,4 +122,30 @@ public interface ChargerConnectorMapper extends BaseMapper<ChargerConnector> {
         @Param("energy") BigDecimal energy,
         @Param("duration") Integer duration
     );
+
+    @Update("""
+        UPDATE charger_connector
+        SET last_meter_time = COALESCE(#{sampleTime}, last_meter_time),
+            last_voltage = COALESCE(#{voltage}, last_voltage),
+            last_current = COALESCE(#{current}, last_current),
+            last_power = COALESCE(#{power}, last_power),
+            last_soc = COALESCE(#{soc}, last_soc),
+            last_energy = COALESCE(#{energy}, last_energy),
+            update_time = CURRENT_TIMESTAMP
+        WHERE charger_id = #{chargerId}
+          AND connector_no = #{connectorNo}
+          AND deleted = 0
+          AND (#{sessionId} IS NULL OR current_session_id = #{sessionId})
+        """)
+    int updateTelemetrySnapshot(
+        @Param("chargerId") Long chargerId,
+        @Param("connectorNo") Integer connectorNo,
+        @Param("sessionId") String sessionId,
+        @Param("sampleTime") LocalDateTime sampleTime,
+        @Param("voltage") BigDecimal voltage,
+        @Param("current") BigDecimal current,
+        @Param("power") BigDecimal power,
+        @Param("soc") BigDecimal soc,
+        @Param("energy") BigDecimal energy
+    );
 }
