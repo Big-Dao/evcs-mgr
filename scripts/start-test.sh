@@ -47,9 +47,9 @@ fi
 if [ "$rebuild" = "y" ] || [ "$rebuild" = "Y" ]; then
     echo ""
     echo -e "${YELLOW}构建应用JAR文件...${NC}"
-    # 注意：不要在这里执行仓库根目录的 `clean`。
-    # 仓库下的 build/registry-data 可能由本地 Docker Registry 以 root 写入，导致 `:clean` 无法删除而失败。
-    # 测试环境只需要 tenant/station 两个可执行 JAR，按需构建即可。
+    # 注意：测试环境只需要 tenant/station 两个可执行 JAR，按需构建即可。
+    # 另外：如果本机历史上把本地 Docker Registry 数据放在 build/registry-data（旧默认），可能会导致 `:clean` 无法删除而失败。
+    # 现已推荐将 registry 数据迁到 .local/registry-data，避免污染 Gradle 的 build 目录。
     ./gradlew :evcs-tenant:build :evcs-station:build -x test --no-daemon
     if [ $? -ne 0 ]; then
         echo -e "${RED}错误: 应用构建失败!${NC}"

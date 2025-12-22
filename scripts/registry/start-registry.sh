@@ -6,9 +6,11 @@ set -euo pipefail
 
 REGISTRY_NAME=${REGISTRY_NAME:-evcs-registry}
 REGISTRY_PORT=${REGISTRY_PORT:-5000}
-REGISTRY_DATA_DIR=${REGISTRY_DATA_DIR:-"$PWD/build/registry-data"}
+REGISTRY_DATA_DIR=${REGISTRY_DATA_DIR:-"$PWD/.local/registry-data"}
 
 mkdir -p "$REGISTRY_DATA_DIR"
+
+echo "Registry data dir: $REGISTRY_DATA_DIR"
 
 echo "Starting registry container '$REGISTRY_NAME' on port $REGISTRY_PORT..."
 
