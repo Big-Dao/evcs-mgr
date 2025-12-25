@@ -17,8 +17,6 @@ spec:
       labels:
         app: gateway
     spec:
-      nodeSelector:
-        role: core
       initContainers:
       - name: wait-config-server
         image: busybox:1.36

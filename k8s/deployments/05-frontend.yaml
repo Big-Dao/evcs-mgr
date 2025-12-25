@@ -17,8 +17,6 @@ spec:
       labels:
         app: admin-frontend
     spec:
-      nodeSelector:
-        role: core
       containers:
       - name: admin-frontend
         image: ${EVCS_K8S_REGISTRY}/evcs/admin-frontend:${EVCS_IMAGE_TAG}

@@ -13,6 +13,13 @@ data:
   SPRING_PROFILES_ACTIVE: "k8s"
   # Spring Cloud Config：以 local 为基线，并让 k8s profile（最后一个）覆盖差异项（如端口）。
   SPRING_CLOUD_CONFIG_PROFILE: "local,k8s"
+  # Spring Cloud Config Client：避免在 Config Server 不可用时“带空配置启动”
+  # 说明：SPRING_CONFIG_IMPORT 的具体地址由 k8s/deploy.sh 在运行期 patch（DNS workaround）
+  SPRING_CLOUD_CONFIG_FAIL_FAST: "true"
+  SPRING_CLOUD_CONFIG_RETRY_MAX_ATTEMPTS: "20"
+  SPRING_CLOUD_CONFIG_RETRY_INITIAL_INTERVAL: "2000"
+  SPRING_CLOUD_CONFIG_RETRY_MULTIPLIER: "1.5"
+  SPRING_CLOUD_CONFIG_RETRY_MAX_INTERVAL: "10000"
   # Flyway：本测试环境 DB 可能已被初始化脚本写入少量表结构，开启 baseline 避免启动失败。
   SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
   SPRING_FLYWAY_BASELINE_VERSION: "0"

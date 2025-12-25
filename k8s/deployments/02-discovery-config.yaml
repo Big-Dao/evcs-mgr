@@ -17,8 +17,6 @@ spec:
       labels:
         app: eureka
     spec:
-      nodeSelector:
-        role: core
       containers:
       - name: eureka
         image: ${EVCS_K8S_REGISTRY}/evcs/eureka:${EVCS_IMAGE_TAG}
@@ -65,8 +63,6 @@ spec:
       labels:
         app: config-server
     spec:
-      nodeSelector:
-        role: core
       containers:
       - name: config-server
         image: ${EVCS_K8S_REGISTRY}/evcs/config-server:${EVCS_IMAGE_TAG}

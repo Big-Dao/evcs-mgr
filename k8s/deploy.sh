@@ -70,7 +70,12 @@ echo "  evcs-payment:   ${EVCS_PAYMENT_IP}"
 kubectl patch configmap -n evcs evcs-common-config --type merge --patch "$(cat <<EOF
 {"data":{
     "CONFIG_SERVER_URL":"http://${EVCS_CONFIG_IP}:8888",
-    "SPRING_CONFIG_IMPORT":"optional:configserver:http://${EVCS_CONFIG_IP}:8888",
+    "SPRING_CONFIG_IMPORT":"configserver:http://${EVCS_CONFIG_IP}:8888",
+    "SPRING_CLOUD_CONFIG_FAIL_FAST":"true",
+    "SPRING_CLOUD_CONFIG_RETRY_MAX_ATTEMPTS":"20",
+    "SPRING_CLOUD_CONFIG_RETRY_INITIAL_INTERVAL":"2000",
+    "SPRING_CLOUD_CONFIG_RETRY_MULTIPLIER":"1.5",
+    "SPRING_CLOUD_CONFIG_RETRY_MAX_INTERVAL":"10000",
     "EUREKA_SERVER_URL":"http://${EVCS_EUREKA_IP}:8761/eureka/",
     "EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE":"http://${EVCS_EUREKA_IP}:8761/eureka/",
     "SPRING_DATASOURCE_URL":"jdbc:postgresql://${EVCS_POSTGRES_IP}:5432/evcs_mgr?sslmode=disable",
@@ -83,6 +88,26 @@ kubectl patch configmap -n evcs evcs-common-config --type merge --patch "$(cat <
 }}
 EOF
 )"
+
+# IMPORTANT: ConfigMap env vars are only read at Pod start.
+# When re-deploying into an existing cluster, the patched ClusterIP values won't
+# take effect until the affected deployments are restarted.
+restart_if_exists() {
+    local name="$1"
+    if kubectl -n evcs get deployment "$name" >/dev/null 2>&1; then
+        kubectl -n evcs rollout restart deployment "$name" || true
+    fi
+}
+
+# Restart platform/services that depend on patched env vars (config import, eureka url, direct service IPs).
+restart_if_exists "gateway"
+restart_if_exists "auth-service"
+restart_if_exists "tenant-service"
+restart_if_exists "station-service"
+restart_if_exists "order-service"
+restart_if_exists "payment-service"
+restart_if_exists "protocol-service"
+restart_if_exists "monitoring-service"
 
 # 6. Restart Config Server to pick up patched Eureka URL
 kubectl rollout restart deployment -n evcs config-server || true
@@ -100,6 +125,9 @@ kubectl patch configmap -n evcs evcs-common-config --type merge --patch "$(cat <
 }}
 EOF
 )"
+
+# Frontend nginx entrypoint requires EVCS_GATEWAY_IP; restart to pick it up on re-deploy.
+restart_if_exists "admin-frontend"
 
 # 8. Apply Microservices
 echo "Applying Microservices..."
