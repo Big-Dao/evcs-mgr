@@ -6,10 +6,13 @@ spring:
   application:
     name: evcs-station-test
 
+  flyway:
+    enabled: false
+
   # 禁用Config Server导入（覆盖主配置）
   # 注意：Spring Boot不接受"none"作为值，使用autoconfigure.exclude已足够禁用Config Client
   config:
-    import: "optional:"
+    import: ""
 
   # 禁用RabbitMQ for tests
   rabbitmq:

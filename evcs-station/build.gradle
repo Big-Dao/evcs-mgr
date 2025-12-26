@@ -33,6 +33,9 @@ dependencies {
     implementation "com.baomidou:mybatis-plus-boot-starter:${mybatisPlusVersion}"
     implementation 'org.mybatis:mybatis-spring:3.0.3'
     implementation 'com.zaxxer:HikariCP'
+
+    // Database migrations
+    implementation 'org.flywaydb:flyway-core'
     
     // Utilities
     implementation "cn.hutool:hutool-all:${hutoolVersion}"

@@ -132,7 +132,18 @@ public class ChargerConnectorServiceImpl implements IChargerConnectorService {
             faultDescription,
             heartbeat
         );
-        return updated > 0;
+
+        boolean ok = updated > 0;
+        if (ok) {
+            // 同步刷新充电桩聚合状态：charger.status 是枪口状态的聚合视图
+            try {
+                syncChargerAggregateStatus(chargerId);
+            } catch (Exception e) {
+                // 不影响主流程（MQ 消费幂等），聚合失败可在下次事件/查询时修复
+                log.debug("Failed to sync charger aggregate status: chargerId={}", chargerId, e);
+            }
+        }
+        return ok;
     }
 
     @Override
@@ -185,7 +196,15 @@ public class ChargerConnectorServiceImpl implements IChargerConnectorService {
             energy,
             0
         );
-        return updated > 0;
+        boolean ok = updated > 0;
+        if (ok) {
+            try {
+                syncChargerAggregateStatus(chargerId);
+            } catch (Exception e) {
+                log.debug("Failed to sync charger aggregate status after session start: chargerId={}", chargerId, e);
+            }
+        }
+        return ok;
     }
 
     @Override
@@ -230,7 +249,83 @@ public class ChargerConnectorServiceImpl implements IChargerConnectorService {
             );
         }
 
-        return updated > 0;
+        boolean ok = updated > 0;
+        if (ok) {
+            try {
+                syncChargerAggregateStatus(chargerId);
+            } catch (Exception e) {
+                log.debug("Failed to sync charger aggregate status after session stop: chargerId={}", chargerId, e);
+            }
+        }
+        return ok;
+    }
+
+    private void syncChargerAggregateStatus(Long chargerId) {
+        if (chargerId == null) {
+            return;
+        }
+        List<ChargerConnector> connectors = connectorMapper.selectByChargerId(chargerId);
+        if (connectors == null || connectors.isEmpty()) {
+            return;
+        }
+
+        int aggregateStatus = aggregateStatusFromConnectors(connectors);
+        // 统一通过 chargerService.updateStatus 走指标/日志逻辑
+        chargerService.updateStatus(chargerId, aggregateStatus);
+    }
+
+    private static int aggregateStatusFromConnectors(List<ChargerConnector> connectors) {
+        boolean hasFault = false;
+        boolean hasCharging = false;
+        boolean hasMaintenance = false;
+        boolean hasReserved = false;
+        boolean hasIdle = false;
+        boolean allOffline = true;
+
+        for (ChargerConnector c : connectors) {
+            if (c == null) {
+                continue;
+            }
+            Integer s = c.getStatus();
+            int status = s == null ? 0 : s;
+
+            if (status != 0) {
+                allOffline = false;
+            }
+
+            if (status == 3) {
+                hasFault = true;
+            } else if (status == 2) {
+                hasCharging = true;
+            } else if (status == 4) {
+                hasMaintenance = true;
+            } else if (status == 5) {
+                hasReserved = true;
+            } else if (status == 1) {
+                hasIdle = true;
+            }
+        }
+
+        // 优先级：故障 > 充电中 > 维护 > 预约 > 空闲 > 离线
+        if (hasFault) {
+            return 3;
+        }
+        if (hasCharging) {
+            return 2;
+        }
+        if (hasMaintenance) {
+            return 4;
+        }
+        if (hasReserved) {
+            return 5;
+        }
+        if (hasIdle) {
+            return 1;
+        }
+        if (allOffline) {
+            return 0;
+        }
+        return 0;
     }
 
     private static List<String> parseGunTypes(String gunTypes) {

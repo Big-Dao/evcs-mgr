@@ -37,7 +37,7 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="tableData" v-loading="loading" style="width: 100%">
+      <el-table :data="tableData" v-loading="loading" style="width: 100%" @expand-change="handleExpandChange">
         <el-table-column type="expand">
           <template #default="{ row }">
             <el-descriptions :column="2" border style="margin: 10px 0;">
@@ -53,14 +53,62 @@
                 <span v-if="parseGunTypes(row.gunTypes).length === 0">-</span>
               </el-descriptions-item>
               <el-descriptions-item label="枪口(Connector)" :span="2">
-                <el-tag
-                  v-for="gun in buildGunList(row.gunCount, row.gunTypes)"
-                  :key="gun.connectorId"
+                <el-table
+                  v-if="getRowConnectors(row).length > 0"
+                  :data="getRowConnectors(row)"
                   size="small"
-                  style="margin-right: 6px; margin-bottom: 6px;"
+                  border
+                  style="width: 100%"
+                  v-loading="connectorLoadingMap[row.id]"
                 >
-                  枪口 {{ gun.connectorId }}<span v-if="gun.gunType">（{{ gun.gunType }}）</span>
-                </el-tag>
+                  <el-table-column prop="connectorNo" label="枪口号" width="90" />
+                  <el-table-column prop="connectorType" label="枪口类型" min-width="160">
+                    <template #default="{ row: c }">
+                      <span>{{ c.connectorType || '-' }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="status" label="状态" width="110">
+                    <template #default="{ row: c }">
+                      <el-tag :type="getStatusType(c.status)" size="small">{{ getStatusText(c.status) }}</el-tag>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="faultCode" label="故障码" width="110">
+                    <template #default="{ row: c }">
+                      <span>{{ c.faultCode || '-' }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="faultDescription" label="故障描述" min-width="220" show-overflow-tooltip>
+                    <template #default="{ row: c }">
+                      <span>{{ c.faultDescription || '-' }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="currentSessionId" label="会话ID" min-width="160" show-overflow-tooltip>
+                    <template #default="{ row: c }">
+                      <span>{{ c.currentSessionId || '-' }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="chargingStartTime" label="开始充电" min-width="180">
+                    <template #default="{ row: c }">
+                      <span>{{ c.chargingStartTime || '-' }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="chargedEnergy" label="已充电量" width="110">
+                    <template #default="{ row: c }">
+                      <span>{{ c.chargedEnergy ?? '-' }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="chargedDuration" label="已充时长" width="110">
+                    <template #default="{ row: c }">
+                      <span>{{ c.chargedDuration ?? '-' }}</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column prop="lastHeartbeat" label="最后心跳" min-width="180">
+                    <template #default="{ row: c }">
+                      <span>{{ c.lastHeartbeat || '-' }}</span>
+                    </template>
+                  </el-table-column>
+                </el-table>
+                <span v-else style="color:#909399;">-</span>
               </el-descriptions-item>
             </el-descriptions>
           </template>
@@ -121,8 +169,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getChargerList, deleteCharger } from '@/api/charger'
-import type { Charger, ChargerQueryParams } from '@/api/charger'
+import { getChargerList, deleteCharger, getChargerConnectors } from '@/api/charger'
+import type { Charger, ChargerQueryParams, ChargerConnector } from '@/api/charger'
 
 const router = useRouter()
 const loading = ref(false)
@@ -142,6 +190,34 @@ const pagination = reactive({
 })
 
 const tableData = ref<Charger[]>([])
+
+const connectorCache = reactive<Record<number, ChargerConnector[]>>({})
+const connectorLoadingMap = reactive<Record<number, boolean>>({})
+
+const ensureConnectorsLoaded = async (chargerId: number) => {
+  if (!chargerId) return
+  if (connectorCache[chargerId]) return
+  connectorLoadingMap[chargerId] = true
+  try {
+    const resp = await getChargerConnectors(chargerId)
+    if (resp.code === 200 && Array.isArray(resp.data)) {
+      connectorCache[chargerId] = resp.data
+    } else {
+      connectorCache[chargerId] = []
+    }
+  } catch (e) {
+    connectorCache[chargerId] = []
+  } finally {
+    connectorLoadingMap[chargerId] = false
+  }
+}
+
+const handleExpandChange = async (row: Charger, expandedRows: Charger[]) => {
+  const expanded = Array.isArray(expandedRows) && expandedRows.some((r) => r.id === row.id)
+  if (expanded) {
+    await ensureConnectorsLoaded(row.id)
+  }
+}
 
 // 加载充电桩列表
 const loadChargerList = async () => {
@@ -224,13 +300,32 @@ const buildGunList = (gunCount?: number, gunTypes?: string) => {
   const count = typeof gunCount === 'number' && gunCount > 0 ? gunCount : 1
   const types = parseGunTypes(gunTypes)
   return Array.from({ length: count }).map((_, idx) => {
-    const connectorId = idx + 1
-    const gunType = types.length === count ? types[idx] : (types.length === 1 ? types[0] : undefined)
-    return { connectorId, gunType }
+    const connectorNo = idx + 1
+    const connectorType = types.length === count ? types[idx] : (types.length === 1 ? types[0] : undefined)
+    return { connectorNo, connectorType }
   })
 }
 
-const getStatusType = (status: number) => {
+const getRowConnectors = (row: Charger): ChargerConnector[] => {
+  const cached = connectorCache[row.id]
+  if (Array.isArray(cached)) {
+    return cached
+  }
+  // fallback：仅用于接口不可用时的展示，不再把 charger.status 当作枪口状态
+  return buildGunList(row.gunCount, row.gunTypes).map((x) =>
+    ({
+      id: 0,
+      chargerId: row.id,
+      connectorNo: x.connectorNo,
+      connectorType: x.connectorType,
+      status: -1,
+      lastHeartbeat: row.lastHeartbeat
+    }) as ChargerConnector
+  )
+}
+
+const getStatusType = (status?: number) => {
+  if (typeof status !== 'number' || status < 0) return 'info'
   const typeMap: Record<number, string> = {
     1: 'success',
     2: 'warning',
@@ -240,7 +335,8 @@ const getStatusType = (status: number) => {
   return typeMap[status] || 'info'
 }
 
-const getStatusText = (status: number) => {
+const getStatusText = (status?: number) => {
+  if (typeof status !== 'number' || status < 0) return '未知'
   const textMap: Record<number, string> = {
     1: '空闲',
     2: '充电中',

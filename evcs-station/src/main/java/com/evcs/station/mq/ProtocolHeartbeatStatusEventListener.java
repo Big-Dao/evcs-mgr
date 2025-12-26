@@ -92,6 +92,8 @@ public class ProtocolHeartbeatStatusEventListener {
         try {
             TenantContext.setCurrentTenantId(event.getTenantId());
 
+            LocalDateTime eventTime = event.getEventTime() != null ? event.getEventTime() : LocalDateTime.now();
+
             boolean ok;
             if (event.getConnectorId() != null && event.getConnectorId() > 0) {
                 ok = chargerConnectorService != null && chargerConnectorService.updateStatus(
@@ -100,7 +102,7 @@ public class ProtocolHeartbeatStatusEventListener {
                     event.getNewStatus(),
                     event.getFaultCode(),
                     event.getFaultDescription(),
-                    event.getEventTime()
+                    eventTime
                 );
             } else {
                 ok = chargerService.updateStatus(event.getChargerId(), event.getNewStatus());

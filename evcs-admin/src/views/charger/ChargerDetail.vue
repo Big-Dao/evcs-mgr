@@ -417,7 +417,7 @@ const buildGunList = (gunCount?: number, gunTypes?: string) => {
       chargerId: detail.value.id,
       connectorNo,
       connectorType: gunType,
-      status: detail.value.status,
+      status: -1,
       lastHeartbeat: detail.value.lastHeartbeat
     } as ChargerConnector
   })
@@ -585,7 +585,8 @@ onMounted(() => {
   loadDetail()
 })
 
-const getStatusType = (status: number) => {
+const getStatusType = (status?: number) => {
+  if (typeof status !== 'number' || status < 0) return 'info'
   const typeMap: Record<number, string> = {
     1: 'success',
     2: 'warning',
@@ -597,7 +598,8 @@ const getStatusType = (status: number) => {
   return typeMap[status] || 'info'
 }
 
-const getStatusText = (status: number) => {
+const getStatusText = (status?: number) => {
+  if (typeof status !== 'number' || status < 0) return '未知'
   const textMap: Record<number, string> = {
     1: '空闲',
     2: '充电中',
