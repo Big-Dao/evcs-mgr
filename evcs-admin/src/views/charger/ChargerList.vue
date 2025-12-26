@@ -40,77 +40,64 @@
       <el-table :data="tableData" v-loading="loading" style="width: 100%" @expand-change="handleExpandChange">
         <el-table-column type="expand">
           <template #default="{ row }">
-            <el-descriptions :column="2" border style="margin: 10px 0;">
-              <el-descriptions-item label="桩名称">{{ row.chargerName || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="站点">{{ row.stationCode || row.stationId || '-' }}</el-descriptions-item>
-              <el-descriptions-item label="额定功率">{{ row.ratedPower ?? '-' }} kW</el-descriptions-item>
-              <el-descriptions-item label="输入电压">{{ row.inputVoltage ?? '-' }} V</el-descriptions-item>
-              <el-descriptions-item label="枪头数量">{{ row.gunCount ?? 1 }}</el-descriptions-item>
-              <el-descriptions-item label="枪头类型">
-                <el-tag v-for="t in parseGunTypes(row.gunTypes)" :key="t" size="small" style="margin-right: 6px;">
-                  {{ t }}
-                </el-tag>
-                <span v-if="parseGunTypes(row.gunTypes).length === 0">-</span>
-              </el-descriptions-item>
-              <el-descriptions-item label="枪口(Connector)" :span="2">
-                <el-table
-                  v-if="getRowConnectors(row).length > 0"
-                  :data="getRowConnectors(row)"
-                  size="small"
-                  border
-                  style="width: 100%"
-                  v-loading="connectorLoadingMap[row.id]"
-                >
-                  <el-table-column prop="connectorNo" label="枪口号" width="90" />
-                  <el-table-column prop="connectorType" label="枪口类型" min-width="160">
-                    <template #default="{ row: c }">
-                      <span>{{ c.connectorType || '-' }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="status" label="状态" width="110">
-                    <template #default="{ row: c }">
-                      <el-tag :type="getStatusType(c.status)" size="small">{{ getStatusText(c.status) }}</el-tag>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="faultCode" label="故障码" width="110">
-                    <template #default="{ row: c }">
-                      <span>{{ c.faultCode || '-' }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="faultDescription" label="故障描述" min-width="220" show-overflow-tooltip>
-                    <template #default="{ row: c }">
-                      <span>{{ c.faultDescription || '-' }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="currentSessionId" label="会话ID" min-width="160" show-overflow-tooltip>
-                    <template #default="{ row: c }">
-                      <span>{{ c.currentSessionId || '-' }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="chargingStartTime" label="开始充电" min-width="180">
-                    <template #default="{ row: c }">
-                      <span>{{ c.chargingStartTime || '-' }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="chargedEnergy" label="已充电量" width="110">
-                    <template #default="{ row: c }">
-                      <span>{{ c.chargedEnergy ?? '-' }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="chargedDuration" label="已充时长" width="110">
-                    <template #default="{ row: c }">
-                      <span>{{ c.chargedDuration ?? '-' }}</span>
-                    </template>
-                  </el-table-column>
-                  <el-table-column prop="lastHeartbeat" label="最后心跳" min-width="180">
-                    <template #default="{ row: c }">
-                      <span>{{ c.lastHeartbeat || '-' }}</span>
-                    </template>
-                  </el-table-column>
-                </el-table>
-                <span v-else style="color:#909399;">-</span>
-              </el-descriptions-item>
-            </el-descriptions>
+            <div style="margin: 10px 0;">
+              <el-table
+                v-if="getRowConnectors(row).length > 0"
+                :data="getRowConnectors(row)"
+                size="small"
+                border
+                style="width: 100%"
+                v-loading="connectorLoadingMap[row.id]"
+              >
+                <el-table-column prop="connectorNo" label="枪口号" width="90" />
+                <el-table-column prop="connectorType" label="枪口类型" min-width="160">
+                  <template #default="{ row: c }">
+                    <span>{{ c.connectorType || '-' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="status" label="状态" width="110">
+                  <template #default="{ row: c }">
+                    <el-tag :type="getStatusType(c.status)" size="small">{{ getStatusText(c.status) }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="faultCode" label="故障码" width="110">
+                  <template #default="{ row: c }">
+                    <span>{{ c.faultCode || '-' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="faultDescription" label="故障描述" min-width="220" show-overflow-tooltip>
+                  <template #default="{ row: c }">
+                    <span>{{ c.faultDescription || '-' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="currentSessionId" label="会话ID" min-width="160" show-overflow-tooltip>
+                  <template #default="{ row: c }">
+                    <span>{{ c.currentSessionId || '-' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="chargingStartTime" label="开始充电" min-width="180">
+                  <template #default="{ row: c }">
+                    <span>{{ c.chargingStartTime || '-' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="chargedEnergy" label="已充电量" width="110">
+                  <template #default="{ row: c }">
+                    <span>{{ c.chargedEnergy ?? '-' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="chargedDuration" label="已充时长" width="110">
+                  <template #default="{ row: c }">
+                    <span>{{ c.chargedDuration ?? '-' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="lastHeartbeat" label="最后心跳" min-width="180">
+                  <template #default="{ row: c }">
+                    <span>{{ c.lastHeartbeat || '-' }}</span>
+                  </template>
+                </el-table-column>
+              </el-table>
+              <span v-else style="color:#909399;">-</span>
+            </div>
           </template>
         </el-table-column>
         <el-table-column prop="id" label="桩ID" width="90" />
@@ -123,6 +110,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="ratedPower" label="额定功率(kW)" width="130" />
+        <el-table-column prop="inputVoltage" label="输入电压(V)" width="130">
+          <template #default="{ row }">
+            <span>{{ row.inputVoltage ?? '-' }}</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="gunCount" label="枪头数" width="90" />
         <el-table-column prop="status" label="状态" width="100">
           <template #default="{ row }">
