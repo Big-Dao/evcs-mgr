@@ -10,6 +10,7 @@ x-java-env: &java-env
   CONFIG_SERVER_URL: "http://config-server:8888"
   SPRING_CLOUD_CONFIG_PROFILE: "local"
   EUREKA_SERVER_URL: "http://eureka:8761/eureka/"
+  EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE: "http://eureka:8761/eureka/"
   # 数据库配置 - 统一使用Spring Boot标准格式
   SPRING_DATASOURCE_URL: "jdbc:postgresql://postgres:5432/evcs_mgr"
   SPRING_DATASOURCE_USERNAME: "postgres"
@@ -50,6 +51,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./sql/init.sql:/docker-entrypoint-initdb.d/01-init.sql
       - ./sql/charging_station_tables.sql:/docker-entrypoint-initdb.d/02-station.sql
+      - ./sql/03-full-test-data.sql:/docker-entrypoint-initdb.d/03-test-data.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 10s
@@ -189,6 +191,11 @@ services:
     environment:
       <<: *java-env
       SPRING_MAIN_ALLOW_BEAN_DEFINITION_OVERRIDING: "true"
+      EVCS_AUTH_IP: "auth-service"
+      EVCS_TENANT_IP: "tenant-service"
+      EVCS_STATION_IP: "station-service"
+      EVCS_ORDER_IP: "order-service"
+      EVCS_PAYMENT_IP: "payment-service"
     depends_on:
       config-server:
         condition: service_healthy
