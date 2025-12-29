@@ -12,6 +12,7 @@ import com.evcs.station.service.IChargerConnectorSessionCurveService;
 import com.evcs.station.entity.ChargerConnectorCurvePoint;
 import com.evcs.station.entity.ChargerConnectorSession;
 import com.evcs.station.client.ProtocolClient;
+import com.evcs.station.client.OrderClient;
 import com.evcs.protocol.dto.ProtocolRequest;
 import com.evcs.protocol.dto.ProtocolResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +48,7 @@ public class ChargerController {
     private final IChargerConnectorService chargerConnectorService;
     private final IChargerConnectorSessionCurveService chargerConnectorSessionCurveService;
     private final ProtocolClient protocolClient;
+    private final OrderClient orderClient;
 
     /**
      * 分页查询充电桩列表
@@ -313,7 +315,25 @@ public class ChargerController {
 
         String actualSessionId = sessionId != null ? sessionId : UUID.randomUUID().toString();
 
-        // 1. Call Protocol Service
+        // 1. Create Order (Pre-check)
+        try {
+            Result<Boolean> orderResult = orderClient.startOrder(
+                charger.getStationId(),
+                chargerId,
+                actualSessionId,
+                userId,
+                null // billingPlanId optional
+            );
+            if (!orderResult.isSuccess()) {
+                log.warn("Order creation failed: {}", orderResult.getMessage());
+                return Result.fail("创建订单失败: " + orderResult.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Order creation exception", e);
+            return Result.fail("创建订单异常: " + e.getMessage());
+        }
+
+        // 2. Call Protocol Service
         try {
             ProtocolRequest req = new ProtocolRequest();
             req.setDeviceCode(charger.getChargerCode());
@@ -329,6 +349,7 @@ public class ChargerController {
             Result<ProtocolResponse> protoResult = protocolClient.startCharging(req);
             if (!protoResult.isSuccess()) {
                 log.warn("Remote start failed: {}", protoResult.getMessage());
+                // TODO: Cancel order if protocol fails?
                 return Result.fail("远程启动失败: " + protoResult.getMessage());
             }
         } catch (Exception e) {
@@ -390,6 +411,22 @@ public class ChargerController {
 
         Double energyValue = energy != null ? energy : 0.0;
         Long durationValue = duration != null ? duration : 0L;
+
+        // 2. Settle Order
+        try {
+            Result<Boolean> orderResult = orderClient.stopOrder(
+                sessionId,
+                energyValue,
+                durationValue
+            );
+            if (!orderResult.isSuccess()) {
+                log.warn("Order settlement failed: {}", orderResult.getMessage());
+                // Continue to update local session even if order fails?
+                // return Result.fail("结算订单失败: " + orderResult.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Order settlement exception", e);
+        }
 
         boolean ok = chargerConnectorService.updateSessionStop(
                 chargerId,
