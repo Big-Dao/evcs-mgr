@@ -12,12 +12,15 @@ import com.evcs.protocol.api.ICloudChargeProtocolService;
 import com.evcs.protocol.api.IOCPPProtocolService;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.entity.Station;
+import com.evcs.station.enums.ChargerStatus;
 import com.evcs.station.event.ChargingStartEvent;
 import com.evcs.station.event.ChargingStopEvent;
 import com.evcs.station.mapper.ChargerMapper;
 import com.evcs.station.mapper.StationMapper;
 import com.evcs.station.metrics.StationMetrics;
 import com.evcs.station.service.IChargerService;
+import com.evcs.station.state.ChargerStatusManager;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -51,6 +54,9 @@ public class ChargerServiceImpl
 
     @Autowired
     private StationMetrics stationMetrics;
+
+    @Autowired
+    private ChargerStatusManager statusManager;
 
     @Override
     public Charger getByCode(String code) {
@@ -245,35 +251,30 @@ public class ChargerServiceImpl
     public boolean updateStatus(Long chargerId, Integer status) {
         try {
             Charger charger = this.getById(chargerId);
-            Integer oldStatus = charger != null ? charger.getStatus() : null;
+            if (charger == null) {
+                log.warn("Charger not found: {}", chargerId);
+                return false;
+            }
+            ChargerStatus oldStatus = ChargerStatus.fromCode(charger.getStatus());
+            ChargerStatus newStatus = ChargerStatus.fromCode(status);
 
+            // 1. 校验状态流转
+            if (!statusManager.validateTransition(oldStatus, newStatus)) {
+                log.warn("Invalid status transition for charger {}: {} -> {}", chargerId, oldStatus, newStatus);
+                throw new IllegalStateException("非法状态变更: " + oldStatus + " -> " + newStatus);
+            }
+
+            // 2. 更新数据库
             boolean result = (baseMapper.updateStatus(chargerId, status, LocalDateTime.now()) > 0);
 
-            if (result && charger != null) {
-                // 记录状态变更
-                if (status == 0) { // 离线
-                    stationMetrics.recordChargerOffline(chargerId);
-                } else if (oldStatus != null && oldStatus == 0 && status > 0) { // 从离线变为其他状态
-                    stationMetrics.recordChargerOnline(chargerId);
-                }
-
-                if (status == 2) { // 开始充电
-                    stationMetrics.recordChargerStartCharging();
-                } else if (oldStatus != null && oldStatus == 2 && status != 2) { // 停止充电
-                    stationMetrics.recordChargerStopCharging();
-                }
-
-                if (status == 3) { // 故障
-                    stationMetrics.recordChargerFaulted();
-                } else if (oldStatus != null && oldStatus == 3 && status != 3) { // 故障恢复
-                    stationMetrics.recordChargerFaultRecovered();
-                }
-
-                log.info("Charger status updated: chargerId={}, oldStatus={}, newStatus={}",
-                        chargerId, oldStatus, status);
+            // 3. 触发副作用
+            if (result) {
+                statusManager.onTransition(chargerId, oldStatus, newStatus, TenantContext.getCurrentTenantId());
             }
 
             return result;
+        } catch (IllegalStateException e) {
+            throw e; // Re-throw validation exceptions
         } catch (Exception e) {
             log.error("Error updating charger status: chargerId={}, status={}", chargerId, status, e);
             throw e;
