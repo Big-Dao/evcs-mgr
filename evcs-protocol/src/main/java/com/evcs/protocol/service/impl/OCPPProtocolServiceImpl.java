@@ -406,7 +406,173 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
         }
     }
 
+    @Override
+    protected boolean doReserveNow(ProtocolRequest request) {
+        String deviceCode = request.getDeviceCode();
+        if (deviceCode == null) return false;
+
+        try {
+            OCPPWebSocketSession session = sessionManager.getSession(deviceCode);
+            if (session != null && session.isActive()) {
+                Map<String, Object> data = request.getData();
+                Integer connectorId = data.get("connectorId") != null ? Integer.parseInt(data.get("connectorId").toString()) : 1;
+                String expiryDate = (String) data.get("expiryDate");
+                String idTag = (String) data.get("idTag");
+                Integer reservationId = data.get("reservationId") != null ? Integer.parseInt(data.get("reservationId").toString()) : 0;
+
+                return sendReserveNow(session, connectorId, expiryDate, idTag, reservationId);
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("Error reserving now: {}", deviceCode, e);
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean doCancelReservation(ProtocolRequest request) {
+        String deviceCode = request.getDeviceCode();
+        if (deviceCode == null) return false;
+
+        try {
+            OCPPWebSocketSession session = sessionManager.getSession(deviceCode);
+            if (session != null && session.isActive()) {
+                Map<String, Object> data = request.getData();
+                Integer reservationId = data.get("reservationId") != null ? Integer.parseInt(data.get("reservationId").toString()) : 0;
+                return sendCancelReservation(session, reservationId);
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("Error cancelling reservation: {}", deviceCode, e);
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean doUpdateFirmware(ProtocolRequest request) {
+        String deviceCode = request.getDeviceCode();
+        if (deviceCode == null) return false;
+
+        try {
+            OCPPWebSocketSession session = sessionManager.getSession(deviceCode);
+            if (session != null && session.isActive()) {
+                Map<String, Object> data = request.getData();
+                String location = (String) data.get("location");
+                String retrieveDate = (String) data.get("retrieveDate");
+                Integer retries = data.get("retries") != null ? Integer.parseInt(data.get("retries").toString()) : null;
+                Integer retryInterval = data.get("retryInterval") != null ? Integer.parseInt(data.get("retryInterval").toString()) : null;
+
+                return sendUpdateFirmware(session, location, retrieveDate, retries, retryInterval);
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("Error updating firmware: {}", deviceCode, e);
+            return false;
+        }
+    }
+
+    @Override
+    protected boolean doSetChargingProfile(ProtocolRequest request) {
+        String deviceCode = request.getDeviceCode();
+        if (deviceCode == null) return false;
+
+        try {
+            OCPPWebSocketSession session = sessionManager.getSession(deviceCode);
+            if (session != null && session.isActive()) {
+                Map<String, Object> data = request.getData();
+                Integer connectorId = data.get("connectorId") != null ? Integer.parseInt(data.get("connectorId").toString()) : 0;
+                @SuppressWarnings("unchecked")
+                Map<String, Object> csChargingProfiles = (Map<String, Object>) data.get("csChargingProfiles");
+
+                return sendSetChargingProfile(session, connectorId, csChargingProfiles);
+            }
+            return false;
+        } catch (Exception e) {
+            log.error("Error setting charging profile: {}", deviceCode, e);
+            return false;
+        }
+    }
+
     // ========== OCPP特定方法 ==========
+
+    /**
+     * 发送ReserveNow请求
+     */
+    private boolean sendReserveNow(OCPPWebSocketSession session, Integer connectorId, String expiryDate, String idTag, Integer reservationId) {
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("connectorId", connectorId);
+            payload.put("expiryDate", expiryDate);
+            payload.put("idTag", idTag);
+            payload.put("reservationId", reservationId);
+
+            String message = buildOCPPMessage("Call", UUID.randomUUID().toString(), "ReserveNow", payload);
+            String messageToSend = message != null ? message : "";
+            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(messageToSend));
+            return true;
+        } catch (Exception e) {
+            log.error("Error sending ReserveNow to charger: {}", session.getChargerCode(), e);
+            return false;
+        }
+    }
+
+    /**
+     * 发送CancelReservation请求
+     */
+    private boolean sendCancelReservation(OCPPWebSocketSession session, Integer reservationId) {
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("reservationId", reservationId);
+
+            String message = buildOCPPMessage("Call", UUID.randomUUID().toString(), "CancelReservation", payload);
+            String messageToSend = message != null ? message : "";
+            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(messageToSend));
+            return true;
+        } catch (Exception e) {
+            log.error("Error sending CancelReservation to charger: {}", session.getChargerCode(), e);
+            return false;
+        }
+    }
+
+    /**
+     * 发送UpdateFirmware请求
+     */
+    private boolean sendUpdateFirmware(OCPPWebSocketSession session, String location, String retrieveDate, Integer retries, Integer retryInterval) {
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("location", location);
+            payload.put("retrieveDate", retrieveDate);
+            if (retries != null) payload.put("retries", retries);
+            if (retryInterval != null) payload.put("retryInterval", retryInterval);
+
+            String message = buildOCPPMessage("Call", UUID.randomUUID().toString(), "UpdateFirmware", payload);
+            String messageToSend = message != null ? message : "";
+            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(messageToSend));
+            return true;
+        } catch (Exception e) {
+            log.error("Error sending UpdateFirmware to charger: {}", session.getChargerCode(), e);
+            return false;
+        }
+    }
+
+    /**
+     * 发送SetChargingProfile请求
+     */
+    private boolean sendSetChargingProfile(OCPPWebSocketSession session, Integer connectorId, Map<String, Object> csChargingProfiles) {
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("connectorId", connectorId);
+            payload.put("csChargingProfiles", csChargingProfiles);
+
+            String message = buildOCPPMessage("Call", UUID.randomUUID().toString(), "SetChargingProfile", payload);
+            String messageToSend = message != null ? message : "";
+            session.getWebSocketSession().sendMessage(new org.springframework.web.socket.TextMessage(messageToSend));
+            return true;
+        } catch (Exception e) {
+            log.error("Error sending SetChargingProfile to charger: {}", session.getChargerCode(), e);
+            return false;
+        }
+    }
 
     /**
      * 获取连接统计信息

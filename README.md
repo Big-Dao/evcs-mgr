@@ -49,6 +49,12 @@
 - ✅ **JDK 21统一升级**: 现代化技术栈全面升级
 - ✅ **API网关安全加固**: 企业级安全防护体系
 
+### 📅 规划中特性
+
+- 🔄 **固件管理 (OTA)**: 远程固件升级与版本管理 [详情](docs/features/FIRMWARE-MANAGEMENT.md)
+- ⚡ **智能充电**: 负载均衡与有序充电 [详情](docs/features/SMART-CHARGING.md)
+- 🎟️ **营销优惠**: 优惠券与活动管理 [详情](docs/features/MARKETING-COUPONS.md)
+
 ## 🏗️ 技术架构
 
 📚 **详细架构文档**: [技术架构设计](docs/architecture/architecture.md) | [数据模型](docs/architecture/data-model.md) | [API设计](docs/architecture/api-design.md)

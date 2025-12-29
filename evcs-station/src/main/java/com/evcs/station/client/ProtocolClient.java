@@ -15,4 +15,16 @@ public interface ProtocolClient {
 
     @PostMapping("/stop")
     Result<ProtocolResponse> stopCharging(@RequestBody ProtocolRequest request);
+
+    @PostMapping("/reserve")
+    Result<ProtocolResponse> reserveNow(@RequestBody ProtocolRequest request);
+
+    @PostMapping("/cancel-reservation")
+    Result<ProtocolResponse> cancelReservation(@RequestBody ProtocolRequest request);
+
+    @PostMapping("/update-firmware")
+    Result<ProtocolResponse> updateFirmware(@RequestBody ProtocolRequest request);
+
+    @PostMapping("/set-charging-profile")
+    Result<ProtocolResponse> setChargingProfile(@RequestBody ProtocolRequest request);
 }

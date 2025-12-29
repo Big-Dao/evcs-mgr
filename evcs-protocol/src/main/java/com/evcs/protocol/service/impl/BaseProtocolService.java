@@ -87,6 +87,14 @@ public abstract class BaseProtocolService implements IProtocolService {
                     return handleStartCharging(request);
                 case "stop":
                     return handleStopCharging(request);
+                case "reserve":
+                    return reserveNow(request);
+                case "cancelReservation":
+                    return cancelReservation(request);
+                case "updateFirmware":
+                    return updateFirmware(request);
+                case "setChargingProfile":
+                    return setChargingProfile(request);
                 case "register":
                     return registerStation(request);
                 default:
@@ -95,6 +103,62 @@ public abstract class BaseProtocolService implements IProtocolService {
         } catch (Exception e) {
             log.error("[{}] Error handling request: {}", getSupportedProtocolType(), request, e);
             return ProtocolResponse.failure("500", "Internal server error: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public ProtocolResponse reserveNow(ProtocolRequest request) {
+        log.info("[{}] Reserving device: {}", getSupportedProtocolType(), request.getDeviceCode());
+        if (!getSupportedProtocolType().equals(request.getProtocolType())) {
+            return ProtocolResponse.failure("400", "Protocol type mismatch");
+        }
+        boolean success = doReserveNow(request);
+        if (success) {
+            return ProtocolResponse.success("Reservation command sent successfully");
+        } else {
+            return ProtocolResponse.failure("500", "Failed to send reservation command");
+        }
+    }
+
+    @Override
+    public ProtocolResponse cancelReservation(ProtocolRequest request) {
+        log.info("[{}] Cancelling reservation for device: {}", getSupportedProtocolType(), request.getDeviceCode());
+        if (!getSupportedProtocolType().equals(request.getProtocolType())) {
+            return ProtocolResponse.failure("400", "Protocol type mismatch");
+        }
+        boolean success = doCancelReservation(request);
+        if (success) {
+            return ProtocolResponse.success("Cancel reservation command sent successfully");
+        } else {
+            return ProtocolResponse.failure("500", "Failed to send cancel reservation command");
+        }
+    }
+
+    @Override
+    public ProtocolResponse updateFirmware(ProtocolRequest request) {
+        log.info("[{}] Updating firmware for device: {}", getSupportedProtocolType(), request.getDeviceCode());
+        if (!getSupportedProtocolType().equals(request.getProtocolType())) {
+            return ProtocolResponse.failure("400", "Protocol type mismatch");
+        }
+        boolean success = doUpdateFirmware(request);
+        if (success) {
+            return ProtocolResponse.success("Firmware update command sent successfully");
+        } else {
+            return ProtocolResponse.failure("500", "Failed to send firmware update command");
+        }
+    }
+
+    @Override
+    public ProtocolResponse setChargingProfile(ProtocolRequest request) {
+        log.info("[{}] Setting charging profile for device: {}", getSupportedProtocolType(), request.getDeviceCode());
+        if (!getSupportedProtocolType().equals(request.getProtocolType())) {
+            return ProtocolResponse.failure("400", "Protocol type mismatch");
+        }
+        boolean success = doSetChargingProfile(request);
+        if (success) {
+            return ProtocolResponse.success("Set charging profile command sent successfully");
+        } else {
+            return ProtocolResponse.failure("500", "Failed to send set charging profile command");
         }
     }
 
@@ -250,6 +314,26 @@ public abstract class BaseProtocolService implements IProtocolService {
      * 执行停止充电操作
      */
     protected abstract boolean doStopCharging(ProtocolRequest request);
+
+    protected boolean doReserveNow(ProtocolRequest request) {
+        log.warn("[{}] ReserveNow not implemented", getSupportedProtocolType());
+        return false;
+    }
+
+    protected boolean doCancelReservation(ProtocolRequest request) {
+        log.warn("[{}] CancelReservation not implemented", getSupportedProtocolType());
+        return false;
+    }
+
+    protected boolean doUpdateFirmware(ProtocolRequest request) {
+        log.warn("[{}] UpdateFirmware not implemented", getSupportedProtocolType());
+        return false;
+    }
+
+    protected boolean doSetChargingProfile(ProtocolRequest request) {
+        log.warn("[{}] SetChargingProfile not implemented", getSupportedProtocolType());
+        return false;
+    }
 
     // ============ 事件回调方法 - 子类可以重写 ============
 

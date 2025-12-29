@@ -69,4 +69,96 @@ public class ProtocolCommandController {
             return Result.fail("Failed to execute stop command: " + e.getMessage());
         }
     }
+
+    @Operation(summary = "预约充电", description = "下发预约指令到充电桩")
+    @PostMapping("/reserve")
+    public Result<ProtocolResponse> reserveNow(@RequestBody ProtocolRequest request) {
+        log.info("Received reserve command: deviceCode={}", request.getDeviceCode());
+        
+        if (request.getProtocolType() == null) {
+             request.setProtocolType(protocolManager.getProtocolType(request.getDeviceCode()));
+        }
+        
+        try {
+             IProtocolService service = protocolManager.getProtocolService(request.getProtocolType());
+             ProtocolResponse response = service.reserveNow(request);
+             if (response.isSuccess()) {
+                 return Result.success(response);
+             } else {
+                 return Result.fail(response.getMessage());
+             }
+        } catch (Exception e) {
+            log.error("Failed to execute reserve command", e);
+            return Result.fail("Failed to execute reserve command: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "取消预约", description = "下发取消预约指令到充电桩")
+    @PostMapping("/cancel-reservation")
+    public Result<ProtocolResponse> cancelReservation(@RequestBody ProtocolRequest request) {
+        log.info("Received cancel reservation command: deviceCode={}", request.getDeviceCode());
+
+        if (request.getProtocolType() == null) {
+             request.setProtocolType(protocolManager.getProtocolType(request.getDeviceCode()));
+        }
+
+        try {
+             IProtocolService service = protocolManager.getProtocolService(request.getProtocolType());
+             ProtocolResponse response = service.cancelReservation(request);
+             if (response.isSuccess()) {
+                 return Result.success(response);
+             } else {
+                 return Result.fail(response.getMessage());
+             }
+        } catch (Exception e) {
+            log.error("Failed to execute cancel reservation command", e);
+            return Result.fail("Failed to execute cancel reservation command: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "固件升级", description = "下发固件升级指令到充电桩")
+    @PostMapping("/update-firmware")
+    public Result<ProtocolResponse> updateFirmware(@RequestBody ProtocolRequest request) {
+        log.info("Received update firmware command: deviceCode={}", request.getDeviceCode());
+
+        if (request.getProtocolType() == null) {
+             request.setProtocolType(protocolManager.getProtocolType(request.getDeviceCode()));
+        }
+
+        try {
+             IProtocolService service = protocolManager.getProtocolService(request.getProtocolType());
+             ProtocolResponse response = service.updateFirmware(request);
+             if (response.isSuccess()) {
+                 return Result.success(response);
+             } else {
+                 return Result.fail(response.getMessage());
+             }
+        } catch (Exception e) {
+            log.error("Failed to execute update firmware command", e);
+            return Result.fail("Failed to execute update firmware command: " + e.getMessage());
+        }
+    }
+
+    @Operation(summary = "设置充电策略", description = "下发充电策略到充电桩")
+    @PostMapping("/set-charging-profile")
+    public Result<ProtocolResponse> setChargingProfile(@RequestBody ProtocolRequest request) {
+        log.info("Received set charging profile command: deviceCode={}", request.getDeviceCode());
+
+        if (request.getProtocolType() == null) {
+             request.setProtocolType(protocolManager.getProtocolType(request.getDeviceCode()));
+        }
+
+        try {
+             IProtocolService service = protocolManager.getProtocolService(request.getProtocolType());
+             ProtocolResponse response = service.setChargingProfile(request);
+             if (response.isSuccess()) {
+                 return Result.success(response);
+             } else {
+                 return Result.fail(response.getMessage());
+             }
+        } catch (Exception e) {
+            log.error("Failed to execute set charging profile command", e);
+            return Result.fail("Failed to execute set charging profile command: " + e.getMessage());
+        }
+    }
 }

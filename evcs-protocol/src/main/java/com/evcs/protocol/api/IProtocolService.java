@@ -59,6 +59,38 @@ public interface IProtocolService {
     ProtocolResponse stopCharging(ProtocolRequest request);
 
     /**
+     * 预约充电
+     *
+     * @param request 预约请求
+     * @return 预约响应
+     */
+    ProtocolResponse reserveNow(ProtocolRequest request);
+
+    /**
+     * 取消预约
+     *
+     * @param request 取消预约请求
+     * @return 取消预约响应
+     */
+    ProtocolResponse cancelReservation(ProtocolRequest request);
+
+    /**
+     * 固件升级
+     *
+     * @param request 固件升级请求
+     * @return 固件升级响应
+     */
+    ProtocolResponse updateFirmware(ProtocolRequest request);
+
+    /**
+     * 设置充电策略
+     *
+     * @param request 设置充电策略请求
+     * @return 设置充电策略响应
+     */
+    ProtocolResponse setChargingProfile(ProtocolRequest request);
+
+    /**
      * 注册站点（云快充协议专用）
      *
      * @param request 注册请求

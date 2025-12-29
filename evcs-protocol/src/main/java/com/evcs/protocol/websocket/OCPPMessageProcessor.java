@@ -117,6 +117,9 @@ public class OCPPMessageProcessor {
             case "MeterValues":
                 processMeterValues(session, callMessage, payload);
                 break;
+            case "FirmwareStatusNotification":
+                processFirmwareStatusNotification(session, callMessage, payload);
+                break;
             default:
                 log.warn("Unsupported action from charger {}: {}", session.getChargerCode(), action);
                 sendErrorResponse(session, callMessage, "NotSupported", "Action not supported: " + action);
@@ -566,6 +569,24 @@ public class OCPPMessageProcessor {
         } catch (Exception e) {
             log.error("Error processing MeterValues from charger: {}", session.getChargerCode(), e);
             sendErrorResponse(session, message, "FormationViolation", "Invalid MeterValues format");
+        }
+    }
+
+    /**
+     * 处理FirmwareStatusNotification消息
+     */
+    private void processFirmwareStatusNotification(OCPPWebSocketSession session, OCPPCallMessage message, Map<String, Object> payload) {
+        try {
+            String status = (String) payload.get("status");
+            log.info("Received FirmwareStatusNotification from charger {}: status={}", session.getChargerCode(), status);
+
+            // 发送接受响应
+            Map<String, Object> responsePayload = new HashMap<>();
+            sendResponse(session, message, responsePayload);
+
+        } catch (Exception e) {
+            log.error("Error processing FirmwareStatusNotification from charger: {}", session.getChargerCode(), e);
+            sendErrorResponse(session, message, "FormationViolation", "Invalid FirmwareStatusNotification format");
         }
     }
 

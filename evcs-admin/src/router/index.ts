@@ -98,6 +98,18 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '订单管理', icon: 'Document' }
       },
       {
+        path: 'firmware',
+        name: 'Firmware',
+        component: () => import('@/views/firmware/FirmwareList.vue'),
+        meta: { title: '固件管理', icon: 'Files' }
+      },
+      {
+        path: 'smart-charging',
+        name: 'SmartCharging',
+        component: () => import('@/views/smart-charging/ProfileList.vue'),
+        meta: { title: '智能充电', icon: 'Lightning' }
+      },
+      {
         path: 'orders/:id',
         name: 'OrderDetail',
         component: () => import('@/views/order/OrderDetail.vue'),
