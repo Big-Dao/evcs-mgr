@@ -110,6 +110,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '智能充电', icon: 'Lightning' }
       },
       {
+        path: 'coupons',
+        name: 'Coupons',
+        component: () => import('@/views/marketing/CouponList.vue'),
+        meta: { title: '营销优惠', icon: 'Present' }
+      },
+      {
         path: 'orders/:id',
         name: 'OrderDetail',
         component: () => import('@/views/order/OrderDetail.vue'),
