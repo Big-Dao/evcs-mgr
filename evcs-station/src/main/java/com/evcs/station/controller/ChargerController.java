@@ -11,6 +11,9 @@ import com.evcs.station.service.IChargerConnectorService;
 import com.evcs.station.service.IChargerConnectorSessionCurveService;
 import com.evcs.station.entity.ChargerConnectorCurvePoint;
 import com.evcs.station.entity.ChargerConnectorSession;
+import com.evcs.station.client.ProtocolClient;
+import com.evcs.protocol.dto.ProtocolRequest;
+import com.evcs.protocol.dto.ProtocolResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +29,8 @@ import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * 充电桩管理控制器
@@ -41,6 +46,7 @@ public class ChargerController {
     private final IChargerService chargerService;
     private final IChargerConnectorService chargerConnectorService;
     private final IChargerConnectorSessionCurveService chargerConnectorSessionCurveService;
+    private final ProtocolClient protocolClient;
 
     /**
      * 分页查询充电桩列表
@@ -289,32 +295,62 @@ public class ChargerController {
     /**
      * 开始充电会话（指定枪口）
      */
-    @Operation(summary = "开始充电(按枪口)", description = "开始指定枪口的充电会话（仅落库会话字段；实际协议启动由协议服务负责）")
+    @Operation(summary = "开始充电(按枪口)", description = "开始指定枪口的充电会话（下发协议指令并落库）")
     @PostMapping("/{chargerId}/connectors/{connectorNo}/start")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:charge')")
     @DataScope
     public Result<Void> startChargingByConnector(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
             @Parameter(description = "枪口号(从1开始)") @PathVariable("connectorNo") @NotNull Integer connectorNo,
-            @Parameter(description = "会话ID") @RequestParam String sessionId,
+            @Parameter(description = "会话ID（可选，若无则生成）") @RequestParam(required = false) String sessionId,
             @Parameter(description = "用户ID") @RequestParam Long userId,
             @Parameter(description = "起始电量(kWh)") @RequestParam(required = false) Double initialEnergy) {
+
+        Charger charger = chargerService.getById(chargerId);
+        if (charger == null) {
+            return Result.fail("充电桩不存在");
+        }
+
+        String actualSessionId = sessionId != null ? sessionId : UUID.randomUUID().toString();
+
+        // 1. Call Protocol Service
+        try {
+            ProtocolRequest req = new ProtocolRequest();
+            req.setDeviceCode(charger.getChargerCode());
+            req.setSessionId(actualSessionId);
+            req.setUserId(userId);
+            req.setChargerId(chargerId);
+            req.setTenantId(charger.getTenantId());
+            
+            Map<String, Object> data = new HashMap<>();
+            data.put("connectorId", connectorNo);
+            req.setData(data);
+
+            Result<ProtocolResponse> protoResult = protocolClient.startCharging(req);
+            if (!protoResult.isSuccess()) {
+                log.warn("Remote start failed: {}", protoResult.getMessage());
+                return Result.fail("远程启动失败: " + protoResult.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Remote start exception", e);
+            return Result.fail("远程启动异常: " + e.getMessage());
+        }
 
         boolean ok = chargerConnectorService.updateSessionStart(
                 chargerId,
                 connectorNo,
-                sessionId,
+                actualSessionId,
                 userId,
                 LocalDateTime.now(),
                 initialEnergy
         );
-        return ok ? Result.success("开始充电成功") : Result.fail("开始充电失败");
+        return ok ? Result.success("开始充电指令已下发") : Result.fail("开始充电失败");
     }
 
     /**
      * 结束充电会话（指定枪口）
      */
-    @Operation(summary = "结束充电(按枪口)", description = "结束指定枪口的充电会话（仅落库会话字段；实际协议停止由协议服务负责）")
+    @Operation(summary = "结束充电(按枪口)", description = "结束指定枪口的充电会话（下发协议指令并落库）")
     @PostMapping("/{chargerId}/connectors/{connectorNo}/stop")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:charge')")
     @DataScope
@@ -324,6 +360,33 @@ public class ChargerController {
             @Parameter(description = "会话ID（可选，存在时用于校验）") @RequestParam(required = false) String sessionId,
             @Parameter(description = "充电量(kWh)") @RequestParam(required = false) Double energy,
             @Parameter(description = "充电时长(分钟)") @RequestParam(required = false) Long duration) {
+
+        Charger charger = chargerService.getById(chargerId);
+        if (charger == null) {
+            return Result.fail("充电桩不存在");
+        }
+
+        // 1. Call Protocol Service
+        try {
+            ProtocolRequest req = new ProtocolRequest();
+            req.setDeviceCode(charger.getChargerCode());
+            req.setSessionId(sessionId);
+            req.setChargerId(chargerId);
+            req.setTenantId(charger.getTenantId());
+            
+            Map<String, Object> data = new HashMap<>();
+            data.put("connectorId", connectorNo);
+            req.setData(data);
+
+            Result<ProtocolResponse> protoResult = protocolClient.stopCharging(req);
+            if (!protoResult.isSuccess()) {
+                 log.warn("Remote stop failed: {}", protoResult.getMessage());
+                 return Result.fail("远程停止失败: " + protoResult.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Remote stop exception", e);
+            return Result.fail("远程停止异常: " + e.getMessage());
+        }
 
         Double energyValue = energy != null ? energy : 0.0;
         Long durationValue = duration != null ? duration : 0L;
@@ -335,7 +398,7 @@ public class ChargerController {
                 energyValue,
                 durationValue
         );
-        return ok ? Result.success("结束充电成功") : Result.fail("结束充电失败");
+        return ok ? Result.success("结束充电指令已下发") : Result.fail("结束充电失败");
     }
 
     /**

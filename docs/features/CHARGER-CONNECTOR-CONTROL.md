@@ -21,13 +21,13 @@
 ### 2.1 已实现
 
 - 管理后台按枪口展示：枪口状态/故障/心跳/会话字段
-- 站点服务提供按枪口的 start/stop 接口：**仅更新 `charger_connector` 会话字段**
+- 站点服务提供按枪口的 start/stop 接口：**集成协议服务下发指令 + 更新 `charger_connector` 会话字段**
+- 协议服务集成：通过 Feign Client 调用 `evcs-protocol` 下发 RemoteStart/RemoteStop 指令
 - 整桩（charger-level）的 start/stop 控制：**已移除**（UI + 后端接口都不再提供）
 
 ### 2.2 未实现（后续工作）
 
-- 真正的“协议远程启停”（OCPP RemoteStart/RemoteStop / 云快充远程控制）
-- start/stop 的协议侧 ACK/失败原因回传与 UI 展示
+- start/stop 的协议侧 ACK/失败原因回传与 UI 展示（目前仅同步返回指令下发结果）
 - 与订单/计费/支付的强一致联动（当前刻意避免触发 order-service 的副作用）
 
 ## 3. 数据落库口径（摘要）
