@@ -32,6 +32,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
 
     private final SysRoleMapper roleMapper;
     private final SysUserRoleMapper userRoleMapper;
+    private final com.evcs.common.tenant.HierarchyValidator hierarchyValidator;
+    private final com.evcs.common.audit.TenantAuditService tenantAuditService;
 
     @Override
     public IPage<SysUser> pageUsers(UserQuery query, Long tenantId) {
@@ -41,7 +43,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         wrapper.eq(SysUser::getTenantId, tenantId)
                 .eq(SysUser::getDeleted, 0)
                 .like(StringUtils.isNotBlank(query.getUsername()), SysUser::getUsername, query.getUsername())
-                .like(StringUtils.isNotBlank(query.getLoginIdentifier()), SysUser::getLoginIdentifier, query.getLoginIdentifier())
+                .like(StringUtils.isNotBlank(query.getLoginIdentifier()), SysUser::getLoginIdentifier,
+                        query.getLoginIdentifier())
                 .like(StringUtils.isNotBlank(query.getRealName()), SysUser::getRealName, query.getRealName())
                 .eq(Objects.nonNull(query.getStatus()), SysUser::getStatus, query.getStatus())
                 .orderByDesc(SysUser::getCreateTime);
@@ -52,7 +55,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
             countWrapper.eq(SysUser::getTenantId, tenantId)
                     .eq(SysUser::getDeleted, 0)
                     .like(StringUtils.isNotBlank(query.getUsername()), SysUser::getUsername, query.getUsername())
-                    .like(StringUtils.isNotBlank(query.getLoginIdentifier()), SysUser::getLoginIdentifier, query.getLoginIdentifier())
+                    .like(StringUtils.isNotBlank(query.getLoginIdentifier()), SysUser::getLoginIdentifier,
+                            query.getLoginIdentifier())
                     .like(StringUtils.isNotBlank(query.getRealName()), SysUser::getRealName, query.getRealName())
                     .eq(Objects.nonNull(query.getStatus()), SysUser::getStatus, query.getStatus());
             long total = this.count(countWrapper);
@@ -161,7 +165,8 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         if (StringUtils.isNotBlank(user.getUsername()) && !user.getUsername().equals(existing.getUsername())) {
             validateUsernameUnique(user.getUsername(), tenantId, user.getId());
         }
-        if (StringUtils.isNotBlank(user.getLoginIdentifier()) && !user.getLoginIdentifier().equals(existing.getLoginIdentifier())) {
+        if (StringUtils.isNotBlank(user.getLoginIdentifier())
+                && !user.getLoginIdentifier().equals(existing.getLoginIdentifier())) {
             validateIdentifierUnique(user.getLoginIdentifier(), user.getId());
         }
         user.setTenantId(tenantId);
@@ -199,6 +204,23 @@ public class SysUserServiceImpl extends ServiceImpl<SysUserMapper, SysUser> impl
         if (tenantId == null) {
             throw new TenantContextMissingException("缺少租户信息");
         }
+
+        Long currentTenantId = TenantContext.getTenantId();
+        // 如果当前有上下文且与目标租户不同，说明是跨租户操作
+        if (currentTenantId != null && !currentTenantId.equals(tenantId)) {
+            // 1. 层级校验 (不允许平级或越级，只允许上级管下级)
+            if (!hierarchyValidator.validateAccess(currentTenantId, tenantId)) {
+                log.warn("越权访问尝试: Tenant " + currentTenantId + " trying to access Tenant " + tenantId);
+                throw new com.evcs.common.exception.AccessDeniedException("无权操作该租户数据");
+            }
+
+            // 2. 审计日志 (只记录关键修改操作，这里是进入TenantContext，具体Audit在业务方法里细化？
+            // 为了统一管控，凡是跨租户切换上下文，都视为敏感接入，记录一条DEBUG或INFO即可，
+            // 真正的业务Audit在 createUser/updateUser 等方法里调用)
+            tenantAuditService.logOperation("CROSS_TENANT_ACCESS", tenantId,
+                    "Access from parent tenant: " + currentTenantId);
+        }
+
         TenantContext.setTenantId(tenantId);
     }
 

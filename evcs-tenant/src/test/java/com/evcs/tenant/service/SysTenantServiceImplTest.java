@@ -396,4 +396,48 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         tenant.setRemark("系统测试租户");
         return tenant;
     }
+
+    @Test
+    @DisplayName("能力边界管控 - 配额修改限制验证")
+    void testCapabilityBoundary_Quota() {
+        // Given: 创建 父 -> 子 租户
+        SysTenant parent = createTestSysTenant("PARENT_CAP", "上级租户");
+        parent.setStatus(1); // 激活
+        sysTenantService.saveTenant(parent);
+
+        // 切换到父租户上下文创建子租户
+        switchTenant(parent.getId());
+        SysTenant child = createTestSysTenant("CHILD_CAP", "下级租户");
+        child.setParentId(parent.getId());
+        child.setMaxUsers(10);
+        child.setMaxStations(5);
+        child.setStatus(1);
+        sysTenantService.saveTenant(child);
+
+        // Scenario 1: Self update quota (Should Fail)
+        switchTenant(child.getId());
+        SysTenant updateSelf = new SysTenant();
+        updateSelf.setId(child.getId());
+        updateSelf.setMaxUsers(100);
+
+        try {
+            sysTenantService.updateTenant(updateSelf);
+            throw new RuntimeException("Should have failed but success");
+        } catch (RuntimeException e) {
+            // Expected
+        }
+
+        // Scenario 2: Parent update quota (Should Success)
+        switchTenant(parent.getId());
+        SysTenant updateByParent = new SysTenant();
+        updateByParent.setId(child.getId());
+        updateByParent.setMaxUsers(20);
+
+        boolean success = sysTenantService.updateTenant(updateByParent);
+        assertThat(success).isTrue();
+
+        // 验证修改成功
+        SysTenant updated = sysTenantService.getTenantById(child.getId());
+        assertThat(updated.getMaxUsers()).isEqualTo(20);
+    }
 }

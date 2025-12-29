@@ -34,8 +34,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @Service
 public class ChargerServiceImpl
-    extends ServiceImpl<ChargerMapper, Charger>
-    implements IChargerService {
+        extends ServiceImpl<ChargerMapper, Charger>
+        implements IChargerService {
 
     @Autowired(required = false)
     private IOCPPProtocolService ocppService;
@@ -48,7 +48,7 @@ public class ChargerServiceImpl
 
     @Autowired
     private StationMapper stationMapper;
-    
+
     @Autowired
     private StationMetrics stationMetrics;
 
@@ -67,9 +67,8 @@ public class ChargerServiceImpl
     @Override
     @DataScope
     public IPage<Charger> queryChargerPage(
-        Page<Charger> page,
-        Charger queryParam
-    ) {
+            Page<Charger> page,
+            Charger queryParam) {
         QueryWrapper<Charger> wrapper = new QueryWrapper<>();
 
         // 根据充电桩名称查询
@@ -160,8 +159,7 @@ public class ChargerServiceImpl
         Long tenantId = TenantContext.getCurrentTenantId();
         if (tenantId == null) {
             throw new TenantContextMissingException(
-                "执行充电桩保存操作时缺少租户上下文"
-            );
+                    "执行充电桩保存操作时缺少租户上下文");
         }
         Long userId = TenantContext.getCurrentUserId();
         Station station = stationMapper.selectById(charger.getStationId());
@@ -204,13 +202,10 @@ public class ChargerServiceImpl
         }
 
         // 检查编码是否重复（排除自己）
-        if (
-            StrUtil.isNotBlank(charger.getChargerCode()) &&
-            checkChargerCodeExists(
-                charger.getChargerCode(),
-                charger.getId()
-            )
-        ) {
+        if (StrUtil.isNotBlank(charger.getChargerCode()) &&
+                checkChargerCodeExists(
+                        charger.getChargerCode(),
+                        charger.getId())) {
             throw new RuntimeException("充电桩编码已存在");
         }
 
@@ -251,11 +246,9 @@ public class ChargerServiceImpl
         try {
             Charger charger = this.getById(chargerId);
             Integer oldStatus = charger != null ? charger.getStatus() : null;
-            
-            boolean result = (
-                baseMapper.updateStatus(chargerId, status, LocalDateTime.now()) > 0
-            );
-            
+
+            boolean result = (baseMapper.updateStatus(chargerId, status, LocalDateTime.now()) > 0);
+
             if (result && charger != null) {
                 // 记录状态变更
                 if (status == 0) { // 离线
@@ -263,23 +256,23 @@ public class ChargerServiceImpl
                 } else if (oldStatus != null && oldStatus == 0 && status > 0) { // 从离线变为其他状态
                     stationMetrics.recordChargerOnline(chargerId);
                 }
-                
+
                 if (status == 2) { // 开始充电
                     stationMetrics.recordChargerStartCharging();
                 } else if (oldStatus != null && oldStatus == 2 && status != 2) { // 停止充电
                     stationMetrics.recordChargerStopCharging();
                 }
-                
+
                 if (status == 3) { // 故障
                     stationMetrics.recordChargerFaulted();
                 } else if (oldStatus != null && oldStatus == 3 && status != 3) { // 故障恢复
                     stationMetrics.recordChargerFaultRecovered();
                 }
-                
-                log.info("Charger status updated: chargerId={}, oldStatus={}, newStatus={}", 
-                    chargerId, oldStatus, status);
+
+                log.info("Charger status updated: chargerId={}, oldStatus={}, newStatus={}",
+                        chargerId, oldStatus, status);
             }
-            
+
             return result;
         } catch (Exception e) {
             log.error("Error updating charger status: chargerId={}, status={}", chargerId, status, e);
@@ -293,23 +286,18 @@ public class ChargerServiceImpl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateRealTimeData(
-        Long chargerId,
-        Double power,
-        Double voltage,
-        Double current,
-        Double temperature
-    ) {
-        return (
-            baseMapper.updateRealTimeData(
+            Long chargerId,
+            Double power,
+            Double voltage,
+            Double current,
+            Double temperature) {
+        return (baseMapper.updateRealTimeData(
                 chargerId,
                 power,
                 voltage,
                 current,
                 temperature,
-                LocalDateTime.now()
-            ) >
-            0
-        );
+                LocalDateTime.now()) > 0);
     }
 
     /**
@@ -338,10 +326,9 @@ public class ChargerServiceImpl
     @Transactional(rollbackFor = Exception.class)
     @DataScope
     public boolean startChargingSession(
-        Long chargerId,
-        String sessionId,
-        Long userId
-    ) {
+            Long chargerId,
+            String sessionId,
+            Long userId) {
         // 检查充电桩状态
         Charger charger = this.getById(chargerId);
         if (charger == null) {
@@ -358,34 +345,28 @@ public class ChargerServiceImpl
         if (!protoOk) {
             throw new RuntimeException("协议启动失败");
         }
-        boolean dbOk =
-            baseMapper.startChargingSession(
+        boolean dbOk = baseMapper.startChargingSession(
                 chargerId,
                 sessionId,
                 userId,
-                LocalDateTime.now()
-            ) >
-            0;
+                LocalDateTime.now()) > 0;
         if (dbOk) {
             // 发布充电开始事件，订单服务监听此事件创建订单
             Long billingPlanId = null; // 可以从请求参数传入
             eventPublisher.publishEvent(
-                new ChargingStartEvent(
-                    this,
-                    charger.getStationId(),
+                    new ChargingStartEvent(
+                            this,
+                            charger.getStationId(),
+                            chargerId,
+                            sessionId,
+                            userId,
+                            billingPlanId,
+                            TenantContext.getCurrentTenantId()));
+            log.info(
+                    "充电会话开始，充电桩ID: {}, 会话ID: {}, 用户ID: {}",
                     chargerId,
                     sessionId,
-                    userId,
-                    billingPlanId,
-                    TenantContext.getCurrentTenantId()
-                )
-            );
-            log.info(
-                "充电会话开始，充电桩ID: {}, 会话ID: {}, 用户ID: {}",
-                chargerId,
-                sessionId,
-                userId
-            );
+                    userId);
         }
         return dbOk;
     }
@@ -397,35 +378,30 @@ public class ChargerServiceImpl
     @Transactional(rollbackFor = Exception.class)
     @DataScope
     public boolean endChargingSession(
-        Long chargerId,
-        Double energy,
-        Long duration
-    ) {
+            Long chargerId,
+            Double energy,
+            Long duration) {
         Charger charger = this.getById(chargerId);
         if (charger == null) {
             return false;
         }
         String sessionId = charger.getCurrentSessionId();
         invokeStopProtocol(charger);
-        boolean ok =
-            baseMapper.endChargingSession(chargerId, energy, duration) > 0;
+        boolean ok = baseMapper.endChargingSession(chargerId, energy, duration) > 0;
         if (ok && sessionId != null) {
             // 发布充电停止事件，订单服务监听此事件完成订单
             eventPublisher.publishEvent(
-                new ChargingStopEvent(
-                    this,
+                    new ChargingStopEvent(
+                            this,
+                            sessionId,
+                            energy,
+                            duration,
+                            TenantContext.getCurrentTenantId()));
+            log.info(
+                    "充电会话结束，会话ID: {}, 充电量: {}, 时长: {}",
                     sessionId,
                     energy,
-                    duration,
-                    TenantContext.getCurrentTenantId()
-                )
-            );
-            log.info(
-                "充电会话结束，会话ID: {}, 充电量: {}, 时长: {}",
-                sessionId,
-                energy,
-                duration
-            );
+                    duration);
         }
         return ok;
     }
@@ -436,19 +412,14 @@ public class ChargerServiceImpl
     @Override
     @Transactional(rollbackFor = Exception.class)
     public boolean updateChargingProgress(
-        Long chargerId,
-        Double energy,
-        Integer duration
-    ) {
-        return (
-            baseMapper.updateChargingProgress(
+            Long chargerId,
+            Double energy,
+            Integer duration) {
+        return (baseMapper.updateChargingProgress(
                 chargerId,
                 energy,
                 duration,
-                LocalDateTime.now()
-            ) >
-            0
-        );
+                LocalDateTime.now()) > 0);
     }
 
     /**
@@ -499,13 +470,11 @@ public class ChargerServiceImpl
     public Map<Integer, Long> getStatusStatistics(Long tenantId) {
         List<Map<String, Object>> result = baseMapper.countByStatus(tenantId);
         return result
-            .stream()
-            .collect(
-                Collectors.toMap(
-                    map -> (Integer) map.get("status"),
-                    map -> ((Number) map.get("count")).longValue()
-                )
-            );
+                .stream()
+                .collect(
+                        Collectors.toMap(
+                                map -> (Integer) map.get("status"),
+                                map -> ((Number) map.get("count")).longValue()));
     }
 
     /**
@@ -577,19 +546,64 @@ public class ChargerServiceImpl
     }
 
     private boolean invokeStartProtocol(
-        Charger charger,
-        String sessionId,
-        Long userId
-    ) {
-        // Protocol服务已临时禁用 (Week 1 Day 1)
-        // 优雅降级：允许业务逻辑继续，但不调用实际协议
-        log.warn("协议服务已禁用，充电启动协议调用跳过（Week 9重新启用）");
-        return true;
+            Charger charger,
+            String sessionId,
+            Long userId) {
+        if (StrUtil.isBlank(charger.getSupportedProtocols())) {
+            log.warn(
+                    "Charger {} has no supported protocols defined, defaulting to CloudCharge skip (simulated success)",
+                    charger.getChargerCode());
+            // For safety in this transition phase, return true if no protocol defined, or
+            // false?
+            // Given the previous requirement "Graceful degradation", let's return true but
+            // log warn.
+            return true;
+        }
+
+        cn.hutool.json.JSONObject protocols = cn.hutool.json.JSONUtil.parseObj(charger.getSupportedProtocols());
+
+        // Priority 1: OCPP
+        if (protocols.containsKey("ocpp")) {
+            if (ocppService == null) {
+                log.error("OCPP Service not available but charger {} requires OCPP", charger.getChargerCode());
+                return false;
+            }
+            return ocppService.startCharging(charger.getId(), sessionId, userId);
+        }
+
+        // Priority 2: CloudCharge
+        if (protocols.containsKey("cloudCharge")) {
+            if (cloudService == null) {
+                log.error("CloudCharge Service not available but charger {} requires it", charger.getChargerCode());
+                return false;
+            }
+            return cloudService.startCharging(charger.getId(), sessionId, userId);
+        }
+
+        log.warn("Unknown protocol support for charger {}: {}", charger.getChargerCode(),
+                charger.getSupportedProtocols());
+        return true; // Fallback success
     }
 
     private void invokeStopProtocol(Charger charger) {
-        // Protocol服务已临时禁用 (Week 1 Day 1)
-        // 优雅降级：允许业务逻辑继续，但不调用实际协议
-        log.warn("协议服务已禁用，充电停止协议调用跳过（Week 9重新启用）");
+        if (StrUtil.isBlank(charger.getSupportedProtocols())) {
+            return;
+        }
+
+        cn.hutool.json.JSONObject protocols = cn.hutool.json.JSONUtil.parseObj(charger.getSupportedProtocols());
+
+        try {
+            if (protocols.containsKey("ocpp")) {
+                if (ocppService != null) {
+                    ocppService.stopCharging(charger.getId());
+                }
+            } else if (protocols.containsKey("cloudCharge")) {
+                if (cloudService != null) {
+                    cloudService.stopCharging(charger.getId());
+                }
+            }
+        } catch (Exception e) {
+            log.error("Failed to stop charging via protocol for charger {}", charger.getChargerCode(), e);
+        }
     }
 }

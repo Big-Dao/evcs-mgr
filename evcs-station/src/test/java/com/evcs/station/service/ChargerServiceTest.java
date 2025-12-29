@@ -19,8 +19,8 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 充电桩服务测试类
  */
-@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class, com.evcs.station.config.TestConfig.class},
-                webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(classes = { com.evcs.station.StationServiceApplication.class,
+        com.evcs.station.config.TestConfig.class }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @DisplayName("充电桩服务测试")
 class ChargerServiceTest extends BaseServiceTest {
 
@@ -263,8 +263,29 @@ class ChargerServiceTest extends BaseServiceTest {
         charger.setChargerType(1);
         charger.setRatedPower(new java.math.BigDecimal("120.0"));
         charger.setStatus(1);
-        charger.setSupportedProtocols("[\"OCPP1.6\"]");
+        charger.setSupportedProtocols("{\"ocpp\": \"1.6\"}"); // Use JSON format
         chargerService.saveCharger(charger);
         return charger;
+    }
+
+    @Test
+    @DisplayName("启动充电会话 - 协议降级测试")
+    void testStartChargingSession() {
+        // Arrange
+        Charger charger = createTestCharger("SESSION_TEST");
+        String sessionId = "SESSION_" + System.currentTimeMillis();
+        Long userId = 10086L;
+
+        // Act
+        // Assuming OCPP service is null in test context, it should log error and return
+        // false based on my implementation
+        // Wait, my implementation returns false if service is null!
+        // So I expect RuntimeException("协议启动失败") from startChargingSession method
+        Exception exception = assertThrows(RuntimeException.class, () -> {
+            chargerService.startChargingSession(charger.getId(), sessionId, userId);
+        });
+
+        // Assert
+        assertEquals("协议启动失败", exception.getMessage());
     }
 }

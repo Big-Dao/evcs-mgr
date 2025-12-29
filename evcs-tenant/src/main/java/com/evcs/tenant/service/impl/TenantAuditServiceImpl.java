@@ -1,7 +1,7 @@
 package com.evcs.tenant.service.impl;
 
 import com.evcs.common.tenant.TenantContext;
-import com.evcs.tenant.service.TenantAuditService;
+import com.evcs.common.audit.TenantAuditService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 

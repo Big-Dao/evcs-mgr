@@ -14,10 +14,10 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.tenant.TenantContext;
+import com.evcs.common.audit.TenantAuditService;
 import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.mapper.SysTenantMapper;
 import com.evcs.tenant.service.ISysTenantService;
-import com.evcs.tenant.service.TenantAuditService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -249,9 +249,74 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
 
         // 设置更新信息
         tenant.setUpdateTime(LocalDateTime.now());
-        tenant.setUpdateBy(TenantContext.getCurrentTenantId());
+        tenant.setUpdateBy(TenantContext.getCurrentTenantId()); // Note: using tenantId as user? Usually userId. Let's
+                                                                // keep original unless valid userId
+
+        // --- 能力边界管控 (Capability Boundary) 开始 ---
+        Long currentTenantId = TenantContext.getTenantId();
+        // 简单判定是否为租户自身
+        boolean isSelf = currentTenantId != null && currentTenantId.equals(existTenant.getId());
+
+        // 检查关键字段变更需要更高权限（上级或平台）
+        // 只有当传入了非空值且与原值不同时，才视为变更
+        boolean isQuotaChanged = isValueChanged(tenant.getMaxUsers(), existTenant.getMaxUsers())
+                || isValueChanged(tenant.getMaxStations(), existTenant.getMaxStations())
+                || isValueChanged(tenant.getMaxChargers(), existTenant.getMaxChargers())
+                || isValueChanged(tenant.getExpireTime(), existTenant.getExpireTime());
+
+        boolean isStatusChanged = isValueChanged(tenant.getStatus(), existTenant.getStatus());
+
+        if (isQuotaChanged || isStatusChanged) {
+            if (isSelf) {
+                throw new RuntimeException("租户无权修改自身的配额或状态信息");
+            }
+
+            // 验证层级关系: 确保 currentTenantId 在 existTenant 的 ancestors 列表中
+            boolean isAncestor = isAncestor(currentTenantId, existTenant.getAncestors());
+
+            if (!isAncestor) {
+                // 兜底检查：如果是超级管理员(0)，也允许
+                if (currentTenantId != null && currentTenantId == 0L) {
+                    // allow
+                } else {
+                    throw new RuntimeException("无权修改下级租户的管控信息 (非直属上级)");
+                }
+            }
+
+            // 记录审计日志
+            if (isQuotaChanged) {
+                String detail = String.format("Update Quota: Users [%s->%s], Stations [%s->%s]",
+                        existTenant.getMaxUsers(), tenant.getMaxUsers(),
+                        existTenant.getMaxStations(), tenant.getMaxStations());
+                tenantAuditService.logOperation(TenantAuditService.ACTION_UPDATE_QUOTA, tenant.getId(), detail);
+            }
+            if (isStatusChanged) {
+                String detail = String.format("Update Status: [%s->%s]", existTenant.getStatus(), tenant.getStatus());
+                tenantAuditService.logOperation(TenantAuditService.ACTION_UPDATE_STATUS, tenant.getId(), detail);
+            }
+        }
+        // --- 能力边界管控 结束 ---
 
         return this.updateById(tenant);
+    }
+
+    private boolean isValueChanged(Object newVal, Object oldVal) {
+        // 如果新值为null，说明本次不更新该字段，视为无变更
+        if (newVal == null)
+            return false;
+        return !newVal.equals(oldVal);
+    }
+
+    private boolean isAncestor(Long currentId, String ancestors) {
+        if (currentId == null || ancestors == null)
+            return false;
+        String[] ids = ancestors.split(",");
+        String currentStr = String.valueOf(currentId);
+        for (String id : ids) {
+            if (id.trim().equals(currentStr))
+                return true;
+        }
+        return false;
     }
 
     /**
