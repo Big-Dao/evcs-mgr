@@ -39,9 +39,6 @@ services:
     image: postgres:17-alpine
     container_name: evcs-postgres
     restart: unless-stopped
-    command: >
-      postgres
-      -c shared_preload_libraries=pg_stat_statements
     environment:
       POSTGRES_DB: evcs_mgr
       POSTGRES_USER: postgres
@@ -479,6 +476,8 @@ services:
     restart: unless-stopped
     ports:
       - "3000:80"
+    environment:
+      - EVCS_GATEWAY_IP=gateway
     depends_on:
       - gateway
     networks:
