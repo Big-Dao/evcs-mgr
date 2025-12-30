@@ -60,6 +60,9 @@ CREATE TABLE IF NOT EXISTS charging_order (
     duration BIGINT,            -- minutes
     amount DECIMAL(12,4),       -- total amount
     billing_plan_id BIGINT,
+    coupon_id BIGINT,           -- 优惠券ID
+    discount_amount DECIMAL(12,4) DEFAULT 0, -- 优惠金额
+    pay_amount DECIMAL(12,4),   -- 实付金额
     payment_trade_id VARCHAR(100),
     paid_time TIMESTAMP,
     status INTEGER DEFAULT 0,   -- 0-created, 1-completed, 2-cancelled, 10-to_pay, 11-paid

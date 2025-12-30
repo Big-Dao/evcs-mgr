@@ -43,6 +43,17 @@
       </el-descriptions>
     </el-card>
 
+    <el-card class="detail-card" style="margin-top: 20px;" v-if="detail.latitude && detail.longitude">
+      <template #header>
+        <span>站点位置</span>
+      </template>
+      <StationMap 
+        :latitude="detail.latitude" 
+        :longitude="detail.longitude" 
+        :station-name="detail.stationName" 
+      />
+    </el-card>
+
     <el-row :gutter="20" style="margin-top: 20px;">
       <el-col :span="6">
         <el-card>
@@ -180,20 +191,6 @@
         </el-table-column>
       </el-table>
     </el-card>
-
-    <el-card class="detail-card" style="margin-top: 20px;">
-      <template #header>
-        <span>位置地图</span>
-      </template>
-
-      <div id="map-container" style="height: 400px; background: #f5f5f5; display: flex; align-items: center; justify-content: center;">
-        <div style="text-align: center; color: #999;">
-          <el-icon :size="60"><Location /></el-icon>
-          <p style="margin-top: 10px;">地图组件占位（需集成高德/百度地图）</p>
-          <p style="font-size: 14px;">位置: {{ detail.latitude }}, {{ detail.longitude }}</p>
-        </div>
-      </div>
-    </el-card>
   </div>
 </template>
 
@@ -204,6 +201,7 @@ import { ElMessage } from 'element-plus'
 import { getStationDetail } from '@/api/station'
 import { getChargerList, getChargerConnectors } from '@/api/charger'
 import type { Charger, ChargerConnector } from '@/api/charger'
+import StationMap from './components/StationMap.vue'
 
 const router = useRouter()
 const route = useRoute()
