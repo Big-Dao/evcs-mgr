@@ -101,7 +101,6 @@
 - [ ] `ReconciliationExceptionServiceImpl`: 实现异常检测和处理逻辑
 - [ ] `ReconciliationServiceImpl`: 实现更精确的匹配逻辑（交易号、时间等）
 - [ ] `AlipayChannelService`: 实现完整的支付宝签名验证逻辑
-- [ ] `AlipayChannelServiceV2`: 完善签名验证
 - [ ] `OrderSyncServiceImpl`: 实现订单同步记录表和重试机制
 
 **预期产出**:
