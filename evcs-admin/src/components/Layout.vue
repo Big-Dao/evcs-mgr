@@ -64,7 +64,7 @@
             <el-dropdown @command="onUserCommand">
               <span class="el-dropdown-link">
                 <el-icon><Avatar /></el-icon>
-                管理员
+                {{ username }}
                 <el-icon><ArrowDown /></el-icon>
               </span>
               <template #dropdown>
@@ -87,14 +87,20 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useUserStore } from '../stores/user'
 
 const route = useRoute()
 const router = useRouter()
+const userStore = useUserStore()
 
 const activeMenu = computed(() => route.path)
 const pageTitle = computed(() => route.meta.title as string || '')
+const username = computed(() => userStore.username || '管理员')
 
-const handleLogout = () => { router.push('/login') }
+const handleLogout = async () => {
+  await userStore.logout()
+  router.push('/login')
+}
 const onUserCommand = (cmd: string) => {
   if (cmd === 'profile') router.push('/profile')
   if (cmd === 'logout') handleLogout()

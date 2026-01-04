@@ -46,10 +46,10 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { login } from '../api/auth'
-import type { LoginResponse } from '../api/auth'
+import { useUserStore } from '../stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 const loginFormRef = ref<FormInstance>()
 const loading = ref(false)
 
@@ -70,69 +70,23 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true
       try {
-        // 调用真实登录API
-        const response = await login({
+        const success = await userStore.login({
           identifier: loginForm.identifier,
           password: loginForm.password
         })
         
-        const payload: LoginResponse | undefined = response?.data
-
-        // 保存token和用户信息
-        if (payload?.accessToken) {
-          localStorage.setItem('token', payload.accessToken)
-          localStorage.setItem('tokenType', payload.tokenType ?? 'Bearer')
-
-          if (payload.refreshToken) {
-            localStorage.setItem('refreshToken', payload.refreshToken)
-          } else {
-            localStorage.removeItem('refreshToken')
-          }
-
-          if (typeof payload.expiresIn === 'number') {
-            localStorage.setItem('tokenExpiresIn', String(payload.expiresIn))
-          } else {
-            localStorage.removeItem('tokenExpiresIn')
-          }
-
-          const user = payload.user
-          if (user && user.id !== undefined && user.id !== null) {
-            localStorage.setItem('userId', String(user.id))
-          } else {
-            localStorage.removeItem('userId')
-          }
-
-          const tenantId = user?.tenantId
-          if (tenantId !== undefined && tenantId !== null) {
-            localStorage.setItem('tenantId', String(tenantId))
-          } else {
-            localStorage.removeItem('tenantId')
-          }
-
-          const username = user?.username || user?.identifier || loginForm.identifier
-          if (username) {
-            localStorage.setItem('username', username)
-          }
-          if (user?.identifier) {
-            localStorage.setItem('loginIdentifier', user.identifier)
-          } else {
-            localStorage.removeItem('loginIdentifier')
-          }
-
-          if (user?.realName) {
-            localStorage.setItem('realName', user.realName)
-          } else {
-            localStorage.removeItem('realName')
-          }
-
-          ElMessage.success(response?.message ?? '登录成功')
+        if (success) {
+          // 保存登录账号以便下次自动填充
+          localStorage.setItem('loginIdentifier', loginForm.identifier)
+          
+          ElMessage.success('登录成功')
           router.push('/')
         } else {
           ElMessage.error('登录失败：未获取到token')
         }
       } catch (error: any) {
         console.error('登录失败:', error)
-        // 错误消息已由 request.ts 拦截器统一处理，这里不再重复显示
+        // 错误消息已由 request.ts 拦截器统一处理
       } finally {
         loading.value = false
       }
