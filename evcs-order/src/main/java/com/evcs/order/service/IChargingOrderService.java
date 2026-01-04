@@ -2,6 +2,7 @@ package com.evcs.order.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.evcs.order.dto.CityOrderStatistics;
+import com.evcs.order.dto.OrderDTO;
 import com.evcs.order.entity.ChargingOrder;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -11,6 +12,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public interface IChargingOrderService extends IService<ChargingOrder> {
+    /**
+     * 分页查询订单列表
+     * @param page 分页参数
+     * @param queryParams 查询参数
+     * @return 订单DTO分页
+     */
+    IPage<OrderDTO> getOrderPage(Page<OrderDTO> page, ChargingOrder queryParams);
+
     boolean createOrderOnStart(Long stationId, Long chargerId, String sessionId, Long userId, Long billingPlanId);
     boolean completeOrderOnStop(String sessionId, Double energy, Long duration);
 

@@ -86,6 +86,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '充电桩管理', icon: 'Monitor' }
       },
       {
+        path: 'connectors',
+        name: 'Connectors',
+        component: () => import('@/views/charger/ConnectorList.vue'),
+        meta: { title: '充电枪管理', icon: 'Connection' }
+      },
+      {
         path: 'chargers/:id',
         name: 'ChargerDetail',
         component: () => import('@/views/charger/ChargerDetail.vue'),

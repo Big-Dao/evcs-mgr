@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { login as loginApi, logout as logoutApi, type LoginRequest, type LoginResponse, type LoginUserInfo } from '@/api/auth'
+import { login as loginApi, logout as logoutApi, type LoginRequest, type LoginUserInfo } from '@/api/auth'
 
 export const useUserStore = defineStore('user', () => {
   // State
@@ -37,7 +37,7 @@ export const useUserStore = defineStore('user', () => {
       await logoutApi()
     } catch (error) {
       console.warn('Logout API failed:', error)
-    } final {
+    } finally {
       clearState()
     }
   }

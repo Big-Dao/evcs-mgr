@@ -225,6 +225,9 @@ configure(subprojects.findAll { evcsK8sImageMap.containsKey(it.name) }) {
             image = "${evcsK8sRegistry}/${imageName}:${evcsK8sTag}"
         }
         allowInsecureRegistries = true
+        container {
+            creationTime = 'USE_CURRENT_TIMESTAMP'
+        }
     }
 }
 

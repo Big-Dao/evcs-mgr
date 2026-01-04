@@ -1,100 +1,186 @@
 <template>
   <el-container class="layout-container">
-    <el-aside width="200px">
+    <el-aside width="220px">
       <div class="logo">
-        <el-icon style="font-size: 32px; color: #409eff;"><Lightning /></el-icon>
-        <span>EVCS Manager</span>
+        <img src="/logo.png" alt="logo" style="width: 28px; height: 28px;" />
+        <span class="logo-text">铁林慧充</span>
       </div>
       <el-menu
         :default-active="activeMenu"
+        :default-openeds="['common', 'operation', 'device', 'station', 'finance', 'org']"
         router
         class="sidebar-menu"
+        text-color="#606266"
+        active-text-color="#409EFF"
       >
         <el-menu-item index="/dashboard">
-          <el-icon><DataAnalysis /></el-icon>
-          <span>仪表盘</span>
+          <el-icon><HomeFilled /></el-icon>
+          <span>首页</span>
         </el-menu-item>
-        <el-sub-menu index="/tenants">
+        
+        <el-sub-menu index="common">
           <template #title>
-            <el-icon><OfficeBuilding /></el-icon>
-            <span>租户管理</span>
+            <div class="common-menu-title">
+              <div class="title-content">
+                <el-icon><Menu /></el-icon>
+                <span>常用</span>
+              </div>
+              <el-icon class="setting-icon" @click.stop="openCommonConfig"><Setting /></el-icon>
+            </div>
           </template>
-          <el-menu-item index="/tenants">租户列表</el-menu-item>
-          <el-menu-item index="/tenants/tree">租户树形</el-menu-item>
+          <el-menu-item v-for="item in commonMenuItems" :key="item.index" :index="item.index">
+            {{ item.title }}
+          </el-menu-item>
         </el-sub-menu>
-        <el-sub-menu index="/users">
+
+        <el-sub-menu index="operation">
           <template #title>
-            <el-icon><User /></el-icon>
-            <span>用户管理</span>
+            <el-icon><TrendCharts /></el-icon>
+            <span>运营</span>
           </template>
-          <el-menu-item index="/users">用户列表</el-menu-item>
-          <el-menu-item index="/roles">角色管理</el-menu-item>
-        </el-sub-menu>
-        <el-sub-menu index="/stations">
-          <template #title>
-            <el-icon><Location /></el-icon>
-            <span>充电站管理</span>
-          </template>
-          <el-menu-item index="/stations">充电站列表</el-menu-item>
-          <el-menu-item index="/stations/map-analytics">地图分析</el-menu-item>
-        </el-sub-menu>
-        <el-menu-item index="/chargers">
-          <el-icon><Monitor /></el-icon>
-          <span>充电桩管理</span>
-        </el-menu-item>
-        <el-sub-menu index="/orders">
-          <template #title>
-            <el-icon><Document /></el-icon>
-            <span>订单管理</span>
-          </template>
-          <el-menu-item index="/orders">订单列表</el-menu-item>
+          <el-menu-item index="/stations/map-analytics">订单地区分析</el-menu-item>
+          <el-menu-item index="/orders">充电订单</el-menu-item>
+          <el-menu-item index="/billing-plans">计费方案</el-menu-item>
           <el-menu-item index="/orders/dashboard">订单统计</el-menu-item>
         </el-sub-menu>
-        <el-menu-item index="/billing-plans">
-          <el-icon><Coin /></el-icon>
-          <span>计费方案</span>
-        </el-menu-item>
+
+        <el-sub-menu index="device">
+          <template #title>
+            <el-icon><Tools /></el-icon>
+            <span>设备</span>
+          </template>
+          <el-menu-item index="/chargers">充电桩</el-menu-item>
+          <el-menu-item index="/connectors">充电枪</el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="station">
+          <template #title>
+            <el-icon><Location /></el-icon>
+            <span>场站</span>
+          </template>
+          <el-menu-item index="/stations">充电站</el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="finance">
+          <template #title>
+            <el-icon><Money /></el-icon>
+            <span>财务</span>
+          </template>
+          <el-menu-item index="/orders/dashboard">订单结算</el-menu-item>
+        </el-sub-menu>
+        
+        <el-sub-menu index="org">
+          <template #title>
+            <el-icon><User /></el-icon>
+            <span>组织</span>
+          </template>
+          <el-menu-item index="/tenants">租户管理</el-menu-item>
+          <el-menu-item index="/users">账号管理</el-menu-item>
+          <el-menu-item index="/roles">角色管理</el-menu-item>
+        </el-sub-menu>
       </el-menu>
     </el-aside>
     <el-container>
       <el-header>
-        <div class="header-content">
-          <span class="page-title">{{ pageTitle }}</span>
-          <div class="user-info">
-            <el-dropdown @command="onUserCommand">
-              <span class="el-dropdown-link">
-                <el-icon><Avatar /></el-icon>
-                {{ username }}
-                <el-icon><ArrowDown /></el-icon>
-              </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item command="profile">个人中心</el-dropdown-item>
-                  <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
-          </div>
+        <div class="header-left">
+           <el-breadcrumb separator="/">
+            <el-breadcrumb-item>铁林超光(深圳)绿能科技有限公司</el-breadcrumb-item>
+            <el-breadcrumb-item>
+              <el-dropdown>
+                <span class="el-dropdown-link">
+                  铁林超光-怡景花园充电站
+                  <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </span>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item>怡景花园充电站</el-dropdown-item>
+                    <el-dropdown-item>科技园充电站</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
+            </el-breadcrumb-item>
+          </el-breadcrumb>
+        </div>
+        <div class="header-right">
+          <el-tooltip content="下载APP" placement="bottom">
+            <el-icon class="header-icon"><Download /></el-icon>
+          </el-tooltip>
+          <el-tooltip content="设置" placement="bottom">
+            <el-icon class="header-icon"><Setting /></el-icon>
+          </el-tooltip>
+          <el-tooltip content="消息" placement="bottom">
+            <el-badge is-dot class="item">
+              <el-icon class="header-icon"><Bell /></el-icon>
+            </el-badge>
+          </el-tooltip>
+          <el-dropdown @command="onUserCommand">
+            <span class="user-dropdown-link">
+              <el-avatar :size="32" src="https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png" />
+              <span class="username">{{ username }}</span>
+            </span>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人中心</el-dropdown-item>
+                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
         </div>
       </el-header>
       <el-main>
         <router-view />
       </el-main>
     </el-container>
+
+    <!-- Common Menu Configuration Dialog -->
+    <el-dialog
+      v-model="configVisible"
+      title="常用菜单配置"
+      width="500px"
+      :close-on-click-modal="false"
+    >
+      <div class="menu-config-container">
+        <div v-for="group in allMenus" :key="group.id" class="menu-group">
+          <div class="group-title">{{ group.title }}</div>
+          <div class="group-items">
+            <el-checkbox-group v-model="selectedMenus">
+              <el-checkbox 
+                v-for="item in group.children" 
+                :key="item.index" 
+                :label="item.title"
+                :value="item.index"
+              >
+                {{ item.title }}
+              </el-checkbox>
+            </el-checkbox-group>
+          </div>
+        </div>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="configVisible = false">取消</el-button>
+          <el-button type="primary" @click="saveCommonConfig">确定</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </el-container>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { 
+  User, Location, 
+  ArrowDown, HomeFilled, Menu, TrendCharts, Tools, Money, Download, Setting, Bell
+} from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
 const activeMenu = computed(() => route.path)
-const pageTitle = computed(() => route.meta.title as string || '')
 const username = computed(() => userStore.username || '管理员')
 
 const handleLogout = async () => {
@@ -105,6 +191,92 @@ const onUserCommand = (cmd: string) => {
   if (cmd === 'profile') router.push('/profile')
   if (cmd === 'logout') handleLogout()
 }
+
+// Common Menu Configuration
+const configVisible = ref(false)
+const selectedMenus = ref<string[]>([])
+const commonMenuItems = ref<any[]>([])
+
+// Define all available menus for configuration
+const allMenus = [
+  {
+    id: 'operation',
+    title: '运营',
+    children: [
+      { index: '/stations/map-analytics', title: '订单地区分析' },
+      { index: '/orders', title: '充电订单' },
+      { index: '/billing-plans', title: '计费方案' },
+      { index: '/orders/dashboard', title: '订单统计' }
+    ]
+  },
+  {
+    id: 'device',
+    title: '设备',
+    children: [
+      { index: '/chargers', title: '充电桩' },
+      { index: '/connectors', title: '充电枪' }
+    ]
+  },
+  {
+    id: 'station',
+    title: '场站',
+    children: [
+      { index: '/stations', title: '充电站' }
+    ]
+  },
+  {
+    id: 'finance',
+    title: '财务',
+    children: [
+      { index: '/orders/dashboard', title: '订单结算' }
+    ]
+  },
+  {
+    id: 'org',
+    title: '组织',
+    children: [
+      { index: '/tenants', title: '租户管理' },
+      { index: '/users', title: '账号管理' },
+      { index: '/roles', title: '角色管理' }
+    ]
+  }
+]
+
+const openCommonConfig = () => {
+  // Load current selection from commonMenuItems
+  selectedMenus.value = commonMenuItems.value.map(item => item.index)
+  configVisible.value = true
+}
+
+const saveCommonConfig = () => {
+  // Flatten all menus to find titles for selected indices
+  const flatMenus = allMenus.flatMap(group => group.children)
+  
+  const newCommonItems = selectedMenus.value.map(index => {
+    const found = flatMenus.find(item => item.index === index)
+    return found ? { ...found } : null
+  }).filter(item => item !== null)
+
+  commonMenuItems.value = newCommonItems
+  
+  // Save to localStorage
+  localStorage.setItem('user_common_menus', JSON.stringify(newCommonItems))
+  
+  configVisible.value = false
+  ElMessage.success('常用菜单配置已保存')
+}
+
+onMounted(() => {
+  // Load saved common menus
+  const saved = localStorage.getItem('user_common_menus')
+  if (saved) {
+    try {
+      commonMenuItems.value = JSON.parse(saved)
+    } catch (e) {
+      console.error('Failed to parse common menus', e)
+    }
+  }
+})
 </script>
 
 <style scoped>
@@ -113,161 +285,28 @@ const onUserCommand = (cmd: string) => {
 }
 
 .el-aside {
-  background-color: #2c3e50;
-  color: #fff;
+  background-color: #ffffff;
+  border-right: 1px solid #e6e6e6;
+  transition: width 0.3s;
 }
 
 .logo {
   display: flex;
   align-items: center;
-  justify-content: center;
+  padding-left: 20px;
   height: 60px;
-  font-size: 20px;
-  font-weight: bold;
-  color: #ffffff;
   gap: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
 }
 
 .sidebar-menu {
   border-right: none;
-  background-color: #2c3e50;
-}
-
-/* 默认状态 - 未选中，未悬停 */
-.sidebar-menu :deep(.el-menu-item) {
-  color: #b8c7ce;
-  font-weight: 400;
-  transition: all 0.3s ease;
-  border-left: 3px solid transparent;
-}
-
-/* 悬停状态 - 鼠标划过但未选中 */
-.sidebar-menu :deep(.el-menu-item:hover) {
-  background-color: #34495e !important;
-  color: #ffffff;
-  border-left: 3px solid #409eff;
-}
-
-/* 选中状态 - 当前页面 */
-.sidebar-menu :deep(.el-menu-item.is-active) {
-  background-color: #409eff !important;
-  color: #ffffff;
-  font-weight: 600;
-  border-left: 3px solid #66b1ff;
-}
-
-/* 选中且悬停状态 */
-.sidebar-menu :deep(.el-menu-item.is-active:hover) {
-  background-color: #66b1ff !important;
-  color: #ffffff;
-  border-left: 3px solid #a0cfff;
-}
-
-/* 菜单项图标样式 */
-.sidebar-menu :deep(.el-menu-item .el-icon) {
-  color: inherit;
-  transition: all 0.3s ease;
-}
-
-/* ========== 子菜单样式 ========== */
-
-/* 子菜单标题 - 默认状态 */
-.sidebar-menu :deep(.el-sub-menu__title) {
-  color: #b8c7ce;
-  font-weight: 400;
-  transition: all 0.3s ease;
-  border-left: 3px solid transparent;
-}
-
-/* 子菜单标题 - 悬停状态 */
-.sidebar-menu :deep(.el-sub-menu__title:hover) {
-  background-color: #34495e !important;
-  color: #ffffff;
-  border-left: 3px solid #409eff;
-}
-
-/* 子菜单标题图标 */
-.sidebar-menu :deep(.el-sub-menu__title .el-icon) {
-  color: inherit;
-}
-
-/* ========== 内嵌子菜单（展开式）========== */
-
-/* 子菜单容器背景 */
-.sidebar-menu :deep(.el-sub-menu .el-menu) {
-  background-color: #344A5F !important;
-}
-
-/* 内嵌子菜单项 - 默认状态 */
-.sidebar-menu :deep(.el-sub-menu .el-menu .el-menu-item) {
-  background-color: #344A5F !important;
-  color: #c8d1d9 !important;
-  font-weight: 400;
-  border-left: 3px solid transparent;
-  padding-left: 50px !important;
-  min-width: auto !important;
-}
-
-/* 内嵌子菜单项 - 悬停状态 */
-.sidebar-menu :deep(.el-sub-menu .el-menu .el-menu-item:hover) {
-  background-color: #2d3e50 !important;
-  color: #ffffff !important;
-  border-left: 3px solid #409eff;
-}
-
-/* 内嵌子菜单项 - 选中状态 */
-.sidebar-menu :deep(.el-sub-menu .el-menu .el-menu-item.is-active) {
-  background-color: #409eff !important;
-  color: #ffffff !important;
-  font-weight: 600;
-  border-left: 3px solid #66b1ff;
-}
-
-/* 内嵌子菜单项 - 选中且悬停 */
-.sidebar-menu :deep(.el-sub-menu .el-menu .el-menu-item.is-active:hover) {
-  background-color: #66b1ff !important;
-  color: #ffffff !important;
-  border-left: 3px solid #a0cfff;
-}
-
-/* ========== 弹出式子菜单（备用）========== */
-
-/* 子菜单弹出层背景 */
-.sidebar-menu :deep(.el-menu--popup) {
-  background-color: #23313f !important;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-/* 子菜单项 - 默认状态 */
-.sidebar-menu :deep(.el-menu--popup .el-menu-item) {
-  background-color: #23313f !important;
-  color: #c8d1d9 !important;
-  font-weight: 400;
-  border-left: 3px solid transparent;
-  padding-left: 40px !important;
-}
-
-/* 子菜单项 - 悬停状态 */
-.sidebar-menu :deep(.el-menu--popup .el-menu-item:hover) {
-  background-color: #2d3e50 !important;
-  color: #ffffff !important;
-  border-left: 3px solid #3498db;
-}
-
-/* 子菜单项 - 选中状态 */
-.sidebar-menu :deep(.el-menu--popup .el-menu-item.is-active) {
-  background-color: #1a252f !important;
-  color: #3498db !important;
-  font-weight: 600;
-  border-left: 3px solid #3498db;
-}
-
-/* 子菜单项 - 选中且悬停 */
-.sidebar-menu :deep(.el-menu--popup .el-menu-item.is-active:hover) {
-  background-color: #1a252f !important;
-  color: #5dade2 !important;
-  border-left: 3px solid #5dade2;
 }
 
 .el-header {
@@ -275,35 +314,143 @@ const onUserCommand = (cmd: string) => {
   border-bottom: 1px solid #e6e6e6;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 20px;
+  height: 60px;
 }
 
-.header-content {
-  width: 100%;
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.header-icon {
+  font-size: 20px;
+  color: #606266;
+  cursor: pointer;
+}
+
+.header-icon:hover {
+  color: #409EFF;
+}
+
+.user-dropdown-link {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 8px;
+}
+
+.username {
+  font-size: 14px;
+  color: #606266;
+}
+
+.el-main {
+  background-color: #f5f7fa;
+  padding: 20px;
+}
+
+/* Menu Item Styles */
+:deep(.el-menu-item) {
+  border-left: 3px solid transparent;
+}
+
+:deep(.el-menu-item.is-active) {
+  background-color: #e6f7ff;
+  border-left-color: #1890ff;
+  color: #1890ff;
+}
+
+:deep(.el-sub-menu__title:hover), :deep(.el-menu-item:hover) {
+  background-color: #f5f7fa;
+}
+
+/* Two-column Submenu Layout */
+:deep(.el-sub-menu .el-menu) {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 5px;
+}
+
+:deep(.el-sub-menu .el-menu .el-menu-item) {
+  width: 50%;
+  min-width: auto;
+  padding: 0 !important;
+  height: 36px;
+  line-height: 36px;
+  justify-content: center;
+  margin: 2px 0;
+  border-radius: 4px;
+  border-left: none;
+  font-size: 13px;
+}
+
+:deep(.el-sub-menu .el-menu .el-menu-item.is-active) {
+  background-color: #e6f7ff;
+  color: #1890ff;
+  font-weight: bold;
+}
+
+/* Common Menu Config Styles */
+.common-menu-title {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
+  padding-right: 20px; /* Adjust for arrow */
 }
 
-.page-title {
-  font-size: 18px;
-  font-weight: 500;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-}
-
-.el-dropdown-link {
-  cursor: pointer;
+.title-content {
   display: flex;
   align-items: center;
   gap: 5px;
 }
 
-.el-main {
-  background-color: #f0f2f5;
-  padding: 20px;
+.setting-icon {
+  font-size: 14px;
+  color: #909399;
+  cursor: pointer;
+  display: none; /* Hidden by default */
+}
+
+:deep(.el-sub-menu__title:hover) .setting-icon {
+  display: block; /* Show on hover */
+}
+
+.setting-icon:hover {
+  color: #409EFF;
+}
+
+.menu-config-container {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.menu-group {
+  margin-bottom: 15px;
+}
+
+.group-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: #303133;
+  border-left: 3px solid #409EFF;
+  padding-left: 8px;
+}
+
+.group-items {
+  padding-left: 10px;
+}
+
+.el-checkbox {
+  margin-right: 15px;
+  margin-bottom: 5px;
 }
 </style>
