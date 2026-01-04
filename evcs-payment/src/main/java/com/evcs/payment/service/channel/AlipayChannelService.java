@@ -10,7 +10,9 @@ import com.alipay.api.domain.AlipayTradeQueryModel;
 import com.alipay.api.domain.AlipayTradeRefundModel;
 import com.alipay.api.request.AlipayTradeAppPayRequest;
 import com.alipay.api.request.AlipayTradeCreateRequest;
-import com.alipay.api.request.AlipayTradePagePayRequest;import com.alipay.api.internal.util.AlipaySignature;import com.alipay.api.request.AlipayTradePrecreateRequest;
+import com.alipay.api.request.AlipayTradePagePayRequest;
+import com.alipay.api.internal.util.AlipaySignature;
+import com.alipay.api.request.AlipayTradePrecreateRequest;
 import com.alipay.api.request.AlipayTradeQueryRequest;
 import com.alipay.api.request.AlipayTradeRefundRequest;
 import com.alipay.api.response.AlipayTradeAppPayResponse;
@@ -28,6 +30,8 @@ import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -46,10 +50,16 @@ public class AlipayChannelService implements IPaymentChannel {
 
     private final AlipayConfig alipayConfig;
 
+    private final Environment environment;
+
+    private boolean isProduction() {
+        return environment.acceptsProfiles(Profiles.of("prod", "production"));
+    }
+
     @Override
     public PaymentResponse createPayment(PaymentRequest request) {
-        log.info("创建支付宝支付订单: orderId={}, amount={}, method={}",
-            request.getOrderId(), request.getAmount(), request.getPaymentMethod());
+        log.info("创建支付宝支付订单: orderId={}, amount={}, method={}", request.getOrderId(), request.getAmount(),
+                request.getPaymentMethod());
 
         PaymentResponse response = new PaymentResponse();
         String tradeNo = request.getTradeNo();
@@ -64,35 +74,38 @@ public class AlipayChannelService implements IPaymentChannel {
             AlipayClient alipayClient = alipayClientFactory.getAlipayClient();
 
             switch (request.getPaymentMethod()) {
-                case ALIPAY_APP:
-                    response = createAppPay(alipayClient, request, tradeNo);
-                    break;
-                case ALIPAY_QR:
-                    response = createQrPay(alipayClient, request, tradeNo);
-                    break;
-                default:
-                    throw new IllegalArgumentException("不支持的支付宝支付方式: " + request.getPaymentMethod());
+            case ALIPAY_APP:
+                response = createAppPay(alipayClient, request, tradeNo);
+                break;
+            case ALIPAY_QR:
+                response = createQrPay(alipayClient, request, tradeNo);
+                break;
+            default:
+                throw new IllegalArgumentException("不支持的支付宝支付方式: " + request.getPaymentMethod());
             }
 
             log.info("支付宝支付订单创建成功: tradeNo={}, method={}", tradeNo, request.getPaymentMethod());
 
         } catch (AlipayApiException e) {
             log.error("支付宝API调用失败: {}", e.getMessage(), e);
-            // 回退到模拟实现
-            log.warn("回退到模拟实现");
+            if (isProduction()) {
+                throw new RuntimeException("支付宝支付调用失败: " + e.getErrMsg(), e);
+            }
+            // 回退到模拟实现（仅限非生产环境）
+            log.warn("非生产环境：回退到模拟实现");
             switch (request.getPaymentMethod()) {
-                case ALIPAY_APP:
-                    response.setPayParams("alipay_app_params_mock_" + tradeNo);
-                    break;
-                case ALIPAY_QR:
-                    response.setPayUrl("https://qr.alipay.com/mock/" + tradeNo);
-                    break;
-                default:
-                    throw new IllegalArgumentException("不支持的支付方式: " + request.getPaymentMethod());
+            case ALIPAY_APP:
+                response.setPayParams("alipay_app_params_mock_" + tradeNo);
+                break;
+            case ALIPAY_QR:
+                response.setPayUrl("https://qr.alipay.com/mock/" + tradeNo);
+                break;
+            default:
+                throw new IllegalArgumentException("不支持的支付方式: " + request.getPaymentMethod());
             }
         } catch (Exception e) {
             log.error("创建支付宝支付订单失败", e);
-            throw new RuntimeException("创建支付宝支付订单失败: " + e.getMessage(), e);
+            throw new RuntimeException("创建支付宝支付订单失败: " + (e.getMessage() != null ? e.getMessage() : "未知错误"), e);
         }
 
         log.info("支付宝支付订单创建成功: tradeNo={}", response.getTradeNo());
@@ -132,7 +145,14 @@ public class AlipayChannelService implements IPaymentChannel {
                 return result;
             } else {
                 log.warn("支付宝支付状态查询失败: tradeNo={}, error={}", tradeNo, response.getSubMsg());
-                // 回退到模拟实现
+                if (isProduction()) {
+                    PaymentResponse errorResult = new PaymentResponse();
+                    errorResult.setTradeNo(tradeNo);
+                    errorResult.setStatus(PaymentStatus.FAILED);
+                    return errorResult;
+                }
+                // 非生产环境回退到模拟实现
+                log.warn("非生产环境：回退到模拟实现");
                 PaymentResponse fallbackResponse = new PaymentResponse();
                 fallbackResponse.setTradeNo(tradeNo);
                 fallbackResponse.setStatus(PaymentStatus.SUCCESS);
@@ -154,8 +174,7 @@ public class AlipayChannelService implements IPaymentChannel {
 
     @Override
     public RefundResponse refund(RefundRequest request) {
-        log.info("发起支付宝退款: paymentId={}, amount={}",
-            request.getPaymentId(), request.getRefundAmount());
+        log.info("发起支付宝退款: paymentId={}, amount={}", request.getPaymentId(), request.getRefundAmount());
 
         try {
             AlipayClient alipayClient = alipayClientFactory.getAlipayClient();
@@ -176,12 +195,15 @@ public class AlipayChannelService implements IPaymentChannel {
                 result.setRefundAmount(request.getRefundAmount());
                 result.setRefundStatus("SUCCESS");
 
-                log.info("支付宝退款成功: refundNo={}, amount={}",
-                    result.getRefundNo(), result.getRefundAmount());
+                log.info("支付宝退款成功: refundNo={}, amount={}", result.getRefundNo(), result.getRefundAmount());
                 return result;
             } else {
                 log.warn("支付宝退款失败: error={}", response.getSubMsg());
-                // 回退到模拟实现
+                if (isProduction()) {
+                    throw new RuntimeException("支付宝退款失败: " + response.getSubMsg());
+                }
+                // 非生产环境回退到模拟实现
+                log.warn("非生产环境：回退到模拟实现");
                 RefundResponse fallbackResponse = new RefundResponse();
                 fallbackResponse.setRefundNo(UUID.randomUUID().toString());
                 fallbackResponse.setRefundAmount(request.getRefundAmount());
@@ -209,8 +231,8 @@ public class AlipayChannelService implements IPaymentChannel {
         try {
             // 使用支付宝公钥验证签名
             // data应该是待签名的内容（通常是排序后的参数字符串）
-            return AlipaySignature.rsaCheckContent(data, signature, 
-                alipayConfig.getAlipayPublicKey(), alipayConfig.getCharset());
+            return AlipaySignature.rsaCheckContent(data, signature, alipayConfig.getAlipayPublicKey(),
+                    alipayConfig.getCharset());
         } catch (AlipayApiException e) {
             log.error("支付宝签名验证失败: {}", e.getMessage());
             return false;
@@ -234,7 +256,8 @@ public class AlipayChannelService implements IPaymentChannel {
     /**
      * 创建APP支付
      */
-    private PaymentResponse createAppPay(AlipayClient alipayClient, PaymentRequest request, String tradeNo) throws AlipayApiException {
+    private PaymentResponse createAppPay(AlipayClient alipayClient, PaymentRequest request, String tradeNo)
+            throws AlipayApiException {
         AlipayTradeAppPayRequest alipayRequest = new AlipayTradeAppPayRequest();
         alipayRequest.setNotifyUrl(alipayConfig.getNotifyUrl());
 
@@ -259,7 +282,8 @@ public class AlipayChannelService implements IPaymentChannel {
     /**
      * 创建扫码支付
      */
-    private PaymentResponse createQrPay(AlipayClient alipayClient, PaymentRequest request, String tradeNo) throws AlipayApiException {
+    private PaymentResponse createQrPay(AlipayClient alipayClient, PaymentRequest request, String tradeNo)
+            throws AlipayApiException {
         AlipayTradePrecreateRequest alipayRequest = new AlipayTradePrecreateRequest();
         alipayRequest.setNotifyUrl(alipayConfig.getNotifyUrl());
 
