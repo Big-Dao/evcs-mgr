@@ -62,6 +62,8 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
                 station.setStationCode(TestDataFactory.generateCode("TENANT1"));
                 station.setStationName("租户1充电站" + i);
                 station.setAddress("地址" + i);
+                station.setLatitude(39.9087);
+                station.setLongitude(116.4089);
                 station.setStatus(1);
                 stationService.saveStation(station);
             }
@@ -74,6 +76,8 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
                 station.setStationCode(TestDataFactory.generateCode("TENANT2"));
                 station.setStationName("租户2充电站" + i);
                 station.setAddress("地址" + i);
+                station.setLatitude(39.9087);
+                station.setLongitude(116.4089);
                 station.setStatus(1);
                 stationService.saveStation(station);
             }
@@ -109,6 +113,8 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
             station.setStationCode(TestDataFactory.generateCode("TENANT1"));
             station.setStationName("原始名称");
             station.setAddress("原始地址");
+            station.setLatitude(39.9087);
+            station.setLongitude(116.4089);
             station.setStatus(1);
             stationService.saveStation(station);
             return station.getStationId();
@@ -145,6 +151,8 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
             station.setStationCode(TestDataFactory.generateCode("TENANT1"));
             station.setStationName("待删除充电站");
             station.setAddress("地址");
+            station.setLatitude(39.9087);
+            station.setLongitude(116.4089);
             station.setStatus(1);
             stationService.saveStation(station);
             return station.getStationId();
@@ -175,6 +183,8 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
             station.setStationCode(sameCode);
             station.setStationName("租户1的充电站");
             station.setAddress("地址1");
+            station.setLatitude(39.9087);
+            station.setLongitude(116.4089);
             station.setStatus(1);
             stationService.saveStation(station);
         });
@@ -185,6 +195,8 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
             station.setStationCode(sameCode);
             station.setStationName("租户2的充电站");
             station.setAddress("地址2");
+            station.setLatitude(39.9087);
+            station.setLongitude(116.4089);
             station.setStatus(1);
             
             // 不同租户可以使用相同编码

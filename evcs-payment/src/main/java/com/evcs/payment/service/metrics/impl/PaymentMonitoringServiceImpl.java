@@ -1,9 +1,12 @@
 package com.evcs.payment.service.metrics.impl;
 
+import com.evcs.common.http.ContextPropagationClientHttpRequestInterceptor;
 import com.evcs.payment.config.MonitoringHealthProperties;
 import com.evcs.payment.dto.MetricsResponse;
 import com.evcs.payment.metrics.PaymentMetrics;
 import com.evcs.payment.service.metrics.PaymentMonitoringService;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.retry.Retry;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -44,6 +48,8 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
     private final MeterRegistry meterRegistry;
     private final JdbcTemplate jdbcTemplate;
     private final MonitoringHealthProperties monitoringHealthProperties;
+    private final CircuitBreaker paymentMonitoringApiCircuitBreaker;
+    private final Retry paymentMonitoringApiRetry;
 
     @Value("${evcs.payment.monitoring.enabled:true}")
     private boolean monitoringEnabled;
@@ -355,7 +361,11 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
         RestTemplate restTemplate = getApiHealthRestTemplate();
         for (String endpoint : endpoints) {
             try {
-                ResponseEntity<String> response = restTemplate.getForEntity(endpoint, String.class);
+                Supplier<ResponseEntity<String>> supplier = () -> restTemplate.getForEntity(endpoint, String.class);
+                supplier = CircuitBreaker.decorateSupplier(paymentMonitoringApiCircuitBreaker, supplier);
+                supplier = Retry.decorateSupplier(paymentMonitoringApiRetry, supplier);
+
+                ResponseEntity<String> response = supplier.get();
                 if (response.getStatusCode().is2xxSuccessful() && responseMatchesExpectation(response.getBody())) {
                     healthyCount++;
                 } else {
@@ -429,7 +439,9 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
                     SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
                     factory.setConnectTimeout((int) monitoringHealthProperties.getApi().getTimeoutMs());
                     factory.setReadTimeout((int) monitoringHealthProperties.getApi().getTimeoutMs());
-                    apiHealthRestTemplate = new RestTemplate(factory);
+                    RestTemplate restTemplate = new RestTemplate(factory);
+                    restTemplate.getInterceptors().add(new ContextPropagationClientHttpRequestInterceptor());
+                    apiHealthRestTemplate = restTemplate;
                 }
             }
         }

@@ -1,5 +1,6 @@
 package com.evcs.payment.config;
 
+import com.evcs.common.http.ContextPropagationClientHttpRequestInterceptor;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -62,6 +63,9 @@ public class OrderSyncConfig {
     @Bean
     public RestTemplate orderSyncRestTemplate() {
         RestTemplate restTemplate = new RestTemplate();
+
+        // Propagate tenant + trace context to downstream services
+        restTemplate.getInterceptors().add(new ContextPropagationClientHttpRequestInterceptor());
 
         // 配置超时时间
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();

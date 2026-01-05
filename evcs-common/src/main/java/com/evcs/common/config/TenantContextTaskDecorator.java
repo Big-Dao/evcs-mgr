@@ -3,8 +3,11 @@ package com.evcs.common.config;
 import com.evcs.common.tenant.TenantContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.core.task.TaskDecorator;
 import org.springframework.stereotype.Component;
+
+import java.util.Map;
 
 /**
  * TaskDecorator that propagates the current thread's {@link TenantContext} into async tasks.
@@ -49,6 +52,7 @@ public class TenantContextTaskDecorator implements TaskDecorator {
     public Runnable decorate(Runnable runnable) {
         // Capture the submitting (caller) thread's tenant context at the moment the task is scheduled.
         final TenantContextSnapshot captured = TenantContextSnapshot.capture();
+        final Map<String, String> capturedMdc = MDC.getCopyOfContextMap();
 
         // Return a wrapper that applies the captured context when the task runs and restores the
         // worker thread's previous context afterwards.
@@ -56,10 +60,17 @@ public class TenantContextTaskDecorator implements TaskDecorator {
             // Snapshot the current worker thread context so we can restore it later.
             final TenantContextSnapshot previous =
                 TenantContextSnapshot.capture();
+            final Map<String, String> previousMdc = MDC.getCopyOfContextMap();
 
             try {
                 // Apply captured context for this task (this will clear first, then set values).
                 captured.apply();
+
+                if (capturedMdc == null || capturedMdc.isEmpty()) {
+                    MDC.clear();
+                } else {
+                    MDC.setContextMap(capturedMdc);
+                }
                 if (log.isTraceEnabled()) {
                     log.trace(
                         "TenantContext propagated to async task: {}",
@@ -73,8 +84,17 @@ public class TenantContextTaskDecorator implements TaskDecorator {
                 // Always clear to avoid leaking the captured context to subsequent tasks.
                 TenantContext.clear();
 
+                // Clear MDC to avoid leaking request/trace context to subsequent tasks.
+                MDC.clear();
+
                 // Restore any previous context that existed on the worker thread.
                 previous.apply();
+
+                if (previousMdc == null || previousMdc.isEmpty()) {
+                    MDC.clear();
+                } else {
+                    MDC.setContextMap(previousMdc);
+                }
                 if (log.isTraceEnabled()) {
                     log.trace(
                         "TenantContext restored after async task: {}",

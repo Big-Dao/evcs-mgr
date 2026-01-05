@@ -1,6 +1,6 @@
 # EVCS 充电站管理系统 — 编程与架构规范（SSOT）
 
-版本：v1.2｜最后更新：2025-12-18｜维护：技术负责人｜状态：活跃
+版本：v1.2｜最后更新：2026-01-05｜维护：技术负责人｜状态：活跃
 
 本文件为“单一来源”（Single Source of Truth，SSOT）编码与架构规范。助手使用说明请参见 `docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md`，不要在本文件重复助手指令。
 
@@ -86,6 +86,11 @@ Controller ← Service ← Domain/Repository ← Entity
 - 禁止在 INFO 打印敏感信息；DEBUG 受配置门控
 - 性能关键环节记录耗时与关键指标
 
+#### traceId / requestId 统一口径
+- Header：优先使用 `X-Trace-Id`；兼容 `X-Request-Id`（如网关或旧客户端仍使用该 header）。
+- MDC：统一写入 `traceId`（并兼容写入 `requestId`，便于旧日志模板/查询继续工作）。
+- 响应：对统一 `Result<T>` 响应自动补齐 `traceId` 字段，业务代码不应手动拼装 traceId。
+
 ### 参数校验
 - 使用 Bean Validation（`@Valid`, `@NotNull` 等）
 - Controller 输入校验与错误提示一致化；避免在 Service 再做重复校验
@@ -115,6 +120,14 @@ Controller ← Service ← Domain/Repository ← Entity
 ## 质量与性能要求
 - 测试：核心路径必须具备单元测试与必要的集成测试；覆盖率达到团队门槛
 - 代码质量：静态检查（SpotBugs/Checkstyle）与安全审计通过；关键路径考虑缓存与性能
+- 门禁：`./gradlew check` 默认包含 `forbidThreadingPrimitives`，生产代码出现 `new Thread(...)` / `Executors.*` 等将直接失败（需改为 Spring `@Async/@Scheduled` 或上下文传播执行器）。
+- 门禁开关：支持 `off|warn|fail` 三种模式，通过 `-Devcs.gate.threading=warn`（或环境变量 `EVCS_GATE_THREADING=warn`）配置；默认 `fail`。
+- 例外：如确有必要（例如极底层封装且已审阅），可在文件头 40 行内添加 `// EVCS_ALLOW_THREADING_PRIMITIVES: <reason>` 进行豁免；必须写明原因并控制影响范围。
+- 门禁：`./gradlew check` 默认包含 `forbidAsyncContextLoss`，生产代码出现 `CompletableFuture.runAsync/supplyAsync/then*Async/...` 未显式传入 `Executor`、或 `parallelStream()/parallel()`、或 `ForkJoinPool.commonPool()`、或 Spring `@Async` 未显式指定 executor（应使用 `@Async("chargingExecutor")`）、或 Reactor `Schedulers.parallel/boundedElastic/...` / `publishOn|subscribeOn(Schedulers.*)`（内联）将直接失败。
+- 门禁开关：支持 `off|warn|fail` 三种模式，通过 `-Devcs.gate.async=warn`（或环境变量 `EVCS_GATE_ASYNC=warn`）配置；默认 `fail`。
+- 例外：如确有必要，可在文件头 40 行内添加 `// EVCS_ALLOW_ASYNC_CONTEXT_LOSS: <reason>` 进行豁免；必须写明原因并控制影响范围。
+- Reactor 推荐：需要显式线程切换时，优先注入“受管 Scheduler”，例如网关提供的 `evcsReactorScheduler`（见 `com.evcs.gateway.config.ReactorSchedulerConfig`），避免直接调用 `Schedulers.parallel()/boundedElastic()`。
+  - 最小示例（示意）：`mono.publishOn(evcsReactorScheduler)` / `mono.subscribeOn(evcsReactorScheduler)`
 - 监控：埋点与指标（QPS/RT/ErrorRate），健康检查与告警链路完整
 
 ---

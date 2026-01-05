@@ -34,21 +34,33 @@ public class ChargerStatusManager {
         // IDLE -> CHARGING, BOOKED, OFFLINE, FAULT, MAINTAIN
         TRANSITIONS.put(ChargerStatus.IDLE, EnumSet.allOf(ChargerStatus.class)); // 允许跳到任何状态（除了自己，但也允许）
 
-        // CHARGING -> IDLE, FAULT, OFFLINE
+        // CHARGING -> IDLE, BOOKED, FAULT, OFFLINE, MAINTAIN
         TRANSITIONS.put(ChargerStatus.CHARGING,
-                EnumSet.of(ChargerStatus.IDLE, ChargerStatus.FAULT, ChargerStatus.OFFLINE));
+            EnumSet.of(
+                ChargerStatus.IDLE,
+                ChargerStatus.BOOKED,
+                ChargerStatus.FAULT,
+                ChargerStatus.OFFLINE,
+                ChargerStatus.MAINTAIN
+            ));
 
-        // FAULT -> IDLE (recover), OFFLINE, MAINTAIN
+        // FAULT -> IDLE (recover), OFFLINE, MAINTAIN, CHARGING
         TRANSITIONS.put(ChargerStatus.FAULT,
-                EnumSet.of(ChargerStatus.IDLE, ChargerStatus.OFFLINE, ChargerStatus.MAINTAIN));
+            EnumSet.of(ChargerStatus.IDLE, ChargerStatus.OFFLINE, ChargerStatus.MAINTAIN, ChargerStatus.CHARGING));
 
-        // MAINTAIN -> IDLE, OFFLINE, FAULT
+        // MAINTAIN -> IDLE, OFFLINE, FAULT, CHARGING
         TRANSITIONS.put(ChargerStatus.MAINTAIN,
-                EnumSet.of(ChargerStatus.IDLE, ChargerStatus.OFFLINE, ChargerStatus.FAULT));
+            EnumSet.of(ChargerStatus.IDLE, ChargerStatus.OFFLINE, ChargerStatus.FAULT, ChargerStatus.CHARGING));
 
         // BOOKED -> IDLE, CHARGING, FAULT, OFFLINE
         TRANSITIONS.put(ChargerStatus.BOOKED,
-                EnumSet.of(ChargerStatus.IDLE, ChargerStatus.CHARGING, ChargerStatus.FAULT, ChargerStatus.OFFLINE));
+            EnumSet.of(
+                ChargerStatus.IDLE,
+                ChargerStatus.CHARGING,
+                ChargerStatus.FAULT,
+                ChargerStatus.MAINTAIN,
+                ChargerStatus.OFFLINE
+            ));
     }
 
     public ChargerStatusManager(StationMetrics stationMetrics, ApplicationEventPublisher eventPublisher) {

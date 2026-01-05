@@ -78,7 +78,7 @@ public class StationController {
         try {
             boolean success = stationService.saveStation(station);
             if (success) {
-                return Result.success("新增充电站成功");
+                return Result.successMessage("新增充电站成功");
             } else {
                 return Result.fail("新增充电站失败");
             }
@@ -106,7 +106,7 @@ public class StationController {
         try {
             boolean success = stationService.updateStation(station);
             if (success) {
-                return Result.success("更新充电站成功");
+                return Result.successMessage("更新充电站成功");
             } else {
                 return Result.fail("更新充电站失败");
             }
@@ -128,7 +128,7 @@ public class StationController {
         try {
             boolean success = stationService.deleteStation(stationId);
             if (success) {
-                return Result.success("删除充电站成功");
+                return Result.successMessage("删除充电站成功");
             } else {
                 return Result.fail("删除充电站失败");
             }
@@ -172,7 +172,7 @@ public class StationController {
         boolean success = stationService.changeStatus(stationId, status);
         if (success) {
             String action = status == 1 ? "启用" : "停用";
-            return Result.success(action + "充电站成功");
+            return Result.successMessage(action + "充电站成功");
         } else {
             return Result.fail("操作失败");
         }
@@ -217,7 +217,7 @@ public class StationController {
         try {
             boolean success = stationService.importStations(stations);
             if (success) {
-                return Result.success("导入充电站成功");
+                return Result.successMessage("导入充电站成功");
             } else {
                 return Result.fail("导入充电站失败");
             }

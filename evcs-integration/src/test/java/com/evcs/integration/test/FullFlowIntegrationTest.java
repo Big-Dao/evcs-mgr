@@ -74,6 +74,8 @@ class FullFlowIntegrationTest extends BaseIntegrationTest {
         Station station = new Station();
         station.setStationCode(TestDataFactory.generateCode("STATION"));
         station.setStationName("FullFlow Station");
+        station.setLatitude(39.9042);
+        station.setLongitude(116.4074);
         station.setStatus(1);
         stationService.saveStation(station);
 

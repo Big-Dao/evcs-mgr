@@ -1,5 +1,6 @@
 package com.evcs.protocol.config;
 
+import com.evcs.common.http.ContextPropagationClientHttpRequestInterceptor;
 import com.evcs.protocol.api.ProtocolManager;
 import com.evcs.protocol.api.ProtocolEventListener;
 import com.evcs.protocol.enums.ProtocolType;
@@ -10,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.List;
@@ -50,9 +52,17 @@ public class ProtocolServiceConfiguration {
      */
     @Bean
     @org.springframework.cloud.client.loadbalancer.LoadBalanced
-    @ConditionalOnProperty(name = "evcs.protocol.cloud-charge.enabled", havingValue = "true", matchIfMissing = true)
     public RestTemplate restTemplate() {
         RestTemplate restTemplate = new RestTemplate();
+
+        // Propagate tenant + trace context to downstream services
+        restTemplate.getInterceptors().add(new ContextPropagationClientHttpRequestInterceptor());
+
+        // Configure timeouts (resilience requirement)
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(protocolProperties.getCloudCharge().getConnectionTimeout());
+        factory.setReadTimeout(protocolProperties.getCloudCharge().getReadTimeout());
+        restTemplate.setRequestFactory(factory);
 
         // 可以在这里添加拦截器、消息转换器等配置
         // restTemplate.setInterceptors(List.of(new CloudChargeInterceptor()));

@@ -20,7 +20,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * 异步执行配置
  *
  * - 启用 Spring 的 {@code @Async} 支持
- * - 注册名为 {@code chargingExecutor} 的线程池（同时作为默认的 {@code taskExecutor}）
+ * - 注册名为 {@code chargingExecutor} 的线程池（同时提供别名 {@code taskExecutor}）
  * - 为线程池设置 {@link TenantContextTaskDecorator}，在调度异步任务时传递租户上下文
  *
  * 使用示例：
@@ -75,7 +75,9 @@ public class AsyncConfig implements AsyncConfigurer {
     }
 
     /**
-     * 将 chargingExecutor 作为默认的异步执行器返回（用于不显式指定 executor 的 @Async）。
+     * 为 Spring 的异步执行器提供默认值（兼容兜底）。
+     *
+     * 规范要求：业务代码应显式指定 {@code @Async("chargingExecutor")}，避免未来默认执行器调整引发行为变化。
      */
     @Override
     public Executor getAsyncExecutor() {

@@ -1,21 +1,16 @@
 package com.evcs.protocol.controller;
 
-import com.evcs.common.result.Result;
+import com.evcs.protocol.client.StationServiceClient;
 import com.evcs.protocol.dto.ChargerBasicInfo;
 import com.evcs.protocol.dto.ProtocolRequest;
 import com.evcs.protocol.service.CloudChargeSignatureValidator;
 import com.evcs.protocol.mq.ProtocolEventPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import jakarta.servlet.http.HttpServletRequest;
-import java.net.URI;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -32,7 +27,7 @@ public class CloudChargeController {
 
     private final CloudChargeSignatureValidator signatureValidator;
     private final ProtocolEventPublisher eventPublisher;
-    private final RestTemplate restTemplate;
+    private final StationServiceClient stationServiceClient;
 
     /**
      * 处理心跳请求
@@ -458,42 +453,7 @@ public class CloudChargeController {
      * 从设备服务获取充电桩信息
      */
     private ChargerBasicInfo fetchChargerInfo(String deviceCode) {
-        if (deviceCode == null) {
-            return null;
-        }
-        try {
-            // 使用服务名 'evcs-station' 调用
-            String url = "http://evcs-station/charger/code/" + deviceCode;
-            ParameterizedTypeReference<Result<ChargerBasicInfo>> typeRef = new ParameterizedTypeReference<>() {};
-            RequestEntity<Void> requestEntity = RequestEntity.get(requiredUri(url)).build();
-            ResponseEntity<Result<ChargerBasicInfo>> response = restTemplate.exchange(requestEntity, typeRef);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                return null;
-            }
-
-            Result<ChargerBasicInfo> result = response.getBody();
-            if (result == null) {
-                return null;
-            }
-
-            Integer code = result.getCode();
-            if (code != null && code == 200) {
-                return result.getData();
-            }
-        } catch (Exception e) {
-            log.error("Failed to fetch charger info for code: {}", deviceCode, e);
-        }
-        return null;
-    }
-
-    @NonNull
-    private static URI requiredUri(String url) {
-        URI uri = URI.create(url);
-        if (uri == null) {
-            throw new IllegalStateException("URI.create returned null");
-        }
-        return uri;
+        return stationServiceClient.getChargerByCode(deviceCode);
     }
 
     /**

@@ -146,7 +146,9 @@ class TenantControllerTest extends BaseControllerTest {
     @DisplayName("查询子租户列表 - 返回成功")
     void testGetSubTenants() throws Exception {
         // Given: 创建父子租户
-        SysTenant parent = createAndSaveTenant("SUB_CTRL_P", "父租户");
+        SysTenant parent = createTestTenant("SUB_CTRL_P", "父租户");
+        parent.setParentId(getTestTenantId());
+        sysTenantService.saveTenant(parent);
 
         SysTenant child1 = createTestTenant("SUB_CTRL_C1", "子租户1");
         child1.setParentId(parent.getId());

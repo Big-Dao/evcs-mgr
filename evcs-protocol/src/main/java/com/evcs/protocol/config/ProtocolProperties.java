@@ -46,6 +46,11 @@ public class ProtocolProperties {
     private RetryConfig retry = new RetryConfig();
 
     /**
+     * 弹性与容错配置（Resilience4j）
+     */
+    private ResilienceConfig resilience = new ResilienceConfig();
+
+    /**
      * OCPP协议配置
      */
     @Data
@@ -233,5 +238,57 @@ public class ProtocolProperties {
          * 最大重试间隔（毫秒）
          */
         private int maxDelay = 10000;
+    }
+
+    /**
+     * 弹性与容错配置
+     */
+    @Data
+    public static class ResilienceConfig {
+
+        /**
+         * Station 服务调用（通过 Eureka serviceId：evcs-station）的熔断配置
+         */
+        private CircuitBreakerPolicy stationServiceCircuitBreaker = new CircuitBreakerPolicy();
+
+        /**
+         * Station 服务调用（通过 Eureka serviceId：evcs-station）的重试配置
+         *
+         * 说明：为了避免未来其它外部依赖复用全局 retry 配置而相互影响，这里单独提供 station-service 维度的 retry。
+         * 若未配置该字段，将回退使用顶层 evcs.protocol.retry 配置（兼容历史配置）。
+         */
+        private RetryConfig stationServiceRetry;
+    }
+
+    /**
+     * 熔断策略（Circuit Breaker）
+     */
+    @Data
+    public static class CircuitBreakerPolicy {
+
+        /**
+         * 统计滑动窗口大小
+         */
+        private int slidingWindowSize = 20;
+
+        /**
+         * 进入统计的最小调用次数
+         */
+        private int minimumNumberOfCalls = 10;
+
+        /**
+         * 失败率阈值（百分比）
+         */
+        private float failureRateThreshold = 50.0f;
+
+        /**
+         * OPEN 状态持续时间（毫秒）
+         */
+        private long waitDurationInOpenStateMs = 15000;
+
+        /**
+         * HALF_OPEN 状态允许的试探调用次数
+         */
+        private int permittedNumberOfCallsInHalfOpenState = 3;
     }
 }

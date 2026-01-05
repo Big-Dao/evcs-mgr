@@ -1,7 +1,7 @@
 package com.evcs.payment.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.evcs.common.result.Result;
+import com.evcs.payment.client.OrderServiceClient;
 import com.evcs.payment.config.OrderSyncConfig;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.entity.PaymentSyncRecord;
@@ -10,13 +10,8 @@ import com.evcs.payment.mapper.PaymentSyncRecordMapper;
 import com.evcs.payment.service.OrderSyncService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -31,7 +26,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class OrderSyncServiceImpl implements OrderSyncService {
 
-    private final RestTemplate restTemplate;
+    private final OrderServiceClient orderServiceClient;
     private final OrderSyncConfig orderSyncConfig;
     private final PaymentSyncRecordMapper paymentSyncRecordMapper;
     private final PaymentOrderMapper paymentOrderMapper;
@@ -128,49 +123,14 @@ public class OrderSyncServiceImpl implements OrderSyncService {
      */
     private boolean syncViaDirectApi(PaymentOrder paymentOrder, boolean isSuccess) {
         try {
-            // 使用新的回调接口: /order/payment/callback
-            String orderServiceUrl = orderSyncConfig.getOrderServiceUrl() + "/order/payment/callback";
-
-            // 构建请求参数
-            MultiValueMap<String, String> params = new LinkedMultiValueMap<>();
-            params.add("tradeId", paymentOrder.getTradeNo());
-            params.add("success", String.valueOf(isSuccess));
-
-            // 设置请求头
-            HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-            if (paymentOrder.getTenantId() != null) {
-                headers.set("X-Tenant-Id", String.valueOf(paymentOrder.getTenantId()));
-            }
-            if (paymentOrder.getCreateBy() != null) {
-                headers.set("X-User-Id", String.valueOf(paymentOrder.getCreateBy()));
+            boolean ok = orderServiceClient.notifyPaymentCallback(paymentOrder, isSuccess);
+            if (ok) {
+                log.info("订单状态同步API调用成功: paymentOrderId={}", paymentOrder.getId());
+                return true;
             }
 
-            HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(params, headers);
-
-            // 发送请求
-            ResponseEntity<Result<Boolean>> response = restTemplate.exchange(
-                orderServiceUrl,
-                HttpMethod.POST,
-                request,
-                new ParameterizedTypeReference<Result<Boolean>>() {}
-            );
-
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                Result<Boolean> result = response.getBody();
-                if (result.getCode() == 200 && Boolean.TRUE.equals(result.getData())) {
-                    log.info("订单状态同步API调用成功: paymentOrderId={}", paymentOrder.getId());
-                    return true;
-                } else {
-                    log.warn("订单状态同步API调用返回失败: paymentOrderId={}, result={}",
-                            paymentOrder.getId(), result);
-                    return false;
-                }
-            } else {
-                log.warn("订单状态同步API调用失败: paymentOrderId={}, status={}",
-                        paymentOrder.getId(), response.getStatusCode());
-                return false;
-            }
+            log.warn("订单状态同步API调用返回失败: paymentOrderId={}", paymentOrder.getId());
+            return false;
 
         } catch (Exception e) {
             log.error("直接API调用同步失败: paymentOrderId={}", paymentOrder.getId(), e);
@@ -183,34 +143,15 @@ public class OrderSyncServiceImpl implements OrderSyncService {
      */
     private boolean checkOrderStatusViaApi(PaymentOrder paymentOrder) {
         try {
-            // 使用新的查询接口: /order/{id}
-            String orderServiceUrl = orderSyncConfig.getOrderServiceUrl() + "/order/" + paymentOrder.getOrderId();
-
-            HttpHeaders headers = new HttpHeaders();
-            if (paymentOrder.getTenantId() != null) {
-                headers.set("X-Tenant-Id", String.valueOf(paymentOrder.getTenantId()));
+            Map<String, Object> orderData = orderServiceClient.getOrderDetail(paymentOrder);
+            if (orderData == null) {
+                return false;
             }
 
-            HttpEntity<?> request = new HttpEntity<>(headers);
-
-            ResponseEntity<Result<Map<String, Object>>> response = restTemplate.exchange(
-                orderServiceUrl,
-                HttpMethod.GET,
-                request,
-                new ParameterizedTypeReference<Result<Map<String, Object>>>() {}
-            );
-
-            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
-                Result<Map<String, Object>> result = response.getBody();
-                if (result.getCode() == 200 && result.getData() != null) {
-                    Map<String, Object> orderData = result.getData();
-                    Integer status = (Integer) orderData.get("status");
-                    // 假设状态 2 (PAID) 或 3 (COMPLETED) 表示已支付
-                    // 需要确认 ChargingOrderStatus 枚举，这里暂时假设
-                    return status != null && status >= 2; 
-                }
-            }
-            return false;
+            Integer status = (Integer) orderData.get("status");
+            // 假设状态 2 (PAID) 或 3 (COMPLETED) 表示已支付
+            // 需要确认 ChargingOrderStatus 枚举，这里暂时假设
+            return status != null && status >= 2;
         } catch (Exception e) {
             log.error("通过API检查订单状态失败: paymentOrderId={}", paymentOrder.getId(), e);
             return false;
