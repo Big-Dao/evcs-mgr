@@ -3,6 +3,7 @@ package com.evcs.common.executor;
 import com.evcs.common.tenant.TenantContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +26,7 @@ class TenantContextPropagatingExecutorServiceTest {
     void tearDown() {
         // Ensure the test thread does not keep any tenant context between tests.
         TenantContext.clear();
+        MDC.clear();
     }
 
     @Test
@@ -211,6 +213,44 @@ class TenantContextPropagatingExecutorServiceTest {
             assertNull(post.get(1, TimeUnit.SECONDS), "Worker threads should not retain tenant context after work completes");
         } finally {
             submitterPool.shutdownNow();
+            wrapped.shutdownNow();
+            raw.shutdownNow();
+            raw.awaitTermination(1, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    void shouldPropagateAndRestoreMdcContext() throws Exception {
+        // Arrange - set MDC on submitting (test) thread
+        MDC.put("traceId", "trace-abc");
+        MDC.put("requestId", "req-def");
+
+        ExecutorService raw = Executors.newSingleThreadExecutor();
+        ExecutorService wrapped = TenantContextPropagatingExecutorService.wrap(raw);
+
+        try {
+            // Pre-populate worker thread with a previous MDC value
+            raw.submit(() -> MDC.put("traceId", "trace-prev")).get(1, TimeUnit.SECONDS);
+
+            // Act - observe MDC inside wrapped task
+            Future<Boolean> inside = wrapped.submit(() ->
+                    "trace-abc".equals(MDC.get("traceId"))
+                            && "req-def".equals(MDC.get("requestId"))
+            );
+
+            // Assert - inside sees captured MDC
+            assertTrue(inside.get(2, TimeUnit.SECONDS), "Wrapped task should see submitting thread's MDC values");
+
+            // Assert - worker thread restored
+            Future<String> restoredTrace = raw.submit(() -> MDC.get("traceId"));
+            Future<String> restoredRequest = raw.submit(() -> MDC.get("requestId"));
+            assertEquals("trace-prev", restoredTrace.get(1, TimeUnit.SECONDS), "Worker thread MDC.traceId should be restored after wrapped task");
+            assertNull(restoredRequest.get(1, TimeUnit.SECONDS), "Worker thread MDC.requestId should be restored (null when previously absent)");
+
+            // Assert - submitting thread unchanged
+            assertEquals("trace-abc", MDC.get("traceId"), "Submitting thread MDC.traceId must remain unchanged");
+            assertEquals("req-def", MDC.get("requestId"), "Submitting thread MDC.requestId must remain unchanged");
+        } finally {
             wrapped.shutdownNow();
             raw.shutdownNow();
             raw.awaitTermination(1, TimeUnit.SECONDS);

@@ -1,9 +1,9 @@
 package com.evcs.common.tenant;
 
 import com.evcs.common.config.TenantContextTaskDecorator;
-import com.evcs.common.tenant.TenantContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,6 +27,7 @@ class TenantContextTaskDecoratorTest {
     void tearDown() {
         // Always clear the test thread's tenant context to avoid leaks between tests
         TenantContext.clear();
+        MDC.clear();
     }
 
     @Test
@@ -138,6 +139,56 @@ class TenantContextTaskDecoratorTest {
             // Assert the worker thread's previous context was restored
             assertEquals(previousTenantId, restoredTenantId, "Worker thread previous tenantId should be restored after task execution");
             assertEquals(previousUserId, restoredUserId, "Worker thread previous userId should be restored after task execution");
+        } finally {
+            executor.shutdownNow();
+            executor.awaitTermination(1, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    void shouldPropagateAndRestoreMdcContext() throws Exception {
+        final String capturedTraceId = "trace-123";
+        final String capturedRequestId = "req-456";
+        final String previousTraceId = "trace-prev";
+
+        // Arrange: set MDC on submitting (test) thread
+        MDC.put("traceId", capturedTraceId);
+        MDC.put("requestId", capturedRequestId);
+
+        TenantContextTaskDecorator decorator = new TenantContextTaskDecorator();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            // Pre-populate worker thread with a previous MDC value
+            executor.submit(() -> MDC.put("traceId", previousTraceId)).get(1, TimeUnit.SECONDS);
+
+            CompletableFuture<Boolean> insideOk = new CompletableFuture<>();
+
+            Runnable task = () -> {
+                try {
+                    boolean ok = capturedTraceId.equals(MDC.get("traceId"))
+                            && capturedRequestId.equals(MDC.get("requestId"));
+                    insideOk.complete(ok);
+                } catch (Throwable t) {
+                    insideOk.completeExceptionally(t);
+                }
+            };
+
+            // Act
+            executor.submit(decorator.decorate(task)).get(2, TimeUnit.SECONDS);
+
+            // Assert - observed inside
+            assertTrue(insideOk.get(2, TimeUnit.SECONDS), "Decorated task should observe captured MDC values");
+
+            // Assert - worker thread restored
+            Future<String> restoredTrace = executor.submit(() -> MDC.get("traceId"));
+            Future<String> restoredRequest = executor.submit(() -> MDC.get("requestId"));
+            assertEquals(previousTraceId, restoredTrace.get(1, TimeUnit.SECONDS), "Worker thread MDC.traceId should be restored");
+            assertNull(restoredRequest.get(1, TimeUnit.SECONDS), "Worker thread MDC.requestId should be restored (null when previously absent)");
+
+            // Assert - submitting thread unchanged
+            assertEquals(capturedTraceId, MDC.get("traceId"), "Submitting thread MDC.traceId must remain unchanged");
+            assertEquals(capturedRequestId, MDC.get("requestId"), "Submitting thread MDC.requestId must remain unchanged");
         } finally {
             executor.shutdownNow();
             executor.awaitTermination(1, TimeUnit.SECONDS);

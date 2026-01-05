@@ -63,6 +63,7 @@
 - 统一测试指南：[docs/testing/UNIFIED-TESTING-GUIDE.md](testing/UNIFIED-TESTING-GUIDE.md)
 - 集成测试指南：[docs/testing/INTEGRATION-TEST-GUIDE.md](testing/INTEGRATION-TEST-GUIDE.md)
 - 测试修复指南：[docs/testing/TEST-FIX-GUIDE.md](testing/TEST-FIX-GUIDE.md)
+- 上下文传播验收清单（多租户/traceId/异步）：[docs/testing/CONTEXT-PROPAGATION-ACCEPTANCE-CHECKLIST.md](testing/CONTEXT-PROPAGATION-ACCEPTANCE-CHECKLIST.md)
 - 按枪口控制测试报告：[docs/testing/CHARGER-CONNECTOR-CONTROL-TEST-REPORT.md](testing/CHARGER-CONNECTOR-CONTROL-TEST-REPORT.md)
 
 ## 故障排查（troubleshooting）

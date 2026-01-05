@@ -4,10 +4,12 @@ import com.evcs.common.tenant.TenantContext;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 
 /**
  * ExecutorService wrapper that propagates the current thread's {@link TenantContext}
@@ -151,16 +153,31 @@ public class TenantContextPropagatingExecutorService
      */
     protected Runnable wrapRunnable(final Runnable runnable) {
         final TenantContextSnapshot captured = TenantContextSnapshot.capture();
+        final Map<String, String> capturedMdc = MDC.getCopyOfContextMap();
         return () -> {
             final TenantContextSnapshot previous =
                 TenantContextSnapshot.capture();
+            final Map<String, String> previousMdc = MDC.getCopyOfContextMap();
             try {
                 captured.apply();
+
+                if (capturedMdc == null || capturedMdc.isEmpty()) {
+                    MDC.clear();
+                } else {
+                    MDC.setContextMap(capturedMdc);
+                }
                 runnable.run();
             } finally {
                 // Clear to avoid leaking the captured context, then restore any previous context.
                 TenantContext.clear();
+                MDC.clear();
                 previous.apply();
+
+                if (previousMdc == null || previousMdc.isEmpty()) {
+                    MDC.clear();
+                } else {
+                    MDC.setContextMap(previousMdc);
+                }
             }
         };
     }
@@ -171,6 +188,7 @@ public class TenantContextPropagatingExecutorService
      */
     protected <T> Callable<T> wrapCallable(final Callable<T> callable) {
         final TenantContextSnapshot captured = TenantContextSnapshot.capture();
+        final Map<String, String> capturedMdc = MDC.getCopyOfContextMap();
 
         // Return a Callable that:
         // 1) Applies the submitting thread's TenantContext snapshot before execution
@@ -181,11 +199,18 @@ public class TenantContextPropagatingExecutorService
         return () -> {
             final TenantContextSnapshot previous =
                 TenantContextSnapshot.capture();
+            final Map<String, String> previousMdc = MDC.getCopyOfContextMap();
             T result = null;
             Throwable thrown = null;
 
             try {
                 captured.apply();
+
+                if (capturedMdc == null || capturedMdc.isEmpty()) {
+                    MDC.clear();
+                } else {
+                    MDC.setContextMap(capturedMdc);
+                }
                 result = callable.call();
             } catch (Throwable t) {
                 // Capture the throwable so we can try to restore context and then rethrow it.
@@ -194,7 +219,14 @@ public class TenantContextPropagatingExecutorService
                 try {
                     // Always clear the captured context and attempt to restore previous state.
                     TenantContext.clear();
+                    MDC.clear();
                     previous.apply();
+
+                    if (previousMdc == null || previousMdc.isEmpty()) {
+                        MDC.clear();
+                    } else {
+                        MDC.setContextMap(previousMdc);
+                    }
                 } catch (Throwable restoreEx) {
                     if (thrown != null) {
                         // If the task already threw, attach restore failure as suppressed so the original
