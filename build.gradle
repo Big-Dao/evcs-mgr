@@ -83,6 +83,10 @@ subprojects {
         implementation 'org.springframework.boot:spring-boot-starter'
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
 
+        // Required by Gradle's test execution; make it explicit to avoid Gradle 8.x deprecation
+        // warning about automatic loading of test framework implementation dependencies.
+        testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
         // Keep jsr305 annotations on the compile classpath to avoid javac warnings
         // like "unknown enum constant When.MAYBE" from transitive dependencies.
         compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
