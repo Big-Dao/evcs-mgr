@@ -102,9 +102,9 @@ spring:
         - id: evcs-payment
           uri: http://${EVCS_PAYMENT_IP}:8084
           predicates:
-            - Path=/api/payment/**
+            - Path=/api/payment/**, /api/reconciliation/**
           filters:
-            - StripPrefix=1  # 去掉/api，转发到payment服务的/payments/**
+            - StripPrefix=1  # 去掉/api，转发到payment服务的/payments/** 或 /reconciliation/**
     loadbalancer:
       retry:
         enabled: true

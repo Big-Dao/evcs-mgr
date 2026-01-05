@@ -1,11 +1,15 @@
 package com.evcs.station.service;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.entity.ChargerConnector;
 import java.time.LocalDateTime;
 import java.util.List;
 
 public interface IChargerConnectorService {
+
+    IPage<ChargerConnector> queryPage(Page<ChargerConnector> page, ChargerConnector queryParam);
 
     List<ChargerConnector> listByChargerId(Long chargerId);
 

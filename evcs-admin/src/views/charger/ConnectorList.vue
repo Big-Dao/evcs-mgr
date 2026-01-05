@@ -74,9 +74,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { getConnectorList, type ChargerConnector } from '@/api/charger'
 
-// Mock data for now
+const router = useRouter()
+
 const loading = ref(false)
 const currentPage = ref(1)
 const pageSize = ref(10)
@@ -88,7 +91,7 @@ const searchForm = reactive({
   status: ''
 })
 
-const tableData = ref<any[]>([])
+const tableData = ref<ChargerConnector[]>([])
 
 const getStatusType = (status: number) => {
   const map: Record<number, string> = {
@@ -117,15 +120,17 @@ const getStatusText = (status: number) => {
 const fetchData = async () => {
   loading.value = true
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 500))
-    tableData.value = [
-      { id: 1, connectorNo: '1', chargerCode: 'CP001', connectorType: 'GB/T 2015', status: 1, power: 0, voltage: 0, current: 0 },
-      { id: 2, connectorNo: '2', chargerCode: 'CP001', connectorType: 'GB/T 2015', status: 2, power: 60.5, voltage: 380, current: 160 },
-      { id: 3, connectorNo: '1', chargerCode: 'CP002', connectorType: 'CCS2', status: 0, power: 0, voltage: 0, current: 0 },
-      { id: 4, connectorNo: '1', chargerCode: 'CP003', connectorType: 'CHAdeMO', status: 3, power: 0, voltage: 0, current: 0 },
-    ]
-    total.value = 4
+    const res = await getConnectorList({
+      current: currentPage.value,
+      size: pageSize.value,
+      connectorNo: searchForm.connectorNo || undefined,
+      chargerCode: searchForm.chargerCode || undefined,
+      status: searchForm.status ? Number(searchForm.status) : undefined
+    })
+    if (res.code === 200 && res.data) {
+      tableData.value = res.data.records
+      total.value = res.data.total
+    }
   } catch (error) {
     console.error(error)
     ElMessage.error('获取数据失败')
@@ -157,7 +162,11 @@ const handleCurrentChange = (val: number) => {
 }
 
 const handleDetail = (row: any) => {
-  ElMessage.info(`查看详情: ${row.chargerCode}-${row.connectorNo}`)
+  if (row.chargerId && row.connectorNo) {
+    router.push(`/chargers/${row.chargerId}/connectors/${row.connectorNo}`)
+  } else {
+    ElMessage.warning('缺少必要参数，无法查看详情')
+  }
 }
 
 const handleRemoteStart = (row: any) => {

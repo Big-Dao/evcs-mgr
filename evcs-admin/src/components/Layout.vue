@@ -2,7 +2,7 @@
   <el-container class="layout-container">
     <el-aside width="220px">
       <div class="logo">
-        <img src="/logo.png" alt="logo" style="width: 28px; height: 28px;" />
+        <img src="/logo.png" alt="logo" style="width: auto; height: 28px;" />
         <span class="logo-text">铁林慧充</span>
       </div>
       <el-menu
@@ -38,10 +38,13 @@
             <el-icon><TrendCharts /></el-icon>
             <span>运营</span>
           </template>
-          <el-menu-item index="/stations/map-analytics">订单地区分析</el-menu-item>
           <el-menu-item index="/orders">充电订单</el-menu-item>
           <el-menu-item index="/billing-plans">计费方案</el-menu-item>
-          <el-menu-item index="/orders/dashboard">订单统计</el-menu-item>
+          <el-sub-menu index="order-stats">
+            <template #title>订单统计</template>
+            <el-menu-item index="/orders/dashboard">统计概览</el-menu-item>
+            <el-menu-item index="/stations/map-analytics">地区分布</el-menu-item>
+          </el-sub-menu>
         </el-sub-menu>
 
         <el-sub-menu index="device">
@@ -66,7 +69,7 @@
             <el-icon><Money /></el-icon>
             <span>财务</span>
           </template>
-          <el-menu-item index="/orders/dashboard">订单结算</el-menu-item>
+          <el-menu-item index="/reconciliation">订单结算</el-menu-item>
         </el-sub-menu>
         
         <el-sub-menu index="org">
@@ -373,23 +376,58 @@ onMounted(() => {
 }
 
 /* Two-column Submenu Layout */
+/* Level 2 Container */
 :deep(.el-sub-menu .el-menu) {
   display: flex;
   flex-wrap: wrap;
   padding: 5px;
 }
 
-:deep(.el-sub-menu .el-menu .el-menu-item) {
+/* Level 2 Items (Leaf) */
+:deep(.el-sub-menu .el-menu > .el-menu-item) {
   width: 50%;
   min-width: auto;
-  padding: 0 !important;
+  padding: 0 0 0 20px !important;
   height: 36px;
   line-height: 36px;
-  justify-content: center;
   margin: 2px 0;
   border-radius: 4px;
   border-left: none;
   font-size: 13px;
+}
+
+/* Level 2 Items (Submenu Parent) */
+:deep(.el-sub-menu .el-menu > .el-sub-menu) {
+  width: 50%;
+  min-width: auto;
+  margin: 2px 0;
+}
+
+/* Level 2 Submenu Title */
+:deep(.el-sub-menu .el-menu > .el-sub-menu > .el-sub-menu__title) {
+  padding: 0 0 0 20px !important;
+  height: 36px;
+  line-height: 36px;
+  font-size: 13px;
+  border-radius: 4px;
+}
+
+/* Level 3 Container */
+:deep(.el-sub-menu .el-menu > .el-sub-menu .el-menu) {
+  display: block;
+  width: 100%;
+  padding: 0;
+}
+
+/* Level 3 Items */
+:deep(.el-sub-menu .el-menu > .el-sub-menu .el-menu .el-menu-item) {
+  width: 100%;
+  padding: 0 0 0 20px !important;
+  height: 36px;
+  line-height: 36px;
+  margin: 0;
+  font-size: 13px;
+  border-left: none;
 }
 
 :deep(.el-sub-menu .el-menu .el-menu-item.is-active) {

@@ -1,6 +1,8 @@
 package com.evcs.station.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.station.entity.ChargerConnector;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -11,6 +13,26 @@ import org.apache.ibatis.annotations.Update;
 
 @Mapper
 public interface ChargerConnectorMapper extends BaseMapper<ChargerConnector> {
+
+    @Select("""
+        <script>
+        SELECT cc.*, c.charger_code
+        FROM charger_connector cc
+        LEFT JOIN charger c ON cc.charger_id = c.charger_id
+        WHERE cc.deleted = 0
+        <if test="param.connectorNo != null">
+            AND cc.connector_no = #{param.connectorNo}
+        </if>
+        <if test="param.chargerCode != null and param.chargerCode != ''">
+            AND c.charger_code LIKE CONCAT('%', #{param.chargerCode}, '%')
+        </if>
+        <if test="param.status != null">
+            AND cc.status = #{param.status}
+        </if>
+        ORDER BY cc.charger_id, cc.connector_no
+        </script>
+        """)
+    IPage<ChargerConnector> selectPageList(Page<?> page, @Param("param") ChargerConnector param);
 
     @Select("""
         SELECT * FROM charger_connector

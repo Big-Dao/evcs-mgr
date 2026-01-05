@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @Tag(name = "支付管理", description = "支付订单创建、查询、回调、退款")
 @RestController
-@RequestMapping("/api/payment")
+@RequestMapping("/payment")
 @RequiredArgsConstructor
 public class PaymentController {
 

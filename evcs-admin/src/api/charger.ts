@@ -194,6 +194,23 @@ export function getChargerConnectors(chargerId: number) {
 }
 
 /**
+ * 分页查询所有枪口列表
+ */
+export function getConnectorList(params: {
+  current?: number
+  size?: number
+  connectorNo?: string
+  chargerCode?: string
+  status?: number
+}) {
+  return request<PageResult<ChargerConnector>>({
+    url: '/charger/connector-list',
+    method: 'get',
+    params
+  })
+}
+
+/**
  * 查询枪口历史会话列表（按会话分页）
  */
 export function getChargerConnectorSessions(
@@ -275,7 +292,7 @@ export function getChargerStatus(id: number) {
 export function startChargerConnectorSession(
   chargerId: number,
   connectorNo: number,
-  params: { sessionId: string; userId: number; initialEnergy?: number }
+  params: { sessionId?: string; userId: number; initialEnergy?: number }
 ) {
   return request<void>({
     url: `/charger/${chargerId}/connectors/${connectorNo}/start`,

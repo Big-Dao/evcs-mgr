@@ -92,6 +92,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '充电枪管理', icon: 'Connection' }
       },
       {
+        path: 'chargers/:chargerId/connectors/:connectorNo',
+        name: 'ConnectorDetail',
+        component: () => import('@/views/charger/ConnectorDetail.vue'),
+        meta: { title: '充电枪详情', icon: 'Connection', hidden: true }
+      },
+      {
         path: 'chargers/:id',
         name: 'ChargerDetail',
         component: () => import('@/views/charger/ChargerDetail.vue'),

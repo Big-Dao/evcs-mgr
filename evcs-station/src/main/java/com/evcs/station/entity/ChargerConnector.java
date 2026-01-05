@@ -103,4 +103,7 @@ public class ChargerConnector extends BaseEntity {
      * 最新累计电量（kWh，可选）
      */
     private BigDecimal lastEnergy;
+
+    @com.baomidou.mybatisplus.annotation.TableField(exist = false)
+    private String chargerCode;
 }

@@ -88,9 +88,10 @@ echo "Registry is reachable: http://${REGISTRY_ENDPOINT}/v2/"
 
 # Push Java images via Jib (no Docker daemon needed)
 if [ "${EVCS_PUSH_JAVA_IMAGES}" = "true" ]; then
+  GRADLE_TASK="${GRADLE_TASK:-pushK8sImages}"
   echo "=== Pushing Java service images via Jib ==="
-  echo "Command: ./gradlew :evcs-order:jib -Devcs.k8s.registry=${REGISTRY_ENDPOINT} -Devcs.k8s.tag=${EVCS_IMAGE_TAG}"
-  (cd "${REPO_ROOT}" && ./gradlew :evcs-order:jib -Devcs.k8s.registry="${REGISTRY_ENDPOINT}" -Devcs.k8s.tag="${EVCS_IMAGE_TAG}")
+  echo "Command: ./gradlew ${GRADLE_TASK} -Devcs.k8s.registry=${REGISTRY_ENDPOINT} -Devcs.k8s.tag=${EVCS_IMAGE_TAG}"
+  (cd "${REPO_ROOT}" && ./gradlew ${GRADLE_TASK} -Devcs.k8s.registry="${REGISTRY_ENDPOINT}" -Devcs.k8s.tag="${EVCS_IMAGE_TAG}")
 fi
 
 # Push admin frontend image

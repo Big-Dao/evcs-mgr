@@ -101,6 +101,24 @@ public class ChargerController {
     }
 
     /**
+     * 分页查询所有枪口列表
+     */
+    @Operation(summary = "分页查询所有枪口", description = "支持按枪口号、桩编码、状态查询")
+    @GetMapping("/connector-list")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
+    @DataScope
+    public Result<IPage<ChargerConnector>> getConnectorPage(
+            @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
+            @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") Long size,
+            @Parameter(description = "查询条件") ChargerConnector queryParam) {
+        
+        log.info("Querying connector page: current={}, size={}, param={}", current, size, queryParam);
+        Page<ChargerConnector> page = new Page<>(current, size);
+        IPage<ChargerConnector> result = chargerConnectorService.queryPage(page, queryParam);
+        return Result.success(result);
+    }
+
+    /**
      * 查询枪口会话历史（用于按会话查看历史曲线）
      */
     @Operation(summary = "查询枪口会话历史", description = "按枪口查询历史会话列表（用于客诉诊断/曲线回放）")

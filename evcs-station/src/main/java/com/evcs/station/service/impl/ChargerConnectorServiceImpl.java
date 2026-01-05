@@ -1,5 +1,7 @@
 package com.evcs.station.service.impl;
 
+import com.baomidou.mybatisplus.core.metadata.IPage;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.station.entity.Charger;
@@ -23,6 +25,12 @@ public class ChargerConnectorServiceImpl implements IChargerConnectorService {
 
     private final ChargerConnectorMapper connectorMapper;
     private final IChargerService chargerService;
+
+    @Override
+    @DataScope
+    public IPage<ChargerConnector> queryPage(Page<ChargerConnector> page, ChargerConnector queryParam) {
+        return connectorMapper.selectPageList(page, queryParam);
+    }
 
     @Override
     @DataScope
