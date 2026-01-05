@@ -33,6 +33,11 @@
 - 站点地图分析：[docs/features/STATION-MAP-ANALYTICS.md](features/STATION-MAP-ANALYTICS.md)
 - 按枪口（Connector）控制与会话落库：[docs/features/CHARGER-CONNECTOR-CONTROL.md](features/CHARGER-CONNECTOR-CONTROL.md)
 
+## 核心概念（concepts）
+
+- **异步上下文传播**：[docs/concepts/ASYNC-CONTEXT-PROPAGATION.md](concepts/ASYNC-CONTEXT-PROPAGATION.md) ⭐  
+  解释什么是异步上下文传播、为什么需要它，以及如何在项目中使用
+
 ## 开发（development）
 
 - 开发者指南：[docs/development/DEVELOPER-GUIDE.md](development/DEVELOPER-GUIDE.md)

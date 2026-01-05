@@ -143,6 +143,15 @@ curl http://localhost:8080/actuator/health
 - `@DataScope`: 声明式数据权限注解
 - `DataScopeAspect`: AOP权限验证切面
 
+### 异步上下文传播
+
+多租户系统在异步任务中需要特别处理租户上下文的传播，避免数据泄漏：
+
+- 📖 **[异步上下文传播指南](docs/concepts/ASYNC-CONTEXT-PROPAGATION.md)** ⭐ - 什么是异步上下文传播以及如何使用
+- `TenantContextTaskDecorator`: Spring 异步任务上下文装饰器
+- `TenantContextPropagatingExecutorService`: ExecutorService 包装器
+- 详细技术方案参见 [RFC 文档](docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md)
+
 ## 💳 支付集成
 
 ### 核心功能
