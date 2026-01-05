@@ -1,8 +1,8 @@
 package com.evcs.payment.service;
 
+import com.evcs.payment.client.OrderServiceClient;
 import com.evcs.payment.config.OrderSyncConfig;
 import com.evcs.payment.entity.PaymentOrder;
-import com.evcs.payment.entity.PaymentSyncRecord;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.mapper.PaymentOrderMapper;
 import com.evcs.payment.mapper.PaymentSyncRecordMapper;
@@ -13,13 +13,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
-import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -33,7 +29,7 @@ import static org.mockito.Mockito.*;
 class OrderSyncServiceTest {
 
     @Mock
-    private RestTemplate restTemplate;
+    private OrderServiceClient orderServiceClient;
 
     @Mock
     private OrderSyncConfig orderSyncConfig;
@@ -48,7 +44,7 @@ class OrderSyncServiceTest {
 
     @BeforeEach
     void setUp() {
-        orderSyncService = new OrderSyncServiceImpl(restTemplate, orderSyncConfig, paymentSyncRecordMapper, paymentOrderMapper);
+        orderSyncService = new OrderSyncServiceImpl(orderServiceClient, orderSyncConfig, paymentSyncRecordMapper, paymentOrderMapper);
     }
 
     @Test
@@ -58,19 +54,7 @@ class OrderSyncServiceTest {
         PaymentOrder paymentOrder = createTestPaymentOrder();
 
         when(orderSyncConfig.isDirectApiEnabled()).thenReturn(true);
-        when(orderSyncConfig.getOrderServiceUrl()).thenReturn("http://localhost:8083/api");
-
-        // 模拟API调用返回 Result<Boolean> 结构
-        Map<String, Object> successResult = Map.of("code", 200, "data", true);
-        ResponseEntity<Map> successResponse = ResponseEntity.ok(successResult);
-        
-        // 使用 exchange 替代 postForEntity 以匹配 Service 实现
-        when(restTemplate.exchange(
-            anyString(), 
-            eq(HttpMethod.POST), 
-            any(HttpEntity.class), 
-            any(ParameterizedTypeReference.class))
-        ).thenReturn(successResponse);
+        when(orderServiceClient.notifyPaymentCallback(any(PaymentOrder.class), eq(true))).thenReturn(true);
 
         // When
         boolean result = orderSyncService.syncPaymentSuccess(paymentOrder);
@@ -86,15 +70,8 @@ class OrderSyncServiceTest {
         PaymentOrder paymentOrder = createTestPaymentOrder();
 
         when(orderSyncConfig.isDirectApiEnabled()).thenReturn(true);
-        when(orderSyncConfig.getOrderServiceUrl()).thenReturn("http://localhost:8083/api");
-
-        // 模拟API调用抛出异常
-        when(restTemplate.exchange(
-            anyString(), 
-            eq(HttpMethod.POST), 
-            any(HttpEntity.class), 
-            any(ParameterizedTypeReference.class))
-        ).thenThrow(new RuntimeException("API调用失败"));
+        when(orderServiceClient.notifyPaymentCallback(any(PaymentOrder.class), eq(true)))
+            .thenThrow(new RuntimeException("API调用失败"));
 
         // When
         boolean result = orderSyncService.syncPaymentSuccess(paymentOrder);
@@ -116,7 +93,7 @@ class OrderSyncServiceTest {
 
         // Then
         assertTrue(result); // 应该使用消息队列
-        verify(restTemplate, never()).exchange(anyString(), any(), any(), any(ParameterizedTypeReference.class));
+        verify(orderServiceClient, never()).notifyPaymentCallback(any(PaymentOrder.class), anyBoolean());
     }
 
     @Test
@@ -126,18 +103,7 @@ class OrderSyncServiceTest {
         PaymentOrder paymentOrder = createTestPaymentOrder();
 
         when(orderSyncConfig.isDirectApiEnabled()).thenReturn(true);
-        when(orderSyncConfig.getOrderServiceUrl()).thenReturn("http://localhost:8083/api");
-
-        // 模拟API调用返回 Result<Boolean> 结构
-        Map<String, Object> successResult = Map.of("code", 200, "data", true);
-        ResponseEntity<Map> successResponse = ResponseEntity.ok(successResult);
-
-        when(restTemplate.exchange(
-            anyString(), 
-            eq(HttpMethod.POST), 
-            any(HttpEntity.class), 
-            any(ParameterizedTypeReference.class))
-        ).thenReturn(successResponse);
+        when(orderServiceClient.notifyPaymentCallback(any(PaymentOrder.class), eq(false))).thenReturn(true);
 
         // When
         boolean result = orderSyncService.syncPaymentFailure(paymentOrder, "余额不足");

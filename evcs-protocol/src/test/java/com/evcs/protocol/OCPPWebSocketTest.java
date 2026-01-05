@@ -4,11 +4,15 @@ import com.evcs.protocol.config.ProtocolProperties;
 import com.evcs.protocol.dto.ProtocolRequest;
 import com.evcs.protocol.dto.ProtocolResponse;
 import com.evcs.protocol.enums.ProtocolType;
+import com.evcs.protocol.client.StationServiceClient;
 import com.evcs.protocol.mq.ProtocolEventPublisher;
 import com.evcs.protocol.service.impl.OCPPProtocolServiceImpl;
 import com.evcs.protocol.websocket.OCPPSessionManager;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.retry.Retry;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.springframework.web.client.RestTemplate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,8 +31,13 @@ class OCPPWebSocketTest {
         ProtocolProperties properties = new ProtocolProperties();
         OCPPSessionManager sessionManager = new OCPPSessionManager();
         ProtocolEventPublisher eventPublisher = new ProtocolEventPublisher();
+        StationServiceClient stationServiceClient = new StationServiceClient(
+            CircuitBreaker.ofDefaults("stationService"),
+            Retry.ofDefaults("stationService"),
+            new RestTemplate()
+        );
 
-        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager) {
+        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager, stationServiceClient) {
             @Override
             protected boolean doConnect(String deviceCode, ProtocolType protocolType) {
                 return true;
@@ -126,8 +135,13 @@ class OCPPWebSocketTest {
         ProtocolProperties properties = new ProtocolProperties();
         OCPPSessionManager sessionManager = new OCPPSessionManager();
         ProtocolEventPublisher eventPublisher = new ProtocolEventPublisher();
+        StationServiceClient stationServiceClient = new StationServiceClient(
+            CircuitBreaker.ofDefaults("stationService"),
+            Retry.ofDefaults("stationService"),
+            new RestTemplate()
+        );
 
-        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager) {
+        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager, stationServiceClient) {
             @Override
             protected boolean doConnect(String deviceCode, ProtocolType protocolType) {
                 return ProtocolType.OCPP.equals(protocolType);
@@ -223,8 +237,13 @@ class OCPPWebSocketTest {
         ProtocolProperties properties = new ProtocolProperties();
         OCPPSessionManager sessionManager = new OCPPSessionManager();
         ProtocolEventPublisher eventPublisher = new ProtocolEventPublisher();
+        StationServiceClient stationServiceClient = new StationServiceClient(
+            CircuitBreaker.ofDefaults("stationService"),
+            Retry.ofDefaults("stationService"),
+            new RestTemplate()
+        );
 
-        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager) {
+        OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager, stationServiceClient) {
             @Override
             protected boolean doConnect(String deviceCode, ProtocolType protocolType) {
                 return false;

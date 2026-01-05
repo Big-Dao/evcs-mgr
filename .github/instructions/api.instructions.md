@@ -5,7 +5,7 @@ priority: high
 
 # API 设计规范 (API Consistency)
 
-> **最后更新**: 2025-12-18 | **维护者**: 架构团队 | **状态**: 已发布
+> **最后更新**: 2026-01-05 | **维护者**: 架构团队 | **状态**: 已发布
 
 本规范适用于所有 RESTful API 的设计与实现。
 
@@ -30,6 +30,14 @@ priority: high
 **统一包装器**
 - 所有 API 必须返回统一的 `Result<T>` 结构。
 - 禁止直接返回实体类、Map 或 List。
+
+#### 例外：第三方回调 / Webhook
+当接口必须满足第三方协议的“固定响应格式”（例如支付回调要求返回纯文本 `success/fail` 或 XML），允许返回 `ResponseEntity<String>` 等原始响应。
+
+约束：
+- 仅限“第三方回调/通知”类接口（建议放置在 `*CallbackController` 或 `*WebhookController` 中，并在 OpenAPI `@Tag/@Operation` 标注为回调接口）。
+- 必须进行签名/验签与重放保护（如 `nonce/timestamp` 校验）。
+- 禁止记录敏感信息（Token、银行卡号、身份证号、密钥等），日志仅记录必要的业务主键与 traceId。
 
 ```java
 public class Result<T> {

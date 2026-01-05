@@ -2,20 +2,12 @@ package com.evcs.protocol.service;
 
 import com.evcs.protocol.api.ICloudChargeProtocolService;
 import com.evcs.protocol.api.ProtocolEventListener;
-import com.evcs.common.result.Result;
+import com.evcs.protocol.client.StationServiceClient;
 import com.evcs.protocol.dto.ChargerBasicInfo;
 import com.evcs.protocol.mq.ProtocolEventPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import java.net.URI;
 import java.time.LocalDateTime;
 
 @Slf4j
@@ -23,10 +15,8 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class CloudChargeProtocolServiceImpl implements ICloudChargeProtocolService {
     private final ProtocolEventPublisher eventPublisher;
+    private final StationServiceClient stationServiceClient;
     private volatile ProtocolEventListener listener;
-
-    @Autowired(required = false)
-    private RestTemplate restTemplate;
 
     @Override
     public boolean registerStation(String stationCode) {
@@ -90,41 +80,7 @@ public class CloudChargeProtocolServiceImpl implements ICloudChargeProtocolServi
         if (chargerId == null) {
             return null;
         }
-        if (restTemplate == null) {
-            return null;
-        }
-        try {
-            String url = "http://evcs-station/charger/" + chargerId;
-            ParameterizedTypeReference<Result<ChargerBasicInfo>> typeRef = new ParameterizedTypeReference<>() {};
-            RequestEntity<Void> requestEntity = RequestEntity.get(requiredUri(url)).build();
-            ResponseEntity<Result<ChargerBasicInfo>> response = restTemplate.exchange(requestEntity, typeRef);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                return null;
-            }
-
-            Result<ChargerBasicInfo> result = response.getBody();
-            if (result == null) {
-                return null;
-            }
-
-            Integer code = result.getCode();
-            if (code != null && code == 200) {
-                return result.getData();
-            }
-        } catch (Exception e) {
-            log.warn("Failed to fetch charger info by id from station service, chargerId={}", chargerId, e);
-        }
-        return null;
-    }
-
-    @NonNull
-    private static URI requiredUri(String url) {
-        URI uri = URI.create(url);
-        if (uri == null) {
-            throw new IllegalStateException("URI.create returned null");
-        }
-        return uri;
+        return stationServiceClient.getChargerById(chargerId);
     }
 
     @Override

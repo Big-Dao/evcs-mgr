@@ -1,5 +1,6 @@
 package com.evcs.station;
 
+import com.evcs.station.config.FeignContextPropagationConfiguration;
 import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -14,7 +15,10 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
     scanBasePackages = "com.evcs"
 )
 @EnableDiscoveryClient
-@EnableFeignClients(basePackages = "com.evcs.station.client")
+@EnableFeignClients(
+    basePackages = "com.evcs.station.client",
+    defaultConfiguration = FeignContextPropagationConfiguration.class
+)
 @EnableTransactionManagement
 @MapperScan("com.evcs.station.mapper")
 public class StationServiceApplication {

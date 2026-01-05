@@ -66,7 +66,7 @@ subprojects {
         hutoolVersion = '5.8.34'  // 升级：修复安全漏洞（文件操作、加密等）⚠️ HIGH
         knife4jVersion = '4.5.0'
         logstashLogbackVersion = '7.4'
-        resilience4jVersion = '2.2.1'  // 性能优化版本
+        resilience4jVersion = '2.2.0'  // Spring Boot 3 compatible (available in Maven repos)
         h2Version = '2.3.232'  // 统一H2数据库版本（最新稳定版），修复PostgreSQL兼容性问题
     }
     
@@ -82,6 +82,11 @@ subprojects {
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter'
         testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+        // Keep jsr305 annotations on the compile classpath to avoid javac warnings
+        // like "unknown enum constant When.MAYBE" from transitive dependencies.
+        compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
+        testCompileOnly 'com.google.code.findbugs:jsr305:3.0.2'
         
         // Lombok
         compileOnly 'org.projectlombok:lombok'
@@ -162,6 +167,671 @@ subprojects {
     // 编译配置
     tasks.withType(JavaCompile) {
         options.encoding = 'UTF-8'
+    }
+
+    tasks.register('forbidThreadingPrimitives') {
+        group = 'verification'
+        description = 'Fail build if production code uses raw Thread/Executors APIs (must use context-propagating executors or Spring scheduling).'
+
+        doLast {
+            def gateMode = (System.getProperty('evcs.gate.threading')
+                    ?: System.getenv('EVCS_GATE_THREADING')
+                    ?: 'fail').toString().toLowerCase()
+            def allowedModes = ['off', 'warn', 'fail'] as Set
+            if (!allowedModes.contains(gateMode)) {
+                throw new GradleException(
+                        "Invalid gate mode for evcs.gate.threading: '${gateMode}'. Allowed: off|warn|fail"
+                )
+            }
+            if (gateMode == 'off') {
+                return
+            }
+
+            def srcDir = file('src/main/java')
+            if (!srcDir.exists()) {
+                return
+            }
+
+            def stripJavaCommentsAndStrings = { String input ->
+                if (input == null || input.isEmpty()) {
+                    return input
+                }
+
+                def out = new StringBuilder(input.length())
+                boolean inLineComment = false
+                boolean inBlockComment = false
+                boolean inString = false
+                boolean inChar = false
+                boolean escaped = false
+
+                for (int i = 0; i < input.length(); i++) {
+                    char c = input.charAt(i)
+                    char n = (i + 1) < input.length() ? input.charAt(i + 1) : (char) 0
+
+                    if (inLineComment) {
+                        if (c == '\n') {
+                            inLineComment = false
+                            out.append(c)
+                        } else {
+                            out.append(' ')
+                        }
+                        continue
+                    }
+
+                    if (inBlockComment) {
+                        if (c == '*' && n == '/') {
+                            inBlockComment = false
+                            out.append(' ')
+                            out.append(' ')
+                            i++
+                        } else {
+                            out.append(c == '\n' ? c : ' ')
+                        }
+                        continue
+                    }
+
+                    if (inString) {
+                        if (!escaped && c == '"') {
+                            inString = false
+                        }
+                        escaped = (!escaped && c == '\\')
+                        out.append(c == '\n' ? c : ' ')
+                        continue
+                    }
+
+                    if (inChar) {
+                        if (!escaped && c == '\'') {
+                            inChar = false
+                        }
+                        escaped = (!escaped && c == '\\')
+                        out.append(c == '\n' ? c : ' ')
+                        continue
+                    }
+
+                    if (c == '/' && n == '/') {
+                        inLineComment = true
+                        out.append(' ')
+                        out.append(' ')
+                        i++
+                        continue
+                    }
+
+                    if (c == '/' && n == '*') {
+                        inBlockComment = true
+                        out.append(' ')
+                        out.append(' ')
+                        i++
+                        continue
+                    }
+
+                    if (c == '"') {
+                        inString = true
+                        escaped = false
+                        out.append(' ')
+                        continue
+                    }
+
+                    if (c == '\'') {
+                        inChar = true
+                        escaped = false
+                        out.append(' ')
+                        continue
+                    }
+
+                    out.append(c)
+                }
+
+                return out.toString()
+            }
+
+            def rules = [
+                    [
+                            id     : 'NEW_THREAD',
+                            pattern: java.util.regex.Pattern.compile('\\bnew\\s+Thread\\s*\\('),
+                            message: 'Do not use new Thread(...) in production code. Use Spring @Async/@Scheduled or a context-propagating executor.'
+                    ],
+                    [
+                            id     : 'EXECUTORS',
+                            pattern: java.util.regex.Pattern.compile('\\bExecutors\\s*\\.'),
+                            message: 'Do not use java.util.concurrent.Executors in production code. Use a managed/context-propagating executor.'
+                    ],
+                    [
+                            id     : 'IMPORT_EXECUTORS',
+                            pattern: java.util.regex.Pattern.compile('^\\s*import\\s+java\\.util\\.concurrent\\.Executors\\s*;', java.util.regex.Pattern.MULTILINE),
+                            message: 'Do not import java.util.concurrent.Executors in production code.'
+                    ],
+                    [
+                            id     : 'THREAD_POOL_EXECUTOR',
+                            pattern: java.util.regex.Pattern.compile('\\bnew\\s+ThreadPoolExecutor\\s*\\('),
+                            message: 'Do not instantiate ThreadPoolExecutor directly in production code. Use a managed/context-propagating executor.'
+                    ],
+                    [
+                            id     : 'SCHEDULED_THREAD_POOL_EXECUTOR',
+                            pattern: java.util.regex.Pattern.compile('\\bnew\\s+ScheduledThreadPoolExecutor\\s*\\('),
+                            message: 'Do not instantiate ScheduledThreadPoolExecutor directly in production code. Use Spring scheduling (@Scheduled) or a managed scheduler.'
+                    ]
+            ]
+
+            def violations = []
+
+                def allowMarkerPattern = java.util.regex.Pattern.compile(
+                    '(?m)^(?:\\s*//|\\s*/\\*)\\s*EVCS_ALLOW_THREADING_PRIMITIVES\\s*:\\s*\\S.+$'
+                )
+
+            srcDir.eachFileRecurse(groovy.io.FileType.FILES) { File f ->
+                if (!f.name.endsWith('.java')) {
+                    return
+                }
+
+                def original = f.getText('UTF-8')
+
+                // Escape hatch (must be explicit + justified, near the top of file)
+                def head = original
+                def firstNewline = 0
+                int linesToCheck = 40
+                for (int i = 0; i < original.length() && linesToCheck > 0; i++) {
+                    if (original.charAt(i) == '\n') {
+                        firstNewline = i
+                        linesToCheck--
+                    }
+                }
+                if (firstNewline > 0) {
+                    head = original.substring(0, firstNewline)
+                }
+
+                if (allowMarkerPattern.matcher(head).find()) {
+                    return
+                }
+
+                def content = stripJavaCommentsAndStrings(original)
+
+                rules.each { rule ->
+                    def matcher = rule.pattern.matcher(content)
+                    while (matcher.find()) {
+                        int start = matcher.start()
+                        int line = 1
+                        for (int i = 0; i < start && i < content.length(); i++) {
+                            if (content.charAt(i) == '\n') {
+                                line++
+                            }
+                        }
+
+                        violations << [file: f, line: line, ruleId: rule.id, message: rule.message]
+                    }
+                }
+            }
+
+            if (!violations.isEmpty()) {
+                def details = violations.collect { v ->
+                    "- ${v.file}:L${v.line} [${v.ruleId}] ${v.message}"
+                }.join('\n')
+
+                def message =
+                        "Forbidden threading primitives found in production code.\n" +
+                                "Fix: replace with Spring @Async/@Scheduled or a context-propagating managed executor.\n" +
+                                "Escape hatch (exceptional only): add a header marker within the first 40 lines: \"// EVCS_ALLOW_THREADING_PRIMITIVES: <reason>\"\n" +
+                                details + "\n"
+
+                if (gateMode == 'warn') {
+                    logger.warn("[EVCS GATE][threading][WARN]\n" + message)
+                    return
+                }
+
+                throw new GradleException(message)
+            }
+        }
+    }
+
+    tasks.register('forbidAsyncContextLoss') {
+        group = 'verification'
+        description = 'Fail build if production code uses async/parallel APIs that default to common pools without context propagation (TenantContext/traceId).'
+
+        doLast {
+            def gateMode = (System.getProperty('evcs.gate.async')
+                    ?: System.getenv('EVCS_GATE_ASYNC')
+                    ?: 'fail').toString().toLowerCase()
+            def allowedModes = ['off', 'warn', 'fail'] as Set
+            if (!allowedModes.contains(gateMode)) {
+                throw new GradleException(
+                        "Invalid gate mode for evcs.gate.async: '${gateMode}'. Allowed: off|warn|fail"
+                )
+            }
+            if (gateMode == 'off') {
+                return
+            }
+
+            def srcDir = file('src/main/java')
+            if (!srcDir.exists()) {
+                return
+            }
+
+            def stripJavaCommentsAndStrings = { String input ->
+                if (input == null || input.isEmpty()) {
+                    return input
+                }
+
+                def out = new StringBuilder(input.length())
+                boolean inLineComment = false
+                boolean inBlockComment = false
+                boolean inString = false
+                boolean inChar = false
+                boolean escaped = false
+
+                for (int i = 0; i < input.length(); i++) {
+                    char c = input.charAt(i)
+                    char n = (i + 1) < input.length() ? input.charAt(i + 1) : (char) 0
+
+                    if (inLineComment) {
+                        if (c == '\n') {
+                            inLineComment = false
+                            out.append(c)
+                        } else {
+                            out.append(' ')
+                        }
+                        continue
+                    }
+
+                    if (inBlockComment) {
+                        if (c == '*' && n == '/') {
+                            inBlockComment = false
+                            out.append(' ')
+                            out.append(' ')
+                            i++
+                        } else {
+                            out.append(c == '\n' ? c : ' ')
+                        }
+                        continue
+                    }
+
+                    if (inString) {
+                        if (!escaped && c == '"') {
+                            inString = false
+                        }
+                        escaped = (!escaped && c == '\\')
+                        out.append(c == '\n' ? c : ' ')
+                        continue
+                    }
+
+                    if (inChar) {
+                        if (!escaped && c == '\'') {
+                            inChar = false
+                        }
+                        escaped = (!escaped && c == '\\')
+                        out.append(c == '\n' ? c : ' ')
+                        continue
+                    }
+
+                    if (c == '/' && n == '/') {
+                        inLineComment = true
+                        out.append(' ')
+                        out.append(' ')
+                        i++
+                        continue
+                    }
+
+                    if (c == '/' && n == '*') {
+                        inBlockComment = true
+                        out.append(' ')
+                        out.append(' ')
+                        i++
+                        continue
+                    }
+
+                    if (c == '"') {
+                        inString = true
+                        escaped = false
+                        out.append(' ')
+                        continue
+                    }
+
+                    if (c == '\'') {
+                        inChar = true
+                        escaped = false
+                        out.append(' ')
+                        continue
+                    }
+
+                    out.append(c)
+                }
+
+                return out.toString()
+            }
+
+            def stripJavaCommentsOnly = { String input ->
+                if (input == null || input.isEmpty()) {
+                    return input
+                }
+
+                def out = new StringBuilder(input.length())
+                boolean inLineComment = false
+                boolean inBlockComment = false
+
+                for (int i = 0; i < input.length(); i++) {
+                    char c = input.charAt(i)
+                    char n = (i + 1) < input.length() ? input.charAt(i + 1) : (char) 0
+
+                    if (inLineComment) {
+                        if (c == '\n') {
+                            inLineComment = false
+                            out.append(c)
+                        } else {
+                            out.append(' ')
+                        }
+                        continue
+                    }
+
+                    if (inBlockComment) {
+                        if (c == '*' && n == '/') {
+                            inBlockComment = false
+                            out.append(' ')
+                            out.append(' ')
+                            i++
+                        } else {
+                            out.append(c == '\n' ? c : ' ')
+                        }
+                        continue
+                    }
+
+                    if (c == '/' && n == '/') {
+                        inLineComment = true
+                        out.append(' ')
+                        out.append(' ')
+                        i++
+                        continue
+                    }
+
+                    if (c == '/' && n == '*') {
+                        inBlockComment = true
+                        out.append(' ')
+                        out.append(' ')
+                        i++
+                        continue
+                    }
+
+                    out.append(c)
+                }
+
+                return out.toString()
+            }
+
+            def allowMarkerPattern = java.util.regex.Pattern.compile(
+                    '(?m)^(?:\\s*//|\\s*/\\*)\\s*EVCS_ALLOW_ASYNC_CONTEXT_LOSS\\s*:\\s*\\S.+$'
+            )
+
+                // Reactor schedulers that typically jump threads without TenantContext/MDC propagation
+                // Allowed alternatives: inject a managed Scheduler bean, or wrap a managed executor via Schedulers.fromExecutor/fromExecutorService.
+                def reactorBadSchedulersPattern = java.util.regex.Pattern.compile(
+                    '\\b(?:reactor\\.core\\.scheduler\\.)?Schedulers\\s*\\.\\s*(?:parallel|boundedElastic|elastic|immediate|single|newParallel|newBoundedElastic|newSingle)\\s*\\('
+                )
+
+            def simpleRules = [
+                    [
+                            id     : 'PARALLEL_STREAM',
+                            pattern: java.util.regex.Pattern.compile('\\.parallelStream\\s*\\('),
+                            message: 'Avoid parallelStream() in production code (uses common pool, loses TenantContext/MDC). Use a managed executor with context propagation.'
+                    ],
+                    [
+                            id     : 'STREAM_PARALLEL',
+                            pattern: java.util.regex.Pattern.compile('\\.parallel\\s*\\('),
+                            message: 'Avoid Stream.parallel() in production code (uses common pool, loses TenantContext/MDC). Use a managed executor with context propagation.'
+                    ],
+                    [
+                            id     : 'FORK_JOIN_COMMON_POOL',
+                            pattern: java.util.regex.Pattern.compile('\\bForkJoinPool\\s*\\.\\s*commonPool\\s*\\('),
+                            message: 'Avoid ForkJoinPool.commonPool() in production code. Use a managed/context-propagating executor.'
+                        ],
+                        [
+                            id     : 'REACTOR_BAD_SCHEDULERS_FACTORY',
+                            pattern: reactorBadSchedulersPattern,
+                            message: 'Avoid Reactor Schedulers.parallel/boundedElastic/etc in production code (thread switch loses TenantContext/MDC). Use a managed Scheduler or wrap a managed executor via Schedulers.fromExecutorService.'
+                    ]
+            ]
+
+            def cfAsyncPatterns = [
+                    [
+                            id     : 'CF_RUN_ASYNC_NO_EXECUTOR',
+                            pattern: java.util.regex.Pattern.compile('\\bCompletableFuture\\s*\\.\\s*runAsync\\s*\\('),
+                            message: 'CompletableFuture.runAsync must pass an explicit Executor (avoid common pool; preserve TenantContext/MDC).'
+                    ],
+                    [
+                            id     : 'CF_SUPPLY_ASYNC_NO_EXECUTOR',
+                            pattern: java.util.regex.Pattern.compile('\\bCompletableFuture\\s*\\.\\s*supplyAsync\\s*\\('),
+                            message: 'CompletableFuture.supplyAsync must pass an explicit Executor (avoid common pool; preserve TenantContext/MDC).'
+                    ],
+                    [
+                        id     : 'CF_THEN_APPLY_ASYNC_NO_EXECUTOR',
+                        pattern: java.util.regex.Pattern.compile('\\.thenApplyAsync\\s*\\('),
+                        message: 'CompletableFuture.thenApplyAsync must pass an explicit Executor (avoid common pool; preserve TenantContext/MDC).'
+                    ],
+                    [
+                        id     : 'CF_THEN_ACCEPT_ASYNC_NO_EXECUTOR',
+                        pattern: java.util.regex.Pattern.compile('\\.thenAcceptAsync\\s*\\('),
+                        message: 'CompletableFuture.thenAcceptAsync must pass an explicit Executor (avoid common pool; preserve TenantContext/MDC).'
+                    ],
+                    [
+                        id     : 'CF_THEN_RUN_ASYNC_NO_EXECUTOR',
+                        pattern: java.util.regex.Pattern.compile('\\.thenRunAsync\\s*\\('),
+                        message: 'CompletableFuture.thenRunAsync must pass an explicit Executor (avoid common pool; preserve TenantContext/MDC).'
+                    ],
+                    [
+                        id     : 'CF_THEN_COMPOSE_ASYNC_NO_EXECUTOR',
+                        pattern: java.util.regex.Pattern.compile('\\.thenComposeAsync\\s*\\('),
+                        message: 'CompletableFuture.thenComposeAsync must pass an explicit Executor (avoid common pool; preserve TenantContext/MDC).'
+                    ],
+                    [
+                        id     : 'CF_HANDLE_ASYNC_NO_EXECUTOR',
+                        pattern: java.util.regex.Pattern.compile('\\.handleAsync\\s*\\('),
+                        message: 'CompletableFuture.handleAsync must pass an explicit Executor (avoid common pool; preserve TenantContext/MDC).'
+                    ],
+                    [
+                        id     : 'CF_WHEN_COMPLETE_ASYNC_NO_EXECUTOR',
+                        pattern: java.util.regex.Pattern.compile('\\.whenCompleteAsync\\s*\\('),
+                        message: 'CompletableFuture.whenCompleteAsync must pass an explicit Executor (avoid common pool; preserve TenantContext/MDC).'
+                    ]
+            ]
+
+                    def reactorShiftPatterns = [
+                        [
+                            id     : 'REACTOR_PUBLISH_ON_INLINE_BAD_SCHEDULER',
+                            pattern: java.util.regex.Pattern.compile('\\.publishOn\\s*\\('),
+                            message: 'Do not call publishOn(...) with Schedulers.parallel/boundedElastic/etc inline. Inject a managed Scheduler or wrap a managed executor via Schedulers.fromExecutorService.'
+                        ],
+                        [
+                            id     : 'REACTOR_SUBSCRIBE_ON_INLINE_BAD_SCHEDULER',
+                            pattern: java.util.regex.Pattern.compile('\\.subscribeOn\\s*\\('),
+                            message: 'Do not call subscribeOn(...) with Schedulers.parallel/boundedElastic/etc inline. Inject a managed Scheduler or wrap a managed executor via Schedulers.fromExecutorService.'
+                        ]
+                    ]
+
+                        def asyncAnnotationPattern = java.util.regex.Pattern.compile('\\@Async\\b')
+
+            def violations = []
+
+            def lineOfIndex = { String s, int idx ->
+                int line = 1
+                for (int i = 0; i < idx && i < s.length(); i++) {
+                    if (s.charAt(i) == '\n') {
+                        line++
+                    }
+                }
+                return line
+            }
+
+            def findMatchingParen = { String s, int openIdx ->
+                int depth = 0
+                for (int i = openIdx; i < s.length(); i++) {
+                    char c = s.charAt(i)
+                    if (c == '(') {
+                        depth++
+                    } else if (c == ')') {
+                        depth--
+                        if (depth == 0) {
+                            return i
+                        }
+                    }
+                }
+                return -1
+            }
+
+            def hasTopLevelComma = { String s, int startIdx, int endIdx ->
+                int paren = 0
+                int brace = 0
+                int bracket = 0
+
+                for (int i = startIdx; i < endIdx && i < s.length(); i++) {
+                    char c = s.charAt(i)
+                    if (c == '(') {
+                        paren++
+                    } else if (c == ')') {
+                        paren = Math.max(0, paren - 1)
+                    } else if (c == '{') {
+                        brace++
+                    } else if (c == '}') {
+                        brace = Math.max(0, brace - 1)
+                    } else if (c == '[') {
+                        bracket++
+                    } else if (c == ']') {
+                        bracket = Math.max(0, bracket - 1)
+                    } else if (c == ',' && paren == 0 && brace == 0 && bracket == 0) {
+                        return true
+                    }
+                }
+
+                return false
+            }
+
+            srcDir.eachFileRecurse(groovy.io.FileType.FILES) { File f ->
+                if (!f.name.endsWith('.java')) {
+                    return
+                }
+
+                def original = f.getText('UTF-8')
+
+                // Escape hatch (must be explicit + justified, near the top of file)
+                def head = original
+                def firstNewline = 0
+                int linesToCheck = 40
+                for (int i = 0; i < original.length() && linesToCheck > 0; i++) {
+                    if (original.charAt(i) == '\n') {
+                        firstNewline = i
+                        linesToCheck--
+                    }
+                }
+                if (firstNewline > 0) {
+                    head = original.substring(0, firstNewline)
+                }
+
+                if (allowMarkerPattern.matcher(head).find()) {
+                    return
+                }
+
+                def content = stripJavaCommentsAndStrings(original)
+                def commentStripped = stripJavaCommentsOnly(original)
+
+                simpleRules.each { rule ->
+                    def matcher = rule.pattern.matcher(content)
+                    while (matcher.find()) {
+                        violations << [file: f, line: lineOfIndex(content, matcher.start()), ruleId: rule.id, message: rule.message]
+                    }
+                }
+
+                cfAsyncPatterns.each { rule ->
+                    def matcher = rule.pattern.matcher(content)
+                    while (matcher.find()) {
+                        int openParenIdx = matcher.end() - 1
+                        int closeParenIdx = findMatchingParen(content, openParenIdx)
+                        if (closeParenIdx < 0) {
+                            break
+                        }
+
+                        if (!hasTopLevelComma(content, openParenIdx + 1, closeParenIdx)) {
+                            violations << [file: f, line: lineOfIndex(content, matcher.start()), ruleId: rule.id, message: rule.message]
+                        }
+
+                        matcher.region(Math.min(closeParenIdx + 1, content.length()), content.length())
+                    }
+                }
+
+                reactorShiftPatterns.each { rule ->
+                    def matcher = rule.pattern.matcher(content)
+                    while (matcher.find()) {
+                        int openParenIdx = matcher.end() - 1
+                        int closeParenIdx = findMatchingParen(content, openParenIdx)
+                        if (closeParenIdx < 0) {
+                            break
+                        }
+
+                        def args = content.substring(openParenIdx + 1, closeParenIdx)
+                        if (reactorBadSchedulersPattern.matcher(args).find()) {
+                            violations << [file: f, line: lineOfIndex(content, matcher.start()), ruleId: rule.id, message: rule.message]
+                        }
+
+                        matcher.region(Math.min(closeParenIdx + 1, content.length()), content.length())
+                    }
+                }
+
+                // Spring @Async must be explicit to avoid default executors that drop TenantContext/MDC
+                def asyncMatcher = asyncAnnotationPattern.matcher(commentStripped)
+                while (asyncMatcher.find()) {
+                    int idx = asyncMatcher.end()
+                    while (idx < commentStripped.length() && Character.isWhitespace(commentStripped.charAt(idx))) {
+                        idx++
+                    }
+
+                    if (idx >= commentStripped.length() || commentStripped.charAt(idx) != '(') {
+                        violations << [
+                                file  : f,
+                                line  : lineOfIndex(commentStripped, asyncMatcher.start()),
+                                ruleId: 'SPRING_ASYNC_MUST_SPECIFY_EXECUTOR',
+                                message: 'Spring @Async must specify an explicit executor bean name (avoid default executor; preserve TenantContext/MDC). Use @Async("<executorBean>").'
+                        ]
+                        continue
+                    }
+
+                    int openParenIdx = idx
+                    int closeParenIdx = findMatchingParen(commentStripped, openParenIdx)
+                    if (closeParenIdx < 0) {
+                        break
+                    }
+
+                    def args = commentStripped.substring(openParenIdx + 1, closeParenIdx)
+                    if (args.trim().isEmpty()) {
+                        violations << [
+                                file  : f,
+                                line  : lineOfIndex(commentStripped, asyncMatcher.start()),
+                                ruleId: 'SPRING_ASYNC_MUST_SPECIFY_EXECUTOR',
+                                message: 'Spring @Async must specify an explicit executor bean name (avoid default executor; preserve TenantContext/MDC). Use @Async("<executorBean>").'
+                        ]
+                    }
+
+                    asyncMatcher.region(Math.min(closeParenIdx + 1, commentStripped.length()), commentStripped.length())
+                }
+            }
+
+            if (!violations.isEmpty()) {
+                def details = violations.collect { v ->
+                    "- ${v.file}:L${v.line} [${v.ruleId}] ${v.message}"
+                }.join('\n')
+
+                def message =
+                        "Async/parallel patterns that can lose TenantContext/traceId found in production code.\n" +
+                                "Fix: provide an explicit managed executor/scheduler with context propagation.\n" +
+                                "Escape hatch (exceptional only): add within first 40 lines: \"// EVCS_ALLOW_ASYNC_CONTEXT_LOSS: <reason>\"\n" +
+                                details + "\n"
+
+                if (gateMode == 'warn') {
+                    logger.warn("[EVCS GATE][async][WARN]\n" + message)
+                    return
+                }
+
+                throw new GradleException(message)
+            }
+        }
+    }
+
+    tasks.matching { it.name == 'check' }.configureEach {
+        dependsOn(tasks.named('forbidThreadingPrimitives'))
+        dependsOn(tasks.named('forbidAsyncContextLoss'))
     }
 
     def hasBootApplication = fileTree('src/main/java') {

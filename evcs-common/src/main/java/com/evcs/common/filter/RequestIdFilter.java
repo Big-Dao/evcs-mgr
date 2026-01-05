@@ -16,7 +16,16 @@ import java.util.UUID;
 @Slf4j
 public class RequestIdFilter implements Filter {
     
+    /**
+     * 兼容策略：
+     * - 优先使用 X-Trace-Id 作为链路追踪 ID
+     * - 兼容旧的 X-Request-Id
+     * - MDC 同时写入 traceId 和 requestId（后续逐步统一为 traceId）
+     */
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
     private static final String REQUEST_ID_HEADER = "X-Request-Id";
+
+    private static final String MDC_TRACE_ID_KEY = "traceId";
     private static final String MDC_REQUEST_ID_KEY = "requestId";
     
     @Override
@@ -26,25 +35,31 @@ public class RequestIdFilter implements Filter {
         HttpServletRequest httpRequest = (HttpServletRequest) request;
         HttpServletResponse httpResponse = (HttpServletResponse) response;
         
-        // 从请求头获取或生成RequestId
-        String requestId = httpRequest.getHeader(REQUEST_ID_HEADER);
-        if (requestId == null || requestId.isEmpty()) {
-            requestId = UUID.randomUUID().toString();
-            log.debug("生成新的RequestId: {}", requestId);
+        // 从请求头获取或生成 TraceId（优先 X-Trace-Id，兼容 X-Request-Id）
+        String traceId = httpRequest.getHeader(TRACE_ID_HEADER);
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = httpRequest.getHeader(REQUEST_ID_HEADER);
+        }
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = UUID.randomUUID().toString();
+            log.debug("生成新的TraceId: {}", traceId);
         } else {
-            log.debug("从Header获取RequestId: {}", requestId);
+            log.debug("从Header获取TraceId: {}", traceId);
         }
         
         // 设置到MDC中，便于日志记录
-        MDC.put(MDC_REQUEST_ID_KEY, requestId);
+        MDC.put(MDC_TRACE_ID_KEY, traceId);
+        MDC.put(MDC_REQUEST_ID_KEY, traceId);
         
-        // 设置到响应头中，便于客户端追踪
-        httpResponse.setHeader(REQUEST_ID_HEADER, requestId);
+        // 设置到响应头中，便于客户端追踪（同时写入新旧 header）
+        httpResponse.setHeader(TRACE_ID_HEADER, traceId);
+        httpResponse.setHeader(REQUEST_ID_HEADER, traceId);
         
         try {
             chain.doFilter(request, response);
         } finally {
             // 清理MDC，避免内存泄漏
+            MDC.remove(MDC_TRACE_ID_KEY);
             MDC.remove(MDC_REQUEST_ID_KEY);
         }
     }

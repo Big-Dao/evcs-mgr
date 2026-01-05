@@ -89,6 +89,10 @@ class OCPPMessageProcessorTelemetryTest {
 
     private static final class ChargerInfoResolverStub extends ChargerInfoResolver {
 
+        private ChargerInfoResolverStub() {
+            super(null);
+        }
+
         @Override
         public ChargerBasicInfo resolveByChargerCode(String chargerCode) {
             ChargerBasicInfo info = new ChargerBasicInfo();

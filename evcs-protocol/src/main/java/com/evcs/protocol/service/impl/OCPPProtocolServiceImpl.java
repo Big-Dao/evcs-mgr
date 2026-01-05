@@ -1,6 +1,6 @@
 package com.evcs.protocol.service.impl;
 
-import com.evcs.common.result.Result;
+import com.evcs.protocol.client.StationServiceClient;
 import com.evcs.protocol.config.ProtocolProperties;
 import com.evcs.protocol.dto.ChargerBasicInfo;
 import com.evcs.protocol.dto.ProtocolRequest;
@@ -10,15 +10,7 @@ import com.evcs.protocol.mq.ProtocolEventPublisher;
 import com.evcs.protocol.websocket.OCPPSessionManager;
 import com.evcs.protocol.websocket.OCPPWebSocketSession;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
-import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-
-import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -32,16 +24,16 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
 
     private final ProtocolEventPublisher eventPublisher;
     private final OCPPSessionManager sessionManager;
-
-    @Autowired(required = false)
-    private RestTemplate restTemplate;
+    private final StationServiceClient stationServiceClient;
 
     public OCPPProtocolServiceImpl(ProtocolProperties protocolProperties,
                                   ProtocolEventPublisher eventPublisher,
-                                  OCPPSessionManager sessionManager) {
+                                  OCPPSessionManager sessionManager,
+                                  StationServiceClient stationServiceClient) {
         super(protocolProperties);
         this.eventPublisher = eventPublisher;
         this.sessionManager = sessionManager;
+        this.stationServiceClient = stationServiceClient;
     }
 
     @Override
@@ -321,42 +313,7 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
         if (chargerCode == null) {
             return null;
         }
-        if (restTemplate == null) {
-            log.warn("RestTemplate not available, cannot fetch charger info by code: {}", chargerCode);
-            return null;
-        }
-        try {
-            String url = "http://evcs-station/charger/code/" + chargerCode;
-            ParameterizedTypeReference<Result<ChargerBasicInfo>> typeRef = new ParameterizedTypeReference<>() {};
-            RequestEntity<Void> requestEntity = RequestEntity.get(requiredUri(url)).build();
-            ResponseEntity<Result<ChargerBasicInfo>> response = restTemplate.exchange(requestEntity, typeRef);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                return null;
-            }
-
-            Result<ChargerBasicInfo> result = response.getBody();
-            if (result == null) {
-                return null;
-            }
-
-            Integer code = result.getCode();
-            if (code != null && code == 200) {
-                return result.getData();
-            }
-        } catch (Exception e) {
-            log.warn("Failed to fetch charger info from station service, chargerCode={}", chargerCode, e);
-        }
-        return null;
-    }
-
-    @NonNull
-    private static URI requiredUri(String url) {
-        URI uri = URI.create(url);
-        if (uri == null) {
-            throw new IllegalStateException("URI.create returned null");
-        }
-        return uri;
+        return stationServiceClient.getChargerByCode(chargerCode);
     }
 
     @Override

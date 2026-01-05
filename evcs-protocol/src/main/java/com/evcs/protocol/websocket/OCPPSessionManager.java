@@ -3,13 +3,11 @@ package com.evcs.protocol.websocket;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -31,21 +29,9 @@ public class OCPPSessionManager {
     private final ConcurrentHashMap<String, OCPPWebSocketSession> sessionMap = new ConcurrentHashMap<>();
 
     /**
-     * 定时任务执行器
-     */
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
-
-    /**
      * 最大会话数
      */
     private static final int MAX_SESSIONS = 1000;
-
-    public OCPPSessionManager() {
-        // 启动会话清理任务
-        startSessionCleanupTask();
-        // 启动心跳检测任务
-        startHeartbeatCheckTask();
-    }
 
     /**
      * 添加新会话
@@ -189,35 +175,11 @@ public class OCPPSessionManager {
     }
 
     /**
-     * 启动会话清理任务
-     */
-    private void startSessionCleanupTask() {
-        scheduler.scheduleAtFixedRate(() -> {
-            try {
-                cleanupInactiveSessions();
-            } catch (Exception e) {
-                log.error("Error in session cleanup task", e);
-            }
-        }, 5, 5, TimeUnit.MINUTES); // 每5分钟执行一次
-    }
-
-    /**
-     * 启动心跳检测任务
-     */
-    private void startHeartbeatCheckTask() {
-        scheduler.scheduleAtFixedRate(() -> {
-            try {
-                checkHeartbeats();
-            } catch (Exception e) {
-                log.error("Error in heartbeat check task", e);
-            }
-        }, 1, 1, TimeUnit.MINUTES); // 每分钟执行一次
-    }
-
-    /**
      * 清理非活跃会话
      */
-    private void cleanupInactiveSessions() {
+    @Scheduled(initialDelay = 5, fixedDelay = 5, timeUnit = java.util.concurrent.TimeUnit.MINUTES)
+    public void cleanupInactiveSessions() {
+        try {
         LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(30); // 30分钟未活跃的会话
 
         List<String> inactiveChargers = activeSessions.entrySet().stream()
@@ -236,12 +198,17 @@ public class OCPPSessionManager {
         if (!inactiveChargers.isEmpty()) {
             log.info("Session cleanup completed: removed {} inactive sessions", inactiveChargers.size());
         }
+        } catch (Exception e) {
+            log.error("Error in session cleanup task", e);
+        }
     }
 
     /**
      * 检查心跳
      */
-    private void checkHeartbeats() {
+    @Scheduled(initialDelay = 1, fixedDelay = 1, timeUnit = java.util.concurrent.TimeUnit.MINUTES)
+    public void checkHeartbeats() {
+        try {
         List<String> missedHeartbeatChargers = activeSessions.values().stream()
                 .filter(OCPPWebSocketSession::needsHeartbeat)
                 .map(OCPPWebSocketSession::getChargerCode)
@@ -260,6 +227,9 @@ public class OCPPSessionManager {
                     removeSession(chargerCode);
                 }
             }
+        }
+        } catch (Exception e) {
+            log.error("Error in heartbeat check task", e);
         }
     }
 
@@ -281,17 +251,6 @@ public class OCPPSessionManager {
         // 清空映射
         activeSessions.clear();
         sessionMap.clear();
-
-        // 关闭调度器
-        scheduler.shutdown();
-        try {
-            if (!scheduler.awaitTermination(10, TimeUnit.SECONDS)) {
-                scheduler.shutdownNow();
-            }
-        } catch (InterruptedException e) {
-            scheduler.shutdownNow();
-            Thread.currentThread().interrupt();
-        }
 
         log.info("Session manager shutdown completed");
     }

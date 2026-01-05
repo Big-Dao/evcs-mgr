@@ -20,6 +20,22 @@ logging:
     com.evcs.protocol: info
     com.evcs.protocol.mq: debug
 
+evcs:
+  protocol:
+    resilience:
+      station-service-circuit-breaker:
+        sliding-window-size: 20
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50.0
+        wait-duration-in-open-state-ms: 15000
+        permitted-number-of-calls-in-half-open-state: 3
+      station-service-retry:
+        enabled: true
+        max-attempts: 3
+        delay: 200
+        multiplier: 2.0
+        max-delay: 2000
+
 management:
   endpoints:
     web:

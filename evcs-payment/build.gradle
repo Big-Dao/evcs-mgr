@@ -13,6 +13,10 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
+    // Resilience (timeouts already enforced at HTTP client level)
+    implementation "io.github.resilience4j:resilience4j-spring-boot3:${resilience4jVersion}"
+    implementation "io.github.resilience4j:resilience4j-micrometer:${resilience4jVersion}"
     
     // HTTP Client
     implementation 'org.apache.httpcomponents.client5:httpclient5'
