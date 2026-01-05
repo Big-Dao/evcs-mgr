@@ -42,4 +42,8 @@
 ## 示例
 - 路由分层、DTO 与实体转换、异常映射等示例保持在此文件中；规范性条目在 SSOT 中维护。
 
+## 设备控制示例（按枪口）
+
+- 按枪口（Connector）启停与会话字段落库的边界与接口示例见：`docs/features/CHARGER-CONNECTOR-CONTROL.md`
+
 备注：如需扩展规范或新增规则，请在 `API-DESIGN-STANDARDS.md` 中维护，并在此文件仅保留指向与摘要，避免重复。

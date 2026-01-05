@@ -340,8 +340,6 @@ spec:
       labels:
         app: postgres
     spec:
-      nodeSelector:
-        role: core
       containers:
       - name: postgres
         image: postgres:15-alpine
@@ -378,7 +376,7 @@ spec:
       - name: postgres-data
         hostPath:
           path: /data/evcs/postgres
-          type: DirectoryOrCreate
+          type: Directory
       - name: init-scripts
         configMap:
           name: postgres-init-scripts
@@ -412,8 +410,6 @@ spec:
       labels:
         app: redis
     spec:
-      nodeSelector:
-        role: core
       containers:
       - name: redis
         image: redis:7-alpine
@@ -434,7 +430,7 @@ spec:
       - name: redis-data
         hostPath:
           path: /data/evcs/redis
-          type: DirectoryOrCreate
+          type: Directory
 
 ---
 apiVersion: v1
@@ -465,8 +461,6 @@ spec:
       labels:
         app: rabbitmq
     spec:
-      nodeSelector:
-        role: core
       containers:
       - name: rabbitmq
         image: rabbitmq:3-management-alpine
@@ -498,7 +492,7 @@ spec:
       - name: rabbitmq-data
         hostPath:
           path: /data/evcs/rabbitmq
-          type: DirectoryOrCreate
+          type: Directory
 
 ---
 apiVersion: v1
@@ -533,8 +527,6 @@ spec:
       labels:
         app: registry
     spec:
-      nodeSelector:
-        role: core
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:
@@ -552,4 +544,4 @@ spec:
       - name: registry-data
         hostPath:
           path: /data/evcs/registry
-          type: DirectoryOrCreate
+          type: Directory

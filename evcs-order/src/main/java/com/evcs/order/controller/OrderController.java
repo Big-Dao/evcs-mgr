@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
+import com.evcs.order.dto.OrderDTO;
 import com.evcs.order.entity.ChargingOrder;
 import com.evcs.order.service.IChargingOrderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,15 +25,22 @@ public class OrderController {
     @GetMapping({"/page", "/list"})
     @Operation(summary = "分页查询订单")
     @DataScope
-    public Result<IPage<ChargingOrder>> page(
+    public Result<IPage<OrderDTO>> page(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(required = false) Long stationId,
             @RequestParam(required = false) Long chargerId,
             @RequestParam(required = false) Long userId,
-            @RequestParam(required = false) Integer status) {
-        Page<ChargingOrder> p = new Page<>(page, size);
-        return Result.success(orderService.pageOrders(p, stationId, chargerId, userId, status));
+            @RequestParam(required = false) Integer status,
+            @RequestParam(required = false) String sessionId) {
+        Page<OrderDTO> p = new Page<>(page, size);
+        ChargingOrder query = new ChargingOrder();
+        query.setStationId(stationId);
+        query.setChargerId(chargerId);
+        query.setUserId(userId);
+        query.setStatus(status);
+        query.setSessionId(sessionId);
+        return Result.success(orderService.getOrderPage(p, query));
     }
 
     @GetMapping("/by-session")

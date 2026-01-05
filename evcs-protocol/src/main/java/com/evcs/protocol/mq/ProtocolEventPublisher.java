@@ -37,9 +37,23 @@ public class ProtocolEventPublisher {
         String protocolType,
         LocalDateTime heartbeatTime
     ) {
+        return publishHeartbeat(chargerId, null, tenantId, protocolType, heartbeatTime);
+    }
+
+    /**
+     * 发布心跳事件（可选指定枪口）
+     */
+    public HeartbeatEvent publishHeartbeat(
+        Long chargerId,
+        Integer connectorId,
+        Long tenantId,
+        String protocolType,
+        LocalDateTime heartbeatTime
+    ) {
         HeartbeatEvent event = HeartbeatEvent.builder()
             .eventId(UUID.randomUUID().toString())
             .chargerId(chargerId)
+            .connectorId(connectorId)
             .tenantId(tenantId)
             .eventType(ProtocolEvent.EventType.HEARTBEAT)
             .eventTime(LocalDateTime.now())
@@ -62,9 +76,37 @@ public class ProtocolEventPublisher {
         Integer newStatus,
         String statusDesc
     ) {
+        return publishStatusChange(
+            chargerId,
+            null,
+            tenantId,
+            protocolType,
+            oldStatus,
+            newStatus,
+            statusDesc,
+            null,
+            null
+        );
+    }
+
+    /**
+     * 发布状态变更事件（可选指定枪口，并可携带故障信息）
+     */
+    public StatusEvent publishStatusChange(
+        Long chargerId,
+        Integer connectorId,
+        Long tenantId,
+        String protocolType,
+        Integer oldStatus,
+        Integer newStatus,
+        String statusDesc,
+        String faultCode,
+        String faultDescription
+    ) {
         StatusEvent event = StatusEvent.builder()
             .eventId(UUID.randomUUID().toString())
             .chargerId(chargerId)
+            .connectorId(connectorId)
             .tenantId(tenantId)
             .eventType(ProtocolEvent.EventType.STATUS_CHANGE)
             .eventTime(LocalDateTime.now())
@@ -72,6 +114,8 @@ public class ProtocolEventPublisher {
             .oldStatus(oldStatus)
             .newStatus(newStatus)
             .statusDesc(statusDesc)
+            .faultCode(faultCode)
+            .faultDescription(faultDescription)
             .build();
 
         publishEvent(event);
@@ -94,6 +138,39 @@ public class ProtocolEventPublisher {
         Boolean success,
         String message
     ) {
+        return publishChargingStart(
+            stationId,
+            chargerId,
+            null,
+            tenantId,
+            protocolType,
+            sessionId,
+            userId,
+            billingPlanId,
+            orderNo,
+            initialEnergy,
+            success,
+            message
+        );
+    }
+
+    /**
+     * 发布开始充电事件（可选指定枪口）
+     */
+    public StartEvent publishChargingStart(
+        Long stationId,
+        Long chargerId,
+        Integer connectorId,
+        Long tenantId,
+        String protocolType,
+        String sessionId,
+        Long userId,
+        Long billingPlanId,
+        String orderNo,
+        Double initialEnergy,
+        Boolean success,
+        String message
+    ) {
         if (stationId == null) {
             throw new IllegalArgumentException(
                 "stationId is required for charging start event"
@@ -103,6 +180,7 @@ public class ProtocolEventPublisher {
             .eventId(UUID.randomUUID().toString())
             .stationId(stationId)
             .chargerId(chargerId)
+            .connectorId(connectorId)
             .tenantId(tenantId)
             .eventType(ProtocolEvent.EventType.CHARGING_START)
             .eventTime(LocalDateTime.now())
@@ -135,9 +213,41 @@ public class ProtocolEventPublisher {
         Boolean success,
         String message
     ) {
+        return publishChargingStop(
+            chargerId,
+            null,
+            tenantId,
+            protocolType,
+            sessionId,
+            orderNo,
+            energy,
+            duration,
+            reason,
+            success,
+            message
+        );
+    }
+
+    /**
+     * 发布停止充电事件（可选指定枪口）
+     */
+    public StopEvent publishChargingStop(
+        Long chargerId,
+        Integer connectorId,
+        Long tenantId,
+        String protocolType,
+        String sessionId,
+        String orderNo,
+        Double energy,
+        Long duration,
+        String reason,
+        Boolean success,
+        String message
+    ) {
         StopEvent event = StopEvent.builder()
             .eventId(UUID.randomUUID().toString())
             .chargerId(chargerId)
+            .connectorId(connectorId)
             .tenantId(tenantId)
             .eventType(ProtocolEvent.EventType.CHARGING_STOP)
             .eventTime(LocalDateTime.now())
@@ -149,6 +259,47 @@ public class ProtocolEventPublisher {
             .reason(reason)
             .success(success)
             .message(message)
+            .build();
+
+        publishEvent(event);
+        return event;
+    }
+
+    /**
+     * 发布实时遥测/计量事件（用于实时展示与会话曲线）
+     */
+    public TelemetryEvent publishTelemetry(
+        Long chargerId,
+        Integer connectorId,
+        Long tenantId,
+        String protocolType,
+        String sessionId,
+        Integer transactionId,
+        LocalDateTime sampleTime,
+        Double voltage,
+        Double current,
+        Double power,
+        Double soc,
+        Double energy,
+        Long durationSeconds
+    ) {
+        TelemetryEvent event = TelemetryEvent.builder()
+            .eventId(UUID.randomUUID().toString())
+            .chargerId(chargerId)
+            .connectorId(connectorId)
+            .tenantId(tenantId)
+            .eventType(ProtocolEvent.EventType.TELEMETRY)
+            .eventTime(LocalDateTime.now())
+            .protocolType(protocolType)
+            .sessionId(sessionId)
+            .transactionId(transactionId)
+            .sampleTime(sampleTime)
+            .voltage(voltage)
+            .current(current)
+            .power(power)
+            .soc(soc)
+            .energy(energy)
+            .durationSeconds(durationSeconds)
             .build();
 
         publishEvent(event);

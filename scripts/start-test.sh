@@ -47,7 +47,10 @@ fi
 if [ "$rebuild" = "y" ] || [ "$rebuild" = "Y" ]; then
     echo ""
     echo -e "${YELLOW}构建应用JAR文件...${NC}"
-    ./gradlew clean build -x test --no-daemon
+    # 注意：测试环境只需要 tenant/station 两个可执行 JAR，按需构建即可。
+    # 另外：如果本机历史上把本地 Docker Registry 数据放在 build/registry-data（旧默认），可能会导致 `:clean` 无法删除而失败。
+    # 现已推荐将 registry 数据迁到 .local/registry-data，避免污染 Gradle 的 build 目录。
+    ./gradlew :evcs-tenant:build :evcs-station:build -x test --no-daemon
     if [ $? -ne 0 ]; then
         echo -e "${RED}错误: 应用构建失败!${NC}"
         exit 1
@@ -60,7 +63,7 @@ else
     if [ ! -f "evcs-tenant/build/libs/evcs-tenant-1.0.0.jar" ] || [ ! -f "evcs-station/build/libs/evcs-station-1.0.0-boot.jar" ]; then
         echo ""
         echo -e "${YELLOW}未找到预构建的JAR文件，开始构建...${NC}"
-        ./gradlew clean build -x test --no-daemon
+        ./gradlew :evcs-tenant:build :evcs-station:build -x test --no-daemon
         if [ $? -ne 0 ]; then
             echo -e "${RED}错误: 应用构建失败!${NC}"
             exit 1
@@ -76,7 +79,8 @@ docker compose -f docker-compose.test.yml down --remove-orphans
 
 echo ""
 echo -e "${YELLOW}启动测试环境 (可能需要几分钟)...${NC}"
-docker compose -f docker-compose.test.yml up $BUILD_FLAG -d
+# 在受限网络/镜像源不稳定场景下，避免 compose 主动 pull 导致失败；依赖本机已缓存镜像。
+docker compose -f docker-compose.test.yml up $BUILD_FLAG --pull=never -d
 
 # 等待服务启动
 echo ""
@@ -98,7 +102,6 @@ echo "  PostgreSQL:      localhost:5432 (evcs_test/test_password_123)"
 echo "  Redis:           localhost:6379 (密码: test_redis_123)"
 echo "  RabbitMQ:        localhost:5672 (evcs_test/test_mq_123)"
 echo "  RabbitMQ管理界面: http://localhost:15672"
-echo "  Adminer数据库:   http://localhost:8090"
 echo "  租户服务:        http://localhost:8081"
 echo "  充电站服务:      http://localhost:8082"
 echo ""

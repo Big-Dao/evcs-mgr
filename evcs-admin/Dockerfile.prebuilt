@@ -1,8 +1,12 @@
-# Runtime-only image for k8s builds when dist/ is already built locally.
+# Runtime-only image when dist/ is already built locally.
 # This avoids any outbound network access inside the cluster (no npm install).
+#
+# Default uses public nginx base image.
+# For air-gapped environments, override at build time, e.g.:
+#   --build-arg NGINX_IMAGE=localhost:5000/base/nginx:alpine
 
-ARG BASE_REGISTRY=192.168.20.235:5000
-FROM ${BASE_REGISTRY}/base/nginx:alpine
+ARG NGINX_IMAGE=nginx:alpine
+FROM ${NGINX_IMAGE}
 
 WORKDIR /usr/share/nginx/html
 

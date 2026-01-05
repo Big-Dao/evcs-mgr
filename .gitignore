@@ -193,6 +193,9 @@ hs_err_pid*.log
 # Personal local notes (keep out of repo)
 local-notes/
 
+# Local-only runtime data (do not commit)
+.local/
+
 # Performance tests / JMeter reports (do not commit)
 performance-tests/results/
 results/
@@ -202,3 +205,7 @@ results/
 **/report-*/
 **/aggregate-report.csv
 **/response-time-graph.csv
+.codex/
+
+# Build artifacts (auto-generated during build)
+META-INF/

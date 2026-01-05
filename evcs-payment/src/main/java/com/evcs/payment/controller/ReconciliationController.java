@@ -1,9 +1,12 @@
 package com.evcs.payment.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
+import com.evcs.payment.dto.ReconciliationQuery;
 import com.evcs.payment.dto.ReconciliationRequest;
 import com.evcs.payment.dto.ReconciliationResult;
+import com.evcs.payment.entity.ReconciliationTask;
 import com.evcs.payment.service.IReconciliationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -15,11 +18,29 @@ import org.springframework.web.bind.annotation.*;
  */
 @Tag(name = "对账管理", description = "支付对账功能")
 @RestController
-@RequestMapping("/api/reconciliation")
+@RequestMapping("/reconciliation")
 @RequiredArgsConstructor
 public class ReconciliationController {
 
     private final IReconciliationService reconciliationService;
+
+    @GetMapping("/tasks")
+    @Operation(summary = "分页查询对账任务")
+    public Result<Page<ReconciliationTask>> getTaskList(ReconciliationQuery query) {
+        return Result.success(reconciliationService.getTaskList(query));
+    }
+
+    @GetMapping("/tasks/{id}")
+    @Operation(summary = "获取对账任务详情")
+    public Result<ReconciliationTask> getTaskDetail(@PathVariable Long id) {
+        return Result.success(reconciliationService.getTaskDetail(id));
+    }
+
+    @GetMapping("/report/{taskNo}")
+    @Operation(summary = "获取对账报告")
+    public Result<Object> getReport(@PathVariable String taskNo) {
+        return Result.success(reconciliationService.getReport(taskNo));
+    }
 
     @PostMapping("/execute")
     @Operation(summary = "执行对账")

@@ -210,7 +210,7 @@ const handleAdd = () => {
 }
 
 const handleView = (row: Station) => {
-  router.push(`/stations/${row.id}`)
+  router.push(`/stations/${row.stationId || row.id}`)
 }
 
 const handleEdit = (row: Station) => {
@@ -225,7 +225,7 @@ const handleDelete = async (row: Station) => {
       type: 'warning'
     })
     
-    await deleteStation(row.id)
+    await deleteStation(row.stationId || row.id!)
     ElMessage.success('删除成功')
     loadStationList()
   } catch (error) {

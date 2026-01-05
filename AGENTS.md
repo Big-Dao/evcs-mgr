@@ -8,7 +8,7 @@
 - AI 助手统一配置：`docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md`
 - 项目共享上下文：`.ai-assistant-config/SHARED-PROJECT-CONTEXT.md`
 - Claude 指令：`.claude/project-instructions.md`（应仅做引用，不重复详细规则）
-- Copilot 指令：`.github/*` 中相关说明（只引用统一配置）
+- Copilot 指令：`.github/copilot-instructions.md`（引用统一配置）及 `.github/instructions/` 下的模块专用规范
 - CodeX 指令：`.codex/project-context.md`（只引用统一配置）
 
 除上述“单一来源”文档外，其它位置（含本文件）只可：
@@ -20,6 +20,10 @@
 - 复制整段规范正文并修改
 - 引入与 SSOT 矛盾的实现建议
 - 在不同 AI 助手配置中写出冲突策略
+
+## 🚨 AI 助手必读 (CRITICAL INSTRUCTION)
+在开始任何任务前，**必须**先读取并理解 `docs/overview/PROJECT-CODING-STANDARDS.md`。这是本项目的最高法律。
+任何生成的代码若违反该文档中的规范，将被视为**严重错误**。
 
 ## 助手统一行为基线（摘要）
 - 严格遵守分层：Controller → Service → Domain/Repository，不跨层渗透。

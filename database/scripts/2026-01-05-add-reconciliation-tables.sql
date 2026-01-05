@@ -1,0 +1,40 @@
+CREATE TABLE IF NOT EXISTS reconciliation_task (
+    id BIGSERIAL PRIMARY KEY,
+    task_no VARCHAR(64) NOT NULL,
+    channel VARCHAR(32) NOT NULL,
+    reconciliation_date DATE NOT NULL,
+    status VARCHAR(32) NOT NULL,
+    total_count INT DEFAULT 0,
+    matched_count INT DEFAULT 0,
+    unmatched_count INT DEFAULT 0,
+    exception_count INT DEFAULT 0,
+    total_amount DECIMAL(18, 2) DEFAULT 0.00,
+    matched_amount DECIMAL(18, 2) DEFAULT 0.00,
+    unmatched_amount DECIMAL(18, 2) DEFAULT 0.00,
+    start_time TIMESTAMP,
+    end_time TIMESTAMP,
+    duration BIGINT,
+    tenant_id BIGINT,
+    statement_file_url VARCHAR(255),
+    report_file_url VARCHAR(255),
+    error_message TEXT,
+    created_by VARCHAR(64),
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted SMALLINT DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS reconciliation_exception (
+    id BIGSERIAL PRIMARY KEY,
+    task_id BIGINT NOT NULL,
+    trade_no VARCHAR(64),
+    order_no VARCHAR(64),
+    amount DECIMAL(18, 2),
+    exception_type VARCHAR(32),
+    description TEXT,
+    handle_status VARCHAR(32) DEFAULT 'PENDING',
+    handle_result TEXT,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted SMALLINT DEFAULT 0
+);

@@ -1,5 +1,6 @@
 package com.evcs.payment.service.channel;
 
+import com.evcs.common.exception.BusinessException;
 import com.evcs.payment.config.PaymentConfig;
 import com.evcs.payment.dto.PaymentRequest;
 import com.evcs.payment.dto.PaymentResponse;
@@ -23,12 +24,13 @@ import com.wechat.pay.java.service.refund.model.CreateRequest;
 import com.wechat.pay.java.service.refund.model.Refund;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.core.env.Environment;
+import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -43,14 +45,26 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class WechatPayChannelService implements IPaymentChannel {
 
+    private static final String CURRENCY_CNY = "CNY";
+    private static final String REFUND_STATUS_PROCESSING = "PROCESSING";
+    private static final String REFUND_STATUS_SUCCESS = "SUCCESS";
+
     private final PaymentConfig paymentConfig;
     private final WechatPayClientFactory clientFactory;
     private final ObjectMapper objectMapper;
+    private final Environment environment;
+
+    private boolean isProduction() {
+        return environment.acceptsProfiles(Profiles.of("prod", "production"));
+    }
 
     @Override
     public PaymentResponse createPayment(PaymentRequest request) {
+        log.info("创建微信支付订单: orderId={}, amount={}, method={}", request.getOrderId(), request.getAmount(),
+                request.getPaymentMethod());
+
         if (!isRealIntegrationEnabled()) {
-            log.debug("微信支付处于模拟模式，返回伪造响应");
+            log.warn("微信支付未完全配置或非生产环境，返回模拟响应");
             return createMockPaymentResponse(request);
         }
 
@@ -63,13 +77,18 @@ public class WechatPayChannelService implements IPaymentChannel {
             }
             throw new IllegalArgumentException("不支持的微信支付方式: " + method);
         } catch (Exception ex) {
-            log.error("调用微信支付失败，回退到模拟响应: orderId={}", request.getOrderId(), ex);
+            log.error("调用微信支付失败: orderId={}", request.getOrderId(), ex);
+            if (isProduction()) {
+                throw new BusinessException("创建微信支付订单失败: " + ex.getMessage());
+            }
             return createMockPaymentResponse(request);
         }
     }
 
     @Override
     public PaymentResponse queryPayment(String tradeNo) {
+        log.info("查询微信支付状态: tradeNo={}", tradeNo);
+
         if (!isRealIntegrationEnabled()) {
             return createMockQueryResponse(tradeNo);
         }
@@ -87,12 +106,17 @@ public class WechatPayChannelService implements IPaymentChannel {
             return buildResponseFromTransaction(tradeNo, transaction);
         } catch (Exception ex) {
             log.error("微信支付查询失败: tradeNo={}", tradeNo, ex);
+            if (isProduction()) {
+                throw new BusinessException("查询微信支付状态失败: " + ex.getMessage());
+            }
             return createMockQueryResponse(tradeNo);
         }
     }
 
     @Override
     public RefundResponse refund(RefundRequest request) {
+        log.info("发起微信退款: paymentId={}, amount={}", request.getPaymentId(), request.getRefundAmount());
+
         if (!isRealIntegrationEnabled()) {
             return createMockRefundResponse(request);
         }
@@ -120,7 +144,7 @@ public class WechatPayChannelService implements IPaymentChannel {
             }
 
             AmountReq amountReq = new AmountReq();
-            amountReq.setCurrency("CNY");
+            amountReq.setCurrency(CURRENCY_CNY);
             amountReq.setRefund((long) convertAmountToFen(request.getRefundAmount()));
             BigDecimal totalAmount = Optional.ofNullable(request.getTotalAmount())
                 .orElse(request.getRefundAmount());
@@ -132,13 +156,16 @@ public class WechatPayChannelService implements IPaymentChannel {
             RefundResponse result = new RefundResponse();
             result.setRefundNo(response.getRefundId());
             result.setRefundAmount(request.getRefundAmount());
-            result.setRefundStatus(response.getStatus() != null ? response.getStatus().name() : "PROCESSING");
+            result.setRefundStatus(response.getStatus() != null ? response.getStatus().name() : REFUND_STATUS_PROCESSING);
 
             log.info("微信退款提交成功: outRefundNo={}, channelRefundId={}",
                 refundRequest.getOutRefundNo(), response.getRefundId());
             return result;
         } catch (Exception ex) {
-            log.error("微信退款失败，回退到模拟响应: paymentId={}", request.getPaymentId(), ex);
+            log.error("微信退款失败: paymentId={}", request.getPaymentId(), ex);
+            if (isProduction()) {
+                throw new BusinessException("微信退款失败: " + ex.getMessage());
+            }
             return createMockRefundResponse(request);
         }
     }
@@ -189,7 +216,7 @@ public class WechatPayChannelService implements IPaymentChannel {
 
         com.wechat.pay.java.service.payments.jsapi.model.Amount amount =
             new com.wechat.pay.java.service.payments.jsapi.model.Amount();
-        amount.setCurrency("CNY");
+        amount.setCurrency(CURRENCY_CNY);
         amount.setTotal(convertAmountToFen(request.getAmount()));
         prepayRequest.setAmount(amount);
 
@@ -228,7 +255,7 @@ public class WechatPayChannelService implements IPaymentChannel {
 
         com.wechat.pay.java.service.payments.nativepay.model.Amount amount =
             new com.wechat.pay.java.service.payments.nativepay.model.Amount();
-        amount.setCurrency("CNY");
+        amount.setCurrency(CURRENCY_CNY);
         amount.setTotal(convertAmountToFen(request.getAmount()));
         prepayRequest.setAmount(amount);
 
@@ -343,22 +370,27 @@ public class WechatPayChannelService implements IPaymentChannel {
 
     private int convertAmountToFen(BigDecimal amount) {
         return amount.movePointRight(2)
-            .setScale(0, RoundingMode.UNNECESSARY)
+            .setScale(0, RoundingMode.HALF_UP)
             .intValueExact();
     }
 
     private String generateTradeNo(Long orderId) {
-        String suffix = orderId != null ? String.format("%06d", Math.abs(orderId) % 1_000_000) : "000000";
-        return "EVC" + Instant.now().getEpochSecond() + suffix;
+        // 业务前缀 + 订单ID + 随机后缀，降低碰撞概率
+        return "WXP" + orderId + "_" + UUID.randomUUID().toString().substring(0, 8);
     }
 
     private String generateRefundNo(Long paymentId) {
-        return "EVCR" + (paymentId != null ? paymentId : UUID.randomUUID());
+        return "WXPR" + (paymentId != null ? paymentId : UUID.randomUUID().toString().substring(0, 8));
     }
 
     private PaymentResponse createMockPaymentResponse(PaymentRequest request) {
+        log.warn("非生产环境：回退到模拟实现");
         PaymentResponse response = new PaymentResponse();
-        response.setTradeNo(generateTradeNo(request.getOrderId()));
+        String tradeNo = request.getTradeNo();
+        if (tradeNo == null || tradeNo.isEmpty()) {
+            tradeNo = generateTradeNo(request.getOrderId());
+        }
+        response.setTradeNo(tradeNo);
         response.setAmount(request.getAmount());
         response.setStatus(PaymentStatus.PENDING);
 
@@ -378,6 +410,7 @@ public class WechatPayChannelService implements IPaymentChannel {
     }
 
     private PaymentResponse createMockQueryResponse(String tradeNo) {
+        log.warn("非生产环境：回退到模拟实现");
         PaymentResponse response = new PaymentResponse();
         response.setTradeNo(tradeNo);
         response.setStatus(PaymentStatus.SUCCESS);
@@ -385,10 +418,11 @@ public class WechatPayChannelService implements IPaymentChannel {
     }
 
     private RefundResponse createMockRefundResponse(RefundRequest request) {
+        log.warn("非生产环境：回退到模拟实现");
         RefundResponse response = new RefundResponse();
         response.setRefundNo(generateRefundNo(request.getPaymentId()));
         response.setRefundAmount(request.getRefundAmount());
-        response.setRefundStatus("SUCCESS");
+        response.setRefundStatus(REFUND_STATUS_SUCCESS);
         return response;
     }
 }

@@ -35,6 +35,10 @@ public class ChargingOrder extends BaseEntity {
 
     private Long billingPlanId; // assigned at start if charger has plan
 
+    private Long couponId;
+    private BigDecimal discountAmount;
+    private BigDecimal payAmount;
+
     // 简易支付字段（占位）
     private String paymentTradeId;  // 第三方支付单号/交易ID
     private LocalDateTime paidTime; // 支付完成时间

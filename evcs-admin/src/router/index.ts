@@ -68,22 +68,34 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '充电站管理', icon: 'Location' }
       },
       {
-        path: 'stations/:id',
-        name: 'StationDetail',
-        component: () => import('@/views/station/StationDetail.vue'),
-        meta: { title: '充电站详情', icon: 'Location', hidden: true }
-      },
-      {
         path: 'stations/map-analytics',
         name: 'StationMapAnalytics',
         component: () => import('@/views/station/StationMapAnalytics.vue'),
         meta: { title: '地图分析', icon: 'Map' }
       },
       {
+        path: 'stations/:id',
+        name: 'StationDetail',
+        component: () => import('@/views/station/StationDetail.vue'),
+        meta: { title: '充电站详情', icon: 'Location', hidden: true }
+      },
+      {
         path: 'chargers',
         name: 'Chargers',
         component: () => import('@/views/charger/ChargerList.vue'),
         meta: { title: '充电桩管理', icon: 'Monitor' }
+      },
+      {
+        path: 'connectors',
+        name: 'Connectors',
+        component: () => import('@/views/charger/ConnectorList.vue'),
+        meta: { title: '充电枪管理', icon: 'Connection' }
+      },
+      {
+        path: 'chargers/:chargerId/connectors/:connectorNo',
+        name: 'ConnectorDetail',
+        component: () => import('@/views/charger/ConnectorDetail.vue'),
+        meta: { title: '充电枪详情', icon: 'Connection', hidden: true }
       },
       {
         path: 'chargers/:id',
@@ -96,6 +108,24 @@ const routes: RouteRecordRaw[] = [
         name: 'Orders',
         component: () => import('@/views/order/OrderList.vue'),
         meta: { title: '订单管理', icon: 'Document' }
+      },
+      {
+        path: 'firmware',
+        name: 'Firmware',
+        component: () => import('@/views/firmware/FirmwareList.vue'),
+        meta: { title: '固件管理', icon: 'Files' }
+      },
+      {
+        path: 'smart-charging',
+        name: 'SmartCharging',
+        component: () => import('@/views/smart-charging/ProfileList.vue'),
+        meta: { title: '智能充电', icon: 'Lightning' }
+      },
+      {
+        path: 'coupons',
+        name: 'Coupons',
+        component: () => import('@/views/marketing/CouponList.vue'),
+        meta: { title: '营销优惠', icon: 'Present' }
       },
       {
         path: 'orders/:id',

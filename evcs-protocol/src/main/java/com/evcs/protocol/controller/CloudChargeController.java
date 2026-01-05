@@ -54,9 +54,12 @@ public class CloudChargeController {
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "heartbeat");
 
+            Integer connectorId = extractConnectorIdFromData(request.getData());
+
             // 发布心跳事件
             eventPublisher.publishHeartbeat(
                 protocolRequest.getChargerId(),
+                connectorId,
                 protocolRequest.getTenantId(),
                 "CLOUD_CHARGE",
                 LocalDateTime.now()
@@ -99,14 +102,21 @@ public class CloudChargeController {
 
             Integer status = (Integer) request.getData().get("status");
 
+            Integer connectorId = extractConnectorIdFromData(request.getData());
+            String faultCode = extractStringFromData(request.getData(), "faultCode", "errorCode", "errCode", "fault");
+            String faultDescription = extractStringFromData(request.getData(), "faultDescription", "errorMsg", "errorMessage");
+
             // 发布状态变更事件
             eventPublisher.publishStatusChange(
                 protocolRequest.getChargerId(),
+                connectorId,
                 protocolRequest.getTenantId(),
                 "CLOUD_CHARGE",
                 null, // oldStatus
                 status,
-                "Status reported by device"
+                "Status reported by device",
+                faultCode,
+                faultDescription
             );
 
             // 返回成功响应
@@ -144,6 +154,8 @@ public class CloudChargeController {
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "start");
 
+            Integer connectorId = extractConnectorIdFromData(request.getData());
+
             // 云快充：userId 由协议上报携带，且必须在 data 内（确保签名覆盖），否则拒绝
             if (protocolRequest.getUserId() == null) {
                 return ResponseEntity.badRequest()
@@ -160,6 +172,7 @@ public class CloudChargeController {
             eventPublisher.publishChargingStart(
                 protocolRequest.getStationId(),
                 protocolRequest.getChargerId(),
+                connectorId,
                 protocolRequest.getTenantId(),
                 "CLOUD_CHARGE",
                 request.getSessionId(),
@@ -209,13 +222,25 @@ public class CloudChargeController {
 
             // 从请求数据中获取充电信息
             Map<String, Object> data = request.getData();
-            Double energy = data != null ? (Double) data.getOrDefault("energy", 0.0) : 0.0;
-            Long duration = data != null ? (Long) data.getOrDefault("duration", 0L) : 0L;
-            String reason = data != null ? (String) data.get("reason") : "Manual stop";
+            Double energy = data != null ? toDoubleValue(data.get("energy")) : null;
+            if (energy == null) {
+                energy = 0.0;
+            }
+            Long duration = data != null ? toLongValue(data.get("duration")) : null;
+            if (duration == null) {
+                duration = 0L;
+            }
+            String reason = data != null ? (String) data.get("reason") : null;
+            if (reason == null || reason.trim().isEmpty()) {
+                reason = "Manual stop";
+            }
+
+            Integer connectorId = extractConnectorIdFromData(request.getData());
 
             // 发布充电停止事件
             eventPublisher.publishChargingStop(
                 protocolRequest.getChargerId(),
+                connectorId,
                 protocolRequest.getTenantId(),
                 "CLOUD_CHARGE",
                 request.getSessionId(),
@@ -325,6 +350,47 @@ public class CloudChargeController {
         return toLongValue(data.get("userId"));
     }
 
+    private Integer extractConnectorIdFromData(Map<String, Object> data) {
+        if (data == null || data.isEmpty()) {
+            return null;
+        }
+
+        Object raw = null;
+        // 常见字段：connectorId / connectorNo / gunNo / port
+        for (String key : new String[]{"connectorId", "connectorNo", "gunNo", "gunId", "port", "connector"}) {
+            if (data.containsKey(key)) {
+                raw = data.get(key);
+                break;
+            }
+        }
+
+        Integer v = toIntegerValue(raw);
+        if (v == null || v <= 0) {
+            return null;
+        }
+        return v;
+    }
+
+    private String extractStringFromData(Map<String, Object> data, String... keys) {
+        if (data == null || data.isEmpty() || keys == null || keys.length == 0) {
+            return null;
+        }
+        for (String key : keys) {
+            if (!data.containsKey(key)) {
+                continue;
+            }
+            Object v = data.get(key);
+            if (v == null) {
+                continue;
+            }
+            String s = v.toString().trim();
+            if (!s.isEmpty()) {
+                return s;
+            }
+        }
+        return null;
+    }
+
     private Long toLongValue(Object value) {
         if (value == null) {
             return null;
@@ -339,6 +405,48 @@ public class CloudChargeController {
             }
             try {
                 return Long.parseLong(s);
+            } catch (NumberFormatException ex) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private Integer toIntegerValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).intValue();
+        }
+        if (value instanceof String) {
+            String s = ((String) value).trim();
+            if (s.isEmpty()) {
+                return null;
+            }
+            try {
+                return Integer.parseInt(s);
+            } catch (NumberFormatException ex) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private Double toDoubleValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        if (value instanceof String) {
+            String s = ((String) value).trim();
+            if (s.isEmpty()) {
+                return null;
+            }
+            try {
+                return Double.parseDouble(s);
             } catch (NumberFormatException ex) {
                 return null;
             }

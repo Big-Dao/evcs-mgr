@@ -44,6 +44,7 @@ spring:
     baseline-on-migrate: false
 
 mybatis-plus:
+  # mapper-locations: classpath:db/migration/ChargingOrderMapper.xml
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
@@ -91,4 +92,4 @@ eureka:
     prefer-ip-address: true
   client:
     service-url:
-      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+      defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE}

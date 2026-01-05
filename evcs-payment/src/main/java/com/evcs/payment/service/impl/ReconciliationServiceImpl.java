@@ -1,20 +1,25 @@
 package com.evcs.payment.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.payment.dto.ReconciliationException;
 import com.evcs.payment.dto.ReconciliationExceptionCandidate;
+import com.evcs.payment.dto.ReconciliationQuery;
 import com.evcs.payment.dto.ReconciliationRequest;
 import com.evcs.payment.dto.ReconciliationResult;
 import com.evcs.payment.entity.PaymentOrder;
+import com.evcs.payment.entity.ReconciliationTask;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.mapper.PaymentOrderMapper;
+import com.evcs.payment.mapper.ReconciliationTaskMapper;
 import com.evcs.payment.service.IReconciliationService;
 import com.evcs.payment.service.reconciliation.ReconciliationExceptionService;
 import com.evcs.payment.service.reconciliation.ReconciliationStatementService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -23,8 +28,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -45,6 +52,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
     private final PaymentOrderMapper paymentOrderMapper;
     private final ReconciliationStatementService statementService;
     private final ReconciliationExceptionService exceptionService;
+    private final ReconciliationTaskMapper reconciliationTaskMapper;
 
     @Override
     @DataScope
@@ -459,5 +467,58 @@ public class ReconciliationServiceImpl implements IReconciliationService {
             default:
                 return true;
         }
+    }
+
+    @Override
+    public Page<ReconciliationTask> getTaskList(ReconciliationQuery query) {
+        Page<ReconciliationTask> page = new Page<>(query.getPage() != null ? query.getPage() : 1, query.getSize() != null ? query.getSize() : 10);
+        LambdaQueryWrapper<ReconciliationTask> wrapper = new LambdaQueryWrapper<>();
+        if (StringUtils.hasText(query.getChannel())) {
+            wrapper.eq(ReconciliationTask::getChannel, query.getChannel());
+        }
+        if (StringUtils.hasText(query.getStatus())) {
+            wrapper.eq(ReconciliationTask::getStatus, query.getStatus());
+        }
+        if (query.getStartDate() != null) {
+            wrapper.ge(ReconciliationTask::getReconciliationDate, query.getStartDate());
+        }
+        if (query.getEndDate() != null) {
+            wrapper.le(ReconciliationTask::getReconciliationDate, query.getEndDate());
+        }
+        wrapper.orderByDesc(ReconciliationTask::getCreateTime);
+        return reconciliationTaskMapper.selectPage(page, wrapper);
+    }
+
+    @Override
+    public ReconciliationTask getTaskDetail(Long id) {
+        return reconciliationTaskMapper.selectById(id);
+    }
+
+    @Override
+    public Object getReport(String taskNo) {
+        LambdaQueryWrapper<ReconciliationTask> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(ReconciliationTask::getTaskNo, taskNo);
+        ReconciliationTask task = reconciliationTaskMapper.selectOne(wrapper);
+        
+        Map<String, Object> report = new HashMap<>();
+        report.put("taskNo", taskNo);
+        report.put("channel", task != null ? task.getChannel() : "UNKNOWN");
+        report.put("reconciliationDate", task != null ? task.getReconciliationDate() : LocalDate.now());
+        
+        Map<String, Object> summary = new HashMap<>();
+        if (task != null) {
+            summary.put("totalCount", task.getTotalCount());
+            summary.put("matchedCount", task.getMatchedCount());
+            summary.put("unmatchedCount", task.getUnmatchedCount());
+            summary.put("exceptionCount", task.getExceptionCount());
+            summary.put("totalAmount", task.getTotalAmount());
+            summary.put("matchedAmount", task.getMatchedAmount());
+        }
+        report.put("summary", summary);
+        report.put("matchedRecords", new ArrayList<>());
+        report.put("unmatchedRecords", new ArrayList<>());
+        report.put("exceptions", new ArrayList<>());
+        
+        return report;
     }
 }

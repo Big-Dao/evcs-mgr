@@ -2,11 +2,25 @@
 
 > 一句话说明：EVCS Manager 的生产部署与发布基线（Day-0/Day-1），以现有 Compose/K8s 资产为准，本文件只做规划与验收口径。
 
-**最后更新**: 2025-12-18  \
+**最后更新**: 2025-12-21  \
 **维护者**: DevOps 团队  \
 **状态**: 已发布
 
 ---
+
+## 目录
+
+- [适用范围](#适用范围)
+- [目标与原则](#目标与原则)
+- [生产环境拓扑（参考基线）](#生产环境拓扑参考基线)
+- [K3S 内部测试环境（无外网）发布流程（推荐）](#k3s-内部测试环境无外网发布流程推荐)
+- [宿主机重启后的自动恢复（K3S）](#宿主机重启后的自动恢复k3s)
+- [配置来源与环境分层](#配置来源与环境分层)
+- [发布流程（生产基线）](#发布流程生产基线)
+- [观测与验收基线](#观测与验收基线)
+- [安全基线（生产必须）](#安全基线生产必须)
+- [本地/预发验证（用于发布演练）](#本地预发验证用于发布演练)
+- [参考](#参考)
 
 ## 适用范围
 
@@ -77,6 +91,138 @@ curl -fsS http://<gateway-host>:8080/actuator/health
 ```
 
 说明：本仓库当前同时存在多套 Compose 变体（如 minimal/optimized/core-dev/monitoring），生产环境建议优先使用“optimized + 必要的 monitoring 叠加”，以减少资源浪费与误配置概率。
+
+---
+
+## K3S 内部测试环境（无外网）发布流程（推荐）
+
+> 适用场景：集群内无法访问 GitHub / npm / DockerHub（或访问不稳定）。
+> 结论：**构建在开发机本地完成**，然后通过 `kubectl port-forward` 将镜像推送进集群内置 registry，最后再执行 `deploy.sh` 渲染并发布。
+
+### 为什么不在集群内构建
+
+- 集群内构建（Kaniko + git clone / npm install）对外网依赖强，极易因网络/证书/镜像源限制失败。
+- 失败常见症状：`vue-tsc not found`（devDependencies 被跳过）、npm registry 超时、git clone 失败、基础镜像拉取失败。
+- 本仓库已提供“本地构建 + 上传”的标准脚本，避免重复踩坑。
+
+### 1) 推送后端服务镜像（推荐：Jib，无需 Docker）
+
+说明：根目录 Gradle 已集成 `pushK8sImages`，默认允许 HTTP registry（`allowInsecureRegistries = true`）。
+
+```bash
+# 将集群内 registry 端口转发到本机（避免 Docker/客户端配置 insecure registry）
+kubectl -n evcs port-forward deploy/registry 5000:5000
+
+# 另开终端：推送 Java 服务镜像到 localhost:5000
+./gradlew pushK8sImages -Devcs.k8s.registry=127.0.0.1:5000 -Devcs.k8s.tag=dev
+```
+
+### 2) 推送管理后台前端镜像（本地 npm build + docker build/push）
+
+推荐使用仓库脚本一键完成（包含 port-forward、npm build、docker build/push）：
+
+```bash
+EVCS_IMAGE_TAG=dev \
+EVCS_PUSH_JAVA_IMAGES=false \
+bash k8s/push-images-from-local.sh
+```
+
+### 3) 部署到 K3S
+
+```bash
+export EVCS_K8S_REGISTRY=192.168.20.235:5000
+export EVCS_IMAGE_TAG=dev
+
+bash k8s/deploy.sh
+```
+
+### 4) 只刷新部分服务（更快）
+
+当只更新了前端或 station 服务时，优先只滚动重启相关 deployment：
+
+```bash
+kubectl -n evcs rollout restart deploy/admin-frontend
+kubectl -n evcs rollout restart deploy/station-service
+```
+
+### 验证建议
+
+- 前端版本：`http://<node-ip>:30090/version.json`
+- 网关健康：`http://<node-ip>:30080/actuator/health`
+
+## 宿主机重启后的自动恢复（K3S）
+
+> 目标：宿主机重启后，无需人工干预，k3s 与 evcs 命名空间内 workload 可自动拉起并恢复到可用状态。
+
+### 前置条件（必须）
+
+1) **k3s 服务启用自启动**
+
+```bash
+sudo systemctl enable k3s
+sudo systemctl enable --now k3s
+```
+
+1) **持久化盘挂载在 `/data` 且在 k3s 启动前就绪**
+
+当前 k8s manifests 使用 `hostPath: /data/evcs/...` 作为基础设施持久化路径。为避免宿主机重启时因挂载未就绪导致目录被创建在错误位置，`hostPath` 已收紧为 `Directory`（目录必须存在）。
+
+在首次部署前（或变更磁盘挂载后）确保目录存在：
+
+```bash
+sudo mkdir -p /data/evcs/postgres /data/evcs/redis /data/evcs/rabbitmq /data/evcs/registry
+sudo chown -R root:root /data/evcs
+sudo chmod -R 755 /data/evcs
+```
+
+1) **（可选，但推荐）让 k3s 显式依赖 `/data` 挂载**
+
+将 [k8s/host/systemd/k3s.service.d/10-evcs.conf](../../k8s/host/systemd/k3s.service.d/10-evcs.conf) 安装为 systemd drop-in：
+
+```bash
+sudo mkdir -p /etc/systemd/system/k3s.service.d
+sudo cp k8s/host/systemd/k3s.service.d/10-evcs.conf /etc/systemd/system/k3s.service.d/10-evcs.conf
+
+sudo systemctl daemon-reload
+sudo systemctl restart k3s
+```
+
+### 重启后验收（建议 5 分钟内完成）
+
+```bash
+bash k8s/verify-after-reboot.sh -g http://<node-ip>:30080/actuator/health
+
+# 推荐：增加 API 冒烟，避免“Pod 都 Running 但 /api 仍 404（路由未加载）”
+bash k8s/verify-after-reboot.sh \
+  -g http://<node-ip>:30080/actuator/health \
+  --api-smoke-url http://<node-ip>:30080/api/auth/login
+
+sudo systemctl is-active k3s
+
+kubectl -n evcs get pods -o wide
+kubectl -n evcs get svc
+
+# 关键依赖与入口服务滚动状态
+kubectl -n evcs rollout status deploy/postgres --timeout=180s
+kubectl -n evcs rollout status deploy/redis --timeout=180s
+kubectl -n evcs rollout status deploy/rabbitmq --timeout=180s
+kubectl -n evcs rollout status deploy/registry --timeout=180s
+kubectl -n evcs rollout status deploy/config-server --timeout=180s
+kubectl -n evcs rollout status deploy/eureka --timeout=180s
+kubectl -n evcs rollout status deploy/gateway --timeout=180s
+```
+
+> 说明：当前测试环境已开启 Config Client 的 `fail-fast + retry`（由 `evcs-common-config` 注入）。
+> 若宿主机重启后 `evcs-config` 未就绪，依赖配置中心的服务可能会短暂 CrashLoopBackOff，待配置中心恢复后会自动拉起。
+
+### 常见故障与定位
+
+- **Pod Pending 且提示 hostPath 目录不存在**：
+  - 现象：`kubectl -n evcs describe pod <pod>` 出现 `hostPath type check failed` 或 `path "/data/evcs/..." does not exist`。
+  - 处理：确认 `/data` 已正确挂载，再创建对应目录（见“前置条件”）。
+- **ImagePullBackOff / ErrImagePull**：
+  - 现象：业务服务拉不到镜像（依赖 in-cluster registry）。
+  - 处理：先确认 `deploy/registry` 已 Ready，并检查 registry 日志：`kubectl -n evcs logs deploy/registry`。
 
 ## 配置来源与环境分层
 

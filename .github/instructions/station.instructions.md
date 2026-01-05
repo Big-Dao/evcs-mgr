@@ -4,9 +4,10 @@ applyTo: "evcs-station/**/*.java"
 
 # evcs-station 模块开发规范
 
-> **最后更新**: 2025-11-07 | **维护者**: 技术负责人 | **状态**: 已发布
+> **最后更新**: 2025-12-18 | **维护者**: 技术负责人 | **状态**: 已发布
 
 本模块负责充电站和充电桩管理。这是最成熟的模块，可作为多租户模式的参考实现。
+请遵循 [PROJECT-CODING-STANDARDS.md](../../docs/overview/PROJECT-CODING-STANDARDS.md) 中的核心规范。
 
 ## 🚨 关键要求
 
@@ -33,6 +34,12 @@ applyTo: "evcs-station/**/*.java"
 - 每次通信时更新 `last_heartbeat`
 - 使用定时任务检测离线站点（>5 分钟无心跳）
 - 离线状态应触发告警通知
+
+### 5. 分布式锁与并发控制
+**物理资源必须互斥访问**
+- **锁粒度**：必须基于 `ChargerId` 或 `ConnectorId` 加锁，禁止全局锁。
+- **锁超时**：必须设置 TTL（防止死锁）和获取超时（防止线程堆积）。
+- **互斥操作**：`StartTransaction`（启动充电）和 `RemoteStop`（停止充电）必须互斥。
 
 ---
 

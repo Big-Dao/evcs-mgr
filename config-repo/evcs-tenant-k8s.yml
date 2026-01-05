@@ -1,2 +1,3 @@
-server:
-  port: 8080
+# evcs-tenant K8s环境配置
+# 端口继承自 evcs-tenant-local.yml (8086)
+# 此文件仅添加K8s特定配置（如有需要）

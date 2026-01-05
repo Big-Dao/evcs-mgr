@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.tenant.TenantContext;
+import com.evcs.order.dto.CityOrderStatistics;
+import com.evcs.order.dto.OrderDTO;
 import com.evcs.order.entity.ChargingOrder;
 import com.evcs.order.mapper.ChargingOrderMapper;
 import com.evcs.order.service.IChargingOrderService;
@@ -16,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 import io.micrometer.core.instrument.MeterRegistry;
@@ -29,6 +32,24 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     private final IBillingService billingService;
     private final MeterRegistry meterRegistry;
     private final OrderMetrics orderMetrics;
+
+    @Override
+    public IPage<OrderDTO> getOrderPage(Page<OrderDTO> page, ChargingOrder queryParams) {
+        QueryWrapper<ChargingOrder> wrapper = new QueryWrapper<>();
+        if (queryParams != null) {
+            if (queryParams.getSessionId() != null && !queryParams.getSessionId().isEmpty()) {
+                wrapper.like("co.session_id", queryParams.getSessionId());
+            }
+            if (queryParams.getStatus() != null) {
+                wrapper.eq("co.status", queryParams.getStatus());
+            }
+            if (queryParams.getStationId() != null) {
+                wrapper.eq("co.station_id", queryParams.getStationId());
+            }
+        }
+        wrapper.orderByDesc("co.create_time");
+        return baseMapper.selectOrderListCustom(page, wrapper);
+    }
 
     @Override
     @DataScope

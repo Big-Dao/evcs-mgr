@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * 系统租户服务测试
  */
-@SpringBootTest(classes = {TenantServiceApplication.class, com.evcs.tenant.config.TestConfig.class})
+@SpringBootTest(classes = { TenantServiceApplication.class, com.evcs.tenant.config.TestConfig.class })
 @DisplayName("系统租户服务测试")
 class SysTenantServiceImplTest extends BaseServiceTest {
 
@@ -214,9 +214,8 @@ class SysTenantServiceImplTest extends BaseServiceTest {
 
         // When: 移动租户
         boolean result = sysTenantService.moveTenant(
-            child.getId(), 
-            newParent.getId()
-        );
+                child.getId(),
+                newParent.getId());
 
         // Then: 验证移动结果
         assertThat(result).isTrue();
@@ -267,9 +266,8 @@ class SysTenantServiceImplTest extends BaseServiceTest {
 
         // When: 检查相同编码
         boolean exists = sysTenantService.checkTenantCodeExists(
-            "CHECK_EXISTS", 
-            null
-        );
+                "CHECK_EXISTS",
+                null);
 
         // Then: 应该存在
         assertThat(exists).isTrue();
@@ -280,9 +278,8 @@ class SysTenantServiceImplTest extends BaseServiceTest {
     void testCheckTenantCodeExists_CodeNotExists() {
         // When: 检查不存在的编码
         boolean exists = sysTenantService.checkTenantCodeExists(
-            "NOT_EXISTS_CODE", 
-            null
-        );
+                "NOT_EXISTS_CODE",
+                null);
 
         // Then: 不应该存在
         assertThat(exists).isFalse();
@@ -297,9 +294,8 @@ class SysTenantServiceImplTest extends BaseServiceTest {
 
         // When: 检查编码时排除自身
         boolean exists = sysTenantService.checkTenantCodeExists(
-            "EXCLUDE_SELF", 
-            tenant.getId()
-        );
+                "EXCLUDE_SELF",
+                tenant.getId());
 
         // Then: 不应该认为存在（因为排除了自身）
         assertThat(exists).isFalse();
@@ -318,26 +314,63 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         SysTenant tenant2 = createTestSysTenant("TENANT2_DATA", "租户2的数据");
         sysTenantService.saveTenant(tenant2);
 
-        // 注意：sys_tenant 表在 CustomTenantLineHandler 的 IGNORE_TABLES 中
-        // 这意味着租户隔离不会在数据库层面应用到租户表本身
-        // 租户表的访问控制通过 @DataScope 注解在服务层实现
-        
-        // When: 租户1查询（不带 @DataScope，所以能看到所有租户）
+        // 此处 sysTenantService.queryTenantPage 已实现了代码级的租户过滤
+
+        // When: 租户1查询
         switchTenant(1L);
         Page<SysTenant> page1 = new Page<>(1, 100);
         IPage<SysTenant> result1 = sysTenantService.queryTenantPage(page1, new SysTenant());
 
-        // Then: 由于 sys_tenant 不受数据库租户过滤限制，租户1可以看到租户2的数据
-        // 实际的权限控制由 @DataScope 在 queryTenantPage 方法上实现
-        assertThat(result1.getRecords()).isNotNull();
-        
+        // Then: 租户1只能看到自己的数据
+        List<SysTenant> list1 = result1.getRecords();
+        assertThat(list1).isNotEmpty();
+        assertThat(list1.stream().anyMatch(t -> "TENANT1_DATA".equals(t.getTenantCode()))).isTrue();
+        assertThat(list1.stream().anyMatch(t -> "TENANT2_DATA".equals(t.getTenantCode()))).isFalse();
+
         // When: 租户2查询
         switchTenant(2L);
         Page<SysTenant> page2 = new Page<>(1, 100);
         IPage<SysTenant> result2 = sysTenantService.queryTenantPage(page2, new SysTenant());
 
-        // Then: 同样可以查询到数据
-        assertThat(result2.getRecords()).isNotNull();
+        // Then: 租户2只能看到自己的数据
+        List<SysTenant> list2 = result2.getRecords();
+        assertThat(list2).isNotEmpty();
+        assertThat(list2.stream().anyMatch(t -> "TENANT2_DATA".equals(t.getTenantCode()))).isTrue();
+        assertThat(list2.stream().anyMatch(t -> "TENANT1_DATA".equals(t.getTenantCode()))).isFalse();
+    }
+
+    @Test
+    @DisplayName("修改租户状态 - 递归禁用验证")
+    void testChangeStatus_RecursiveDisable() {
+        // Given: 创建三层租户结构 (父 -> 子 -> 孙)，初始全启用
+        SysTenant parent = createTestSysTenant("REC_PARENT", "递归父租户");
+        parent.setStatus(1);
+        sysTenantService.saveTenant(parent);
+
+        SysTenant child = createTestSysTenant("REC_CHILD", "递归子租户");
+        child.setParentId(parent.getId());
+        child.setStatus(1);
+        sysTenantService.saveTenant(child);
+
+        SysTenant grandChild = createTestSysTenant("REC_GCHILD", "递归孙租户");
+        grandChild.setParentId(child.getId());
+        grandChild.setStatus(1);
+        sysTenantService.saveTenant(grandChild);
+
+        // When: 禁用父租户
+        boolean result = sysTenantService.changeStatus(parent.getId(), 0);
+
+        // Then: 验证所有后代都被禁用
+        assertThat(result).isTrue();
+
+        SysTenant p = sysTenantService.getTenantById(parent.getId());
+        assertThat(p.getStatus()).isEqualTo(0);
+
+        SysTenant c = sysTenantService.getTenantById(child.getId());
+        assertThat(c.getStatus()).isEqualTo(0);
+
+        SysTenant gc = sysTenantService.getTenantById(grandChild.getId());
+        assertThat(gc.getStatus()).isEqualTo(0);
     }
 
     // ========== 辅助方法 ==========
@@ -362,5 +395,49 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         tenant.setMaxChargers(200);
         tenant.setRemark("系统测试租户");
         return tenant;
+    }
+
+    @Test
+    @DisplayName("能力边界管控 - 配额修改限制验证")
+    void testCapabilityBoundary_Quota() {
+        // Given: 创建 父 -> 子 租户
+        SysTenant parent = createTestSysTenant("PARENT_CAP", "上级租户");
+        parent.setStatus(1); // 激活
+        sysTenantService.saveTenant(parent);
+
+        // 切换到父租户上下文创建子租户
+        switchTenant(parent.getId());
+        SysTenant child = createTestSysTenant("CHILD_CAP", "下级租户");
+        child.setParentId(parent.getId());
+        child.setMaxUsers(10);
+        child.setMaxStations(5);
+        child.setStatus(1);
+        sysTenantService.saveTenant(child);
+
+        // Scenario 1: Self update quota (Should Fail)
+        switchTenant(child.getId());
+        SysTenant updateSelf = new SysTenant();
+        updateSelf.setId(child.getId());
+        updateSelf.setMaxUsers(100);
+
+        try {
+            sysTenantService.updateTenant(updateSelf);
+            throw new RuntimeException("Should have failed but success");
+        } catch (RuntimeException e) {
+            // Expected
+        }
+
+        // Scenario 2: Parent update quota (Should Success)
+        switchTenant(parent.getId());
+        SysTenant updateByParent = new SysTenant();
+        updateByParent.setId(child.getId());
+        updateByParent.setMaxUsers(20);
+
+        boolean success = sysTenantService.updateTenant(updateByParent);
+        assertThat(success).isTrue();
+
+        // 验证修改成功
+        SysTenant updated = sysTenantService.getTenantById(child.getId());
+        assertThat(updated.getMaxUsers()).isEqualTo(20);
     }
 }

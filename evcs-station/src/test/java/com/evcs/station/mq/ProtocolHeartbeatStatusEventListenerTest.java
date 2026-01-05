@@ -4,6 +4,7 @@ import com.evcs.common.tenant.TenantContext;
 import com.evcs.protocol.event.HeartbeatEvent;
 import com.evcs.protocol.event.ProtocolEvent;
 import com.evcs.protocol.event.StatusEvent;
+import com.evcs.station.service.IChargerConnectorService;
 import com.evcs.station.service.IChargerService;
 import com.rabbitmq.client.Channel;
 import java.io.IOException;
@@ -30,8 +31,9 @@ class ProtocolHeartbeatStatusEventListenerTest {
     void testOnHeartbeat_shouldAck_whenUpdateSucceeded() throws IOException {
         // Arrange
         IChargerService chargerService = Mockito.mock(IChargerService.class);
+        IChargerConnectorService connectorService = Mockito.mock(IChargerConnectorService.class);
         Channel channel = Mockito.mock(Channel.class);
-        ProtocolHeartbeatStatusEventListener listener = new ProtocolHeartbeatStatusEventListener(chargerService);
+        ProtocolHeartbeatStatusEventListener listener = new ProtocolHeartbeatStatusEventListener(chargerService, connectorService);
 
         HeartbeatEvent event = HeartbeatEvent.builder()
                 .eventId("e-1")
@@ -51,6 +53,7 @@ class ProtocolHeartbeatStatusEventListenerTest {
 
             // Assert
             Mockito.verify(chargerService).updateHeartbeat(Mockito.eq(10L), Mockito.any());
+            Mockito.verify(connectorService).touchAllHeartbeat(Mockito.eq(10L), Mockito.any());
             Mockito.verify(channel).basicAck(1L, false);
             assertNull(TenantContext.getCurrentTenantId(), "TenantContext should be cleared");
         } finally {
@@ -63,8 +66,9 @@ class ProtocolHeartbeatStatusEventListenerTest {
     void testOnHeartbeat_shouldReject_whenUpdateFailed() throws IOException {
         // Arrange
         IChargerService chargerService = Mockito.mock(IChargerService.class);
+        IChargerConnectorService connectorService = Mockito.mock(IChargerConnectorService.class);
         Channel channel = Mockito.mock(Channel.class);
-        ProtocolHeartbeatStatusEventListener listener = new ProtocolHeartbeatStatusEventListener(chargerService);
+        ProtocolHeartbeatStatusEventListener listener = new ProtocolHeartbeatStatusEventListener(chargerService, connectorService);
 
         HeartbeatEvent event = HeartbeatEvent.builder()
                 .eventId("e-2")
@@ -95,8 +99,9 @@ class ProtocolHeartbeatStatusEventListenerTest {
     void testOnStatus_shouldAck_whenUpdateSucceeded() throws IOException {
         // Arrange
         IChargerService chargerService = Mockito.mock(IChargerService.class);
+        IChargerConnectorService connectorService = Mockito.mock(IChargerConnectorService.class);
         Channel channel = Mockito.mock(Channel.class);
-        ProtocolHeartbeatStatusEventListener listener = new ProtocolHeartbeatStatusEventListener(chargerService);
+        ProtocolHeartbeatStatusEventListener listener = new ProtocolHeartbeatStatusEventListener(chargerService, connectorService);
 
         StatusEvent event = StatusEvent.builder()
                 .eventId("e-3")
@@ -118,6 +123,57 @@ class ProtocolHeartbeatStatusEventListenerTest {
             // Assert
             Mockito.verify(chargerService).updateStatus(10L, 2);
             Mockito.verify(channel).basicAck(3L, false);
+            assertNull(TenantContext.getCurrentTenantId(), "TenantContext should be cleared");
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    @Test
+    @DisplayName("状态事件 - connectorId 存在时应更新枪口状态")
+    void testOnStatus_shouldUpdateConnector_whenConnectorIdProvided() throws IOException {
+        // Arrange
+        IChargerService chargerService = Mockito.mock(IChargerService.class);
+        IChargerConnectorService connectorService = Mockito.mock(IChargerConnectorService.class);
+        Channel channel = Mockito.mock(Channel.class);
+        ProtocolHeartbeatStatusEventListener listener = new ProtocolHeartbeatStatusEventListener(chargerService, connectorService);
+
+        StatusEvent event = StatusEvent.builder()
+                .eventId("e-4")
+                .tenantId(1L)
+                .chargerId(10L)
+                .connectorId(2)
+                .eventType(ProtocolEvent.EventType.STATUS_CHANGE)
+                .eventTime(LocalDateTime.now())
+                .protocolType("OCPP")
+                .newStatus(3)
+                .faultCode("ConnectorFault")
+                .faultDescription("ConnectorFault")
+                .build();
+
+        Mockito.when(connectorService.updateStatus(
+                Mockito.eq(10L),
+                Mockito.eq(2),
+                Mockito.eq(3),
+                Mockito.any(),
+                Mockito.any(),
+                Mockito.any()
+        )).thenReturn(true);
+
+        try {
+            // Act
+            listener.onStatus(event, messageWithTag(4L), channel);
+
+            // Assert
+            Mockito.verify(connectorService).updateStatus(
+                    Mockito.eq(10L),
+                    Mockito.eq(2),
+                    Mockito.eq(3),
+                    Mockito.any(),
+                    Mockito.any(),
+                    Mockito.any()
+            );
+            Mockito.verify(channel).basicAck(4L, false);
             assertNull(TenantContext.getCurrentTenantId(), "TenantContext should be cleared");
         } finally {
             TenantContext.clear();

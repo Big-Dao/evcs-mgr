@@ -28,7 +28,7 @@ spring:
         
         # 租户/Dashboard服务路由
         - id: evcs-dashboard
-          uri: http://${EVCS_TENANT_IP}:8080
+          uri: http://${EVCS_TENANT_IP}:8086
           predicates:
             - Path=/api/dashboard/**
           filters:
@@ -36,7 +36,7 @@ spring:
         
         # 租户管理路由
         - id: evcs-tenant
-          uri: http://${EVCS_TENANT_IP}:8080
+          uri: http://${EVCS_TENANT_IP}:8086
           predicates:
             - Path=/api/tenant/**
           filters:
@@ -68,7 +68,7 @@ spring:
         
         # 站点服务路由
         - id: evcs-station
-          uri: http://${EVCS_STATION_IP}:8080
+          uri: http://${EVCS_STATION_IP}:8082
           predicates:
             - Path=/api/station/**
           filters:
@@ -76,7 +76,7 @@ spring:
         
         # 充电桩路由（属于station服务）
         - id: evcs-charger
-          uri: http://${EVCS_STATION_IP}:8080
+          uri: http://${EVCS_STATION_IP}:8082
           predicates:
             - Path=/api/charger/**
           filters:
@@ -84,7 +84,7 @@ spring:
         
         # 订单服务路由
         - id: evcs-order
-          uri: http://${EVCS_ORDER_IP}:8080
+          uri: http://${EVCS_ORDER_IP}:8083
           predicates:
             - Path=/api/order/**
           filters:
@@ -92,7 +92,7 @@ spring:
         
         # 计费方案路由（属于order服务）
         - id: evcs-billing
-          uri: http://${EVCS_ORDER_IP}:8080
+          uri: http://${EVCS_ORDER_IP}:8083
           predicates:
             - Path=/api/billing/**
           filters:
@@ -100,11 +100,11 @@ spring:
         
         # 支付服务路由
         - id: evcs-payment
-          uri: http://${EVCS_PAYMENT_IP}:8080
+          uri: http://${EVCS_PAYMENT_IP}:8084
           predicates:
-            - Path=/api/payment/**
+            - Path=/api/payment/**, /api/reconciliation/**
           filters:
-            - StripPrefix=1  # 去掉/api，转发到payment服务的/payments/**
+            - StripPrefix=1  # 去掉/api，转发到payment服务的/payments/** 或 /reconciliation/**
     loadbalancer:
       retry:
         enabled: true

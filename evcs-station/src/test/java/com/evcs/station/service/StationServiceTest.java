@@ -19,8 +19,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * 充电站服务测试类
  * 使用新的测试框架基类
  */
-@SpringBootTest(classes = {com.evcs.station.StationServiceApplication.class, com.evcs.station.config.TestConfig.class},
-                webEnvironment = SpringBootTest.WebEnvironment.NONE)
+@SpringBootTest(classes = { com.evcs.station.StationServiceApplication.class,
+        com.evcs.station.config.TestConfig.class }, webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @AutoConfigureWebMvc
 @DisplayName("充电站服务测试")
 class StationServiceTest extends BaseServiceTest {
@@ -91,6 +91,8 @@ class StationServiceTest extends BaseServiceTest {
         station.setStationCode(testCode);
         station.setStationName("测试充电站2");
         station.setAddress("测试地址2");
+        station.setLatitude(39.9087);
+        station.setLongitude(116.4089);
         stationService.saveStation(station);
 
         // Act & Assert - 测试编码存在
@@ -114,6 +116,8 @@ class StationServiceTest extends BaseServiceTest {
         station.setStationCode(TestDataFactory.generateCode("STATION"));
         station.setStationName("测试充电站3");
         station.setAddress("测试地址3");
+        station.setLatitude(39.9087);
+        station.setLongitude(116.4089);
         stationService.saveStation(station);
 
         // Act - 更新充电站
@@ -138,6 +142,8 @@ class StationServiceTest extends BaseServiceTest {
         station.setStationCode(TestDataFactory.generateCode("STATION"));
         station.setStationName("测试充电站4");
         station.setAddress("测试地址4");
+        station.setLatitude(39.9087);
+        station.setLongitude(116.4089);
         stationService.saveStation(station);
 
         // Act - 停用充电站
@@ -165,6 +171,8 @@ class StationServiceTest extends BaseServiceTest {
         station.setStationCode(TestDataFactory.generateCode("STATION"));
         station.setStationName("测试充电站5");
         station.setAddress("测试地址5");
+        station.setLatitude(39.9087);
+        station.setLongitude(116.4089);
         stationService.saveStation(station);
         Long stationId = station.getStationId();
 

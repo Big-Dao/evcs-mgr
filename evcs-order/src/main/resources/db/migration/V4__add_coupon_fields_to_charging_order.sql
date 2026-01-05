@@ -1,0 +1,3 @@
+ALTER TABLE charging_order ADD COLUMN IF NOT EXISTS coupon_id BIGINT;
+ALTER TABLE charging_order ADD COLUMN IF NOT EXISTS discount_amount DECIMAL(12,4) DEFAULT 0;
+ALTER TABLE charging_order ADD COLUMN IF NOT EXISTS pay_amount DECIMAL(12,4);

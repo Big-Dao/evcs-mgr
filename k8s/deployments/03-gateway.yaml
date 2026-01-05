@@ -17,8 +17,6 @@ spec:
       labels:
         app: gateway
     spec:
-      nodeSelector:
-        role: core
       initContainers:
       - name: wait-config-server
         image: busybox:1.36
@@ -59,6 +57,11 @@ spec:
         env:
         - name: JAVA_OPTS
           value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+        - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+          valueFrom:
+            configMapKeyRef:
+              name: evcs-common-config
+              key: EUREKA_SERVER_URL
         resources:
           limits:
             cpu: "0.8"

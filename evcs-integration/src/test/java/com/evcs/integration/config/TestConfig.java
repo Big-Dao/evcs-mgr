@@ -11,7 +11,14 @@ import com.evcs.payment.service.channel.AlipayClientFactory;
 import com.alipay.api.request.AlipayTradeAppPayRequest;
 import com.alipay.api.response.AlipayTradeAppPayResponse;
 
+import jakarta.annotation.PostConstruct;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import redis.embedded.RedisServer;
+
 import java.time.LocalDateTime;
+import java.io.IOException;
+import java.net.ServerSocket;
 
 import com.alipay.api.AlipayClient;
 import org.mockito.Mockito;
@@ -30,6 +37,47 @@ import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoCo
     RedisRepositoriesAutoConfiguration.class
 })
 public class TestConfig {
+
+    private static final Object REDIS_LOCK = new Object();
+    private static volatile boolean redisStarted = false;
+    private static RedisServer redisServer;
+    private static int redisPort;
+
+    @PostConstruct
+    public void setUpEmbeddedRedis() throws IOException {
+        synchronized (REDIS_LOCK) {
+            if (!redisStarted) {
+                redisPort = findAvailablePort();
+                redisServer = new RedisServer(redisPort);
+                redisServer.start();
+                redisStarted = true;
+
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    synchronized (REDIS_LOCK) {
+                        if (redisServer != null && redisServer.isActive()) {
+                            redisServer.stop();
+                        }
+                    }
+                }));
+            }
+        }
+    }
+
+    private static int findAvailablePort() throws IOException {
+        try (ServerSocket socket = new ServerSocket(0)) {
+            socket.setReuseAddress(true);
+            return socket.getLocalPort();
+        }
+    }
+
+    @Bean
+    @Primary
+    public RedisConnectionFactory redisConnectionFactory() {
+        if (!redisStarted) {
+            throw new IllegalStateException("Embedded Redis is not started");
+        }
+        return new LettuceConnectionFactory("localhost", redisPort);
+    }
 
     @Bean
     @Primary

@@ -152,7 +152,11 @@ CREATE TABLE IF NOT EXISTS charger (
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_by BIGINT,
     deleted INTEGER DEFAULT 0,
+    version INTEGER DEFAULT 0,
     
+    -- 计费方案关联
+    billing_plan_id BIGINT,
+
     -- 约束
     CONSTRAINT uk_charger_code_tenant UNIQUE(charger_code, tenant_id),
     CONSTRAINT fk_charger_station FOREIGN KEY (station_id) REFERENCES charging_station(station_id),
@@ -178,6 +182,7 @@ CREATE INDEX IF NOT EXISTS idx_charger_status ON charger(status);
 CREATE INDEX IF NOT EXISTS idx_charger_type ON charger(charger_type);
 CREATE INDEX IF NOT EXISTS idx_charger_heartbeat ON charger(last_heartbeat);
 CREATE INDEX IF NOT EXISTS idx_charger_session ON charger(current_session_id);
+CREATE INDEX IF NOT EXISTS idx_charger_billing_plan ON charger(billing_plan_id);
 
 -- 复合索引
 CREATE INDEX IF NOT EXISTS idx_station_tenant_status ON charging_station(tenant_id, status);

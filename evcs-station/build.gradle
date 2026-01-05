@@ -22,6 +22,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-websocket'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     implementation 'org.springframework.boot:spring-boot-starter-data-redis'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
@@ -33,6 +34,9 @@ dependencies {
     implementation "com.baomidou:mybatis-plus-boot-starter:${mybatisPlusVersion}"
     implementation 'org.mybatis:mybatis-spring:3.0.3'
     implementation 'com.zaxxer:HikariCP'
+
+    // Database migrations
+    implementation 'org.flywaydb:flyway-core'
     
     // Utilities
     implementation "cn.hutool:hutool-all:${hutoolVersion}"

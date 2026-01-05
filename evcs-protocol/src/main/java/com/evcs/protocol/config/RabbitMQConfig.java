@@ -27,6 +27,7 @@ public class RabbitMQConfig {
     public static final String HEARTBEAT_QUEUE = "evcs.protocol.heartbeat";
     public static final String STATUS_QUEUE = "evcs.protocol.status";
     public static final String CHARGING_QUEUE = "evcs.protocol.charging";
+    public static final String TELEMETRY_QUEUE = "evcs.protocol.telemetry";
     
     // 死信交换机和队列
     public static final String DLX_EXCHANGE = "evcs.protocol.dlx";
@@ -35,6 +36,7 @@ public class RabbitMQConfig {
     // 路由键
     public static final String HEARTBEAT_ROUTING_KEY = "protocol.heartbeat.*";
     public static final String STATUS_ROUTING_KEY = "protocol.status.*";
+    public static final String TELEMETRY_ROUTING_KEY = "protocol.telemetry.*";
     public static final String CHARGING_START_ROUTING_KEY = "protocol.charging.start";
     public static final String CHARGING_STOP_ROUTING_KEY = "protocol.charging.stop";
 
@@ -97,6 +99,18 @@ public class RabbitMQConfig {
     }
 
     /**
+     * 声明遥测队列（高频数据，建议各业务服务使用独立队列避免竞争消费）
+     */
+    @Bean
+    public Queue telemetryQueue() {
+        return QueueBuilder
+            .durable(TELEMETRY_QUEUE)
+            .withArgument("x-dead-letter-exchange", DLX_EXCHANGE)
+            .withArgument("x-dead-letter-routing-key", "dlx")
+            .build();
+    }
+
+    /**
      * 声明死信队列
      */
     @Bean
@@ -124,6 +138,17 @@ public class RabbitMQConfig {
                 .bind(statusQueue)
                 .to(protocolExchange)
                 .with(STATUS_ROUTING_KEY);
+    }
+
+    /**
+     * 绑定遥测队列到交换机
+     */
+    @Bean
+    public Binding telemetryBinding(Queue telemetryQueue, TopicExchange protocolExchange) {
+        return BindingBuilder
+            .bind(telemetryQueue)
+            .to(protocolExchange)
+            .with(TELEMETRY_ROUTING_KEY);
     }
 
     /**

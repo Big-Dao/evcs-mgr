@@ -19,9 +19,23 @@ if [ ! -d "${EVCS_ADMIN_DIR}" ]; then
 fi
 
 if ! command -v npm >/dev/null 2>&1; then
-  echo "ERROR: 本机未找到 npm（需要 Node.js/npm 先本地构建 dist/）。" >&2
-  echo "请在装有 Node.js 的机器上执行：" >&2
-  echo "  cd evcs-admin && npm install && npm run build" >&2
+  if command -v zsh >/dev/null 2>&1 && zsh -lic 'command -v npm >/dev/null 2>&1'; then
+    echo "[INFO] npm not found in current shell; using 'zsh -lic npm'" >&2
+    NPM_RUNNER="zsh -lic npm"
+  else
+    echo "ERROR: 本机未找到 npm（需要 Node.js/npm 先本地构建 dist/）。" >&2
+    echo "请在装有 Node.js 的机器上执行：" >&2
+    echo "  cd evcs-admin && npm install && npm run build" >&2
+    echo "然后再执行：" >&2
+    echo "  EVCS_ADMIN_DOCKERFILE=Dockerfile.prebuilt bash k8s/build-admin-frontend-from-local.sh" >&2
+    exit 1
+  fi
+else
+  NPM_RUNNER="npm"
+fi
+
+if [ -z "${NPM_RUNNER:-}" ]; then
+  echo "Error: NPM_RUNNER not set" >&2
   echo "然后再执行：" >&2
   echo "  EVCS_ADMIN_DOCKERFILE=Dockerfile.prebuilt bash k8s/build-admin-frontend-from-local.sh" >&2
   exit 1
@@ -33,11 +47,11 @@ echo "NPM mirror: ${NPM_REGISTRY}"
 
 pushd "${EVCS_ADMIN_DIR}" >/dev/null
 
-npm config set registry "${NPM_REGISTRY}" >/dev/null 2>&1 || true
+${NPM_RUNNER} config set registry "${NPM_REGISTRY}" >/dev/null 2>&1 || true
 
 # No lockfile in repo; use npm install.
-npm install
-npm run build
+${NPM_RUNNER} install
+${NPM_RUNNER} run build
 
 if [ ! -d "${EVCS_ADMIN_DIR}/dist" ]; then
   echo "Error: dist/ not found after build" >&2

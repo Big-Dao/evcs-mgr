@@ -32,6 +32,16 @@ public class StatusEvent extends ProtocolEvent {
      */
     private String statusDesc;
 
+    /**
+     * 故障代码（可选，例如 OCPP errorCode）
+     */
+    private String faultCode;
+
+    /**
+     * 故障描述（可选）
+     */
+    private String faultDescription;
+
     @Override
     public String getRoutingKey() {
         return "protocol.status." + getProtocolType();

@@ -20,7 +20,7 @@
 ## 指针文件（仅保留引用，不重复正文）
 - CodeX 指针：`.codex/project-context.md`（指向本文件与 `AGENTS.md`）
 - Claude 指针：`.claude/project-instructions.md`（指向本文件与 `AGENTS.md`）
-- Copilot 指针：`.github/*` 中相关说明（仅引用本文件）
+- Copilot 指针：`.github/copilot-instructions.md`（指向本文件）；具体模块规范见 `.github/instructions/*.md`
 
 ## 相关链接
 - 编码与架构规范：`docs/overview/PROJECT-CODING-STANDARDS.md`

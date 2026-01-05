@@ -72,5 +72,34 @@ CREATE TABLE IF NOT EXISTS charger (
     version INTEGER DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS charger_connector (
+    charger_connector_id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    charger_id BIGINT NOT NULL,
+    connector_no INTEGER NOT NULL,
+    connector_type VARCHAR(64),
+    status INTEGER DEFAULT 0,
+    fault_code VARCHAR(50),
+    fault_description VARCHAR(500),
+    last_heartbeat TIMESTAMP,
+    current_session_id VARCHAR(64),
+    current_user_id BIGINT,
+    charging_start_time TIMESTAMP,
+    charged_energy DECIMAL(10,2),
+    charged_duration INTEGER,
+    update_time TIMESTAMP,
+    create_time TIMESTAMP,
+    create_by BIGINT,
+    update_by BIGINT,
+    deleted INTEGER DEFAULT 0,
+    version INTEGER DEFAULT 0
+);
+
 CREATE UNIQUE INDEX IF NOT EXISTS uk_station_code_tenant ON charging_station(station_code, tenant_id);
 CREATE UNIQUE INDEX IF NOT EXISTS uk_charger_code_tenant ON charger(charger_code, tenant_id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS uk_charger_connector_no_tenant
+    ON charger_connector(tenant_id, charger_id, connector_no, deleted);
+
+CREATE INDEX IF NOT EXISTS idx_charger_connector_charger
+    ON charger_connector(charger_id);

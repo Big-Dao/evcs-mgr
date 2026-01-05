@@ -6,19 +6,32 @@ import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.service.IChargerService;
+import com.evcs.station.entity.ChargerConnector;
+import com.evcs.station.service.IChargerConnectorService;
+import com.evcs.station.service.IChargerConnectorSessionCurveService;
+import com.evcs.station.entity.ChargerConnectorCurvePoint;
+import com.evcs.station.entity.ChargerConnectorSession;
+import com.evcs.station.client.ProtocolClient;
+import com.evcs.station.client.OrderClient;
+import com.evcs.protocol.dto.ProtocolRequest;
+import com.evcs.protocol.dto.ProtocolResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.UUID;
 
 /**
  * 充电桩管理控制器
@@ -32,6 +45,10 @@ import java.util.Map;
 public class ChargerController {
 
     private final IChargerService chargerService;
+    private final IChargerConnectorService chargerConnectorService;
+    private final IChargerConnectorSessionCurveService chargerConnectorSessionCurveService;
+    private final ProtocolClient protocolClient;
+    private final OrderClient orderClient;
 
     /**
      * 分页查询充电桩列表
@@ -67,6 +84,97 @@ public class ChargerController {
         }
         
         return Result.success(charger);
+    }
+
+    /**
+     * 查询充电桩枪口列表
+     */
+    @Operation(summary = "查询枪口列表", description = "查询指定充电桩下所有枪口（Connector）信息")
+    @GetMapping("/{chargerId}/connectors")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
+    @DataScope
+    public Result<java.util.List<ChargerConnector>> listConnectors(
+            @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId) {
+
+        java.util.List<ChargerConnector> connectors = chargerConnectorService.ensureConnectors(chargerId);
+        return Result.success(connectors);
+    }
+
+    /**
+     * 分页查询所有枪口列表
+     */
+    @Operation(summary = "分页查询所有枪口", description = "支持按枪口号、桩编码、状态查询")
+    @GetMapping("/connector-list")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
+    @DataScope
+    public Result<IPage<ChargerConnector>> getConnectorPage(
+            @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
+            @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") Long size,
+            @Parameter(description = "查询条件") ChargerConnector queryParam) {
+        
+        log.info("Querying connector page: current={}, size={}, param={}", current, size, queryParam);
+        Page<ChargerConnector> page = new Page<>(current, size);
+        IPage<ChargerConnector> result = chargerConnectorService.queryPage(page, queryParam);
+        return Result.success(result);
+    }
+
+    /**
+     * 查询枪口会话历史（用于按会话查看历史曲线）
+     */
+    @Operation(summary = "查询枪口会话历史", description = "按枪口查询历史会话列表（用于客诉诊断/曲线回放）")
+    @GetMapping("/{chargerId}/connectors/{connectorNo}/sessions")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
+    @DataScope
+    public Result<IPage<ChargerConnectorSession>> listConnectorSessions(
+        @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
+        @Parameter(description = "枪口号(从1开始)") @PathVariable("connectorNo") @NotNull Integer connectorNo,
+        @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
+        @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") Long size
+    ) {
+        long currentValue = current == null ? 1L : current;
+        long sizeValue = size == null ? 10L : size;
+        Page<ChargerConnectorSession> page = new Page<>(currentValue, sizeValue);
+        IPage<ChargerConnectorSession> result = chargerConnectorSessionCurveService.pageSessions(chargerId, connectorNo, page);
+        return Result.success(result);
+    }
+
+    /**
+     * 查询指定会话的充电曲线点
+     */
+    @Operation(summary = "查询会话曲线", description = "按会话ID查询历史曲线点（时间序列），支持时间范围与分页")
+    @GetMapping("/{chargerId}/connectors/{connectorNo}/sessions/{sessionId}/curve")
+    @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
+    @DataScope
+    public Result<IPage<ChargerConnectorCurvePoint>> getSessionCurve(
+        @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
+        @Parameter(description = "枪口号(从1开始)") @PathVariable("connectorNo") @NotNull Integer connectorNo,
+        @Parameter(description = "会话ID") @PathVariable("sessionId") @NotNull String sessionId,
+        @Parameter(description = "起始时间(可选)")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime from,
+        @Parameter(description = "结束时间(可选)")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
+            LocalDateTime to,
+        @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
+        @Parameter(description = "每页大小", example = "200") @RequestParam(defaultValue = "200") Long size
+    ) {
+        if (size != null && size > 5000) {
+            return Result.fail("size 最大不超过 5000");
+        }
+        long currentValue = current == null ? 1L : current;
+        long sizeValue = size == null ? 200L : size;
+        Page<ChargerConnectorCurvePoint> page = new Page<>(currentValue, sizeValue);
+        IPage<ChargerConnectorCurvePoint> result = chargerConnectorSessionCurveService.pageCurvePoints(
+            chargerId,
+            connectorNo,
+            sessionId,
+            from,
+            to,
+            page
+        );
+        return Result.success(result);
     }
 
     /**
@@ -205,47 +313,147 @@ public class ChargerController {
     }
 
     /**
-     * 开始充电会话
+     * 开始充电会话（指定枪口）
      */
-    @Operation(summary = "开始充电", description = "开始充电会话")
-    @PostMapping("/{chargerId}/start")
+    @Operation(summary = "开始充电(按枪口)", description = "开始指定枪口的充电会话（下发协议指令并落库）")
+    @PostMapping("/{chargerId}/connectors/{connectorNo}/start")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:charge')")
-    @DataScope(value = DataScope.DataScopeType.USER)
-    public Result<Void> startCharging(
+    @DataScope
+    public Result<Void> startChargingByConnector(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
-            @Parameter(description = "会话ID") @RequestParam String sessionId,
-            @Parameter(description = "用户ID") @RequestParam Long userId) {
-        
-        try {
-            boolean success = chargerService.startChargingSession(chargerId, sessionId, userId);
-            if (success) {
-                return Result.success("开始充电成功");
-            } else {
-                return Result.fail("开始充电失败");
-            }
-        } catch (RuntimeException e) {
-            return Result.fail(e.getMessage());
+            @Parameter(description = "枪口号(从1开始)") @PathVariable("connectorNo") @NotNull Integer connectorNo,
+            @Parameter(description = "会话ID（可选，若无则生成）") @RequestParam(required = false) String sessionId,
+            @Parameter(description = "用户ID") @RequestParam Long userId,
+            @Parameter(description = "起始电量(kWh)") @RequestParam(required = false) Double initialEnergy) {
+
+        Charger charger = chargerService.getById(chargerId);
+        if (charger == null) {
+            return Result.fail("充电桩不存在");
         }
+
+        String actualSessionId = sessionId != null ? sessionId : UUID.randomUUID().toString();
+
+        // 1. Create Order (Pre-check)
+        try {
+            Result<Boolean> orderResult = orderClient.startOrder(
+                charger.getStationId(),
+                chargerId,
+                actualSessionId,
+                userId,
+                null // billingPlanId optional
+            );
+            if (!orderResult.isSuccess()) {
+                log.warn("Order creation failed: {}", orderResult.getMessage());
+                return Result.fail("创建订单失败: " + orderResult.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Order creation exception", e);
+            return Result.fail("创建订单异常: " + e.getMessage());
+        }
+
+        // 2. Call Protocol Service
+        try {
+            ProtocolRequest req = new ProtocolRequest();
+            req.setDeviceCode(charger.getChargerCode());
+            req.setSessionId(actualSessionId);
+            req.setUserId(userId);
+            req.setChargerId(chargerId);
+            req.setTenantId(charger.getTenantId());
+            
+            Map<String, Object> data = new HashMap<>();
+            data.put("connectorId", connectorNo);
+            req.setData(data);
+
+            Result<ProtocolResponse> protoResult = protocolClient.startCharging(req);
+            if (!protoResult.isSuccess()) {
+                log.warn("Remote start failed: {}", protoResult.getMessage());
+                // TODO: Cancel order if protocol fails?
+                return Result.fail("远程启动失败: " + protoResult.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Remote start exception", e);
+            return Result.fail("远程启动异常: " + e.getMessage());
+        }
+
+        boolean ok = chargerConnectorService.updateSessionStart(
+                chargerId,
+                connectorNo,
+                actualSessionId,
+                userId,
+                LocalDateTime.now(),
+                initialEnergy
+        );
+        return ok ? Result.success("开始充电指令已下发") : Result.fail("开始充电失败");
     }
 
     /**
-     * 结束充电会话
+     * 结束充电会话（指定枪口）
      */
-    @Operation(summary = "结束充电", description = "结束充电会话")
-    @PostMapping("/{chargerId}/stop")
+    @Operation(summary = "结束充电(按枪口)", description = "结束指定枪口的充电会话（下发协议指令并落库）")
+    @PostMapping("/{chargerId}/connectors/{connectorNo}/stop")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:charge')")
-    @DataScope(value = DataScope.DataScopeType.USER)
-    public Result<Void> stopCharging(
+    @DataScope
+    public Result<Void> stopChargingByConnector(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
-            @Parameter(description = "充电量(kWh)") @RequestParam Double energy,
-            @Parameter(description = "充电时长(分钟)") @RequestParam Long duration) {
-        
-        boolean success = chargerService.endChargingSession(chargerId, energy, duration);
-        if (success) {
-            return Result.success("结束充电成功");
-        } else {
-            return Result.fail("结束充电失败");
+            @Parameter(description = "枪口号(从1开始)") @PathVariable("connectorNo") @NotNull Integer connectorNo,
+            @Parameter(description = "会话ID（可选，存在时用于校验）") @RequestParam(required = false) String sessionId,
+            @Parameter(description = "充电量(kWh)") @RequestParam(required = false) Double energy,
+            @Parameter(description = "充电时长(分钟)") @RequestParam(required = false) Long duration) {
+
+        Charger charger = chargerService.getById(chargerId);
+        if (charger == null) {
+            return Result.fail("充电桩不存在");
         }
+
+        // 1. Call Protocol Service
+        try {
+            ProtocolRequest req = new ProtocolRequest();
+            req.setDeviceCode(charger.getChargerCode());
+            req.setSessionId(sessionId);
+            req.setChargerId(chargerId);
+            req.setTenantId(charger.getTenantId());
+            
+            Map<String, Object> data = new HashMap<>();
+            data.put("connectorId", connectorNo);
+            req.setData(data);
+
+            Result<ProtocolResponse> protoResult = protocolClient.stopCharging(req);
+            if (!protoResult.isSuccess()) {
+                 log.warn("Remote stop failed: {}", protoResult.getMessage());
+                 return Result.fail("远程停止失败: " + protoResult.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Remote stop exception", e);
+            return Result.fail("远程停止异常: " + e.getMessage());
+        }
+
+        Double energyValue = energy != null ? energy : 0.0;
+        Long durationValue = duration != null ? duration : 0L;
+
+        // 2. Settle Order
+        try {
+            Result<Boolean> orderResult = orderClient.stopOrder(
+                sessionId,
+                energyValue,
+                durationValue
+            );
+            if (!orderResult.isSuccess()) {
+                log.warn("Order settlement failed: {}", orderResult.getMessage());
+                // Continue to update local session even if order fails?
+                // return Result.fail("结算订单失败: " + orderResult.getMessage());
+            }
+        } catch (Exception e) {
+            log.error("Order settlement exception", e);
+        }
+
+        boolean ok = chargerConnectorService.updateSessionStop(
+                chargerId,
+                connectorNo,
+                sessionId,
+                energyValue,
+                durationValue
+        );
+        return ok ? Result.success("结束充电指令已下发") : Result.fail("结束充电失败");
     }
 
     /**

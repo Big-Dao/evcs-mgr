@@ -4,6 +4,7 @@ import com.evcs.common.tenant.TenantContext;
 import com.evcs.protocol.config.RabbitMQConfig;
 import com.evcs.protocol.event.HeartbeatEvent;
 import com.evcs.protocol.event.StatusEvent;
+import com.evcs.station.service.IChargerConnectorService;
 import com.evcs.station.service.IChargerService;
 import com.rabbitmq.client.Channel;
 import java.io.IOException;
@@ -20,6 +21,7 @@ import org.springframework.stereotype.Component;
 public class ProtocolHeartbeatStatusEventListener {
 
     private final IChargerService chargerService;
+    private final IChargerConnectorService chargerConnectorService;
 
     @RabbitListener(
             queues = RabbitMQConfig.HEARTBEAT_QUEUE,
@@ -49,6 +51,15 @@ public class ProtocolHeartbeatStatusEventListener {
                 );
                 channel.basicReject(tag, false);
                 return;
+            }
+
+            // Best-effort: also touch all connector heartbeats for this charger.
+            try {
+                if (chargerConnectorService != null) {
+                    chargerConnectorService.touchAllHeartbeat(event.getChargerId(), heartbeatTime);
+                }
+            } catch (Exception e) {
+                log.debug("Failed to touch connector heartbeats: tenantId={}, chargerId={}", event.getTenantId(), event.getChargerId(), e);
             }
 
             channel.basicAck(tag, false);
@@ -81,12 +92,27 @@ public class ProtocolHeartbeatStatusEventListener {
         try {
             TenantContext.setCurrentTenantId(event.getTenantId());
 
-            boolean ok = chargerService.updateStatus(event.getChargerId(), event.getNewStatus());
+            LocalDateTime eventTime = event.getEventTime() != null ? event.getEventTime() : LocalDateTime.now();
+
+            boolean ok;
+            if (event.getConnectorId() != null && event.getConnectorId() > 0) {
+                ok = chargerConnectorService != null && chargerConnectorService.updateStatus(
+                    event.getChargerId(),
+                    event.getConnectorId(),
+                    event.getNewStatus(),
+                    event.getFaultCode(),
+                    event.getFaultDescription(),
+                    eventTime
+                );
+            } else {
+                ok = chargerService.updateStatus(event.getChargerId(), event.getNewStatus());
+            }
             if (!ok) {
                 log.warn(
-                        "Failed to update charger status, reject to DLQ: tenantId={}, chargerId={}, newStatus={}, eventId={}",
+                        "Failed to update status, reject to DLQ: tenantId={}, chargerId={}, connectorId={}, newStatus={}, eventId={}",
                         event.getTenantId(),
                         event.getChargerId(),
+                        event.getConnectorId(),
                         event.getNewStatus(),
                         event.getEventId()
                 );
