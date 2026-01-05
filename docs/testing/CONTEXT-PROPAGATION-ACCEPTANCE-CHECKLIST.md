@@ -39,11 +39,15 @@
 - `TenantContextTaskDecoratorTest`：验证 TaskDecorator 传播 TenantContext + MDC，并在任务后恢复 worker-thread 旧值。
 - `TenantContextPropagatingExecutorServiceTest`：验证包装器传播 TenantContext + MDC，并在任务后恢复 worker-thread 旧值。
 - `OutgoingRequestContextHeadersTest`：验证 `OutgoingRequestContextHeaders.applyTo(HttpHeaders)` 的 header 填充与回退逻辑。
+- `ReactorSchedulerContextPropagationTest`（`evcs-gateway`）：验证 `publishOn(evcsReactorScheduler)` 线程切换时仍能传播 TenantContext + MDC，且不泄漏。
 
 执行命令：
 
 ```bash
 ./gradlew :evcs-common:test --warning-mode all
+
+# 可选：包含 Reactor publishOn/subscribeOn 的验收
+./gradlew :evcs-gateway:test --warning-mode all
 ```
 
 ### 2) 门禁规则（必须）

@@ -7,7 +7,7 @@ import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 /**
  * 简化的API网关应用
  */
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.evcs.gateway", "com.evcs.common"})
 @EnableDiscoveryClient
 public class GatewayApplication {
     public static void main(String[] args) {
