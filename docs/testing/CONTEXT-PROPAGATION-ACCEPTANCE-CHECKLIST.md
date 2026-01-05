@@ -92,6 +92,20 @@
 
 ---
 
+## 四、交付与 CI 约定（团队建议）
+
+目标：**CI 仍在跑时不需要开发者本地阻塞等待**，但合并必须以仓库 required checks 通过为准。
+
+- 建议开启 GitHub Auto-merge：让 CI 在 GitHub Actions 上跑完后自动合并，开发者不必盯着等。
+- 本地收尾可提前做：切回 `main`、`git fetch --prune`、保持工作区干净即可；不要在本地做“手工合并绕过 CI”。
+- 查看 CI 是否跑完：
+  - GitHub 页面：PR → Checks / Actions
+  - 使用 `gh`：`gh pr checks <PR_NUMBER> --watch --interval 15`
+
+---
+
+---
+
 ## 三、常见反模式（必须避免）
 
 - 生产代码中使用 `new Thread(...)` 或 `Executors.newFixedThreadPool(...)` 直接提交任务
@@ -101,7 +115,7 @@
 
 ---
 
-## 四、实施锚点（Repo 关键类）
+## 五、实施锚点（Repo 关键类）
 
 - TaskDecorator（Tenant + MDC）：`evcs-common/src/main/java/com/evcs/common/config/TenantContextTaskDecorator.java`
 - ExecutorService 包装器（Tenant + MDC）：`evcs-common/src/main/java/com/evcs/common/executor/TenantContextPropagatingExecutorService.java`
