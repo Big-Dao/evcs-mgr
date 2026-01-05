@@ -50,7 +50,7 @@ public class ProtocolDebugController {
                 now
             );
 
-            return Result.success("Heartbeat event sent successfully");
+            return Result.successMessage("Heartbeat event sent successfully");
         } catch (Exception e) {
             log.error("Failed to simulate heartbeat", e);
             return Result.failure(
@@ -83,7 +83,7 @@ public class ProtocolDebugController {
                 request.getStatusDesc()
             );
 
-            return Result.success("Status change event sent successfully");
+            return Result.successMessage("Status change event sent successfully");
         } catch (Exception e) {
             log.error("Failed to simulate status change", e);
             return Result.failure(
@@ -166,7 +166,7 @@ public class ProtocolDebugController {
                 "Charging stopped"
             );
 
-            return Result.success("Charging stop event sent successfully");
+            return Result.successMessage("Charging stop event sent successfully");
         } catch (Exception e) {
             log.error("Failed to simulate charging stop", e);
             return Result.failure(

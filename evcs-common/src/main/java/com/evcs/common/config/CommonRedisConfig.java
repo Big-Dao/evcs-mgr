@@ -1,5 +1,7 @@
 package com.evcs.common.config;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +17,8 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 public class CommonRedisConfig {
 
     @Bean
+    @ConditionalOnClass(RedisConnectionFactory.class)
+    @ConditionalOnBean(RedisConnectionFactory.class)
     @ConditionalOnMissingBean(name = "redisTemplate")
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();

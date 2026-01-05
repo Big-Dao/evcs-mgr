@@ -41,6 +41,8 @@ class ChargerAggregateStatusFromConnectorsTest extends BaseTenantIsolationTest {
             station.setStationCode(TestDataFactory.generateCode("STATION"));
             station.setStationName("聚合测试站");
             station.setAddress("地址");
+            station.setLatitude(39.9087);
+            station.setLongitude(116.4089);
             station.setStatus(1);
             stationService.saveStation(station);
 

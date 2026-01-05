@@ -177,7 +177,7 @@ public class UserController {
         }
         bindContext(tenantId, resolveUserId(userHeader));
         userService.deleteUser(id, tenantId);
-        return Result.success("删除成功");
+        return Result.successMessage("删除成功");
     }
 
     @PostMapping("/{id}/reset-password")
@@ -194,7 +194,7 @@ public class UserController {
 
         String encoded = passwordEncoder.encode(request.getNewPassword());
         userService.resetPassword(id, encoded, tenantId, operatorId);
-        return Result.success("密码重置成功");
+        return Result.successMessage("密码重置成功");
     }
 
     @GetMapping("/{id}/roles")
@@ -231,7 +231,7 @@ public class UserController {
         } else {
             userService.assignRoles(id, roleIds, tenantId, operatorId);
         }
-        return Result.success("角色分配成功");
+        return Result.successMessage("角色分配成功");
     }
 
     private UserResponse toResponse(SysUser user, List<String> roles) {

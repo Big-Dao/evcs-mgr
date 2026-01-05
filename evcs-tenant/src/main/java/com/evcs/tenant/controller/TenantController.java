@@ -59,7 +59,7 @@ public class TenantController {
               description = "只能删除下级租户")
     public Result<Void> deleteTenant(@Parameter(description = "租户ID") @PathVariable Long id) {
         tenantService.deleteTenant(id);
-        return Result.success("租户删除成功");
+        return Result.successMessage("租户删除成功");
     }
     
     /**
@@ -133,7 +133,7 @@ public class TenantController {
             @Parameter(description = "租户ID") @PathVariable Long id,
             @Parameter(description = "状态：0-禁用，1-启用") @RequestParam Integer status) {
         tenantService.changeStatus(id, status);
-        return Result.success("状态修改成功");
+        return Result.successMessage("状态修改成功");
     }
     
     /**

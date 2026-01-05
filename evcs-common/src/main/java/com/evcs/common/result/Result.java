@@ -64,8 +64,30 @@ public class Result<T> implements Serializable {
         return new Result<>(ResultCode.SUCCESS.getCode(), ResultCode.SUCCESS.getMessage(), data);
     }
     
-    public static Result<Void> success(String message) {
+    /**
+     * Success response with a custom message.
+     * <p>
+     * Prefer this over {@link #success(String)} to avoid overload ambiguity when the payload type is String.
+     */
+    public static Result<Void> successMessage(String message) {
         return new Result<>(ResultCode.SUCCESS.getCode(), message, null);
+    }
+
+    /**
+     * Success response with data payload.
+     * <p>
+     * Prefer this when the payload type is String to avoid overload ambiguity with {@link #success(String)}.
+     */
+    public static <T> Result<T> successData(T data) {
+        return success(data);
+    }
+
+    /**
+     * @deprecated Use {@link #successMessage(String)} for message-only success, or {@link #successData(Object)} for data success.
+     */
+    @Deprecated(since = "2026-01-05", forRemoval = false)
+    public static Result<Void> success(String message) {
+        return successMessage(message);
     }
 
     public static <T> Result<T> success(String message, T data) {

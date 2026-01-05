@@ -3,6 +3,11 @@ package com.evcs.station.controller;
 import com.evcs.common.test.base.BaseControllerTest;
 import com.evcs.common.test.util.TestDataFactory;
 import com.evcs.common.tenant.TenantContext;
+import com.evcs.common.result.Result;
+import com.evcs.protocol.dto.ProtocolRequest;
+import com.evcs.protocol.dto.ProtocolResponse;
+import com.evcs.station.client.OrderClient;
+import com.evcs.station.client.ProtocolClient;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.entity.Station;
 import com.evcs.station.service.IChargerService;
@@ -12,9 +17,13 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.when;
 
 import jakarta.annotation.Resource;
 
@@ -34,6 +43,12 @@ class ChargerConnectorSessionControllerTest extends BaseControllerTest {
     @Resource
     private IChargerService chargerService;
 
+    @MockBean
+    private OrderClient orderClient;
+
+    @MockBean
+    private ProtocolClient protocolClient;
+
         private void resetTestContext() {
                 TenantContext.setCurrentTenantId(getTestTenantId());
                 TenantContext.setCurrentUserId(getTestUserId());
@@ -47,10 +62,21 @@ class ChargerConnectorSessionControllerTest extends BaseControllerTest {
     void testConnectorStartStop_shouldUpdateConnectorSessionFields() throws Exception {
         try {
             // Arrange
+            when(orderClient.startOrder(anyLong(), anyLong(), anyString(), anyLong(), isNull()))
+                .thenReturn(Result.success(true));
+            when(protocolClient.startCharging(any(ProtocolRequest.class)))
+                .thenReturn(Result.success(new ProtocolResponse()));
+            when(protocolClient.stopCharging(any(ProtocolRequest.class)))
+                .thenReturn(Result.success(new ProtocolResponse()));
+            when(orderClient.stopOrder(anyString(), anyDouble(), anyLong()))
+                .thenReturn(Result.success(true));
+
             Station station = new Station();
             station.setStationCode(TestDataFactory.generateCode("STATION"));
             station.setStationName("测试充电站");
             station.setAddress("地址");
+            station.setLatitude(39.9087);
+            station.setLongitude(116.4089);
             station.setStatus(1);
             stationService.saveStation(station);
 

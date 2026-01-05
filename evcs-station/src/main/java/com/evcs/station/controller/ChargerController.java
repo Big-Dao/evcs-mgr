@@ -218,7 +218,7 @@ public class ChargerController {
         try {
             boolean success = chargerService.saveCharger(charger);
             if (success) {
-                return Result.success("新增充电桩成功");
+                return Result.successMessage("新增充电桩成功");
             } else {
                 return Result.fail("新增充电桩失败");
             }
@@ -242,7 +242,7 @@ public class ChargerController {
         try {
             boolean success = chargerService.updateCharger(charger);
             if (success) {
-                return Result.success("更新充电桩成功");
+                return Result.successMessage("更新充电桩成功");
             } else {
                 return Result.fail("更新充电桩失败");
             }
@@ -264,7 +264,7 @@ public class ChargerController {
         try {
             boolean success = chargerService.deleteCharger(chargerId);
             if (success) {
-                return Result.success("删除充电桩成功");
+                return Result.successMessage("删除充电桩成功");
             } else {
                 return Result.fail("删除充电桩失败");
             }
@@ -285,7 +285,7 @@ public class ChargerController {
         
         boolean success = chargerService.updateStatus(chargerId, status);
         if (success) {
-            return Result.success("更新状态成功");
+            return Result.successMessage("更新状态成功");
         } else {
             return Result.fail("更新状态失败");
         }
@@ -306,7 +306,7 @@ public class ChargerController {
         
         boolean success = chargerService.updateRealTimeData(chargerId, power, voltage, current, temperature);
         if (success) {
-            return Result.success("更新实时数据成功");
+            return Result.successMessage("更新实时数据成功");
         } else {
             return Result.fail("更新实时数据失败");
         }
@@ -383,7 +383,7 @@ public class ChargerController {
                 LocalDateTime.now(),
                 initialEnergy
         );
-        return ok ? Result.success("开始充电指令已下发") : Result.fail("开始充电失败");
+        return ok ? Result.successMessage("开始充电指令已下发") : Result.fail("开始充电失败");
     }
 
     /**
@@ -453,7 +453,7 @@ public class ChargerController {
                 energyValue,
                 durationValue
         );
-        return ok ? Result.success("结束充电指令已下发") : Result.fail("结束充电失败");
+        return ok ? Result.successMessage("结束充电指令已下发") : Result.fail("结束充电失败");
     }
 
     /**
@@ -468,7 +468,7 @@ public class ChargerController {
         
         boolean success = chargerService.resetCharger(chargerId);
         if (success) {
-            return Result.success("重置充电桩成功");
+            return Result.successMessage("重置充电桩成功");
         } else {
             return Result.fail("重置充电桩失败");
         }
@@ -492,7 +492,7 @@ public class ChargerController {
         boolean success = chargerService.changeStatus(chargerId, enabled);
         if (success) {
             String action = enabled == 1 ? "启用" : "停用";
-            return Result.success(action + "充电桩成功");
+            return Result.successMessage(action + "充电桩成功");
         } else {
             return Result.fail("操作失败");
         }
@@ -580,7 +580,7 @@ public class ChargerController {
         
         boolean success = chargerService.batchUpdateStatus(chargerIds, status);
         if (success) {
-            return Result.success("批量更新状态成功");
+            return Result.successMessage("批量更新状态成功");
         } else {
             return Result.fail("批量更新状态失败");
         }

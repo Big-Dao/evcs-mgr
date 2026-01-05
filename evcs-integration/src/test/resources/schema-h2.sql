@@ -96,6 +96,9 @@ CREATE TABLE IF NOT EXISTS charging_order (
     amount DECIMAL(12,4),       -- total amount
 
     billing_plan_id BIGINT,
+    coupon_id BIGINT,
+    discount_amount DECIMAL(12,4),
+    pay_amount DECIMAL(12,4),
     payment_trade_id VARCHAR(100),
     paid_time TIMESTAMP,
 

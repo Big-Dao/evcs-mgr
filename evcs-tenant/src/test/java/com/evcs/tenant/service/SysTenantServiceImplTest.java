@@ -48,9 +48,11 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         sysTenantService.saveTenant(tenant);
 
         // When: 更新租户
-        tenant.setTenantName("更新后的系统租户");
-        tenant.setContactPerson("更新后的联系人");
-        boolean result = sysTenantService.updateTenant(tenant);
+        SysTenant update = new SysTenant();
+        update.setId(tenant.getId());
+        update.setTenantName("更新后的系统租户");
+        update.setContactPerson("更新后的联系人");
+        boolean result = sysTenantService.updateTenant(update);
 
         // Then: 验证更新
         assertThat(result).isTrue();
@@ -114,8 +116,10 @@ class SysTenantServiceImplTest extends BaseServiceTest {
     @Test
     @DisplayName("分页查询租户 - 按名称查询")
     void testQueryTenantPage_WithName() {
-        // Given: 创建租户
+        // Given: 使用已有的运营商租户上下文创建“子租户”，以符合层级过滤规则
+        switchTenant(2L);
         SysTenant tenant = createTestSysTenant("SEARCH001", "可搜索的租户");
+        tenant.setParentId(2L);
         sysTenantService.saveTenant(tenant);
 
         // When: 按名称查询
@@ -304,39 +308,40 @@ class SysTenantServiceImplTest extends BaseServiceTest {
     @Test
     @DisplayName("多租户隔离 - 不同租户的数据应该隔离")
     void testTenantIsolation() {
-        // Given: 租户1创建数据
-        switchTenant(1L);
-        SysTenant tenant1 = createTestSysTenant("TENANT1_DATA", "租户1的数据");
-        sysTenantService.saveTenant(tenant1);
-
-        // 租户2创建数据
+        // Given: 使用两套已存在的租户上下文（2/3）分别创建各自的“子租户”数据
         switchTenant(2L);
         SysTenant tenant2 = createTestSysTenant("TENANT2_DATA", "租户2的数据");
+        tenant2.setParentId(2L);
         sysTenantService.saveTenant(tenant2);
+
+        switchTenant(3L);
+        SysTenant tenant3 = createTestSysTenant("TENANT3_DATA", "租户3的数据");
+        tenant3.setParentId(3L);
+        sysTenantService.saveTenant(tenant3);
 
         // 此处 sysTenantService.queryTenantPage 已实现了代码级的租户过滤
 
-        // When: 租户1查询
-        switchTenant(1L);
+        // When: 租户2查询
+        switchTenant(2L);
         Page<SysTenant> page1 = new Page<>(1, 100);
         IPage<SysTenant> result1 = sysTenantService.queryTenantPage(page1, new SysTenant());
 
-        // Then: 租户1只能看到自己的数据
+        // Then: 租户2只能看到自己的数据
         List<SysTenant> list1 = result1.getRecords();
         assertThat(list1).isNotEmpty();
-        assertThat(list1.stream().anyMatch(t -> "TENANT1_DATA".equals(t.getTenantCode()))).isTrue();
-        assertThat(list1.stream().anyMatch(t -> "TENANT2_DATA".equals(t.getTenantCode()))).isFalse();
+        assertThat(list1.stream().anyMatch(t -> "TENANT2_DATA".equals(t.getTenantCode()))).isTrue();
+        assertThat(list1.stream().anyMatch(t -> "TENANT3_DATA".equals(t.getTenantCode()))).isFalse();
 
-        // When: 租户2查询
-        switchTenant(2L);
+        // When: 租户3查询
+        switchTenant(3L);
         Page<SysTenant> page2 = new Page<>(1, 100);
         IPage<SysTenant> result2 = sysTenantService.queryTenantPage(page2, new SysTenant());
 
-        // Then: 租户2只能看到自己的数据
+        // Then: 租户3只能看到自己的数据
         List<SysTenant> list2 = result2.getRecords();
         assertThat(list2).isNotEmpty();
-        assertThat(list2.stream().anyMatch(t -> "TENANT2_DATA".equals(t.getTenantCode()))).isTrue();
-        assertThat(list2.stream().anyMatch(t -> "TENANT1_DATA".equals(t.getTenantCode()))).isFalse();
+        assertThat(list2.stream().anyMatch(t -> "TENANT3_DATA".equals(t.getTenantCode()))).isTrue();
+        assertThat(list2.stream().anyMatch(t -> "TENANT2_DATA".equals(t.getTenantCode()))).isFalse();
     }
 
     @Test

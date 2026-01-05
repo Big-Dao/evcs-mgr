@@ -100,7 +100,7 @@ public class StationRealtimeController {
             log.info("广播充电站状态变化: stationId={}, {} -> {}",
                 stationId, request.getOldStatus(), request.getNewStatus());
 
-            return Result.success("状态变化广播成功");
+            return Result.successMessage("状态变化广播成功");
         } catch (Exception e) {
             log.error("广播充电站状态变化失败", e);
             return Result.fail("广播失败: " + e.getMessage());
