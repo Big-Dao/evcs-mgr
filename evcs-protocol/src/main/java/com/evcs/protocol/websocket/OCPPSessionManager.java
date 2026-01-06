@@ -1,5 +1,6 @@
 package com.evcs.protocol.websocket;
 
+import com.evcs.common.trace.TraceMdc;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -179,25 +180,25 @@ public class OCPPSessionManager {
      */
     @Scheduled(initialDelay = 5, fixedDelay = 5, timeUnit = java.util.concurrent.TimeUnit.MINUTES)
     public void cleanupInactiveSessions() {
-        try {
-        LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(30); // 30分钟未活跃的会话
+        try (TraceMdc ignored = TraceMdc.ensureTracePresent()) {
+            LocalDateTime cutoffTime = LocalDateTime.now().minusMinutes(30); // 30分钟未活跃的会话
 
-        List<String> inactiveChargers = activeSessions.entrySet().stream()
-                .filter(entry -> {
-                    OCPPWebSocketSession session = entry.getValue();
-                    return !session.isActive() || session.getLastActiveTime().isBefore(cutoffTime);
-                })
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toList());
+            List<String> inactiveChargers = activeSessions.entrySet().stream()
+                    .filter(entry -> {
+                        OCPPWebSocketSession session = entry.getValue();
+                        return !session.isActive() || session.getLastActiveTime().isBefore(cutoffTime);
+                    })
+                    .map(Map.Entry::getKey)
+                    .collect(Collectors.toList());
 
-        for (String chargerCode : inactiveChargers) {
-            log.info("Cleaning up inactive session: {}", chargerCode);
-            removeSession(chargerCode);
-        }
+            for (String chargerCode : inactiveChargers) {
+                log.info("Cleaning up inactive session: {}", chargerCode);
+                removeSession(chargerCode);
+            }
 
-        if (!inactiveChargers.isEmpty()) {
-            log.info("Session cleanup completed: removed {} inactive sessions", inactiveChargers.size());
-        }
+            if (!inactiveChargers.isEmpty()) {
+                log.info("Session cleanup completed: removed {} inactive sessions", inactiveChargers.size());
+            }
         } catch (Exception e) {
             log.error("Error in session cleanup task", e);
         }
@@ -208,26 +209,26 @@ public class OCPPSessionManager {
      */
     @Scheduled(initialDelay = 1, fixedDelay = 1, timeUnit = java.util.concurrent.TimeUnit.MINUTES)
     public void checkHeartbeats() {
-        try {
-        List<String> missedHeartbeatChargers = activeSessions.values().stream()
-                .filter(OCPPWebSocketSession::needsHeartbeat)
-                .map(OCPPWebSocketSession::getChargerCode)
-                .collect(Collectors.toList());
+        try (TraceMdc ignored = TraceMdc.ensureTracePresent()) {
+            List<String> missedHeartbeatChargers = activeSessions.values().stream()
+                    .filter(OCPPWebSocketSession::needsHeartbeat)
+                    .map(OCPPWebSocketSession::getChargerCode)
+                    .collect(Collectors.toList());
 
-        for (String chargerCode : missedHeartbeatChargers) {
-            OCPPWebSocketSession session = activeSessions.get(chargerCode);
-            if (session != null) {
-                long idleTime = session.getIdleTimeSeconds();
-                log.warn("Charger {} missed heartbeat, idle time: {}s", chargerCode, idleTime);
+            for (String chargerCode : missedHeartbeatChargers) {
+                OCPPWebSocketSession session = activeSessions.get(chargerCode);
+                if (session != null) {
+                    long idleTime = session.getIdleTimeSeconds();
+                    log.warn("Charger {} missed heartbeat, idle time: {}s", chargerCode, idleTime);
 
-                // 如果超过3个心跳周期未响应，断开连接
-                if (idleTime > (session.getHeartbeatInterval() * 3)) {
-                    log.error("Charger {} heartbeat timeout, disconnecting", chargerCode);
-                    session.setStatus(OCPPWebSocketSession.SessionStatus.ERROR);
-                    removeSession(chargerCode);
+                    // 如果超过3个心跳周期未响应，断开连接
+                    if (idleTime > (session.getHeartbeatInterval() * 3)) {
+                        log.error("Charger {} heartbeat timeout, disconnecting", chargerCode);
+                        session.setStatus(OCPPWebSocketSession.SessionStatus.ERROR);
+                        removeSession(chargerCode);
+                    }
                 }
             }
-        }
         } catch (Exception e) {
             log.error("Error in heartbeat check task", e);
         }
