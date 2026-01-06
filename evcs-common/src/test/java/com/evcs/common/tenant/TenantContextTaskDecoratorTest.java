@@ -1,6 +1,7 @@
 package com.evcs.common.tenant;
 
 import com.evcs.common.config.TenantContextTaskDecorator;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
@@ -187,6 +188,104 @@ class TenantContextTaskDecoratorTest {
             assertNull(restoredRequest.get(1, TimeUnit.SECONDS), "Worker thread MDC.requestId should be restored (null when previously absent)");
 
             // Assert - submitting thread unchanged
+            assertEquals(capturedTraceId, MDC.get("traceId"), "Submitting thread MDC.traceId must remain unchanged");
+            assertEquals(capturedRequestId, MDC.get("requestId"), "Submitting thread MDC.requestId must remain unchanged");
+        } finally {
+            executor.shutdownNow();
+            executor.awaitTermination(1, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    @DisplayName("TaskDecorator - Runnable抛异常时应恢复TenantContext与MDC")
+    void shouldRestoreWorkerThreadContextEvenIfTaskThrows() throws Exception {
+        // Arrange
+        final Long previousTenantId = 9001L;
+        final Long previousUserId = 9002L;
+        final String previousTraceId = "trace-prev";
+
+        final Long capturedTenantId = 42L;
+        final Long capturedUserId = 777L;
+        final String capturedTraceId = "trace-throw";
+        final String capturedRequestId = "req-throw";
+
+        TenantContextTaskDecorator decorator = new TenantContextTaskDecorator();
+
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            // Pre-populate worker thread with previous context + MDC
+            executor
+                .submit(
+                    () -> {
+                        TenantContext.setTenantId(previousTenantId);
+                        TenantContext.setUserId(previousUserId);
+                        MDC.put("traceId", previousTraceId);
+                    }
+                )
+                .get(1, TimeUnit.SECONDS);
+
+            // Set submitting-thread context + MDC to be captured
+            TenantContext.setTenantId(capturedTenantId);
+            TenantContext.setUserId(capturedUserId);
+            MDC.put("traceId", capturedTraceId);
+            MDC.put("requestId", capturedRequestId);
+
+            AtomicReference<Boolean> insideObserved = new AtomicReference<>(false);
+
+            Runnable decorated = decorator.decorate(
+                () -> {
+                    insideObserved.set(
+                        capturedTenantId.equals(TenantContext.getTenantId())
+                            && capturedUserId.equals(TenantContext.getUserId())
+                            && capturedTraceId.equals(MDC.get("traceId"))
+                            && capturedRequestId.equals(MDC.get("requestId"))
+                    );
+                    throw new IllegalStateException("expected error");
+                }
+            );
+
+            // Act
+            Future<?> f = executor.submit(decorated);
+
+            // Assert - exception bubbles up
+            ExecutionException ex = assertThrows(
+                ExecutionException.class,
+                () -> f.get(2, TimeUnit.SECONDS),
+                "Decorated task should propagate exceptions via ExecutionException"
+            );
+            assertTrue(
+                ex.getCause() instanceof IllegalStateException,
+                "Expected IllegalStateException as the cause"
+            );
+            assertTrue(
+                insideObserved.get(),
+                "Decorated task should observe captured TenantContext + MDC before throwing"
+            );
+
+            // Assert - worker thread restored
+            assertEquals(
+                previousTenantId,
+                executor.submit(TenantContext::getTenantId).get(1, TimeUnit.SECONDS),
+                "Worker thread previous tenantId should be restored after exception"
+            );
+            assertEquals(
+                previousUserId,
+                executor.submit(TenantContext::getUserId).get(1, TimeUnit.SECONDS),
+                "Worker thread previous userId should be restored after exception"
+            );
+            assertEquals(
+                previousTraceId,
+                executor.submit(() -> MDC.get("traceId")).get(1, TimeUnit.SECONDS),
+                "Worker thread previous MDC.traceId should be restored after exception"
+            );
+            assertNull(
+                executor.submit(() -> MDC.get("requestId")).get(1, TimeUnit.SECONDS),
+                "Worker thread MDC.requestId should be restored (null when previously absent)"
+            );
+
+            // Assert - submitting thread unchanged
+            assertEquals(capturedTenantId, TenantContext.getTenantId(), "Submitting thread tenantId must remain unchanged");
+            assertEquals(capturedUserId, TenantContext.getUserId(), "Submitting thread userId must remain unchanged");
             assertEquals(capturedTraceId, MDC.get("traceId"), "Submitting thread MDC.traceId must remain unchanged");
             assertEquals(capturedRequestId, MDC.get("requestId"), "Submitting thread MDC.requestId must remain unchanged");
         } finally {

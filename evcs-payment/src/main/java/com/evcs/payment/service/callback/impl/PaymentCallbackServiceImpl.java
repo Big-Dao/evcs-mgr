@@ -35,6 +35,8 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class PaymentCallbackServiceImpl implements PaymentCallbackService {
 
+    private static final long WECHAT_CALLBACK_MAX_SKEW_SECONDS = 300L;
+
     private final IPaymentService paymentService;
     private final PaymentMetrics paymentMetrics;
     private final PaymentMessageService paymentMessageService;
@@ -153,11 +155,22 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
             return null;
         }
 
+        if (wechatPayClientFactory.isEmpty()) {
+            log.warn("微信支付客户端工厂不可用，无法验证签名");
+            return false;
+        }
+
+        if (!wechatPayClientFactory.get().isActive()) {
+            // 非真实接入场景（未完整配置）不应收到生产回调，允许跳过验签以便本地/测试场景运行。
+            log.info("微信支付未启用真实接入（配置不完整），跳过签名验证");
+            return true;
+        }
+
         Optional<NotificationParser> parserOptional = wechatPayClientFactory
             .flatMap(WechatPayClientFactory::getNotificationParser);
         if (parserOptional.isEmpty()) {
-            log.warn("微信支付通知解析器不可用，跳过签名验证");
-            return null;
+            log.warn("微信支付通知解析器不可用，无法验证签名");
+            return false;
         }
 
         String serial = getHeader(headers, "Wechatpay-Serial");
@@ -170,6 +183,11 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
             || !StringUtils.hasText(timestamp) || !StringUtils.hasText(nonce)) {
             log.warn("微信回调缺少必要签名参数 serial={}, signature={}, timestamp={}, nonce={}",
                 serial, signature, timestamp, nonce);
+            return false;
+        }
+
+        if (!isWechatTimestampAcceptable(timestamp)) {
+            log.warn("微信回调timestamp超出允许偏差范围，拒绝处理: timestamp={}", timestamp);
             return false;
         }
 
@@ -194,6 +212,23 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
             log.warn("微信签名验证失败", ex);
             return false;
         }
+    }
+
+    private boolean isWechatTimestampAcceptable(String timestamp) {
+        if (!StringUtils.hasText(timestamp)) {
+            return false;
+        }
+
+        long ts;
+        try {
+            ts = Long.parseLong(timestamp);
+        } catch (NumberFormatException ex) {
+            return false;
+        }
+
+        long nowSeconds = System.currentTimeMillis() / 1000L;
+        long diff = Math.abs(nowSeconds - ts);
+        return diff <= WECHAT_CALLBACK_MAX_SKEW_SECONDS;
     }
 
     private String getHeader(Map<String, String> headers, String target) {

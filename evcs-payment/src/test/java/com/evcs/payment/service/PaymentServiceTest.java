@@ -12,6 +12,7 @@ import com.evcs.payment.dto.WechatPaymentOptions;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
+import com.evcs.payment.exception.PaymentUnknownStateException;
 import com.evcs.payment.service.channel.AlipayChannelService;
 import com.evcs.payment.service.channel.WechatPayChannelService;
 import jakarta.annotation.Resource;
@@ -67,7 +68,10 @@ class PaymentServiceTest extends BaseServiceTest {
                 PaymentRequest request = invocation.getArgument(0);
                 PaymentResponse response = new PaymentResponse();
                 response.setPaymentId(System.currentTimeMillis());
-                response.setTradeNo("ALI" + System.currentTimeMillis());
+                String tradeNo = request.getTradeNo() != null && !request.getTradeNo().isBlank()
+                    ? request.getTradeNo()
+                    : ("ALI" + System.currentTimeMillis());
+                response.setTradeNo(tradeNo);
                 response.setStatus(PaymentStatus.PENDING);
                 response.setAmount(request.getAmount());
 
@@ -99,7 +103,10 @@ class PaymentServiceTest extends BaseServiceTest {
                 PaymentRequest request = invocation.getArgument(0);
                 PaymentResponse response = new PaymentResponse();
                 response.setPaymentId(System.currentTimeMillis());
-                response.setTradeNo("WX" + System.currentTimeMillis());
+                String tradeNo = request.getTradeNo() != null && !request.getTradeNo().isBlank()
+                    ? request.getTradeNo()
+                    : ("WX" + System.currentTimeMillis());
+                response.setTradeNo(tradeNo);
                 response.setStatus(PaymentStatus.PENDING);
                 response.setAmount(request.getAmount());
 
@@ -433,5 +440,95 @@ class PaymentServiceTest extends BaseServiceTest {
         // 3. 验证返回的是同一个订单
         assertEquals(response1.getPaymentId(), response2.getPaymentId());
         assertEquals(response1.getTradeNo(), response2.getTradeNo());
+    }
+
+    @Test
+    @DisplayName("创建支付订单 - 下单未知状态应落库为PROCESSING并返回可追踪tradeNo")
+    void testCreatePayment_shouldPersistProcessing_whenCreateUnknownState() {
+        // Arrange
+        String idempotentKey = "test-idempotent-key-unknown-" + System.currentTimeMillis();
+
+        when(wechatChannelService.createPayment(any(PaymentRequest.class)))
+            .thenThrow(new PaymentUnknownStateException("timeout"));
+
+        PaymentRequest request = new PaymentRequest();
+        request.setOrderId(11L);
+        request.setAmount(new BigDecimal("12.34"));
+        request.setPaymentMethod(PaymentMethod.WECHAT_JSAPI);
+        request.setUserId(1L);
+        request.setIdempotentKey(idempotentKey);
+        request.setWechatOptions(buildWechatOptions());
+
+        // Act
+        PaymentResponse response = paymentService.createPayment(request);
+
+        // Assert
+        assertNotNull(response, "未知状态时仍应返回响应");
+        assertNotNull(response.getPaymentId(), "未知状态时仍应返回paymentId");
+        assertNotNull(response.getTradeNo(), "未知状态时仍应返回tradeNo用于追踪");
+        assertEquals(PaymentStatus.PROCESSING, response.getStatus(), "未知状态应返回PROCESSING");
+
+        PaymentOrder order = paymentService.getById(response.getPaymentId());
+        assertNotNull(order, "未知状态时应已落库支付订单");
+        assertEquals(PaymentStatus.PROCESSING, order.getStatusEnum(), "订单状态应为PROCESSING");
+        assertEquals(response.getTradeNo(), order.getTradeNo(), "tradeNo应保持一致");
+        assertNull(order.getPayParams(), "未知状态不应有payParams");
+        assertNull(order.getPayUrl(), "未知状态不应有payUrl");
+    }
+
+    @Test
+    @DisplayName("创建支付订单 - 未知状态后再次调用应尝试恢复并返回PENDING")
+    void testCreatePayment_shouldRecover_whenSecondCallAfterUnknownState() {
+        // Arrange
+        String idempotentKey = "test-idempotent-key-recover-" + System.currentTimeMillis();
+
+        when(wechatChannelService.createPayment(any(PaymentRequest.class)))
+            .thenThrow(new PaymentUnknownStateException("timeout"))
+            .thenAnswer(invocation -> {
+                PaymentRequest req = invocation.getArgument(0);
+                PaymentResponse resp = new PaymentResponse();
+                resp.setTradeNo(req.getTradeNo());
+                resp.setStatus(PaymentStatus.PENDING);
+                resp.setAmount(req.getAmount());
+                resp.setPayParams("{\"order_string\":\"recovered\"}");
+                return resp;
+            });
+
+        PaymentRequest request = new PaymentRequest();
+        request.setOrderId(12L);
+        request.setAmount(new BigDecimal("56.78"));
+        request.setPaymentMethod(PaymentMethod.WECHAT_JSAPI);
+        request.setUserId(1L);
+        request.setIdempotentKey(idempotentKey);
+        request.setWechatOptions(buildWechatOptions());
+
+        // Act 1: first call -> unknown
+        PaymentResponse first = paymentService.createPayment(request);
+
+        // Act 2: second call -> recovery
+        PaymentRequest retry = new PaymentRequest();
+        retry.setOrderId(12L);
+        retry.setAmount(new BigDecimal("56.78"));
+        retry.setPaymentMethod(PaymentMethod.WECHAT_JSAPI);
+        retry.setUserId(1L);
+        retry.setIdempotentKey(idempotentKey);
+        retry.setWechatOptions(buildWechatOptions());
+        PaymentResponse second = paymentService.createPayment(retry);
+
+        // Assert
+        assertNotNull(first);
+        assertEquals(PaymentStatus.PROCESSING, first.getStatus(), "第一次应为未知状态PROCESSING");
+        assertNotNull(first.getPaymentId());
+
+        assertNotNull(second);
+        assertEquals(first.getPaymentId(), second.getPaymentId(), "恢复后应返回同一paymentId");
+        assertEquals(first.getTradeNo(), second.getTradeNo(), "恢复后tradeNo应保持一致");
+        assertEquals(PaymentStatus.PENDING, second.getStatus(), "恢复后应返回PENDING");
+        assertNotNull(second.getPayParams(), "恢复后应返回payParams");
+
+        PaymentOrder order = paymentService.getById(second.getPaymentId());
+        assertNotNull(order);
+        assertEquals(PaymentStatus.PENDING, order.getStatusEnum(), "恢复后订单应更新为PENDING");
+        assertNotNull(order.getPayParams(), "恢复后订单应保存payParams");
     }
 }

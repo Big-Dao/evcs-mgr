@@ -2,6 +2,7 @@ package com.evcs.common.executor;
 
 import com.evcs.common.tenant.TenantContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 
@@ -250,6 +251,129 @@ class TenantContextPropagatingExecutorServiceTest {
             // Assert - submitting thread unchanged
             assertEquals("trace-abc", MDC.get("traceId"), "Submitting thread MDC.traceId must remain unchanged");
             assertEquals("req-def", MDC.get("requestId"), "Submitting thread MDC.requestId must remain unchanged");
+        } finally {
+            wrapped.shutdownNow();
+            raw.shutdownNow();
+            raw.awaitTermination(1, TimeUnit.SECONDS);
+        }
+    }
+
+    @Test
+    @DisplayName("Executor包装器 - 任务取消/中断时应恢复TenantContext与MDC且不泄漏")
+    void shouldRestoreWorkerThreadContextWhenTaskIsCancelled() throws Exception {
+        // Arrange
+        final Long previousTenantId = 101L;
+        final Long previousUserId = 202L;
+        final String previousTraceId = "trace-prev";
+
+        final Long capturedTenantId = 303L;
+        final Long capturedUserId = 404L;
+        final String capturedTraceId = "trace-cancel";
+        final String capturedRequestId = "req-cancel";
+
+        ExecutorService raw = Executors.newSingleThreadExecutor();
+        ExecutorService wrapped = TenantContextPropagatingExecutorService.wrap(raw);
+
+        CountDownLatch started = new CountDownLatch(1);
+        CountDownLatch finished = new CountDownLatch(1);
+
+        try {
+            // Pre-populate worker thread previous context + MDC using raw executor.
+            raw.submit(
+                    () -> {
+                        TenantContext.setTenantId(previousTenantId);
+                        TenantContext.setUserId(previousUserId);
+                        MDC.put("traceId", previousTraceId);
+                    }
+                )
+                .get(1, TimeUnit.SECONDS);
+
+            // Set submitting thread context + MDC to be captured.
+            TenantContext.setTenantId(capturedTenantId);
+            TenantContext.setUserId(capturedUserId);
+            MDC.put("traceId", capturedTraceId);
+            MDC.put("requestId", capturedRequestId);
+
+            Future<?> future = wrapped.submit(
+                () -> {
+                    try {
+                        started.countDown();
+
+                        // Assert inside task (fail fast if propagation is missing)
+                        assertEquals(
+                            capturedTenantId,
+                            TenantContext.getTenantId(),
+                            "Captured tenantId should be visible inside wrapped task"
+                        );
+                        assertEquals(
+                            capturedUserId,
+                            TenantContext.getUserId(),
+                            "Captured userId should be visible inside wrapped task"
+                        );
+                        assertEquals(
+                            capturedTraceId,
+                            MDC.get("traceId"),
+                            "Captured MDC.traceId should be visible inside wrapped task"
+                        );
+                        assertEquals(
+                            capturedRequestId,
+                            MDC.get("requestId"),
+                            "Captured MDC.requestId should be visible inside wrapped task"
+                        );
+
+                        // Block until interrupted by cancellation.
+                        while (!Thread.currentThread().isInterrupted()) {
+                            Thread.sleep(50);
+                        }
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                    } finally {
+                        finished.countDown();
+                    }
+                }
+            );
+
+            assertTrue(
+                started.await(2, TimeUnit.SECONDS),
+                "Task should start promptly before cancellation"
+            );
+
+            // Act - cancel and interrupt the running task
+            assertTrue(
+                future.cancel(true),
+                "Cancellation should succeed"
+            );
+            assertTrue(
+                finished.await(5, TimeUnit.SECONDS),
+                "Task should finish promptly after cancellation"
+            );
+
+            // Assert - worker thread restored after cancellation
+            assertEquals(
+                previousTenantId,
+                raw.submit(TenantContext::getTenantId).get(1, TimeUnit.SECONDS),
+                "Worker thread previous tenantId should be restored after cancellation"
+            );
+            assertEquals(
+                previousUserId,
+                raw.submit(TenantContext::getUserId).get(1, TimeUnit.SECONDS),
+                "Worker thread previous userId should be restored after cancellation"
+            );
+            assertEquals(
+                previousTraceId,
+                raw.submit(() -> MDC.get("traceId")).get(1, TimeUnit.SECONDS),
+                "Worker thread previous MDC.traceId should be restored after cancellation"
+            );
+            assertNull(
+                raw.submit(() -> MDC.get("requestId")).get(1, TimeUnit.SECONDS),
+                "Worker thread MDC.requestId should be restored (null when previously absent)"
+            );
+
+            // Assert - submitting thread unchanged
+            assertEquals(capturedTenantId, TenantContext.getTenantId(), "Submitting thread tenantId must remain unchanged");
+            assertEquals(capturedUserId, TenantContext.getUserId(), "Submitting thread userId must remain unchanged");
+            assertEquals(capturedTraceId, MDC.get("traceId"), "Submitting thread MDC.traceId must remain unchanged");
+            assertEquals(capturedRequestId, MDC.get("requestId"), "Submitting thread MDC.requestId must remain unchanged");
         } finally {
             wrapped.shutdownNow();
             raw.shutdownNow();
