@@ -1,5 +1,6 @@
 package com.evcs.station.mq;
 
+import com.evcs.common.trace.TraceMdc;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.protocol.event.TelemetryEvent;
 import com.evcs.station.config.StationProtocolTelemetryQueueConfig;
@@ -38,34 +39,37 @@ public class ProtocolTelemetryEventListener {
             return;
         }
 
-        try {
-            TenantContext.setCurrentTenantId(event.getTenantId());
+        String traceId = resolveTraceId(event.getEventId(), message, tag);
+        try (TraceMdc ignored = TraceMdc.withTraceId(traceId)) {
+            try {
+                TenantContext.setCurrentTenantId(event.getTenantId());
 
-            boolean ok = sessionCurveService != null && sessionCurveService.recordTelemetry(event);
-            if (!ok) {
-                log.warn(
-                    "Failed to persist telemetry event, reject to DLQ: tenantId={}, chargerId={}, connectorId={}, eventId={}",
+                boolean ok = sessionCurveService != null && sessionCurveService.recordTelemetry(event);
+                if (!ok) {
+                    log.warn(
+                        "Failed to persist telemetry event, reject to DLQ: tenantId={}, chargerId={}, connectorId={}, eventId={}",
+                        event.getTenantId(),
+                        event.getChargerId(),
+                        event.getConnectorId(),
+                        event.getEventId()
+                    );
+                    channel.basicReject(tag, false);
+                    return;
+                }
+
+                channel.basicAck(tag, false);
+            } catch (Exception ex) {
+                log.error(
+                    "Error handling telemetry event, nack to DLQ: tenantId={}, chargerId={}, eventId={}",
                     event.getTenantId(),
                     event.getChargerId(),
-                    event.getConnectorId(),
-                    event.getEventId()
+                    event.getEventId(),
+                    ex
                 );
-                channel.basicReject(tag, false);
-                return;
+                channel.basicNack(tag, false, false);
+            } finally {
+                TenantContext.clear();
             }
-
-            channel.basicAck(tag, false);
-        } catch (Exception ex) {
-            log.error(
-                "Error handling telemetry event, nack to DLQ: tenantId={}, chargerId={}, eventId={}",
-                event.getTenantId(),
-                event.getChargerId(),
-                event.getEventId(),
-                ex
-            );
-            channel.basicNack(tag, false, false);
-        } finally {
-            TenantContext.clear();
         }
     }
 
@@ -77,5 +81,18 @@ public class ProtocolTelemetryEventListener {
             event == null ? "null" : event.getClass()
         );
         channel.basicReject(tag, false);
+    }
+
+    private static String resolveTraceId(String eventId, Message message, long deliveryTag) {
+        if (eventId != null && !eventId.isBlank()) {
+            return eventId;
+        }
+
+        String messageId = message.getMessageProperties().getMessageId();
+        if (messageId != null && !messageId.isBlank()) {
+            return messageId;
+        }
+
+        return "mq-" + deliveryTag;
     }
 }

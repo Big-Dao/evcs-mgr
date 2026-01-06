@@ -1,5 +1,6 @@
 package com.evcs.station.mq;
 
+import com.evcs.common.trace.TraceMdc;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.protocol.config.RabbitMQConfig;
 import com.evcs.protocol.event.HeartbeatEvent;
@@ -35,45 +36,48 @@ public class ProtocolHeartbeatStatusEventListener {
             return;
         }
 
-        try {
-            TenantContext.setCurrentTenantId(event.getTenantId());
+        String traceId = resolveTraceId(event.getEventId(), message, tag);
+        try (TraceMdc ignored = TraceMdc.withTraceId(traceId)) {
+            try {
+                TenantContext.setCurrentTenantId(event.getTenantId());
 
-            LocalDateTime heartbeatTime = event.getLastHeartbeatTime() != null
-                    ? event.getLastHeartbeatTime()
-                    : event.getEventTime();
-            boolean ok = chargerService.updateHeartbeat(event.getChargerId(), heartbeatTime);
-            if (!ok) {
-                log.warn(
-                        "Failed to update charger heartbeat, reject to DLQ: tenantId={}, chargerId={}, eventId={}",
+                LocalDateTime heartbeatTime = event.getLastHeartbeatTime() != null
+                        ? event.getLastHeartbeatTime()
+                        : event.getEventTime();
+                boolean ok = chargerService.updateHeartbeat(event.getChargerId(), heartbeatTime);
+                if (!ok) {
+                    log.warn(
+                            "Failed to update charger heartbeat, reject to DLQ: tenantId={}, chargerId={}, eventId={}",
+                            event.getTenantId(),
+                            event.getChargerId(),
+                            event.getEventId()
+                    );
+                    channel.basicReject(tag, false);
+                    return;
+                }
+
+                // Best-effort: also touch all connector heartbeats for this charger.
+                try {
+                    if (chargerConnectorService != null) {
+                        chargerConnectorService.touchAllHeartbeat(event.getChargerId(), heartbeatTime);
+                    }
+                } catch (Exception e) {
+                    log.debug("Failed to touch connector heartbeats: tenantId={}, chargerId={}", event.getTenantId(), event.getChargerId(), e);
+                }
+
+                channel.basicAck(tag, false);
+            } catch (Exception ex) {
+                log.error(
+                        "Error handling heartbeat event, nack to DLQ: tenantId={}, chargerId={}, eventId={}",
                         event.getTenantId(),
                         event.getChargerId(),
-                        event.getEventId()
+                        event.getEventId(),
+                        ex
                 );
-                channel.basicReject(tag, false);
-                return;
+                channel.basicNack(tag, false, false);
+            } finally {
+                TenantContext.clear();
             }
-
-            // Best-effort: also touch all connector heartbeats for this charger.
-            try {
-                if (chargerConnectorService != null) {
-                    chargerConnectorService.touchAllHeartbeat(event.getChargerId(), heartbeatTime);
-                }
-            } catch (Exception e) {
-                log.debug("Failed to touch connector heartbeats: tenantId={}, chargerId={}", event.getTenantId(), event.getChargerId(), e);
-            }
-
-            channel.basicAck(tag, false);
-        } catch (Exception ex) {
-            log.error(
-                    "Error handling heartbeat event, nack to DLQ: tenantId={}, chargerId={}, eventId={}",
-                    event.getTenantId(),
-                    event.getChargerId(),
-                    event.getEventId(),
-                    ex
-            );
-            channel.basicNack(tag, false, false);
-        } finally {
-            TenantContext.clear();
         }
     }
 
@@ -89,49 +93,65 @@ public class ProtocolHeartbeatStatusEventListener {
             return;
         }
 
-        try {
-            TenantContext.setCurrentTenantId(event.getTenantId());
+        String traceId = resolveTraceId(event.getEventId(), message, tag);
+        try (TraceMdc ignored = TraceMdc.withTraceId(traceId)) {
+            try {
+                TenantContext.setCurrentTenantId(event.getTenantId());
 
-            LocalDateTime eventTime = event.getEventTime() != null ? event.getEventTime() : LocalDateTime.now();
+                LocalDateTime eventTime = event.getEventTime() != null ? event.getEventTime() : LocalDateTime.now();
 
-            boolean ok;
-            if (event.getConnectorId() != null && event.getConnectorId() > 0) {
-                ok = chargerConnectorService != null && chargerConnectorService.updateStatus(
-                    event.getChargerId(),
-                    event.getConnectorId(),
-                    event.getNewStatus(),
-                    event.getFaultCode(),
-                    event.getFaultDescription(),
-                    eventTime
-                );
-            } else {
-                ok = chargerService.updateStatus(event.getChargerId(), event.getNewStatus());
-            }
-            if (!ok) {
-                log.warn(
-                        "Failed to update status, reject to DLQ: tenantId={}, chargerId={}, connectorId={}, newStatus={}, eventId={}",
-                        event.getTenantId(),
+                boolean ok;
+                if (event.getConnectorId() != null && event.getConnectorId() > 0) {
+                    ok = chargerConnectorService != null && chargerConnectorService.updateStatus(
                         event.getChargerId(),
                         event.getConnectorId(),
                         event.getNewStatus(),
-                        event.getEventId()
-                );
-                channel.basicReject(tag, false);
-                return;
-            }
+                        event.getFaultCode(),
+                        event.getFaultDescription(),
+                        eventTime
+                    );
+                } else {
+                    ok = chargerService.updateStatus(event.getChargerId(), event.getNewStatus());
+                }
+                if (!ok) {
+                    log.warn(
+                            "Failed to update status, reject to DLQ: tenantId={}, chargerId={}, connectorId={}, newStatus={}, eventId={}",
+                            event.getTenantId(),
+                            event.getChargerId(),
+                            event.getConnectorId(),
+                            event.getNewStatus(),
+                            event.getEventId()
+                    );
+                    channel.basicReject(tag, false);
+                    return;
+                }
 
-            channel.basicAck(tag, false);
-        } catch (Exception ex) {
-            log.error(
-                    "Error handling status event, nack to DLQ: tenantId={}, chargerId={}, eventId={}",
-                    event.getTenantId(),
-                    event.getChargerId(),
-                    event.getEventId(),
-                    ex
-            );
-            channel.basicNack(tag, false, false);
-        } finally {
-            TenantContext.clear();
+                channel.basicAck(tag, false);
+            } catch (Exception ex) {
+                log.error(
+                        "Error handling status event, nack to DLQ: tenantId={}, chargerId={}, eventId={}",
+                        event.getTenantId(),
+                        event.getChargerId(),
+                        event.getEventId(),
+                        ex
+                );
+                channel.basicNack(tag, false, false);
+            } finally {
+                TenantContext.clear();
+            }
         }
+    }
+
+    private static String resolveTraceId(String eventId, Message message, long deliveryTag) {
+        if (eventId != null && !eventId.isBlank()) {
+            return eventId;
+        }
+
+        String messageId = message.getMessageProperties().getMessageId();
+        if (messageId != null && !messageId.isBlank()) {
+            return messageId;
+        }
+
+        return "mq-" + deliveryTag;
     }
 }

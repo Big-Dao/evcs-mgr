@@ -1,5 +1,6 @@
 package com.evcs.payment.service.listener;
 
+import com.evcs.common.trace.TraceMdc;
 import com.evcs.payment.dto.message.PaymentMessage;
 import com.evcs.payment.service.message.PaymentMessageService;
 import com.rabbitmq.client.Channel;
@@ -32,20 +33,23 @@ public class PaymentMessageListener {
                                           @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag,
                                           Channel channel,
                                           Message amqpMessage) {
-        log.info("接收到支付成功消息: messageId={}, orderId={}, tradeNo={}",
-                message.getMessageId(), message.getOrderId(), message.getTradeNo());
+        String traceId = resolveTraceId(message, amqpMessage, deliveryTag);
+        try (TraceMdc ignored = TraceMdc.withTraceId(traceId)) {
+            log.info("接收到支付成功消息: messageId={}, orderId={}, tradeNo={}",
+                    message.getMessageId(), message.getOrderId(), message.getTradeNo());
 
-        try {
-            // 处理支付成功消息
-            processPaymentSuccessMessage(message);
+            try {
+                // 处理支付成功消息
+                processPaymentSuccessMessage(message);
 
-            // 手动确认消息
-            channel.basicAck(deliveryTag, false);
-            log.info("支付成功消息处理完成: messageId={}", message.getMessageId());
+                // 手动确认消息
+                channel.basicAck(deliveryTag, false);
+                log.info("支付成功消息处理完成: messageId={}", message.getMessageId());
 
-        } catch (Exception e) {
-            log.error("处理支付成功消息失败: messageId={}", message.getMessageId(), e);
-            handleProcessingFailure(message, channel, deliveryTag, e);
+            } catch (Exception e) {
+                log.error("处理支付成功消息失败: messageId={}", message.getMessageId(), e);
+                handleProcessingFailure(message, channel, deliveryTag, e);
+            }
         }
     }
 
@@ -57,20 +61,23 @@ public class PaymentMessageListener {
                                           @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag,
                                           Channel channel,
                                           Message amqpMessage) {
-        log.info("接收到支付失败消息: messageId={}, orderId={}, tradeNo={}",
-                message.getMessageId(), message.getOrderId(), message.getTradeNo());
+        String traceId = resolveTraceId(message, amqpMessage, deliveryTag);
+        try (TraceMdc ignored = TraceMdc.withTraceId(traceId)) {
+            log.info("接收到支付失败消息: messageId={}, orderId={}, tradeNo={}",
+                    message.getMessageId(), message.getOrderId(), message.getTradeNo());
 
-        try {
-            // 处理支付失败消息
-            processPaymentFailureMessage(message);
+            try {
+                // 处理支付失败消息
+                processPaymentFailureMessage(message);
 
-            // 手动确认消息
-            channel.basicAck(deliveryTag, false);
-            log.info("支付失败消息处理完成: messageId={}", message.getMessageId());
+                // 手动确认消息
+                channel.basicAck(deliveryTag, false);
+                log.info("支付失败消息处理完成: messageId={}", message.getMessageId());
 
-        } catch (Exception e) {
-            log.error("处理支付失败消息失败: messageId={}", message.getMessageId(), e);
-            handleProcessingFailure(message, channel, deliveryTag, e);
+            } catch (Exception e) {
+                log.error("处理支付失败消息失败: messageId={}", message.getMessageId(), e);
+                handleProcessingFailure(message, channel, deliveryTag, e);
+            }
         }
     }
 
@@ -82,20 +89,23 @@ public class PaymentMessageListener {
                                          @Header(AmqpHeaders.DELIVERY_TAG) long deliveryTag,
                                          Channel channel,
                                          Message amqpMessage) {
-        log.info("接收到退款成功消息: messageId={}, orderId={}, tradeNo={}",
-                message.getMessageId(), message.getOrderId(), message.getTradeNo());
+        String traceId = resolveTraceId(message, amqpMessage, deliveryTag);
+        try (TraceMdc ignored = TraceMdc.withTraceId(traceId)) {
+            log.info("接收到退款成功消息: messageId={}, orderId={}, tradeNo={}",
+                    message.getMessageId(), message.getOrderId(), message.getTradeNo());
 
-        try {
-            // 处理退款成功消息
-            processRefundSuccessMessage(message);
+            try {
+                // 处理退款成功消息
+                processRefundSuccessMessage(message);
 
-            // 手动确认消息
-            channel.basicAck(deliveryTag, false);
-            log.info("退款成功消息处理完成: messageId={}", message.getMessageId());
+                // 手动确认消息
+                channel.basicAck(deliveryTag, false);
+                log.info("退款成功消息处理完成: messageId={}", message.getMessageId());
 
-        } catch (Exception e) {
-            log.error("处理退款成功消息失败: messageId={}", message.getMessageId(), e);
-            handleProcessingFailure(message, channel, deliveryTag, e);
+            } catch (Exception e) {
+                log.error("处理退款成功消息失败: messageId={}", message.getMessageId(), e);
+                handleProcessingFailure(message, channel, deliveryTag, e);
+            }
         }
     }
 
@@ -108,25 +118,43 @@ public class PaymentMessageListener {
                                       Channel channel,
                                       Message amqpMessage,
                                       @Header(value = "x-death", required = false) Object deathHeader) {
-        log.error("接收到死信消息: messageId={}, messageType={}, retryCount={}",
-                message.getMessageId(), message.getMessageType(), message.getRetryCount());
+        String traceId = resolveTraceId(message, amqpMessage, deliveryTag);
+        try (TraceMdc ignored = TraceMdc.withTraceId(traceId)) {
+            log.error("接收到死信消息: messageId={}, messageType={}, retryCount={}",
+                    message.getMessageId(), message.getMessageType(), message.getRetryCount());
 
-        try {
-            // 记录死信消息，用于人工干预
-            processDeadLetterMessage(message, deathHeader);
-
-            // 手动确认死信消息
-            channel.basicAck(deliveryTag, false);
-
-        } catch (Exception e) {
-            log.error("处理死信消息失败: messageId={}", message.getMessageId(), e);
             try {
-                // 确认死信消息，避免重复处理
+                // 记录死信消息，用于人工干预
+                processDeadLetterMessage(message, deathHeader);
+
+                // 手动确认死信消息
                 channel.basicAck(deliveryTag, false);
-            } catch (IOException ioException) {
-                log.error("确认死信消息失败", ioException);
+
+            } catch (Exception e) {
+                log.error("处理死信消息失败: messageId={}", message.getMessageId(), e);
+                try {
+                    // 确认死信消息，避免重复处理
+                    channel.basicAck(deliveryTag, false);
+                } catch (IOException ioException) {
+                    log.error("确认死信消息失败", ioException);
+                }
             }
         }
+    }
+
+    private static String resolveTraceId(PaymentMessage message, Message amqpMessage, long deliveryTag) {
+        if (message != null && message.getMessageId() != null && !message.getMessageId().isBlank()) {
+            return message.getMessageId();
+        }
+
+        if (amqpMessage != null) {
+            String messageId = amqpMessage.getMessageProperties().getMessageId();
+            if (messageId != null && !messageId.isBlank()) {
+                return messageId;
+            }
+        }
+
+        return "mq-" + deliveryTag;
     }
 
     /**
