@@ -69,6 +69,19 @@ evcs:
       - sys_permission
     default-tenant-id: 1
   payment:
+    processing-reconcile:
+      # 是否启用 PROCESSING 订单轮询补偿（默认关闭）
+      enabled: false
+      # 任务初始延迟（毫秒）
+      initial-delay-ms: 60000
+      # 任务执行间隔（毫秒）
+      fixed-delay-ms: 60000
+      # 仅处理创建时间早于该阈值的订单（分钟），避免刚创建就被轮询
+      min-age-minutes: 2
+      # 每个租户每次轮询最多处理的订单数
+      batch-size-per-tenant: 50
+      # 每次轮询最多扫描的租户数量
+      max-tenants-per-run: 50
     rabbitmq:
       enabled: true
       queue:
