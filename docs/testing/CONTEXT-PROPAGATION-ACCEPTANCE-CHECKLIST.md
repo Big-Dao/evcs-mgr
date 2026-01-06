@@ -38,9 +38,12 @@
 
 - `TenantContextTaskDecoratorTest`：验证 TaskDecorator 传播 TenantContext + MDC，并在任务后恢复 worker-thread 旧值。
 - `TenantContextPropagatingExecutorServiceTest`：验证包装器传播 TenantContext + MDC，并在任务后恢复 worker-thread 旧值。
+- `TenantContextTaskDecoratorTest` / `TenantContextPropagatingExecutorServiceTest`：验证异常/取消等故障场景下也能恢复/清理上下文，避免复用线程污染。
 - `OutgoingRequestContextHeadersTest`：验证 `OutgoingRequestContextHeaders.applyTo(HttpHeaders)` 的 header 填充与回退逻辑。
 - `TraceMdcTest`：验证“非 HTTP 入口”（MQ / 定时任务）在当前执行范围内补齐 MDC(traceId/requestId)，并在结束后恢复/清理，避免复用线程污染。
 - `OutboundHttpContextPropagationTest`（`evcs-payment`）：验证入站 HTTP header → RequestIdFilter/TenantInterceptor → 出站 RestTemplate 调用时，下游服务可收到租户与 trace headers。
+- `OrderServiceClientResilienceTest`（`evcs-payment`）：验证出站调用具备显式超时，且在 5xx/网络异常触发重试时 traceId/requestId 不丢失、出站 header 保持透传。
+- `WechatPayChannelServiceResilienceTest`（`evcs-payment`）：验证微信SDK调用具备显式超时，且对瞬态 5xx 触发重试时 traceId/requestId 不丢失（4xx 不重试）。
 - `ReactorSchedulerContextPropagationTest`（`evcs-gateway`）：验证 `publishOn(evcsReactorScheduler)` 线程切换时仍能传播 TenantContext + MDC，且不泄漏。
 - `ProtocolChargingEventListenerContextTest`（`evcs-order`）：验证 MQ consumer 入口在处理消息期间设置 TenantContext + MDC(traceId/requestId)，并在返回后清理/恢复。
 - `OCPPSessionManagerTraceMdcTest`（`evcs-protocol`）：验证 `@Scheduled` 入口不会把补齐的 MDC(requestId) 泄漏到后续复用线程。
@@ -58,6 +61,12 @@
 
 # 可选：出站 HTTP 真实链路验收（RestTemplate -> mock downstream server）
 ./gradlew :evcs-payment:test --tests "com.evcs.payment.integration.OutboundHttpContextPropagationTest" --warning-mode all
+
+# 可选：出站 HTTP 超时/重试/trace 不丢失验收（OrderServiceClient -> mock downstream server）
+./gradlew :evcs-payment:test --tests "com.evcs.payment.integration.OrderServiceClientResilienceTest" --warning-mode all
+
+# 可选：微信SDK调用超时/重试/trace 不丢失验收
+./gradlew :evcs-payment:test --tests "com.evcs.payment.service.channel.WechatPayChannelServiceResilienceTest" --warning-mode all
 
 # 可选：包含 Reactor publishOn/subscribeOn 的验收
 ./gradlew :evcs-gateway:test --warning-mode all

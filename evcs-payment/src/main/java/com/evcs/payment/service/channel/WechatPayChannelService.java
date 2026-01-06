@@ -22,8 +22,11 @@ import com.wechat.pay.java.service.refund.RefundService;
 import com.wechat.pay.java.service.refund.model.AmountReq;
 import com.wechat.pay.java.service.refund.model.CreateRequest;
 import com.wechat.pay.java.service.refund.model.Refund;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
+import io.github.resilience4j.retry.Retry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.Profiles;
 import org.springframework.stereotype.Service;
@@ -36,6 +39,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 /**
  * 微信支付渠道服务（集成微信官方SDK）
@@ -53,6 +57,12 @@ public class WechatPayChannelService implements IPaymentChannel {
     private final WechatPayClientFactory clientFactory;
     private final ObjectMapper objectMapper;
     private final Environment environment;
+
+    @Qualifier("wechatPayRetry")
+    private final Retry wechatPayRetry;
+
+    @Qualifier("wechatPayCircuitBreaker")
+    private final CircuitBreaker wechatPayCircuitBreaker;
 
     private boolean isProduction() {
         return environment.acceptsProfiles(Profiles.of("prod", "production"));
@@ -102,7 +112,11 @@ public class WechatPayChannelService implements IPaymentChannel {
             query.setMchid(config.getMchid());
             query.setOutTradeNo(tradeNo);
 
-            Transaction transaction = jsapiService.queryOrderByOutTradeNo(query);
+            // Query is safe to retry on transient failures.
+            Transaction transaction = executeWithWechatResilience(
+                "queryPayment",
+                () -> jsapiService.queryOrderByOutTradeNo(query)
+            );
             return buildResponseFromTransaction(tradeNo, transaction);
         } catch (Exception ex) {
             log.error("微信支付查询失败: tradeNo={}", tradeNo, ex);
@@ -151,7 +165,11 @@ public class WechatPayChannelService implements IPaymentChannel {
             amountReq.setTotal((long) convertAmountToFen(totalAmount));
             refundRequest.setAmount(amountReq);
 
-            Refund response = refundService.create(refundRequest);
+            // Refund is idempotent with outRefundNo; safe to retry on transient failures.
+            Refund response = executeWithWechatResilience(
+                "refund",
+                () -> refundService.create(refundRequest)
+            );
 
             RefundResponse result = new RefundResponse();
             result.setRefundNo(response.getRefundId());
@@ -167,6 +185,18 @@ public class WechatPayChannelService implements IPaymentChannel {
                 throw new BusinessException("微信退款失败: " + ex.getMessage());
             }
             return createMockRefundResponse(request);
+        }
+    }
+
+    private <T> T executeWithWechatResilience(String operation, Supplier<T> supplier) {
+        Supplier<T> decorated = CircuitBreaker.decorateSupplier(wechatPayCircuitBreaker, supplier);
+        decorated = Retry.decorateSupplier(wechatPayRetry, decorated);
+
+        try {
+            return decorated.get();
+        } catch (RuntimeException ex) {
+            log.warn("微信支付调用失败（已应用重试/熔断）: op={}", operation, ex);
+            throw ex;
         }
     }
 

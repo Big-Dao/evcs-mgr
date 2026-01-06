@@ -2,6 +2,8 @@ package com.evcs.payment.service.channel;
 
 import com.evcs.payment.config.PaymentConfig;
 import com.wechat.pay.java.core.RSAAutoCertificateConfig;
+import com.wechat.pay.java.core.http.HostName;
+import com.wechat.pay.java.core.http.HttpClient;
 import com.wechat.pay.java.core.notification.NotificationParser;
 import com.wechat.pay.java.service.payments.jsapi.JsapiServiceExtension;
 import com.wechat.pay.java.service.payments.nativepay.NativePayService;
@@ -32,6 +34,8 @@ public class WechatPayClientFactory {
 
     private volatile boolean initialized;
     private volatile RSAAutoCertificateConfig certificateConfig;
+    private volatile HttpClient httpClient;
+    private volatile HostName hostName;
     private volatile JsapiServiceExtension jsapiService;
     private volatile NativePayService nativePayService;
     private volatile RefundService refundService;
@@ -118,14 +122,23 @@ public class WechatPayClientFactory {
                 .apiV3Key(config.getApiV3Key())
                 .build();
 
+            httpClient = WechatPayHttpClientFactory.buildHttpClient(certificateConfig, config);
+            hostName = resolveHostName(config.getBaseUrl());
+
             jsapiService = new JsapiServiceExtension.Builder()
                 .config(certificateConfig)
+                .httpClient(httpClient)
+                .hostName(hostName)
                 .build();
             nativePayService = new NativePayService.Builder()
                 .config(certificateConfig)
+                .httpClient(httpClient)
+                .hostName(hostName)
                 .build();
             refundService = new RefundService.Builder()
                 .config(certificateConfig)
+                .httpClient(httpClient)
+                .hostName(hostName)
                 .build();
             notificationParser = new NotificationParser(certificateConfig);
 
@@ -135,6 +148,17 @@ public class WechatPayClientFactory {
             log.error("初始化微信支付SDK失败", ex);
             releaseResources();
         }
+    }
+
+    private HostName resolveHostName(String baseUrl) {
+        if (baseUrl == null || baseUrl.isBlank()) {
+            return HostName.API;
+        }
+        String normalized = baseUrl.trim().toLowerCase();
+        if (normalized.contains("apihk.mch.weixin.qq.com")) {
+            return HostName.APIHK;
+        }
+        return HostName.API;
     }
 
     private PrivateKey loadPrivateKey(String privateKeyPem) {
@@ -158,6 +182,8 @@ public class WechatPayClientFactory {
 
     private void releaseResources() {
         certificateConfig = null;
+        httpClient = null;
+        hostName = null;
         jsapiService = null;
         nativePayService = null;
         refundService = null;

@@ -198,6 +198,31 @@ public class PaymentConfig {
         private String refundNotifyUrl = "";
 
         /**
+         * 微信支付SDK连接超时（毫秒）
+         */
+        private int connectTimeoutMs = 3000;
+
+        /**
+         * 微信支付SDK读取超时（毫秒）
+         */
+        private int readTimeoutMs = 10000;
+
+        /**
+         * 微信支付SDK写入超时（毫秒）
+         */
+        private int writeTimeoutMs = 10000;
+
+        /**
+         * 微信支付SDK调用最大重试次数（仅对瞬态故障；不用于“下单创建”避免未知状态误判）
+         */
+        private int maxRetries = 3;
+
+        /**
+         * 微信支付SDK重试初始间隔（毫秒），采用指数退避
+         */
+        private long retryIntervalMs = 200;
+
+        /**
          * 加载私钥内容
          */
         public String resolvePrivateKey() {
