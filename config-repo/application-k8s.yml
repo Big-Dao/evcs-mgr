@@ -23,3 +23,14 @@ spring:
     port: 5672
     username: guest
     password: guest
+
+# 支付服务补偿轮询（默认关闭；仅支付服务读取该配置）
+evcs:
+  payment:
+    processing-reconcile:
+      enabled: false
+      initial-delay-ms: 60000
+      fixed-delay-ms: 60000
+      min-age-minutes: 2
+      batch-size-per-tenant: 50
+      max-tenants-per-run: 50
