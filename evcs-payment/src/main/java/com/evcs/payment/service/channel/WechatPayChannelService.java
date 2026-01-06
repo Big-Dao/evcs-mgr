@@ -228,7 +228,9 @@ public class WechatPayChannelService implements IPaymentChannel {
             "微信支付缺少wechatOptions");
 
         String appId = resolveAppId(options, config);
-        String outTradeNo = generateTradeNo(request.getOrderId());
+        String outTradeNo = StringUtils.hasText(request.getTradeNo())
+            ? request.getTradeNo()
+            : generateTradeNo(request.getOrderId());
 
         PrepayRequest prepayRequest = new PrepayRequest();
         prepayRequest.setAppid(appId);
@@ -273,7 +275,9 @@ public class WechatPayChannelService implements IPaymentChannel {
         PaymentConfig.WechatConfig config = paymentConfig.getWechat();
         WechatPaymentOptions options = request.getWechatOptions();
 
-        String outTradeNo = generateTradeNo(request.getOrderId());
+        String outTradeNo = StringUtils.hasText(request.getTradeNo())
+            ? request.getTradeNo()
+            : generateTradeNo(request.getOrderId());
 
         com.wechat.pay.java.service.payments.nativepay.model.PrepayRequest prepayRequest =
             new com.wechat.pay.java.service.payments.nativepay.model.PrepayRequest();

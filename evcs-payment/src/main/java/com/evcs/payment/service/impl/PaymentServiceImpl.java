@@ -9,6 +9,7 @@ import com.evcs.payment.dto.PaymentResponse;
 import com.evcs.payment.dto.RefundRequest;
 import com.evcs.payment.dto.RefundResponse;
 import com.evcs.payment.entity.PaymentOrder;
+import com.evcs.payment.exception.PaymentUnknownStateException;
 import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.mapper.PaymentOrderMapper;
@@ -27,6 +28,8 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.UUID;
+import java.util.Objects;
 
 /**
  * 支付服务实现
@@ -54,47 +57,43 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
         io.micrometer.core.instrument.Timer.Sample sample =
             io.micrometer.core.instrument.Timer.start();
 
-        String requestId = java.util.UUID.randomUUID().toString();
+        String requestId = UUID.randomUUID().toString();
+
+        // 1. 参数验证
+        if (!validatePaymentRequest(request)) {
+            paymentMetrics.recordPaymentFailure(null);
+            throw new IllegalArgumentException("支付请求参数验证失败");
+        }
+
+        // 2. 生成或验证幂等键
+        String idempotentKey = idempotencyService.generateIdempotentKey(request);
+        if (idempotentKey == null) {
+            paymentMetrics.recordPaymentFailure(null);
+            throw new IllegalStateException("生成幂等键失败");
+        }
+
+        log.debug("使用幂等键: idempotentKey={}, requestId={}", idempotentKey, requestId);
 
         try {
-            // 1. 参数验证
-            if (!validatePaymentRequest(request)) {
-                paymentMetrics.recordPaymentFailure(null);
-                throw new IllegalArgumentException("支付请求参数验证失败");
-            }
-
-            // 2. 生成或验证幂等键
-            String idempotentKey = idempotencyService.generateIdempotentKey(request);
-            if (idempotentKey == null) {
-                paymentMetrics.recordPaymentFailure(null);
-                throw new IllegalStateException("生成幂等键失败");
-            }
-
-            log.debug("使用幂等键: idempotentKey={}, requestId={}", idempotentKey, requestId);
-
-            // 3. 增强的幂等性检查 - 先从缓存检查
+            // 3. 幂等性检查 - 如已存在且无需恢复则直接返回
             PaymentOrder existingOrder = idempotencyService.getExistingPayment(idempotentKey);
-            if (existingOrder != null) {
-                log.info("幂等键已存在（缓存命中），返回原订单: tradeNo={}, status={}",
+            if (existingOrder != null && !needsCreateRecovery(existingOrder)) {
+                log.info("幂等键已存在，返回原订单: tradeNo={}, status={}",
                     existingOrder.getTradeNo(), existingOrder.getStatusEnum());
-
-                // 记录幂等性命中指标
                 paymentMetrics.recordCustomMetric("payment.idempotency.hit", 1.0,
                     java.util.Map.of("source", "cache", "operation", "create_payment"));
-
                 return buildPaymentResponse(existingOrder);
             }
 
-            // 4. 尝试获取分布式锁，防止并发创建
+            // 4. 分布式锁，防止并发创建/并发恢复
             if (!idempotencyService.tryLock(idempotentKey, requestId, 30L)) {
                 log.warn("获取分布式锁失败，可能有并发请求: idempotentKey={}", idempotentKey);
                 paymentMetrics.recordCustomMetric("payment.idempotency.lock.failure", 1.0,
                     java.util.Map.of("operation", "create_payment"));
 
-                // 尝试再次查询，可能有其他请求已经创建了订单
                 PaymentOrder retryOrder = idempotencyService.getExistingPayment(idempotentKey);
                 if (retryOrder != null) {
-                    log.info("锁失败后重试查询成功: tradeNo={}", retryOrder.getTradeNo());
+                    log.info("锁失败后查询成功: tradeNo={}, status={}", retryOrder.getTradeNo(), retryOrder.getStatusEnum());
                     return buildPaymentResponse(retryOrder);
                 }
 
@@ -102,56 +101,77 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
             }
 
             try {
-                // 5. 双重检查 - 再次确认幂等性
+                // 5. 双重检查
                 existingOrder = idempotencyService.getExistingPayment(idempotentKey);
-                if (existingOrder != null) {
-                    log.info("获取锁后再次检查发现已存在订单: tradeNo={}", existingOrder.getTradeNo());
-                    return buildPaymentResponse(existingOrder);
+
+                PaymentOrder paymentOrder;
+                boolean recovering = existingOrder != null;
+                if (recovering) {
+                    paymentOrder = existingOrder;
+                } else {
+                    // 6. DB-first：先落库为PROCESSING，避免下单异常导致本地无单
+                    paymentOrder = new PaymentOrder();
+                    paymentOrder.setTenantId(TenantContext.getCurrentTenantId());
+                    paymentOrder.setOrderId(request.getOrderId());
+                    paymentOrder.setTradeNo(resolveOrGenerateTradeNo(request, idempotentKey));
+                    paymentOrder.setPaymentMethod(request.getPaymentMethod().getCode());
+                    paymentOrder.setAmount(request.getAmount());
+                    paymentOrder.setStatusEnum(PaymentStatus.PROCESSING);
+                    paymentOrder.setIdempotentKey(idempotentKey);
+                    paymentOrder.setDescription(request.getDescription());
+                    paymentOrder.setCreateBy(TenantContext.getCurrentUserId());
+
+                    baseMapper.insert(paymentOrder);
+                    idempotencyService.cachePaymentResult(idempotentKey, paymentOrder, 24, java.util.concurrent.TimeUnit.HOURS);
                 }
 
-                // 6. 选择支付渠道
+                paymentOrder = Objects.requireNonNull(paymentOrder, "paymentOrder must not be null");
+
+                // 7. 选择支付渠道，并确保tradeNo稳定传入渠道（outTradeNo）
                 IPaymentChannel channel = selectChannel(request.getPaymentMethod());
+                request.setTradeNo(paymentOrder.getTradeNo());
 
-                // 7. 调用支付渠道创建支付
-                PaymentResponse channelResponse = channel.createPayment(request);
+                try {
+                    // 8. 调用支付渠道创建支付（不自动重试；未知状态则转入PROCESSING）
+                    PaymentResponse channelResponse = channel.createPayment(request);
 
-                // 8. 保存支付订单
-                PaymentOrder paymentOrder = new PaymentOrder();
-                paymentOrder.setTenantId(TenantContext.getCurrentTenantId());
-                paymentOrder.setOrderId(request.getOrderId());
-                paymentOrder.setTradeNo(channelResponse.getTradeNo());
-                paymentOrder.setPaymentMethod(request.getPaymentMethod().getCode());
-                paymentOrder.setAmount(request.getAmount());
-                paymentOrder.setStatusEnum(PaymentStatus.PENDING);
-                paymentOrder.setIdempotentKey(idempotentKey);
-                paymentOrder.setDescription(request.getDescription());
-                paymentOrder.setPayParams(channelResponse.getPayParams());
-                paymentOrder.setPayUrl(channelResponse.getPayUrl());
-                paymentOrder.setCreateBy(TenantContext.getCurrentUserId());
+                    // 9. 渠道成功返回：更新订单为PENDING，并保存支付参数
+                    paymentOrder.setStatusEnum(PaymentStatus.PENDING);
+                    paymentOrder.setPayParams(channelResponse.getPayParams());
+                    paymentOrder.setPayUrl(channelResponse.getPayUrl());
+                    paymentOrder.setUpdateBy(TenantContext.getCurrentUserId());
+                    baseMapper.updateById(paymentOrder);
+                    idempotencyService.cachePaymentResult(idempotentKey, paymentOrder, 24, java.util.concurrent.TimeUnit.HOURS);
 
-                baseMapper.insert(paymentOrder);
+                    channelResponse.setPaymentId(paymentOrder.getId());
+                    channelResponse.setTradeNo(paymentOrder.getTradeNo());
+                    channelResponse.setStatus(PaymentStatus.PENDING);
 
-                // 9. 缓存支付结果
-                idempotencyService.cachePaymentResult(idempotentKey, paymentOrder, 24, java.util.concurrent.TimeUnit.HOURS);
+                    // 10. 记录成功指标
+                    String channelName = request.getPaymentMethod().name().toLowerCase();
+                    Long amountInCents = request.getAmount().multiply(new java.math.BigDecimal("100")).longValue();
+                    paymentMetrics.recordPaymentSuccess(channelName, amountInCents);
+                    paymentMetrics.recordCustomMetric("payment.idempotency.new_order", recovering ? 0.0 : 1.0,
+                        java.util.Map.of("payment_method", channelName, "operation", "create_payment"));
 
-                channelResponse.setPaymentId(paymentOrder.getId());
+                    log.info("支付订单创建成功: paymentId={}, tradeNo={}, idempotentKey={}, recovering={}",
+                        paymentOrder.getId(), paymentOrder.getTradeNo(), idempotentKey, recovering);
+                    return channelResponse;
 
-                // 10. 记录成功指标
-                String channelName = request.getPaymentMethod().name().toLowerCase();
-                Long amountInCents = request.getAmount().multiply(new java.math.BigDecimal("100")).longValue();
-                paymentMetrics.recordPaymentSuccess(channelName, amountInCents);
-
-                // 记录幂等性新创建指标
-                paymentMetrics.recordCustomMetric("payment.idempotency.new_order", 1.0,
-                    java.util.Map.of("payment_method", channelName, "operation", "create_payment"));
-
-                log.info("支付订单创建成功: paymentId={}, tradeNo={}, idempotentKey={}",
-                    paymentOrder.getId(), channelResponse.getTradeNo(), idempotentKey);
-
-                return channelResponse;
+                } catch (PaymentUnknownStateException ex) {
+                    // 11. 未知状态：不回滚、不重试，保留PROCESSING并返回可追踪tradeNo
+                    paymentOrder.setStatusEnum(PaymentStatus.PROCESSING);
+                    paymentOrder.setUpdateBy(TenantContext.getCurrentUserId());
+                    baseMapper.updateById(paymentOrder);
+                    idempotencyService.cachePaymentResult(idempotentKey, paymentOrder, 24, java.util.concurrent.TimeUnit.HOURS);
+                    paymentMetrics.recordCustomMetric("payment.create.unknown_state", 1.0,
+                        java.util.Map.of("payment_method", request.getPaymentMethod().name().toLowerCase()));
+                    log.warn("创建支付进入未知状态（将等待后续补偿/重试调用恢复）: paymentId={}, tradeNo={}, idempotentKey={}",
+                        paymentOrder.getId(), paymentOrder.getTradeNo(), idempotentKey, ex);
+                    return buildPaymentResponse(paymentOrder);
+                }
 
             } finally {
-                // 11. 释放分布式锁
                 idempotencyService.unlock(idempotentKey, requestId);
             }
 
@@ -159,11 +179,46 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
             String channelName = request != null && request.getPaymentMethod() != null ?
                 request.getPaymentMethod().name().toLowerCase() : "unknown";
             paymentMetrics.recordPaymentFailure(channelName);
-            log.error("创建支付订单失败: orderId={}", request.getOrderId(), e);
+            log.error("创建支付订单失败: orderId={}", request != null ? request.getOrderId() : null, e);
             throw e;
         } finally {
             sample.stop(paymentMetrics.getPaymentProcessTimer());
         }
+    }
+
+    private boolean needsCreateRecovery(PaymentOrder order) {
+        if (order == null) {
+            return false;
+        }
+        if (!PaymentStatus.PROCESSING.equals(order.getStatusEnum())) {
+            return false;
+        }
+        boolean hasPayInfo = StringUtils.hasText(order.getPayParams()) || StringUtils.hasText(order.getPayUrl());
+        return !hasPayInfo && StringUtils.hasText(order.getTradeNo());
+    }
+
+    private String resolveOrGenerateTradeNo(PaymentRequest request, String idempotentKey) {
+        if (request != null && StringUtils.hasText(request.getTradeNo())) {
+            return request.getTradeNo();
+        }
+
+        String prefix;
+        if (request != null && request.getPaymentMethod() != null && request.getPaymentMethod().name().startsWith("WECHAT")) {
+            prefix = "WXP";
+        } else if (request != null && request.getPaymentMethod() != null && request.getPaymentMethod().name().startsWith("ALIPAY")) {
+            prefix = "ALI";
+        } else {
+            prefix = "PAY";
+        }
+
+        String suffix = idempotentKey;
+        if (!StringUtils.hasText(suffix) || suffix.length() < 8) {
+            suffix = UUID.randomUUID().toString().replace("-", "");
+        }
+        suffix = suffix.substring(0, 8);
+
+        Long orderId = request != null ? request.getOrderId() : null;
+        return prefix + orderId + "_" + suffix;
     }
 
     @Override
@@ -190,7 +245,6 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
         log.info("处理支付回调: tradeNo={}, success={}", tradeNo, success);
 
         // 先从缓存查询订单，提升性能
-        String cacheKey = "payment:callback:" + tradeNo;
         PaymentOrder paymentOrder = null;
 
         // 尝试从缓存获取订单
@@ -454,13 +508,6 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
         }
 
         return true;
-    }
-
-    /**
-     * 选择支付渠道（私有方法，保持向后兼容）
-     */
-    private IPaymentChannel selectChannelPrivate(PaymentMethod method) {
-        return selectChannel(method);
     }
 
     /**
