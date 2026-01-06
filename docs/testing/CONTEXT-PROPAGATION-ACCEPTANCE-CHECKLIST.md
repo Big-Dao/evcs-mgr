@@ -2,7 +2,7 @@
 
 > 用途：为“多租户隔离 + traceId/requestId + 异步上下文传播”提供可执行的验收基线（测试 + 人工检查）。
 
-**最后更新**: 2026-01-05  \
+**最后更新**: 2026-01-06  \
 **维护者**: 架构团队 / 平台团队  \
 **状态**: 已发布
 
@@ -39,12 +39,25 @@
 - `TenantContextTaskDecoratorTest`：验证 TaskDecorator 传播 TenantContext + MDC，并在任务后恢复 worker-thread 旧值。
 - `TenantContextPropagatingExecutorServiceTest`：验证包装器传播 TenantContext + MDC，并在任务后恢复 worker-thread 旧值。
 - `OutgoingRequestContextHeadersTest`：验证 `OutgoingRequestContextHeaders.applyTo(HttpHeaders)` 的 header 填充与回退逻辑。
+- `TraceMdcTest`：验证“非 HTTP 入口”（MQ / 定时任务）在当前执行范围内补齐 MDC(traceId/requestId)，并在结束后恢复/清理，避免复用线程污染。
+- `OutboundHttpContextPropagationTest`（`evcs-payment`）：验证入站 HTTP header → RequestIdFilter/TenantInterceptor → 出站 RestTemplate 调用时，下游服务可收到租户与 trace headers。
 - `ReactorSchedulerContextPropagationTest`（`evcs-gateway`）：验证 `publishOn(evcsReactorScheduler)` 线程切换时仍能传播 TenantContext + MDC，且不泄漏。
+- `ProtocolChargingEventListenerContextTest`（`evcs-order`）：验证 MQ consumer 入口在处理消息期间设置 TenantContext + MDC(traceId/requestId)，并在返回后清理/恢复。
+- `OCPPSessionManagerTraceMdcTest`（`evcs-protocol`）：验证 `@Scheduled` 入口不会把补齐的 MDC(requestId) 泄漏到后续复用线程。
 
 执行命令：
 
 ```bash
 ./gradlew :evcs-common:test --warning-mode all
+
+# 可选：MQ consumer 入口链路验收（入口建立 trace + tenant，并确保不泄漏）
+./gradlew :evcs-order:test --tests "com.evcs.order.mq.ProtocolChargingEventListenerContextTest" --warning-mode all
+
+# 可选：@Scheduled 入口链路验收（确保 MDC 不泄漏到复用线程）
+./gradlew :evcs-protocol:test --tests "com.evcs.protocol.websocket.OCPPSessionManagerTraceMdcTest" --warning-mode all
+
+# 可选：出站 HTTP 真实链路验收（RestTemplate -> mock downstream server）
+./gradlew :evcs-payment:test --tests "com.evcs.payment.integration.OutboundHttpContextPropagationTest" --warning-mode all
 
 # 可选：包含 Reactor publishOn/subscribeOn 的验收
 ./gradlew :evcs-gateway:test --warning-mode all
@@ -89,7 +102,14 @@
 - [ ] 任务执行结束后，worker thread 的 TenantContext 与 MDC 均会被清理/恢复（避免跨请求污染）
 - [ ] 任何自建 `ExecutorService` 必须使用包装器（例如 `TenantContextPropagatingExecutorService.wrap(...)`）或等价机制
 
-### 4) 故障场景（异常 / 超时 / 取消）
+### 4) 无请求入口（MQ consumer / @Scheduled）
+
+- [ ] MQ consumer 入口：在处理消息期间必须存在 MDC(traceId/requestId)，并优先从 messageId/eventId 衍生；处理结束后必须恢复/清理，避免复用线程污染
+- [ ] MQ consumer 入口：若消息 payload 含 tenantId/userId，应在处理期间写入 `TenantContext`，并在 finally 中清理
+- [ ] @Scheduled 入口：必须在执行期间确保 MDC(traceId/requestId) 存在，且执行结束后恢复/清理
+- [ ] 推荐使用统一工具类（例如 `TraceMdc.ensureTracePresent()` / `TraceMdc.withTraceId(...)`）封装上述逻辑
+
+### 5) 故障场景（异常 / 超时 / 取消）
 
 - [ ] 即使异步任务抛异常或被取消，worker thread 的 TenantContext/MDC 也不会泄漏
 - [ ] 超时/重试等机制不会吞掉 traceId（日志能串联）
@@ -123,5 +143,6 @@
 
 - TaskDecorator（Tenant + MDC）：`evcs-common/src/main/java/com/evcs/common/config/TenantContextTaskDecorator.java`
 - ExecutorService 包装器（Tenant + MDC）：`evcs-common/src/main/java/com/evcs/common/executor/TenantContextPropagatingExecutorService.java`
+- 非请求入口 Trace 保障（MDC traceId/requestId）：`evcs-common/src/main/java/com/evcs/common/trace/TraceMdc.java`
 - 出站 header 注入：`evcs-common/src/main/java/com/evcs/common/http/OutgoingRequestContextHeaders.java`
 - Header 常量：`evcs-common/src/main/java/com/evcs/common/http/EvcsHeaderNames.java`
