@@ -6,18 +6,21 @@ import com.alipay.api.domain.AlipayTradeAppPayModel;
 import com.alipay.api.domain.AlipayTradeCreateModel;
 import com.alipay.api.domain.AlipayTradePagePayModel;
 import com.alipay.api.domain.AlipayTradePrecreateModel;
+import com.alipay.api.domain.AlipayTradeFastpayRefundQueryModel;
 import com.alipay.api.domain.AlipayTradeQueryModel;
 import com.alipay.api.domain.AlipayTradeRefundModel;
 import com.alipay.api.request.AlipayTradeAppPayRequest;
 import com.alipay.api.request.AlipayTradeCreateRequest;
 import com.alipay.api.request.AlipayTradePagePayRequest;
 import com.alipay.api.internal.util.AlipaySignature;
+import com.alipay.api.request.AlipayTradeFastpayRefundQueryRequest;
 import com.alipay.api.request.AlipayTradePrecreateRequest;
 import com.alipay.api.request.AlipayTradeQueryRequest;
 import com.alipay.api.request.AlipayTradeRefundRequest;
 import com.alipay.api.response.AlipayTradeAppPayResponse;
 import com.alipay.api.response.AlipayTradeCreateResponse;
 import com.alipay.api.response.AlipayTradePagePayResponse;
+import com.alipay.api.response.AlipayTradeFastpayRefundQueryResponse;
 import com.alipay.api.response.AlipayTradePrecreateResponse;
 import com.alipay.api.response.AlipayTradeQueryResponse;
 import com.alipay.api.response.AlipayTradeRefundResponse;
@@ -52,6 +55,8 @@ public class AlipayChannelService implements IPaymentChannel {
     private static final String TRADE_STATUS_SUCCESS = "TRADE_SUCCESS";
     private static final String TRADE_STATUS_FINISHED = "TRADE_FINISHED";
     private static final String TRADE_STATUS_CLOSED = "TRADE_CLOSED";
+
+    private static final String REFUND_REQUEST_NO_PREFIX = "ALIRF";
 
     private final AlipayClientFactory alipayClientFactory;
 
@@ -208,6 +213,78 @@ public class AlipayChannelService implements IPaymentChannel {
     }
 
     @Override
+    public RefundResponse queryRefund(String refundRequestNo) {
+        if (refundRequestNo == null || refundRequestNo.isBlank()) {
+            throw new IllegalArgumentException("refundRequestNo不能为空");
+        }
+
+        String outTradeNo = resolveOutTradeNoFromRefundRequestNo(refundRequestNo);
+        log.info("查询支付宝退款状态: refundRequestNo={}, outTradeNo={}", refundRequestNo, outTradeNo);
+
+        try {
+            AlipayClient alipayClient = alipayClientFactory.getAlipayClient();
+            AlipayTradeFastpayRefundQueryRequest alipayRequest = new AlipayTradeFastpayRefundQueryRequest();
+
+            AlipayTradeFastpayRefundQueryModel model = new AlipayTradeFastpayRefundQueryModel();
+            model.setOutTradeNo(outTradeNo);
+            model.setOutRequestNo(refundRequestNo);
+            alipayRequest.setBizModel(model);
+
+            AlipayTradeFastpayRefundQueryResponse response = alipayClient.execute(alipayRequest);
+
+            if (response != null && response.isSuccess()) {
+                RefundResponse result = new RefundResponse();
+                result.setRefundNo(refundRequestNo);
+                result.setRefundStatus("SUCCESS");
+
+                String refundAmount = response.getRefundAmount();
+                if (refundAmount != null && !refundAmount.isBlank()) {
+                    result.setRefundAmount(new BigDecimal(refundAmount));
+                }
+
+                log.info("支付宝退款状态查询成功: refundRequestNo={}, refundAmount={}",
+                    refundRequestNo,
+                    result.getRefundAmount());
+                return result;
+            }
+
+            String subCode = response != null ? response.getSubCode() : null;
+            String subMsg = response != null ? response.getSubMsg() : null;
+            log.warn("支付宝退款状态查询失败: refundRequestNo={}, subCode={}, subMsg={}", refundRequestNo, subCode, subMsg);
+
+            if (looksLikeRefundNotReady(subCode)) {
+                RefundResponse processing = new RefundResponse();
+                processing.setRefundNo(refundRequestNo);
+                processing.setRefundStatus("PROCESSING");
+                return processing;
+            }
+
+            if (isProduction()) {
+                throw new BusinessException("支付宝退款状态查询失败: " + (subMsg != null ? subMsg : "未知错误"));
+            }
+
+            RefundResponse fallback = new RefundResponse();
+            fallback.setRefundNo(refundRequestNo);
+            fallback.setRefundStatus("PROCESSING");
+            return fallback;
+
+        } catch (AlipayApiException e) {
+            log.error("支付宝退款查询API调用失败: {}", e.getMessage(), e);
+            if (isProduction()) {
+                throw new BusinessException("支付宝退款查询调用失败: " + e.getErrMsg());
+            }
+
+            RefundResponse fallback = new RefundResponse();
+            fallback.setRefundNo(refundRequestNo);
+            fallback.setRefundStatus("PROCESSING");
+            return fallback;
+        } catch (Exception e) {
+            log.error("查询支付宝退款状态失败: refundRequestNo={}", refundRequestNo, e);
+            throw new BusinessException("查询支付宝退款状态失败: " + (e.getMessage() != null ? e.getMessage() : "未知错误"));
+        }
+    }
+
+    @Override
     public boolean verifySignature(String data, String signature) {
         log.info("验证支付宝签名: data={}, signature={}", data, signature);
         try {
@@ -296,6 +373,36 @@ public class AlipayChannelService implements IPaymentChannel {
      */
     private String formatAmount(BigDecimal amount) {
         return amount.setScale(2, RoundingMode.HALF_UP).toString();
+    }
+
+    private String resolveOutTradeNoFromRefundRequestNo(String refundRequestNo) {
+        if (refundRequestNo == null || refundRequestNo.isBlank()) {
+            throw new IllegalArgumentException("refundRequestNo不能为空");
+        }
+
+        if (!refundRequestNo.startsWith(REFUND_REQUEST_NO_PREFIX)) {
+            throw new IllegalArgumentException("无法从refundRequestNo解析outTradeNo: " + refundRequestNo);
+        }
+
+        String remainder = refundRequestNo.substring(REFUND_REQUEST_NO_PREFIX.length());
+        int idx = remainder.indexOf('_');
+        if (idx <= 0) {
+            throw new IllegalArgumentException("无法从refundRequestNo解析outTradeNo: " + refundRequestNo);
+        }
+
+        String paymentIdPart = remainder.substring(0, idx);
+        if (!paymentIdPart.chars().allMatch(Character::isDigit)) {
+            throw new IllegalArgumentException("无法从refundRequestNo解析outTradeNo: " + refundRequestNo);
+        }
+        return paymentIdPart;
+    }
+
+    private boolean looksLikeRefundNotReady(String subCode) {
+        if (subCode == null || subCode.isBlank()) {
+            return false;
+        }
+        String normalized = subCode.toUpperCase();
+        return normalized.contains("REFUND") && normalized.contains("NOT") && normalized.contains("EXIST");
     }
 
     // ========== Mock 降级逻辑 ==========

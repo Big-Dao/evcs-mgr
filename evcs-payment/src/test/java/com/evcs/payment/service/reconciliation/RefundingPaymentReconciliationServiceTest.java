@@ -8,6 +8,7 @@ import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.service.IPaymentService;
+import com.evcs.payment.service.channel.AlipayChannelService;
 import com.evcs.payment.service.channel.WechatPayChannelService;
 import com.evcs.payment.service.message.PaymentMessageService;
 import org.junit.jupiter.api.DisplayName;
@@ -50,6 +51,9 @@ class RefundingPaymentReconciliationServiceTest extends BaseServiceTest {
     private WechatPayChannelService wechatPayChannelService;
 
     @MockBean
+    private AlipayChannelService alipayChannelService;
+
+    @MockBean
     private PaymentMessageService paymentMessageService;
 
     @Test
@@ -63,7 +67,7 @@ class RefundingPaymentReconciliationServiceTest extends BaseServiceTest {
 
         when(wechatPayChannelService.queryRefund(eq("WXPR301_1234")))
             .thenReturn(buildRefundQueryResponse("SUCCESS", new BigDecimal("12.34")));
-        when(wechatPayChannelService.queryRefund(eq("WXPR302_5678")))
+        when(alipayChannelService.queryRefund(eq("ALIRF302_5678")))
             .thenReturn(buildRefundQueryResponse("SUCCESS", new BigDecimal("56.78")));
 
         Long paymentId1;
@@ -92,11 +96,11 @@ class RefundingPaymentReconciliationServiceTest extends BaseServiceTest {
 
             PaymentOrder order2 = new PaymentOrder();
             order2.setOrderId(302L);
-            order2.setTradeNo("WXP302_bbbb");
-            order2.setPaymentMethod(PaymentMethod.WECHAT_JSAPI.getCode());
+            order2.setTradeNo("ALI302_bbbb");
+            order2.setPaymentMethod(PaymentMethod.ALIPAY_APP.getCode());
             order2.setAmount(new BigDecimal("56.78"));
             order2.setStatusEnum(PaymentStatus.REFUNDING);
-            order2.setRefundRequestNo("WXPR302_5678");
+            order2.setRefundRequestNo("ALIRF302_5678");
             order2.setRefundRequestAmount(new BigDecimal("56.78"));
             order2.setRefundRequestTime(LocalDateTime.now().minusMinutes(10));
             order2.setDescription("test");

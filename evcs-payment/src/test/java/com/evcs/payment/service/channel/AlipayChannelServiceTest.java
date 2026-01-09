@@ -1,5 +1,8 @@
 package com.evcs.payment.service.channel;
 
+import com.alipay.api.AlipayClient;
+import com.alipay.api.request.AlipayTradeFastpayRefundQueryRequest;
+import com.alipay.api.response.AlipayTradeFastpayRefundQueryResponse;
 import com.evcs.payment.config.AlipayConfig;
 import com.evcs.payment.config.TestConfig;
 import com.evcs.payment.dto.PaymentRequest;
@@ -18,6 +21,9 @@ import org.springframework.test.context.ContextConfiguration;
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * 支付宝渠道服务测试
@@ -32,6 +38,9 @@ class AlipayChannelServiceTest {
 
     @Resource
     private AlipayChannelService alipayChannelService;
+
+    @Resource
+    private AlipayClient alipayClient;
 
     @Test
     @DisplayName("测试支付宝APP支付创建")
@@ -117,6 +126,25 @@ class AlipayChannelServiceTest {
         assertNotNull(response.getRefundNo());
         assertEquals(new BigDecimal("50.00"), response.getRefundAmount());
         assertEquals("SUCCESS", response.getRefundStatus());
+    }
+
+    @Test
+    @DisplayName("测试支付宝退款状态查询")
+    void testQueryRefund() throws Exception {
+        // Arrange
+        AlipayTradeFastpayRefundQueryResponse mockResponse = mock(AlipayTradeFastpayRefundQueryResponse.class);
+        when(mockResponse.isSuccess()).thenReturn(true);
+        when(mockResponse.getRefundAmount()).thenReturn("12.34");
+        when(alipayClient.execute(any(AlipayTradeFastpayRefundQueryRequest.class))).thenReturn(mockResponse);
+
+        // Act
+        RefundResponse response = alipayChannelService.queryRefund("ALIRF1_1234");
+
+        // Assert
+        assertNotNull(response, "应返回退款查询响应");
+        assertEquals("ALIRF1_1234", response.getRefundNo(), "refundNo应为refundRequestNo");
+        assertEquals("SUCCESS", response.getRefundStatus(), "退款状态应为SUCCESS");
+        assertEquals(new BigDecimal("12.34"), response.getRefundAmount(), "退款金额应正确");
     }
 
     @Test
