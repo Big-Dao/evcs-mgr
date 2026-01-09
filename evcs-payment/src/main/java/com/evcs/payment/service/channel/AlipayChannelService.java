@@ -214,7 +214,13 @@ public class AlipayChannelService implements IPaymentChannel {
 
         } catch (AlipayApiException e) {
             log.error("支付宝退款API调用失败: {}", e.getMessage(), e);
-            return handleMockRefund(request);
+            // 退款在异常/超时场景下可能进入未知状态：不应误判为成功。
+            // 返回PROCESSING以便上层落库为REFUNDING，并由后台轮询(queryRefund)做最终态收敛。
+            RefundResponse fallbackResponse = new RefundResponse();
+            fallbackResponse.setRefundNo(request.getRefundRequestNo());
+            fallbackResponse.setRefundAmount(request.getRefundAmount());
+            fallbackResponse.setRefundStatus("PROCESSING");
+            return fallbackResponse;
         } catch (Exception e) {
             log.error("发起支付宝退款失败", e);
             throw new BusinessException("发起支付宝退款失败: " + e.getMessage());
