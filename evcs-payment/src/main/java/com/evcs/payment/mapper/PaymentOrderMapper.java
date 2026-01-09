@@ -30,4 +30,20 @@ public interface PaymentOrderMapper extends BaseMapper<PaymentOrder> {
 		@Param("cutoff") LocalDateTime cutoff,
 		@Param("limit") int limit
 	);
+
+	@Select("""
+		SELECT DISTINCT tenant_id
+		FROM payment_order
+		WHERE status = #{status}
+		  AND refund_request_no IS NOT NULL
+		  AND refund_request_no <> ''
+		  AND COALESCE(refund_request_time, create_time) <= #{cutoff}
+		ORDER BY tenant_id
+		LIMIT #{limit}
+		""")
+	List<Long> selectTenantIdsWithRefundingStatusBefore(
+		@Param("status") Integer status,
+		@Param("cutoff") LocalDateTime cutoff,
+		@Param("limit") int limit
+	);
 }

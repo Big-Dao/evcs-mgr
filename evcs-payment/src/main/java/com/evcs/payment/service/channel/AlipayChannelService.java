@@ -173,7 +173,11 @@ public class AlipayChannelService implements IPaymentChannel {
             model.setOutTradeNo(request.getPaymentId().toString());
             model.setRefundAmount(formatAmount(request.getRefundAmount()));
             model.setRefundReason(request.getRefundReason());
-            model.setOutRequestNo(UUID.randomUUID().toString().replace("-", ""));
+            String outRequestNo = request.getRefundRequestNo();
+            if (outRequestNo == null || outRequestNo.isBlank()) {
+                outRequestNo = UUID.randomUUID().toString().replace("-", "");
+            }
+            model.setOutRequestNo(outRequestNo);
             alipayRequest.setBizModel(model);
 
             AlipayTradeRefundResponse response = alipayClient.execute(alipayRequest);

@@ -38,4 +38,9 @@ public class RefundRequest {
      * 微信/第三方交易流水号（transaction_id）
      */
     private String transactionId;
+
+    /**
+     * 退款请求号（微信 out_refund_no / 支付宝 out_request_no）
+     */
+    private String refundRequestNo;
 }

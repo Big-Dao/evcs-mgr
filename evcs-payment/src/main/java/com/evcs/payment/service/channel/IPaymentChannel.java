@@ -26,6 +26,15 @@ public interface IPaymentChannel {
     RefundResponse refund(RefundRequest request);
 
     /**
+     * 查询退款状态（用于退款中订单的后台轮询补偿）。
+     *
+     * @param refundRequestNo 退款请求号（微信 out_refund_no / 支付宝 out_request_no）
+     */
+    default RefundResponse queryRefund(String refundRequestNo) {
+        throw new UnsupportedOperationException("当前渠道不支持退款状态查询");
+    }
+
+    /**
      * 验证签名（用于异步通知）
      */
     boolean verifySignature(String data, String signature);

@@ -3,6 +3,8 @@ package com.evcs.payment.entity;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.evcs.common.entity.BaseEntity;
 import com.evcs.payment.enums.PaymentStatus;
 import lombok.Data;
@@ -84,6 +86,24 @@ public class PaymentOrder extends BaseEntity {
      * 退款金额
      */
     private BigDecimal refundAmount;
+
+    /**
+     * 本次退款请求号（微信 out_refund_no / 支付宝 out_request_no）
+     */
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
+    private String refundRequestNo;
+
+    /**
+     * 本次退款请求金额（用于退款中轮询收敛）
+     */
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
+    private BigDecimal refundRequestAmount;
+
+    /**
+     * 本次退款请求时间
+     */
+    @TableField(updateStrategy = FieldStrategy.IGNORED)
+    private LocalDateTime refundRequestTime;
 
     /**
      * 退款时间

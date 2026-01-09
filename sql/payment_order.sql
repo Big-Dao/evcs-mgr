@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS payment_order (
     trade_no VARCHAR(64) NOT NULL COMMENT '交易流水号',
     payment_method VARCHAR(32) NOT NULL COMMENT '支付方式',
     amount DECIMAL(10, 2) NOT NULL COMMENT '支付金额',
-    status INTEGER NOT NULL DEFAULT 0 COMMENT '支付状态：0-待支付，1-支付中，2-支付成功，3-支付失败，4-退款中，5-已退款',
+    status INTEGER NOT NULL DEFAULT 0 COMMENT '支付状态：0-待支付，1-支付中，2-支付成功，3-支付失败，4-退款中，5-已退款，6-已关闭，7-部分退款',
     out_trade_no VARCHAR(64) COMMENT '第三方支付流水号',
     paid_time TIMESTAMP COMMENT '支付完成时间',
     idempotent_key VARCHAR(64) COMMENT '幂等键',
@@ -15,6 +15,9 @@ CREATE TABLE IF NOT EXISTS payment_order (
     pay_url VARCHAR(512) COMMENT '支付URL',
     refund_amount DECIMAL(10, 2) COMMENT '退款金额',
     refund_time TIMESTAMP COMMENT '退款时间',
+    refund_request_no VARCHAR(64) COMMENT '退款请求号（微信out_refund_no / 支付宝out_request_no）',
+    refund_request_amount DECIMAL(10, 2) COMMENT '本次退款请求金额（用于退款中轮询补偿）',
+    refund_request_time TIMESTAMP COMMENT '本次退款请求时间（用于退款中轮询补偿）',
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     create_by BIGINT,
@@ -38,7 +41,7 @@ COMMENT ON COLUMN payment_order.order_id IS '业务订单ID（充电订单ID）'
 COMMENT ON COLUMN payment_order.trade_no IS '交易流水号';
 COMMENT ON COLUMN payment_order.payment_method IS '支付方式';
 COMMENT ON COLUMN payment_order.amount IS '支付金额';
-COMMENT ON COLUMN payment_order.status IS '支付状态：0-待支付，1-支付中，2-支付成功，3-支付失败，4-退款中，5-已退款';
+COMMENT ON COLUMN payment_order.status IS '支付状态：0-待支付，1-支付中，2-支付成功，3-支付失败，4-退款中，5-已退款，6-已关闭，7-部分退款';
 COMMENT ON COLUMN payment_order.out_trade_no IS '第三方支付流水号';
 COMMENT ON COLUMN payment_order.paid_time IS '支付完成时间';
 COMMENT ON COLUMN payment_order.idempotent_key IS '幂等键';
@@ -47,6 +50,9 @@ COMMENT ON COLUMN payment_order.pay_params IS '支付参数（JSON）';
 COMMENT ON COLUMN payment_order.pay_url IS '支付URL';
 COMMENT ON COLUMN payment_order.refund_amount IS '退款金额';
 COMMENT ON COLUMN payment_order.refund_time IS '退款时间';
+COMMENT ON COLUMN payment_order.refund_request_no IS '退款请求号（微信out_refund_no / 支付宝out_request_no）';
+COMMENT ON COLUMN payment_order.refund_request_amount IS '本次退款请求金额（用于退款中轮询补偿）';
+COMMENT ON COLUMN payment_order.refund_request_time IS '本次退款请求时间（用于退款中轮询补偿）';
 
 -- 更新时间触发器
 CREATE OR REPLACE FUNCTION update_payment_order_updated_at()

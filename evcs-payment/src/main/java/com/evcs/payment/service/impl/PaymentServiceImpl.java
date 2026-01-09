@@ -541,6 +541,9 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
         IPaymentChannel channel = selectChannel(method);
 
         // 调用支付渠道退款
+        String refundRequestNo = generateRefundRequestNo(paymentOrder.getPaymentMethod(), paymentOrder.getId(), alreadyRefunded, request.getRefundAmount());
+        request.setRefundRequestNo(refundRequestNo);
+
         RefundResponse refundResponse = channel.refund(request);
         if (refundResponse == null) {
             throw new IllegalStateException("退款响应为空");
@@ -557,6 +560,9 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
             paymentOrder.setStatusEnum(newStatus);
             paymentOrder.setRefundAmount(newRefundTotal);
             paymentOrder.setRefundTime(LocalDateTime.now());
+            paymentOrder.setRefundRequestNo(null);
+            paymentOrder.setRefundRequestAmount(null);
+            paymentOrder.setRefundRequestTime(null);
             paymentOrder.setUpdateBy(TenantContext.getCurrentUserId());
             baseMapper.updateById(paymentOrder);
 
@@ -576,6 +582,9 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
 
         if (acceptedAsProcessing) {
             paymentOrder.setStatusEnum(PaymentStatus.REFUNDING);
+            paymentOrder.setRefundRequestNo(refundRequestNo);
+            paymentOrder.setRefundRequestAmount(request.getRefundAmount());
+            paymentOrder.setRefundRequestTime(LocalDateTime.now());
             paymentOrder.setUpdateBy(TenantContext.getCurrentUserId());
             baseMapper.updateById(paymentOrder);
 
@@ -592,6 +601,17 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
         return refundResponse;
     }
 
+    private String generateRefundRequestNo(String paymentMethodCode, Long paymentId, BigDecimal alreadyRefunded, BigDecimal refundAmount) {
+        String prefix = paymentMethodCode != null && paymentMethodCode.toUpperCase().contains("WECHAT")
+            ? "WXPR"
+            : "ALIRF";
+        BigDecimal base = alreadyRefunded != null ? alreadyRefunded : BigDecimal.ZERO;
+        BigDecimal delta = refundAmount != null ? refundAmount : BigDecimal.ZERO;
+        BigDecimal targetTotal = base.add(delta);
+        String fen = targetTotal.movePointRight(2).setScale(0, java.math.RoundingMode.HALF_UP).toPlainString();
+        return prefix + (paymentId != null ? paymentId : "0") + "_" + fen;
+    }
+
     private PaymentStatus computeRefundedPaymentStatus(BigDecimal totalAmount, BigDecimal refundedAmount) {
         if (totalAmount == null || refundedAmount == null) {
             return PaymentStatus.REFUNDED;
@@ -600,6 +620,99 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
             return PaymentStatus.REFUNDED;
         }
         return PaymentStatus.PARTIALLY_REFUNDED;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean handleRefundFinalStatus(Long paymentId, String refundRequestNo, String refundStatus, BigDecimal refundAmount) {
+        if (paymentId == null || !StringUtils.hasText(refundRequestNo) || !StringUtils.hasText(refundStatus)) {
+            return false;
+        }
+
+        String lockKey = "payment:refund:" + paymentId;
+        String requestId = java.util.UUID.randomUUID().toString();
+
+        if (!idempotencyService.tryLock(lockKey, requestId, 10L)) {
+            return false;
+        }
+
+        try {
+            PaymentOrder order = baseMapper.selectById(paymentId);
+            if (order == null) {
+                log.warn("退款最终态收敛失败：订单不存在 paymentId={}", paymentId);
+                return false;
+            }
+
+            if (!PaymentStatus.REFUNDING.equals(order.getStatusEnum())) {
+                return true;
+            }
+
+            if (order.getRefundRequestNo() == null || !refundRequestNo.equals(order.getRefundRequestNo())) {
+                log.info(
+                    "退款最终态收敛跳过：refundRequestNo不匹配 paymentId={}, expected={}, actual={}",
+                    paymentId,
+                    order.getRefundRequestNo(),
+                    refundRequestNo
+                );
+                return true;
+            }
+
+            String normalized = refundStatus.toUpperCase(java.util.Locale.ROOT);
+            if ("PROCESSING".equals(normalized)) {
+                return true;
+            }
+
+            BigDecimal alreadyRefunded = order.getRefundAmount() != null ? order.getRefundAmount() : BigDecimal.ZERO;
+            BigDecimal requestAmount = order.getRefundRequestAmount() != null ? order.getRefundRequestAmount() : BigDecimal.ZERO;
+            BigDecimal confirmedDelta = refundAmount != null ? refundAmount : requestAmount;
+
+            if ("SUCCESS".equals(normalized)) {
+                BigDecimal newRefundTotal = alreadyRefunded.add(confirmedDelta);
+                PaymentStatus newStatus = computeRefundedPaymentStatus(order.getAmount(), newRefundTotal);
+
+                order.setRefundAmount(newRefundTotal);
+                order.setRefundTime(LocalDateTime.now());
+                order.setStatusEnum(newStatus);
+                order.setRefundRequestNo(null);
+                order.setRefundRequestAmount(null);
+                order.setRefundRequestTime(null);
+                order.setUpdateBy(TenantContext.getCurrentUserId());
+                baseMapper.updateById(order);
+
+                try {
+                    paymentMessageService.sendRefundSuccessMessage(order);
+                } catch (Exception e) {
+                    log.error("发送退款成功消息失败: paymentId={}", paymentId, e);
+                }
+
+                return true;
+            }
+
+            // CLOSED / ABNORMAL / FAILED 等视为退款失败，回滚到“已支付/已部分退款”状态
+            PaymentStatus fallbackStatus;
+            if (alreadyRefunded.compareTo(BigDecimal.ZERO) <= 0) {
+                fallbackStatus = PaymentStatus.SUCCESS;
+            } else {
+                fallbackStatus = computeRefundedPaymentStatus(order.getAmount(), alreadyRefunded);
+            }
+
+            order.setStatusEnum(fallbackStatus);
+            order.setRefundRequestNo(null);
+            order.setRefundRequestAmount(null);
+            order.setRefundRequestTime(null);
+            order.setUpdateBy(TenantContext.getCurrentUserId());
+            baseMapper.updateById(order);
+
+            log.warn(
+                "退款最终态收敛失败：已回滚订单状态 paymentId={}, refundStatus={}, fallbackStatus={}",
+                paymentId,
+                normalized,
+                fallbackStatus
+            );
+            return true;
+        } finally {
+            idempotencyService.unlock(lockKey, requestId);
+        }
     }
 
     @Override

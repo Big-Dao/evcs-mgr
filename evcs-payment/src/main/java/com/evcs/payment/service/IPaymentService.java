@@ -37,6 +37,16 @@ public interface IPaymentService extends IService<PaymentOrder> {
     boolean handlePaymentFinalStatus(String tradeNo, PaymentStatus finalStatus);
 
     /**
+     * 处理退款最终态收敛（用于退款中订单的后台轮询补偿）
+     *
+     * @param paymentId       支付订单ID
+     * @param refundRequestNo 退款请求号（微信 out_refund_no / 支付宝 out_request_no）
+     * @param refundStatus    渠道退款状态（SUCCESS/PROCESSING/CLOSED/ABNORMAL 等）
+     * @param refundAmount    本次退款确认金额（可为空，空则回退到订单上的 refundRequestAmount）
+     */
+    boolean handleRefundFinalStatus(Long paymentId, String refundRequestNo, String refundStatus, java.math.BigDecimal refundAmount);
+
+    /**
      * 退款
      */
     RefundResponse refund(RefundRequest request);
