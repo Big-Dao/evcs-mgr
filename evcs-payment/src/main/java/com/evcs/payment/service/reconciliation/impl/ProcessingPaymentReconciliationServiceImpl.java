@@ -111,14 +111,11 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
                         PaymentResponse response = channel.queryPayment(order.getTradeNo());
                         PaymentStatus status = response != null ? response.getStatus() : null;
 
-                        if (PaymentStatus.SUCCESS.equals(status)) {
-                            boolean handled = paymentService.handlePaymentCallback(order.getTradeNo(), true);
-                            if (handled) {
-                                finalizedOrderCount++;
-                            }
-                        } else if (PaymentStatus.FAILED.equals(status)) {
-                            boolean handled = paymentService.handlePaymentCallback(order.getTradeNo(), false);
-                            if (handled) {
+                        if (PaymentStatus.SUCCESS.equals(status)
+                            || PaymentStatus.FAILED.equals(status)
+                            || PaymentStatus.CLOSED.equals(status)) {
+                            boolean converged = paymentService.handlePaymentFinalStatus(order.getTradeNo(), status);
+                            if (converged) {
                                 finalizedOrderCount++;
                             }
                         }

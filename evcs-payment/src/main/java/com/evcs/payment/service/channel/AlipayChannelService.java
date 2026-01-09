@@ -51,6 +51,7 @@ public class AlipayChannelService implements IPaymentChannel {
     private static final String TRADE_STATUS_WAIT = "WAIT_BUYER_PAY";
     private static final String TRADE_STATUS_SUCCESS = "TRADE_SUCCESS";
     private static final String TRADE_STATUS_FINISHED = "TRADE_FINISHED";
+    private static final String TRADE_STATUS_CLOSED = "TRADE_CLOSED";
 
     private final AlipayClientFactory alipayClientFactory;
 
@@ -132,6 +133,8 @@ public class AlipayChannelService implements IPaymentChannel {
                 } else if (TRADE_STATUS_SUCCESS.equals(tradeStatus) || TRADE_STATUS_FINISHED.equals(tradeStatus)) {
                     result.setStatus(PaymentStatus.SUCCESS);
                     result.setAmount(new BigDecimal(response.getTotalAmount()));
+                } else if (TRADE_STATUS_CLOSED.equals(tradeStatus)) {
+                    result.setStatus(PaymentStatus.CLOSED);
                 } else {
                     result.setStatus(PaymentStatus.FAILED);
                 }

@@ -7,6 +7,7 @@ import com.evcs.payment.dto.RefundRequest;
 import com.evcs.payment.dto.RefundResponse;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentMethod;
+import com.evcs.payment.enums.PaymentStatus;
 
 /**
  * 支付服务接口
@@ -27,6 +28,13 @@ public interface IPaymentService extends IService<PaymentOrder> {
      * 处理支付回调
      */
     boolean handlePaymentCallback(String tradeNo, boolean success);
+
+    /**
+     * 处理支付最终态收敛（用于对账/轮询等后台任务）
+     *
+     * @return true 表示已处理或已是最终态；false 表示未能处理（例如锁竞争）
+     */
+    boolean handlePaymentFinalStatus(String tradeNo, PaymentStatus finalStatus);
 
     /**
      * 退款

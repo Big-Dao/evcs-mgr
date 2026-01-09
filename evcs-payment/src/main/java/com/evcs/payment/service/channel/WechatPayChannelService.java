@@ -347,6 +347,7 @@ public class WechatPayChannelService implements IPaymentChannel {
                 return PaymentStatus.PENDING;
             case CLOSED:
             case REVOKED:
+                return PaymentStatus.CLOSED;
             case PAYERROR:
             default:
                 return PaymentStatus.FAILED;

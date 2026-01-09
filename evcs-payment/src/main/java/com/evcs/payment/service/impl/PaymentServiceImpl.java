@@ -278,12 +278,14 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
         }
 
         // 增强的幂等性检查：如果已经是最终状态，直接返回
-        if (PaymentStatus.SUCCESS.equals(paymentOrder.getStatusEnum()) ||
-            PaymentStatus.FAILED.equals(paymentOrder.getStatusEnum())) {
+        PaymentStatus currentStatus = paymentOrder.getStatusEnum();
+        if (PaymentStatus.SUCCESS.equals(currentStatus) ||
+            PaymentStatus.FAILED.equals(currentStatus) ||
+            PaymentStatus.CLOSED.equals(currentStatus)) {
             log.info("支付订单已经是最终状态，跳过回调处理: tradeNo={}, status={}",
-                tradeNo, paymentOrder.getStatusEnum());
+                tradeNo, currentStatus);
             paymentMetrics.recordCallbackSuccess();
-            return true;
+            return PaymentStatus.SUCCESS.equals(currentStatus);
         }
 
         // 获取分布式锁进行回调处理，防止并发回调
@@ -302,10 +304,11 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
             );
 
             if (retryOrder != null && (PaymentStatus.SUCCESS.equals(retryOrder.getStatusEnum()) ||
-                PaymentStatus.FAILED.equals(retryOrder.getStatusEnum()))) {
+                PaymentStatus.FAILED.equals(retryOrder.getStatusEnum()) ||
+                PaymentStatus.CLOSED.equals(retryOrder.getStatusEnum()))) {
                 log.info("锁失败后重试查询发现订单已处理: tradeNo={}, status={}",
                     tradeNo, retryOrder.getStatusEnum());
-                return true;
+                return PaymentStatus.SUCCESS.equals(retryOrder.getStatusEnum());
             }
 
             return false;
@@ -319,10 +322,11 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
             );
 
             if (latestOrder != null && (PaymentStatus.SUCCESS.equals(latestOrder.getStatusEnum()) ||
-                PaymentStatus.FAILED.equals(latestOrder.getStatusEnum()))) {
+                PaymentStatus.FAILED.equals(latestOrder.getStatusEnum()) ||
+                PaymentStatus.CLOSED.equals(latestOrder.getStatusEnum()))) {
                 log.info("获取锁后发现订单已处理: tradeNo={}, status={}",
                     tradeNo, latestOrder.getStatusEnum());
-                return true;
+                return PaymentStatus.SUCCESS.equals(latestOrder.getStatusEnum());
             }
 
             // 更新支付状态
@@ -369,6 +373,116 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public boolean handlePaymentFinalStatus(String tradeNo, PaymentStatus finalStatus) {
+        if (!StringUtils.hasText(tradeNo) || finalStatus == null) {
+            return false;
+        }
+        if (!(PaymentStatus.SUCCESS.equals(finalStatus)
+            || PaymentStatus.FAILED.equals(finalStatus)
+            || PaymentStatus.CLOSED.equals(finalStatus))) {
+            throw new IllegalArgumentException("不支持的支付最终状态: " + finalStatus);
+        }
+
+        PaymentOrder paymentOrder = baseMapper.selectOne(
+            new LambdaQueryWrapper<PaymentOrder>()
+                .eq(PaymentOrder::getTradeNo, tradeNo)
+        );
+
+        if (paymentOrder == null) {
+            log.warn("支付订单不存在，无法收敛最终态: tradeNo={}, finalStatus={}", tradeNo, finalStatus);
+            return false;
+        }
+
+        PaymentStatus currentStatus = paymentOrder.getStatusEnum();
+        if (PaymentStatus.SUCCESS.equals(currentStatus)
+            || PaymentStatus.FAILED.equals(currentStatus)
+            || PaymentStatus.CLOSED.equals(currentStatus)
+            || PaymentStatus.REFUNDED.equals(currentStatus)) {
+            return true;
+        }
+
+        String lockKey = "payment:callback:" + tradeNo;
+        String requestId = java.util.UUID.randomUUID().toString();
+
+        if (!idempotencyService.tryLock(lockKey, requestId, 10L)) {
+            PaymentOrder retryOrder = baseMapper.selectOne(
+                new LambdaQueryWrapper<PaymentOrder>()
+                    .eq(PaymentOrder::getTradeNo, tradeNo)
+            );
+            if (retryOrder == null) {
+                return false;
+            }
+            PaymentStatus retryStatus = retryOrder.getStatusEnum();
+            if (PaymentStatus.SUCCESS.equals(retryStatus)
+                || PaymentStatus.FAILED.equals(retryStatus)
+                || PaymentStatus.CLOSED.equals(retryStatus)
+                || PaymentStatus.REFUNDED.equals(retryStatus)) {
+                return true;
+            }
+            return false;
+        }
+
+        try {
+            PaymentOrder latestOrder = baseMapper.selectOne(
+                new LambdaQueryWrapper<PaymentOrder>()
+                    .eq(PaymentOrder::getTradeNo, tradeNo)
+            );
+            if (latestOrder == null) {
+                return false;
+            }
+            PaymentStatus latestStatus = latestOrder.getStatusEnum();
+            if (PaymentStatus.SUCCESS.equals(latestStatus)
+                || PaymentStatus.FAILED.equals(latestStatus)
+                || PaymentStatus.CLOSED.equals(latestStatus)
+                || PaymentStatus.REFUNDED.equals(latestStatus)) {
+                return true;
+            }
+
+            latestOrder.setStatusEnum(finalStatus);
+            if (PaymentStatus.SUCCESS.equals(finalStatus) && latestOrder.getPaidTime() == null) {
+                latestOrder.setPaidTime(LocalDateTime.now());
+            }
+            latestOrder.setUpdateBy(TenantContext.getCurrentUserId());
+            baseMapper.updateById(latestOrder);
+
+            if (latestOrder.getIdempotentKey() != null) {
+                idempotencyService.cachePaymentResult(
+                    latestOrder.getIdempotentKey(),
+                    latestOrder,
+                    24,
+                    java.util.concurrent.TimeUnit.HOURS
+                );
+            }
+
+            try {
+                if (PaymentStatus.SUCCESS.equals(finalStatus)) {
+                    paymentMessageService.sendPaymentSuccessMessage(latestOrder);
+                } else {
+                    paymentMessageService.sendPaymentFailureMessage(latestOrder);
+                }
+            } catch (Exception e) {
+                log.error("发送支付状态消息失败: tradeNo={}", tradeNo, e);
+            }
+
+            if (PaymentStatus.SUCCESS.equals(finalStatus)) {
+                paymentMetrics.recordCallbackSuccess();
+            } else {
+                paymentMetrics.recordCallbackFailure();
+            }
+
+            log.info("支付最终态收敛完成: tradeNo={}, fromStatus={}, toStatus={}",
+                tradeNo,
+                latestStatus,
+                finalStatus);
+            return true;
+
+        } finally {
+            idempotencyService.unlock(lockKey, requestId);
+        }
+    }
+
+    @Override
     @DataScope
     @Transactional(rollbackFor = Exception.class)
     public RefundResponse refund(RefundRequest request) {
@@ -381,14 +495,40 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
             throw new IllegalArgumentException("支付订单不存在");
         }
 
+        PaymentStatus currentPaymentStatus = paymentOrder.getStatusEnum();
         // 检查支付状态
-        if (!PaymentStatus.SUCCESS.equals(paymentOrder.getStatusEnum())) {
+        if (!(PaymentStatus.SUCCESS.equals(currentPaymentStatus)
+            || PaymentStatus.PARTIALLY_REFUNDED.equals(currentPaymentStatus))) {
             throw new IllegalStateException("支付订单状态不允许退款");
         }
 
-        // 检查退款金额
-        if (request.getRefundAmount().compareTo(paymentOrder.getAmount()) > 0) {
-            throw new IllegalArgumentException("退款金额超过支付金额");
+        if (PaymentStatus.REFUNDING.equals(currentPaymentStatus)) {
+            throw new IllegalStateException("退款处理中，请稍后再试");
+        }
+
+        if (PaymentStatus.REFUNDED.equals(currentPaymentStatus)) {
+            throw new IllegalStateException("订单已退款完成");
+        }
+
+        if (PaymentStatus.CLOSED.equals(currentPaymentStatus)) {
+            throw new IllegalStateException("订单已关闭，不允许退款");
+        }
+
+        BigDecimal alreadyRefunded = paymentOrder.getRefundAmount() != null
+            ? paymentOrder.getRefundAmount()
+            : BigDecimal.ZERO;
+
+        if (request.getRefundAmount() == null || request.getRefundAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("退款金额无效");
+        }
+
+        BigDecimal remainingRefundable = paymentOrder.getAmount().subtract(alreadyRefunded);
+        if (remainingRefundable.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalStateException("无可退金额");
+        }
+
+        if (request.getRefundAmount().compareTo(remainingRefundable) > 0) {
+            throw new IllegalArgumentException("退款金额超过可退金额");
         }
 
         // 选择支付渠道
@@ -402,27 +542,64 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
 
         // 调用支付渠道退款
         RefundResponse refundResponse = channel.refund(request);
-
-        // 更新支付订单
-        paymentOrder.setStatusEnum(PaymentStatus.REFUNDED);
-        paymentOrder.setRefundAmount(request.getRefundAmount());
-        paymentOrder.setRefundTime(LocalDateTime.now());
-        paymentOrder.setUpdateBy(TenantContext.getCurrentUserId());
-
-        baseMapper.updateById(paymentOrder);
-
-        // 发送退款成功消息
-        try {
-            paymentMessageService.sendRefundSuccessMessage(paymentOrder);
-        } catch (Exception e) {
-            log.error("发送退款成功消息失败: paymentId={}", request.getPaymentId(), e);
-            // 不影响主流程
+        if (refundResponse == null) {
+            throw new IllegalStateException("退款响应为空");
         }
 
-        log.info("退款成功: paymentId={}, refundNo={}",
-            request.getPaymentId(), refundResponse.getRefundNo());
+        String refundStatus = refundResponse.getRefundStatus();
+        boolean acceptedAsSuccess = refundStatus != null && "SUCCESS".equalsIgnoreCase(refundStatus);
+        boolean acceptedAsProcessing = refundStatus != null && "PROCESSING".equalsIgnoreCase(refundStatus);
 
+        if (acceptedAsSuccess) {
+            BigDecimal newRefundTotal = alreadyRefunded.add(request.getRefundAmount());
+            PaymentStatus newStatus = computeRefundedPaymentStatus(paymentOrder.getAmount(), newRefundTotal);
+
+            paymentOrder.setStatusEnum(newStatus);
+            paymentOrder.setRefundAmount(newRefundTotal);
+            paymentOrder.setRefundTime(LocalDateTime.now());
+            paymentOrder.setUpdateBy(TenantContext.getCurrentUserId());
+            baseMapper.updateById(paymentOrder);
+
+            try {
+                paymentMessageService.sendRefundSuccessMessage(paymentOrder);
+            } catch (Exception e) {
+                log.error("发送退款成功消息失败: paymentId={}", request.getPaymentId(), e);
+            }
+
+            log.info("退款提交成功（已确认成功）: paymentId={}, refundNo={}, refundTotal={}, status={}",
+                request.getPaymentId(),
+                refundResponse.getRefundNo(),
+                newRefundTotal,
+                newStatus);
+            return refundResponse;
+        }
+
+        if (acceptedAsProcessing) {
+            paymentOrder.setStatusEnum(PaymentStatus.REFUNDING);
+            paymentOrder.setUpdateBy(TenantContext.getCurrentUserId());
+            baseMapper.updateById(paymentOrder);
+
+            log.info("退款提交成功（处理中）: paymentId={}, refundNo={}",
+                request.getPaymentId(),
+                refundResponse.getRefundNo());
+            return refundResponse;
+        }
+
+        log.warn("退款提交未确认成功: paymentId={}, refundNo={}, refundStatus={}",
+            request.getPaymentId(),
+            refundResponse.getRefundNo(),
+            refundStatus);
         return refundResponse;
+    }
+
+    private PaymentStatus computeRefundedPaymentStatus(BigDecimal totalAmount, BigDecimal refundedAmount) {
+        if (totalAmount == null || refundedAmount == null) {
+            return PaymentStatus.REFUNDED;
+        }
+        if (refundedAmount.compareTo(totalAmount) >= 0) {
+            return PaymentStatus.REFUNDED;
+        }
+        return PaymentStatus.PARTIALLY_REFUNDED;
     }
 
     @Override

@@ -340,7 +340,30 @@ class PaymentServiceTest extends BaseServiceTest {
         
         // 4. 验证订单状态
         PaymentOrder order = paymentService.getById(response.getPaymentId());
+        assertEquals(PaymentStatus.PARTIALLY_REFUNDED, order.getStatusEnum());
         assertEquals(new BigDecimal("50.00"), order.getRefundAmount());
+        assertNotNull(order.getRefundTime());
+    }
+
+    @Test
+    @DisplayName("支付最终态收敛 - CLOSED")
+    void testHandlePaymentFinalStatus_Closed() {
+        configureMocks();
+
+        PaymentRequest request = new PaymentRequest();
+        request.setOrderId(71L);
+        request.setAmount(new BigDecimal("100.00"));
+        request.setPaymentMethod(PaymentMethod.ALIPAY_APP);
+        request.setUserId(1L);
+        request.setIdempotentKey("test-idempotent-key-71");
+        PaymentResponse response = paymentService.createPayment(request);
+
+        boolean converged = paymentService.handlePaymentFinalStatus(response.getTradeNo(), PaymentStatus.CLOSED);
+        assertTrue(converged);
+
+        PaymentOrder order = paymentService.getById(response.getPaymentId());
+        assertNotNull(order);
+        assertEquals(PaymentStatus.CLOSED, order.getStatusEnum());
     }
 
     @Test
