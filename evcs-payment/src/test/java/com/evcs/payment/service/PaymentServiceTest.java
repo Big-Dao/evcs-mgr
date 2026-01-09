@@ -346,6 +346,78 @@ class PaymentServiceTest extends BaseServiceTest {
     }
 
     @Test
+    @DisplayName("退款 - 多次部分退款累计后应收敛为全额已退款")
+    void testRefund_shouldConvergeToRefunded_whenMultiplePartialRefundsReachFull() {
+        // Arrange
+        configureMocks();
+        PaymentRequest request = new PaymentRequest();
+        request.setOrderId(72L);
+        request.setAmount(new BigDecimal("100.00"));
+        request.setPaymentMethod(PaymentMethod.ALIPAY_APP);
+        request.setUserId(1L);
+        request.setIdempotentKey("test-idempotent-key-72");
+        PaymentResponse response = paymentService.createPayment(request);
+        paymentService.handlePaymentCallback(response.getTradeNo(), true);
+
+        RefundRequest firstRefund = new RefundRequest();
+        firstRefund.setPaymentId(response.getPaymentId());
+        firstRefund.setRefundAmount(new BigDecimal("30.00"));
+        firstRefund.setRefundReason("测试部分退款1");
+
+        RefundRequest secondRefund = new RefundRequest();
+        secondRefund.setPaymentId(response.getPaymentId());
+        secondRefund.setRefundAmount(new BigDecimal("70.00"));
+        secondRefund.setRefundReason("测试部分退款2");
+
+        // Act
+        RefundResponse resp1 = paymentService.refund(firstRefund);
+        RefundResponse resp2 = paymentService.refund(secondRefund);
+
+        // Assert
+        assertNotNull(resp1);
+        assertNotNull(resp2);
+
+        PaymentOrder updated = paymentService.getById(response.getPaymentId());
+        assertNotNull(updated);
+        assertEquals(PaymentStatus.REFUNDED, updated.getStatusEnum());
+        assertEquals(new BigDecimal("100.00"), updated.getRefundAmount());
+        assertNotNull(updated.getRefundTime());
+    }
+
+    @Test
+    @DisplayName("退款 - 超额退款应被拒绝")
+    void testRefund_shouldReject_whenOverRefundAmount() {
+        // Arrange
+        configureMocks();
+        PaymentRequest request = new PaymentRequest();
+        request.setOrderId(73L);
+        request.setAmount(new BigDecimal("100.00"));
+        request.setPaymentMethod(PaymentMethod.WECHAT_NATIVE);
+        request.setUserId(1L);
+        request.setIdempotentKey("test-idempotent-key-73");
+        request.setWechatOptions(buildWechatOptions());
+        PaymentResponse response = paymentService.createPayment(request);
+        paymentService.handlePaymentCallback(response.getTradeNo(), true);
+
+        RefundRequest firstRefund = new RefundRequest();
+        firstRefund.setPaymentId(response.getPaymentId());
+        firstRefund.setRefundAmount(new BigDecimal("80.00"));
+        firstRefund.setRefundReason("测试部分退款");
+
+        RefundRequest overRefund = new RefundRequest();
+        overRefund.setPaymentId(response.getPaymentId());
+        overRefund.setRefundAmount(new BigDecimal("30.00"));
+        overRefund.setRefundReason("测试超额退款");
+
+        // Act
+        paymentService.refund(firstRefund);
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () -> paymentService.refund(overRefund));
+
+        // Assert
+        assertTrue(ex.getMessage().contains("可退金额"));
+    }
+
+    @Test
     @DisplayName("支付最终态收敛 - CLOSED")
     void testHandlePaymentFinalStatus_Closed() {
         configureMocks();
