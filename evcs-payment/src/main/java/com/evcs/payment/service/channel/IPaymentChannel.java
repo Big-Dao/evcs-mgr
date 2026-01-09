@@ -30,7 +30,7 @@ public interface IPaymentChannel {
      *
      * @param refundRequestNo 退款请求号（微信 out_refund_no / 支付宝 out_request_no）
      */
-    default RefundResponse queryRefund(String refundRequestNo) {
+    default RefundResponse queryRefund(String refundRequestNo, String tradeNo) {
         throw new UnsupportedOperationException("当前渠道不支持退款状态查询");
     }
 

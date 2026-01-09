@@ -175,7 +175,16 @@ public class AlipayChannelService implements IPaymentChannel {
             AlipayTradeRefundRequest alipayRequest = new AlipayTradeRefundRequest();
 
             AlipayTradeRefundModel model = new AlipayTradeRefundModel();
-            model.setOutTradeNo(request.getPaymentId().toString());
+            String outTradeNo = request.getTradeNo();
+            if (outTradeNo == null || outTradeNo.isBlank()) {
+                if (request.getPaymentId() != null) {
+                    outTradeNo = request.getPaymentId().toString();
+                    log.warn("支付宝退款缺少tradeNo，回退使用paymentId作为outTradeNo: paymentId={}", request.getPaymentId());
+                } else {
+                    throw new IllegalArgumentException("支付宝退款请求缺少tradeNo/paymentId");
+                }
+            }
+            model.setOutTradeNo(outTradeNo);
             model.setRefundAmount(formatAmount(request.getRefundAmount()));
             model.setRefundReason(request.getRefundReason());
             String outRequestNo = request.getRefundRequestNo();
@@ -213,12 +222,15 @@ public class AlipayChannelService implements IPaymentChannel {
     }
 
     @Override
-    public RefundResponse queryRefund(String refundRequestNo) {
+    public RefundResponse queryRefund(String refundRequestNo, String tradeNo) {
         if (refundRequestNo == null || refundRequestNo.isBlank()) {
             throw new IllegalArgumentException("refundRequestNo不能为空");
         }
 
-        String outTradeNo = resolveOutTradeNoFromRefundRequestNo(refundRequestNo);
+        String outTradeNo = tradeNo;
+        if (outTradeNo == null || outTradeNo.isBlank()) {
+            outTradeNo = resolveOutTradeNoFromRefundRequestNo(refundRequestNo);
+        }
         log.info("查询支付宝退款状态: refundRequestNo={}, outTradeNo={}", refundRequestNo, outTradeNo);
 
         try {

@@ -138,7 +138,7 @@ class AlipayChannelServiceTest {
         when(alipayClient.execute(any(AlipayTradeFastpayRefundQueryRequest.class))).thenReturn(mockResponse);
 
         // Act
-        RefundResponse response = alipayChannelService.queryRefund("ALIRF1_1234");
+        RefundResponse response = alipayChannelService.queryRefund("ALIRF1_1234", "ALI1234567890");
 
         // Assert
         assertNotNull(response, "应返回退款查询响应");

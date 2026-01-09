@@ -193,7 +193,7 @@ public class WechatPayChannelService implements IPaymentChannel {
     }
 
     @Override
-    public RefundResponse queryRefund(String refundRequestNo) {
+    public RefundResponse queryRefund(String refundRequestNo, String tradeNo) {
         if (!StringUtils.hasText(refundRequestNo)) {
             throw new IllegalArgumentException("refundRequestNo不能为空");
         }

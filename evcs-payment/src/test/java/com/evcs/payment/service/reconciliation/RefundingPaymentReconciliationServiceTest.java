@@ -25,6 +25,7 @@ import java.time.LocalDateTime;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 
@@ -65,9 +66,9 @@ class RefundingPaymentReconciliationServiceTest extends BaseServiceTest {
 
         doNothing().when(paymentMessageService).sendRefundSuccessMessage(any());
 
-        when(wechatPayChannelService.queryRefund(eq("WXPR301_1234")))
+        when(wechatPayChannelService.queryRefund(eq("WXPR301_1234"), anyString()))
             .thenReturn(buildRefundQueryResponse("SUCCESS", new BigDecimal("12.34")));
-        when(alipayChannelService.queryRefund(eq("ALIRF302_5678")))
+        when(alipayChannelService.queryRefund(eq("ALIRF302_5678"), anyString()))
             .thenReturn(buildRefundQueryResponse("SUCCESS", new BigDecimal("56.78")));
 
         Long paymentId1;
@@ -147,7 +148,7 @@ class RefundingPaymentReconciliationServiceTest extends BaseServiceTest {
         // Arrange
         Long tenantId = 3101L;
 
-        when(wechatPayChannelService.queryRefund(eq("WXPR3101_0100")))
+        when(wechatPayChannelService.queryRefund(eq("WXPR3101_0100"), anyString()))
             .thenReturn(buildRefundQueryResponse("PROCESSING", new BigDecimal("1.00")));
 
         Long paymentId;
@@ -199,7 +200,7 @@ class RefundingPaymentReconciliationServiceTest extends BaseServiceTest {
         // Arrange
         Long tenantId = 3201L;
 
-        when(wechatPayChannelService.queryRefund(eq("WXPR3201_0500")))
+        when(wechatPayChannelService.queryRefund(eq("WXPR3201_0500"), anyString()))
             .thenReturn(buildRefundQueryResponse("CLOSED", new BigDecimal("5.00")));
 
         Long paymentId;
