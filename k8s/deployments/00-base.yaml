@@ -1,14 +1,14 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: evcs
+  name: ${EVCS_NAMESPACE}
 
 ---
 apiVersion: v1
 kind: ConfigMap
 metadata:
   name: evcs-common-config
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 data:
   SPRING_PROFILES_ACTIVE: "k8s"
   # Spring Cloud Config：以 local 为基线，并让 k8s profile（最后一个）覆盖差异项（如端口）。
@@ -32,7 +32,7 @@ apiVersion: v1
 kind: Secret
 metadata:
   name: evcs-secrets
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 type: Opaque
 stringData:
   SPRING_DATASOURCE_USERNAME: "postgres"

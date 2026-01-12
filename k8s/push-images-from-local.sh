@@ -29,6 +29,10 @@ EVCS_ADMIN_NGINX_IMAGE="${EVCS_ADMIN_NGINX_IMAGE:-nginx:alpine}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
+TMP_DIR="${REPO_ROOT}/tmp"
+mkdir -p "${TMP_DIR}"
+PORT_FWD_LOG="${TMP_DIR}/evcs-registry-portforward.log"
+
 PORT_FWD_PID=""
 cleanup() {
   if [ -n "${PORT_FWD_PID}" ]; then
@@ -63,7 +67,7 @@ echo "Push admin frontend:${EVCS_PUSH_ADMIN_FRONTEND}"
 # Start port-forward to registry
 echo "Starting port-forward: deploy/registry 5000 -> localhost:${REGISTRY_LOCAL_PORT} ..."
 set +e
-kubectl -n "${NAMESPACE}" port-forward deploy/registry "${REGISTRY_LOCAL_PORT}:5000" >/tmp/evcs-registry-portforward.log 2>&1 &
+kubectl -n "${NAMESPACE}" port-forward deploy/registry "${REGISTRY_LOCAL_PORT}:5000" >"${PORT_FWD_LOG}" 2>&1 &
 PORT_FWD_PID=$!
 set -e
 
@@ -74,12 +78,12 @@ for i in {1..40}; do
   fi
   sleep 0.25
   if ! kill -0 "${PORT_FWD_PID}" >/dev/null 2>&1; then
-    echo "ERROR: port-forward process exited early. See /tmp/evcs-registry-portforward.log" >&2
+    echo "ERROR: port-forward process exited early. See ${PORT_FWD_LOG}" >&2
     exit 1
   fi
   if [ "$i" = "40" ]; then
     echo "ERROR: registry not reachable at http://${REGISTRY_ENDPOINT}/v2/" >&2
-    echo "Log: /tmp/evcs-registry-portforward.log" >&2
+    echo "Log: ${PORT_FWD_LOG}" >&2
     exit 1
   fi
 done

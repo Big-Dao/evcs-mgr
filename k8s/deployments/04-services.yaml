@@ -6,7 +6,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: auth-service
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
   selector:
@@ -17,6 +17,8 @@ spec:
       labels:
         app: auth-service
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       containers:
       - name: auth-service
         image: ${EVCS_K8S_REGISTRY}/evcs/auth-service:${EVCS_IMAGE_TAG}
@@ -27,6 +29,14 @@ spec:
         - secretRef:
             name: evcs-secrets
         env:
+        - name: EVCS_K8S_REGISTRY
+          value: "${EVCS_K8S_REGISTRY}"
+        - name: EVCS_IMAGE_TAG
+          value: "${EVCS_IMAGE_TAG}"
+        - name: EVCS_GIT_COMMIT
+          value: "${EVCS_GIT_COMMIT}"
+        - name: EVCS_GIT_BRANCH
+          value: "${EVCS_GIT_BRANCH}"
         - name: JAVA_OPTS
           value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
@@ -46,7 +56,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: evcs-auth
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   selector:
     app: auth-service
@@ -60,7 +70,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: tenant-service
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
   selector:
@@ -71,6 +81,8 @@ spec:
       labels:
         app: tenant-service
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       containers:
       - name: tenant-service
         image: ${EVCS_K8S_REGISTRY}/evcs/tenant-service:${EVCS_IMAGE_TAG}
@@ -81,6 +93,14 @@ spec:
         - secretRef:
             name: evcs-secrets
         env:
+        - name: EVCS_K8S_REGISTRY
+          value: "${EVCS_K8S_REGISTRY}"
+        - name: EVCS_IMAGE_TAG
+          value: "${EVCS_IMAGE_TAG}"
+        - name: EVCS_GIT_COMMIT
+          value: "${EVCS_GIT_COMMIT}"
+        - name: EVCS_GIT_BRANCH
+          value: "${EVCS_GIT_BRANCH}"
         - name: JAVA_OPTS
           value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
@@ -100,7 +120,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: evcs-tenant
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   selector:
     app: tenant-service
@@ -114,7 +134,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: station-service
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
   selector:
@@ -125,6 +145,8 @@ spec:
       labels:
         app: station-service
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       containers:
       - name: station-service
         image: ${EVCS_K8S_REGISTRY}/evcs/station-service:${EVCS_IMAGE_TAG}
@@ -135,6 +157,14 @@ spec:
         - secretRef:
             name: evcs-secrets
         env:
+        - name: EVCS_K8S_REGISTRY
+          value: "${EVCS_K8S_REGISTRY}"
+        - name: EVCS_IMAGE_TAG
+          value: "${EVCS_IMAGE_TAG}"
+        - name: EVCS_GIT_COMMIT
+          value: "${EVCS_GIT_COMMIT}"
+        - name: EVCS_GIT_BRANCH
+          value: "${EVCS_GIT_BRANCH}"
         - name: JAVA_OPTS
           value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
@@ -154,7 +184,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: evcs-station
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   selector:
     app: station-service
@@ -168,7 +198,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: order-service
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
   selector:
@@ -179,6 +209,8 @@ spec:
       labels:
         app: order-service
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       containers:
       - name: order-service
         image: ${EVCS_K8S_REGISTRY}/evcs/order-service:${EVCS_IMAGE_TAG}
@@ -189,6 +221,14 @@ spec:
         - secretRef:
             name: evcs-secrets
         env:
+        - name: EVCS_K8S_REGISTRY
+          value: "${EVCS_K8S_REGISTRY}"
+        - name: EVCS_IMAGE_TAG
+          value: "${EVCS_IMAGE_TAG}"
+        - name: EVCS_GIT_COMMIT
+          value: "${EVCS_GIT_COMMIT}"
+        - name: EVCS_GIT_BRANCH
+          value: "${EVCS_GIT_BRANCH}"
         - name: JAVA_OPTS
           value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
@@ -208,7 +248,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: evcs-order
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   selector:
     app: order-service
@@ -222,7 +262,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: payment-service
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
   selector:
@@ -233,6 +273,8 @@ spec:
       labels:
         app: payment-service
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       initContainers:
       - name: wait-config-server
         image: busybox:1.36
@@ -269,6 +311,14 @@ spec:
         - secretRef:
             name: evcs-secrets
         env:
+        - name: EVCS_K8S_REGISTRY
+          value: "${EVCS_K8S_REGISTRY}"
+        - name: EVCS_IMAGE_TAG
+          value: "${EVCS_IMAGE_TAG}"
+        - name: EVCS_GIT_COMMIT
+          value: "${EVCS_GIT_COMMIT}"
+        - name: EVCS_GIT_BRANCH
+          value: "${EVCS_GIT_BRANCH}"
         - name: JAVA_OPTS
           value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
@@ -288,7 +338,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: evcs-payment
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   selector:
     app: payment-service
@@ -302,7 +352,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: protocol-service
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
   selector:
@@ -313,6 +363,8 @@ spec:
       labels:
         app: protocol-service
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       containers:
       - name: protocol-service
         image: ${EVCS_K8S_REGISTRY}/evcs/protocol-service:${EVCS_IMAGE_TAG}
@@ -323,6 +375,14 @@ spec:
         - secretRef:
             name: evcs-secrets
         env:
+        - name: EVCS_K8S_REGISTRY
+          value: "${EVCS_K8S_REGISTRY}"
+        - name: EVCS_IMAGE_TAG
+          value: "${EVCS_IMAGE_TAG}"
+        - name: EVCS_GIT_COMMIT
+          value: "${EVCS_GIT_COMMIT}"
+        - name: EVCS_GIT_BRANCH
+          value: "${EVCS_GIT_BRANCH}"
         - name: JAVA_OPTS
           value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
@@ -342,7 +402,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: evcs-protocol
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   selector:
     app: protocol-service
@@ -356,7 +416,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: monitoring-service
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
   selector:
@@ -367,6 +427,8 @@ spec:
       labels:
         app: monitoring-service
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       containers:
       - name: monitoring-service
         image: ${EVCS_K8S_REGISTRY}/evcs/monitoring-service:${EVCS_IMAGE_TAG}
@@ -377,6 +439,14 @@ spec:
         - secretRef:
             name: evcs-secrets
         env:
+        - name: EVCS_K8S_REGISTRY
+          value: "${EVCS_K8S_REGISTRY}"
+        - name: EVCS_IMAGE_TAG
+          value: "${EVCS_IMAGE_TAG}"
+        - name: EVCS_GIT_COMMIT
+          value: "${EVCS_GIT_COMMIT}"
+        - name: EVCS_GIT_BRANCH
+          value: "${EVCS_GIT_BRANCH}"
         - name: JAVA_OPTS
           value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
@@ -396,7 +466,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: evcs-monitoring
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   selector:
     app: monitoring-service

@@ -4,6 +4,11 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+TMP_DIR="${REPO_ROOT}/tmp"
+mkdir -p "${TMP_DIR}"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -30,7 +35,7 @@ for SERVICE in "${SERVICES[@]}"; do
     echo -e "${YELLOW}Testing: ${SERVICE}${NC}"
     echo "Building Docker image for ${SERVICE}..."
     
-    if docker build -t "${SERVICE}:test" -f "${SERVICE}/Dockerfile" . 2>&1 | tee "/tmp/${SERVICE}-build.log"; then
+    if docker build -t "${SERVICE}:test" -f "${SERVICE}/Dockerfile" . 2>&1 | tee "${TMP_DIR}/${SERVICE}-build.log"; then
         echo -e "${GREEN}✓ ${SERVICE} build successful${NC}"
         
         # Get image size
@@ -43,7 +48,7 @@ for SERVICE in "${SERVICES[@]}"; do
         
     else
         echo -e "${RED}✗ ${SERVICE} build failed${NC}"
-        echo "Check logs at: /tmp/${SERVICE}-build.log"
+        echo "Check logs at: ${TMP_DIR}/${SERVICE}-build.log"
         exit 1
     fi
     

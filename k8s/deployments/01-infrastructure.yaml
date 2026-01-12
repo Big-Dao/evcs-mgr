@@ -6,7 +6,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: postgres-init-scripts
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 data:
   01-init.sql: |
     -- ============================================
@@ -329,7 +329,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
   selector:
@@ -340,6 +340,8 @@ spec:
       labels:
         app: postgres
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       containers:
       - name: postgres
         image: postgres:15-alpine
@@ -376,7 +378,7 @@ spec:
       - name: postgres-data
         hostPath:
           path: /data/evcs/postgres
-          type: Directory
+          type: DirectoryOrCreate
       - name: init-scripts
         configMap:
           name: postgres-init-scripts
@@ -386,7 +388,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: evcs-postgres
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   selector:
     app: postgres
@@ -399,7 +401,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: redis
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
   selector:
@@ -410,6 +412,8 @@ spec:
       labels:
         app: redis
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       containers:
       - name: redis
         image: redis:7-alpine
@@ -430,14 +434,14 @@ spec:
       - name: redis-data
         hostPath:
           path: /data/evcs/redis
-          type: Directory
+          type: DirectoryOrCreate
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: evcs-redis
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   selector:
     app: redis
@@ -450,7 +454,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: rabbitmq
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
   selector:
@@ -461,6 +465,8 @@ spec:
       labels:
         app: rabbitmq
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       containers:
       - name: rabbitmq
         image: rabbitmq:3-management-alpine
@@ -492,14 +498,14 @@ spec:
       - name: rabbitmq-data
         hostPath:
           path: /data/evcs/rabbitmq
-          type: Directory
+          type: DirectoryOrCreate
 
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: evcs-rabbitmq
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   selector:
     app: rabbitmq
@@ -516,9 +522,11 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: registry
-  namespace: evcs
+  namespace: ${EVCS_NAMESPACE}
 spec:
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app: registry
@@ -527,6 +535,8 @@ spec:
       labels:
         app: registry
     spec:
+      nodeSelector:
+        kubernetes.io/hostname: ${EVCS_NODE_NAME}
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:
@@ -537,6 +547,13 @@ spec:
         env:
         - name: REGISTRY_HTTP_ADDR
           value: "0.0.0.0:5000"
+        resources:
+          limits:
+            cpu: "0.5"
+            memory: "256Mi"
+          requests:
+            cpu: "0.1"
+            memory: "64Mi"
         volumeMounts:
         - name: registry-data
           mountPath: /var/lib/registry
@@ -544,4 +561,4 @@ spec:
       - name: registry-data
         hostPath:
           path: /data/evcs/registry
-          type: Directory
+          type: DirectoryOrCreate

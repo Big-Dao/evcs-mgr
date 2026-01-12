@@ -14,6 +14,10 @@ EVCS_K8S_REGISTRY="${EVCS_K8S_REGISTRY:-192.168.20.235:5000}"
 EVCS_IMAGE_TAG="${EVCS_IMAGE_TAG:-dev}"
 EVCS_ADMIN_DOCKERFILE="${EVCS_ADMIN_DOCKERFILE:-Dockerfile}"
 
+# Version identifiers for admin-frontend static assets
+EVCS_GIT_COMMIT="${EVCS_GIT_COMMIT:-}"
+EVCS_GIT_BRANCH="${EVCS_GIT_BRANCH:-}"
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}" )" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 EVCS_ADMIN_CONTEXT_DIR="${EVCS_ADMIN_CONTEXT_DIR:-${REPO_ROOT}/evcs-admin}"
@@ -45,6 +49,19 @@ echo "Registry:   ${EVCS_K8S_REGISTRY}"
 echo "Tag:        ${EVCS_IMAGE_TAG}"
 echo "Dockerfile: ${EVCS_ADMIN_DOCKERFILE}"
 echo "Local dir:  ${EVCS_ADMIN_CONTEXT_DIR}"
+
+if [ -z "${EVCS_GIT_COMMIT}" ]; then
+  EVCS_GIT_COMMIT="$(cd "${REPO_ROOT}" && git rev-parse --short HEAD 2>/dev/null || true)"
+fi
+if [ -z "${EVCS_GIT_BRANCH}" ]; then
+  EVCS_GIT_BRANCH="$(cd "${REPO_ROOT}" && git rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+fi
+
+if [ -n "${EVCS_GIT_COMMIT}" ] && [ -n "${EVCS_GIT_BRANCH}" ]; then
+  echo "Git:        ${EVCS_GIT_BRANCH}@${EVCS_GIT_COMMIT}"
+else
+  echo "Git:        unknown (no .git in build context)"
+fi
 
 echo "Ensuring PVC ${PVC_NAME}..."
 cat <<YAML | kubectl apply -f -
@@ -141,6 +158,8 @@ spec:
         - --context=dir:///workspace/evcs-admin
         - --build-arg=NODE_IMAGE=${EVCS_K8S_REGISTRY}/base/node:20-alpine
         - --build-arg=NGINX_IMAGE=${EVCS_K8S_REGISTRY}/base/nginx:alpine
+        - --build-arg=GIT_COMMIT=${EVCS_GIT_COMMIT:-unknown}
+        - --build-arg=GIT_BRANCH=${EVCS_GIT_BRANCH:-unknown}
         - --destination=${EVCS_K8S_REGISTRY}/evcs/admin-frontend:${EVCS_IMAGE_TAG}
         - --cache=true
         - --cache-repo=${KANIKO_CACHE_REPO}
