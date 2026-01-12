@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.evcs.station.controller.StationAnalyticsController;
 import com.evcs.station.controller.StationRealtimeController;
+import com.evcs.station.dto.ChargingStationTreeDTO;
 import com.evcs.station.entity.Station;
 
 import java.util.List;
@@ -68,6 +69,11 @@ public interface IStationService extends IService<Station> {
      * 导出充电站数据
      */
     List<Station> exportStations(Station queryParam);
+
+    /**
+     * 充电站-充电桩-枪口树形列表（用于管理端展示）
+     */
+    List<ChargingStationTreeDTO> listChargingStationTree(Station queryParam);
 
     /**
      * 获取实时统计数据

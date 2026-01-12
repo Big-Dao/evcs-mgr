@@ -11,8 +11,13 @@ import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.util.GeoValidator;
 import com.evcs.station.controller.StationAnalyticsController;
 import com.evcs.station.controller.StationRealtimeController;
+import com.evcs.station.dto.ChargerTreeDTO;
+import com.evcs.station.dto.ChargingStationTreeDTO;
+import com.evcs.station.dto.ConnectorTreeDTO;
 import com.evcs.station.entity.Charger;
+import com.evcs.station.entity.ChargerConnector;
 import com.evcs.station.entity.Station;
+import com.evcs.station.mapper.ChargerConnectorMapper;
 import com.evcs.station.mapper.ChargerMapper;
 import com.evcs.station.mapper.StationMapper;
 import com.evcs.station.metrics.StationMetrics;
@@ -24,7 +29,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 充电站服务实现类
@@ -35,6 +44,7 @@ import java.util.List;
 public class StationServiceImpl extends ServiceImpl<StationMapper, Station> implements IStationService {
 
     private final ChargerMapper chargerMapper;
+    private final ChargerConnectorMapper chargerConnectorMapper;
     private final StationMetrics stationMetrics;
 
     @Override
@@ -323,6 +333,130 @@ public class StationServiceImpl extends ServiceImpl<StationMapper, Station> impl
         wrapper.orderByDesc("create_time");
 
         return this.list(wrapper);
+    }
+
+    @Override
+    @DataScope
+    public List<ChargingStationTreeDTO> listChargingStationTree(Station queryParam) {
+        QueryWrapper<Station> stationWrapper = new QueryWrapper<>();
+
+        if (queryParam != null) {
+            if (StrUtil.isNotBlank(queryParam.getStationName())) {
+                stationWrapper.like("station_name", queryParam.getStationName());
+            }
+            if (StrUtil.isNotBlank(queryParam.getStationCode())) {
+                stationWrapper.like("station_code", queryParam.getStationCode());
+            }
+            if (queryParam.getStatus() != null) {
+                stationWrapper.eq("status", queryParam.getStatus());
+            }
+            if (StrUtil.isNotBlank(queryParam.getProvince())) {
+                stationWrapper.eq("province", queryParam.getProvince());
+            }
+            if (StrUtil.isNotBlank(queryParam.getCity())) {
+                stationWrapper.eq("city", queryParam.getCity());
+            }
+            if (StrUtil.isNotBlank(queryParam.getDistrict())) {
+                stationWrapper.eq("district", queryParam.getDistrict());
+            }
+        }
+
+        stationWrapper.orderByDesc("create_time");
+        List<Station> stations = this.list(stationWrapper);
+        if (stations == null || stations.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> stationIds = stations.stream()
+            .map(Station::getStationId)
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+
+        if (stationIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Charger> chargers = chargerMapper.selectList(
+            new QueryWrapper<Charger>()
+                .in("station_id", stationIds)
+                .orderByDesc("create_time")
+        );
+
+        Map<Long, List<Charger>> chargersByStationId = chargers == null
+            ? Map.of()
+            : chargers.stream()
+                .filter(c -> c.getStationId() != null)
+                .collect(Collectors.groupingBy(Charger::getStationId));
+
+        List<Long> chargerIds = chargers == null
+            ? List.of()
+            : chargers.stream()
+                .map(Charger::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Map<Long, List<ChargerConnector>> connectorsByChargerId;
+        if (chargerIds.isEmpty()) {
+            connectorsByChargerId = Map.of();
+        } else {
+            List<ChargerConnector> connectors = chargerConnectorMapper.selectList(
+                new QueryWrapper<ChargerConnector>()
+                    .in("charger_id", chargerIds)
+                    .orderByAsc("charger_id")
+                    .orderByAsc("connector_no")
+            );
+            connectorsByChargerId = connectors == null
+                ? Map.of()
+                : connectors.stream()
+                    .filter(cc -> cc.getChargerId() != null)
+                    .collect(Collectors.groupingBy(ChargerConnector::getChargerId));
+        }
+
+        // Assemble DTOs (preserve station ordering)
+        List<ChargingStationTreeDTO> result = new ArrayList<>(stations.size());
+        for (Station station : stations) {
+            ChargingStationTreeDTO stationDto = new ChargingStationTreeDTO();
+            stationDto.setStationId(station.getStationId());
+            stationDto.setStationCode(station.getStationCode());
+            stationDto.setStationName(station.getStationName());
+            stationDto.setStatus(station.getStatus());
+
+            List<Charger> stationChargers = chargersByStationId.getOrDefault(station.getStationId(), List.of());
+            if (!stationChargers.isEmpty()) {
+                List<ChargerTreeDTO> chargerDtos = new ArrayList<>(stationChargers.size());
+                for (Charger charger : stationChargers) {
+                    ChargerTreeDTO chargerDto = new ChargerTreeDTO();
+                    chargerDto.setChargerId(charger.getId());
+                    chargerDto.setChargerCode(charger.getChargerCode());
+                    chargerDto.setChargerName(charger.getChargerName());
+                    chargerDto.setStatus(charger.getStatus());
+                    chargerDto.setEnabled(charger.getEnabled());
+                    chargerDto.setGunCount(charger.getGunCount());
+
+                    List<ChargerConnector> chargerConnectors = connectorsByChargerId.getOrDefault(charger.getId(), List.of());
+                    if (!chargerConnectors.isEmpty()) {
+                        List<ConnectorTreeDTO> connectorDtos = new ArrayList<>(chargerConnectors.size());
+                        for (ChargerConnector connector : chargerConnectors) {
+                            ConnectorTreeDTO connectorDto = new ConnectorTreeDTO();
+                            connectorDto.setConnectorId(connector.getId());
+                            connectorDto.setConnectorNo(connector.getConnectorNo());
+                            connectorDto.setStatus(connector.getStatus());
+                            connectorDtos.add(connectorDto);
+                        }
+                        chargerDto.setConnectors(connectorDtos);
+                    }
+
+                    chargerDtos.add(chargerDto);
+                }
+                stationDto.setChargers(chargerDtos);
+            }
+
+            result.add(stationDto);
+        }
+
+        return result;
     }
 
     /**
