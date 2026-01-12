@@ -67,7 +67,7 @@ cd performance-tests
 
 工具安装完成后，参考以下文档：
 - [JMeter Test Plan Design](JMeter-Test-Plan-Design.md) - 测试场景设计
-- [Performance Optimization Plan](../docs/PERFORMANCE-OPTIMIZATION-PLAN.md) - 完整优化计划
+- [Performance Optimization Plan（归档）](../docs/archive/obsolete-docs-2025-11-02/performance-reports/PERFORMANCE-OPTIMIZATION-PLAN.md) - 完整优化计划（历史快照）
 
 ---
 
