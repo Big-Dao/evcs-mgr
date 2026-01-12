@@ -147,7 +147,6 @@ yarn.lock
 
 # Test files and tokens
 test-*.py
-test-*.ps1
 test-*.json
 test-*.txt
 token.txt
@@ -162,6 +161,12 @@ test-spring-password.sql
 
 # Temporary Java files in root
 GeneratePassword.java
+
+# Repo temp output (do not commit)
+tmp/
+
+# Legacy perf outputs (use repo-root tmp/ instead)
+performance-tests/results/
 
 # Build artifacts that shouldn't be in source
 BOOT-INF/
@@ -189,6 +194,9 @@ hs_err_pid*.log
 **/credentials/
 # .claude
 .claude/
+
+# Local upgrade tooling logs (do not commit)
+.github/java-upgrade/
 
 # Personal local notes (keep out of repo)
 local-notes/
