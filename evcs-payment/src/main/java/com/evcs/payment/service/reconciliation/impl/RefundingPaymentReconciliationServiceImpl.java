@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.evcs.common.tenant.CustomTenantLineHandler;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.payment.config.PaymentConfig;
-import com.evcs.payment.dto.PaymentResponse;
+import com.evcs.payment.dto.RefundResponse;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentMethod;
 import com.evcs.payment.enums.PaymentStatus;
@@ -12,7 +12,7 @@ import com.evcs.payment.mapper.PaymentOrderMapper;
 import com.evcs.payment.metrics.PaymentMetrics;
 import com.evcs.payment.service.IPaymentService;
 import com.evcs.payment.service.channel.IPaymentChannel;
-import com.evcs.payment.service.reconciliation.ProcessingPaymentReconciliationService;
+import com.evcs.payment.service.reconciliation.RefundingPaymentReconciliationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -20,12 +20,13 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPaymentReconciliationService {
+public class RefundingPaymentReconciliationServiceImpl implements RefundingPaymentReconciliationService {
 
     private static final long SYSTEM_USER_ID = 0L;
     private static final int SYSTEM_TENANT_TYPE = 1;
@@ -36,8 +37,8 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
     private final PaymentMetrics paymentMetrics;
 
     @Override
-    public ProcessingPaymentReconciliationResult reconcileOnce() {
-        PaymentConfig.ProcessingReconcileConfig cfg = paymentConfig.getProcessingReconcile();
+    public RefundingPaymentReconciliationResult reconcileOnce() {
+        PaymentConfig.RefundingReconcileConfig cfg = paymentConfig.getRefundingReconcile();
 
         long startMs = System.currentTimeMillis();
         int tenantCount = 0;
@@ -50,8 +51,8 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
         List<Long> tenantIds;
         CustomTenantLineHandler.disableTenantFilter();
         try {
-            tenantIds = paymentOrderMapper.selectTenantIdsWithStatusBefore(
-                PaymentStatus.PROCESSING.getCode(),
+            tenantIds = paymentOrderMapper.selectTenantIdsWithRefundingStatusBefore(
+                PaymentStatus.REFUNDING.getCode(),
                 cutoff,
                 cfg.getMaxTenantsPerRun()
             );
@@ -61,11 +62,11 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
 
         if (tenantIds == null || tenantIds.isEmpty()) {
             paymentMetrics.recordCustomMetric(
-                "payment.processing_reconcile.noop",
+                "payment.refunding_reconcile.noop",
                 1.0,
                 Map.of("result", "no_tenants")
             );
-            return new ProcessingPaymentReconciliationResult(0, 0, 0, 0);
+            return new RefundingPaymentReconciliationResult(0, 0, 0, 0);
         }
 
         tenantCount = tenantIds.size();
@@ -83,9 +84,15 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
 
                 List<PaymentOrder> orders = paymentOrderMapper.selectList(
                     new LambdaQueryWrapper<PaymentOrder>()
-                        .eq(PaymentOrder::getStatus, PaymentStatus.PROCESSING.getCode())
-                        .le(PaymentOrder::getCreateTime, cutoff)
-                        .isNotNull(PaymentOrder::getTradeNo)
+                        .eq(PaymentOrder::getStatus, PaymentStatus.REFUNDING.getCode())
+                        .isNotNull(PaymentOrder::getRefundRequestNo)
+                        .ne(PaymentOrder::getRefundRequestNo, "")
+                        .and(w -> w
+                            .le(PaymentOrder::getRefundRequestTime, cutoff)
+                            .or()
+                            .isNull(PaymentOrder::getRefundRequestTime)
+                            .le(PaymentOrder::getCreateTime, cutoff)
+                        )
                         .orderByAsc(PaymentOrder::getCreateTime)
                         .last("LIMIT " + cfg.getBatchSizePerTenant())
                 );
@@ -97,7 +104,7 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
                 scannedOrderCount += orders.size();
 
                 for (PaymentOrder order : orders) {
-                    if (order == null || !StringUtils.hasText(order.getTradeNo())) {
+                    if (order == null || !StringUtils.hasText(order.getRefundRequestNo())) {
                         continue;
                     }
 
@@ -108,25 +115,43 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
                         }
 
                         IPaymentChannel channel = paymentService.selectChannel(method);
-                        PaymentResponse response = channel.queryPayment(order.getTradeNo());
-                        PaymentStatus status = response != null ? response.getStatus() : null;
+                        RefundResponse response = channel.queryRefund(order.getRefundRequestNo(), order.getTradeNo());
+                        String refundStatus = response != null ? response.getRefundStatus() : null;
 
-                        if (PaymentStatus.SUCCESS.equals(status)
-                            || PaymentStatus.FAILED.equals(status)
-                            || PaymentStatus.CLOSED.equals(status)) {
-                            boolean converged = paymentService.handlePaymentFinalStatus(order.getTradeNo(), status);
-                            if (converged) {
-                                finalizedOrderCount++;
-                            }
+                        if (!StringUtils.hasText(refundStatus)) {
+                            continue;
                         }
 
+                        String normalized = refundStatus.toUpperCase(Locale.ROOT);
+                        if ("PROCESSING".equals(normalized)) {
+                            continue;
+                        }
+
+                        boolean converged = paymentService.handleRefundFinalStatus(
+                            order.getId(),
+                            order.getRefundRequestNo(),
+                            refundStatus,
+                            response != null ? response.getRefundAmount() : null
+                        );
+
+                        if (converged) {
+                            finalizedOrderCount++;
+                        }
+
+                    } catch (UnsupportedOperationException ex) {
+                        log.info(
+                            "渠道不支持退款查询，跳过REFUNDING轮询: tenantId={}, paymentId={}, paymentMethod={}",
+                            tenantId,
+                            order.getId(),
+                            order.getPaymentMethod()
+                        );
                     } catch (Exception ex) {
                         errorCount++;
                         log.warn(
-                            "PROCESSING订单轮询补偿失败: tenantId={}, paymentId={}, tradeNo={}",
+                            "REFUNDING订单轮询补偿失败: tenantId={}, paymentId={}, refundRequestNo={}",
                             tenantId,
                             order.getId(),
-                            order.getTradeNo(),
+                            order.getRefundRequestNo(),
                             ex
                         );
                     }
@@ -134,7 +159,7 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
 
             } catch (Exception ex) {
                 errorCount++;
-                log.warn("PROCESSING订单轮询补偿租户处理失败: tenantId={}", tenantId, ex);
+                log.warn("REFUNDING订单轮询补偿租户处理失败: tenantId={}", tenantId, ex);
             } finally {
                 TenantContext.clear();
             }
@@ -142,18 +167,18 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
 
         long durationMs = System.currentTimeMillis() - startMs;
         paymentMetrics.recordCustomMetric(
-            "payment.processing_reconcile.run",
+            "payment.refunding_reconcile.run",
             1.0,
             Map.of("result", errorCount == 0 ? "success" : "partial")
         );
         paymentMetrics.recordTimer(
-            "payment.processing_reconcile.duration",
+            "payment.refunding_reconcile.duration",
             durationMs,
             Map.of("result", errorCount == 0 ? "success" : "partial")
         );
 
         log.info(
-            "PROCESSING订单轮询补偿完成: tenants={}, scannedOrders={}, finalizedOrders={}, errors={}, durationMs={}",
+            "REFUNDING订单轮询补偿完成: tenants={}, scannedOrders={}, finalizedOrders={}, errors={}, durationMs={}",
             tenantCount,
             scannedOrderCount,
             finalizedOrderCount,
@@ -161,7 +186,7 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
             durationMs
         );
 
-        return new ProcessingPaymentReconciliationResult(
+        return new RefundingPaymentReconciliationResult(
             tenantCount,
             scannedOrderCount,
             finalizedOrderCount,
@@ -174,7 +199,7 @@ public class ProcessingPaymentReconciliationServiceImpl implements ProcessingPay
             return null;
         }
         try {
-            return PaymentMethod.valueOf(paymentMethodCode.trim().toUpperCase());
+            return PaymentMethod.valueOf(paymentMethodCode.trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException ex) {
             log.warn("无法识别支付方式，跳过轮询: paymentMethod={}", paymentMethodCode);
             return null;

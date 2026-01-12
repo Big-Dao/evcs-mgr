@@ -52,6 +52,7 @@ public class WechatPayChannelService implements IPaymentChannel {
     private static final String CURRENCY_CNY = "CNY";
     private static final String REFUND_STATUS_PROCESSING = "PROCESSING";
     private static final String REFUND_STATUS_SUCCESS = "SUCCESS";
+    private static final String REFUND_STATUS_FAILED = "FAILED";
 
     private final PaymentConfig paymentConfig;
     private final WechatPayClientFactory clientFactory;
@@ -141,7 +142,10 @@ public class WechatPayChannelService implements IPaymentChannel {
 
             PaymentConfig.WechatConfig config = paymentConfig.getWechat();
             CreateRequest refundRequest = new CreateRequest();
-            refundRequest.setOutRefundNo(generateRefundNo(request.getPaymentId()));
+            String outRefundNo = StringUtils.hasText(request.getRefundRequestNo())
+                ? request.getRefundRequestNo()
+                : generateRefundNo(request.getPaymentId());
+            refundRequest.setOutRefundNo(outRefundNo);
             refundRequest.setReason(request.getRefundReason());
             refundRequest.setNotifyUrl(resolveRefundNotifyUrl(config));
 
@@ -185,6 +189,59 @@ public class WechatPayChannelService implements IPaymentChannel {
                 throw new BusinessException("微信退款失败: " + ex.getMessage());
             }
             return createMockRefundResponse(request);
+        }
+    }
+
+    @Override
+    public RefundResponse queryRefund(String refundRequestNo, String tradeNo) {
+        if (!StringUtils.hasText(refundRequestNo)) {
+            throw new IllegalArgumentException("refundRequestNo不能为空");
+        }
+
+        if (!isRealIntegrationEnabled()) {
+            RefundResponse resp = new RefundResponse();
+            resp.setRefundNo(refundRequestNo);
+            resp.setRefundStatus(REFUND_STATUS_SUCCESS);
+            return resp;
+        }
+
+        try {
+            RefundService refundService = clientFactory.getRefundService()
+                .orElseThrow(() -> new IllegalStateException("微信退款服务不可用"));
+
+            PaymentConfig.WechatConfig config = paymentConfig.getWechat();
+            com.wechat.pay.java.service.refund.model.QueryByOutRefundNoRequest query =
+                new com.wechat.pay.java.service.refund.model.QueryByOutRefundNoRequest();
+            query.setOutRefundNo(refundRequestNo);
+            if (StringUtils.hasText(config.getSubMchid())) {
+                query.setSubMchid(config.getSubMchid());
+            }
+
+            Refund refund = executeWithWechatResilience(
+                "queryRefund",
+                () -> refundService.queryByOutRefundNo(query)
+            );
+
+            RefundResponse resp = new RefundResponse();
+            resp.setRefundNo(refund != null ? refund.getRefundId() : refundRequestNo);
+            resp.setRefundStatus(refund != null && refund.getStatus() != null
+                ? refund.getStatus().name()
+                : REFUND_STATUS_FAILED);
+
+            if (refund != null && refund.getAmount() != null && refund.getAmount().getRefund() != null) {
+                BigDecimal amount = new BigDecimal(refund.getAmount().getRefund()).movePointLeft(2);
+                resp.setRefundAmount(amount);
+            }
+            return resp;
+        } catch (Exception ex) {
+            log.error("查询微信退款状态失败: refundRequestNo={}", refundRequestNo, ex);
+            if (isProduction()) {
+                throw new BusinessException("查询微信退款状态失败: " + ex.getMessage());
+            }
+            RefundResponse fallback = new RefundResponse();
+            fallback.setRefundNo(refundRequestNo);
+            fallback.setRefundStatus(REFUND_STATUS_PROCESSING);
+            return fallback;
         }
     }
 
@@ -347,6 +404,7 @@ public class WechatPayChannelService implements IPaymentChannel {
                 return PaymentStatus.PENDING;
             case CLOSED:
             case REVOKED:
+                return PaymentStatus.CLOSED;
             case PAYERROR:
             default:
                 return PaymentStatus.FAILED;

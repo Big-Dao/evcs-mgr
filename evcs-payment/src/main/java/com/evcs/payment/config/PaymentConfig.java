@@ -43,6 +43,11 @@ public class PaymentConfig {
     private ProcessingReconcileConfig processingReconcile = new ProcessingReconcileConfig();
 
     /**
+     * 退款中订单后台轮询补偿配置（默认关闭）
+     */
+    private RefundingReconcileConfig refundingReconcile = new RefundingReconcileConfig();
+
+    /**
      * 回调地址前缀
      */
     private String callbackUrlPrefix = "http://localhost:8084/api/payment/callback";
@@ -66,6 +71,39 @@ public class PaymentConfig {
 
         /**
          * 仅处理创建时间早于该阈值的订单（分钟），避免刚创建就被轮询
+         */
+        private long minAgeMinutes = 2L;
+
+        /**
+         * 每个租户每次轮询最多处理的订单数
+         */
+        private int batchSizePerTenant = 50;
+
+        /**
+         * 每次轮询最多扫描的租户数量
+         */
+        private int maxTenantsPerRun = 50;
+    }
+
+    @Data
+    public static class RefundingReconcileConfig {
+        /**
+         * 是否启用 REFUNDING 订单轮询补偿
+         */
+        private boolean enabled = false;
+
+        /**
+         * 任务初始延迟（毫秒）
+         */
+        private long initialDelayMs = 60_000L;
+
+        /**
+         * 任务执行间隔（毫秒）
+         */
+        private long fixedDelayMs = 60_000L;
+
+        /**
+         * 仅处理创建时间早于该阈值的订单（分钟），避免刚发起退款就被轮询
          */
         private long minAgeMinutes = 2L;
 

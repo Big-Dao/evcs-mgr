@@ -12,7 +12,6 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.DigestUtils;
 import org.springframework.util.StringUtils;
 
 import jakarta.annotation.Resource;
@@ -82,7 +81,11 @@ public class RefundCallbackServiceImpl implements IRefundCallbackService {
             }
 
             // 3. 检查订单状态
-            if (order.getStatusEnum() != PaymentStatus.SUCCESS) {
+            PaymentStatus currentStatus = order.getStatusEnum();
+            if (!(PaymentStatus.SUCCESS.equals(currentStatus)
+                || PaymentStatus.PARTIALLY_REFUNDED.equals(currentStatus)
+                || PaymentStatus.REFUNDING.equals(currentStatus)
+                || PaymentStatus.REFUNDED.equals(currentStatus))) {
                 log.warn("退款回调对应订单状态不正确: orderId={}, status={}",
                     order.getId(), order.getStatus());
                 return false;
@@ -217,15 +220,29 @@ public class RefundCallbackServiceImpl implements IRefundCallbackService {
      */
     private boolean handleRefundSuccess(PaymentOrder order, BigDecimal refundAmount, RefundCallbackRequest callbackRequest) {
         try {
-            // 更新订单状态为已退款
-            order.setStatus(PaymentStatus.REFUNDED.getCode());
-            order.setRefundAmount(refundAmount);
+            if (PaymentStatus.REFUNDED.equals(order.getStatusEnum())) {
+                return true;
+            }
+
+            BigDecimal totalAmount = order.getAmount();
+            BigDecimal alreadyRefunded = order.getRefundAmount() != null ? order.getRefundAmount() : BigDecimal.ZERO;
+            BigDecimal delta = refundAmount != null ? refundAmount : BigDecimal.ZERO;
+            BigDecimal newRefundTotal = alreadyRefunded.add(delta);
+
+            if (totalAmount != null && newRefundTotal.compareTo(totalAmount) > 0) {
+                newRefundTotal = totalAmount;
+            }
+
+            PaymentStatus newStatus = computeRefundedPaymentStatus(totalAmount, newRefundTotal);
+
+            order.setStatus(newStatus.getCode());
+            order.setRefundAmount(newRefundTotal);
             order.setRefundTime(java.time.LocalDateTime.now());
 
             int updateCount = paymentOrderMapper.updateById(order);
             if (updateCount > 0) {
-                log.info("订单退款状态更新成功: orderId={}, refundAmount={}",
-                    order.getId(), refundAmount);
+                log.info("订单退款状态更新成功: orderId={}, refundAmount={}, status={}",
+                    order.getId(), newRefundTotal, newStatus);
                 return true;
             } else {
                 log.error("订单退款状态更新失败: orderId={}", order.getId());
@@ -235,6 +252,16 @@ public class RefundCallbackServiceImpl implements IRefundCallbackService {
             log.error("处理退款成功状态失败: orderId={}", order.getId(), e);
             return false;
         }
+    }
+
+    private PaymentStatus computeRefundedPaymentStatus(BigDecimal totalAmount, BigDecimal refundedAmount) {
+        if (totalAmount == null || refundedAmount == null) {
+            return PaymentStatus.REFUNDED;
+        }
+        if (refundedAmount.compareTo(totalAmount) >= 0) {
+            return PaymentStatus.REFUNDED;
+        }
+        return PaymentStatus.PARTIALLY_REFUNDED;
     }
 
     /**
@@ -345,14 +372,14 @@ public class RefundCallbackServiceImpl implements IRefundCallbackService {
 
         try {
             PaymentConfig.WechatConfig wechatConfig = paymentConfig != null ? paymentConfig.getWechat() : null;
-            if (wechatConfig == null || !StringUtils.hasText(wechatConfig.getApiV2Key())) {
+            String apiV2Key = wechatConfig != null ? wechatConfig.getApiV2Key() : null;
+            if (apiV2Key == null || apiV2Key.isBlank()) {
                 log.warn("微信API v2密钥未配置，无法解密退款信息");
                 return Collections.emptyMap();
             }
 
             byte[] decodedBytes = Base64.getDecoder().decode(reqInfo);
-            String md5Key = DigestUtils.md5DigestAsHex(wechatConfig.getApiV2Key().getBytes(StandardCharsets.UTF_8))
-                .toLowerCase(Locale.ROOT);
+            String md5Key = md5HexLower(apiV2Key.getBytes(StandardCharsets.UTF_8));
             SecretKeySpec keySpec = new SecretKeySpec(md5Key.getBytes(StandardCharsets.UTF_8), "AES");
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, keySpec);
@@ -362,6 +389,21 @@ public class RefundCallbackServiceImpl implements IRefundCallbackService {
         } catch (Exception e) {
             log.error("解密微信退款回调信息失败", e);
             return Collections.emptyMap();
+        }
+    }
+
+    private String md5HexLower(byte[] input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] digest = md.digest(input);
+            StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                sb.append(String.format(Locale.ROOT, "%02x", b));
+            }
+            return sb.toString();
+        } catch (Exception e) {
+            log.error("计算MD5失败", e);
+            return "";
         }
     }
 

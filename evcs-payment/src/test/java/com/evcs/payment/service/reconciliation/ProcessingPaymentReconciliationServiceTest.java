@@ -130,6 +130,57 @@ class ProcessingPaymentReconciliationServiceTest extends BaseServiceTest {
         }
     }
 
+    @Test
+    @DisplayName("轮询补偿 - 渠道返回CLOSED时应收敛为CLOSED")
+    void testReconcileOnce_shouldFinalizeClosed_whenChannelReturnsClosed() {
+        // Arrange
+        Long tenantId = 2101L;
+
+        doNothing().when(paymentMessageService).sendPaymentSuccessMessage(any());
+        doNothing().when(paymentMessageService).sendPaymentFailureMessage(any());
+
+        when(wechatPayChannelService.queryPayment(eq("WXP21_cccc3333")))
+            .thenReturn(buildChannelQueryResponse(PaymentStatus.CLOSED));
+
+        Long paymentId;
+        try {
+            TenantContext.setTenantId(tenantId);
+            TenantContext.setUserId(1L);
+
+            PaymentOrder order = new PaymentOrder();
+            order.setOrderId(21L);
+            order.setTradeNo("WXP21_cccc3333");
+            order.setPaymentMethod(PaymentMethod.WECHAT_JSAPI.getCode());
+            order.setAmount(new BigDecimal("12.34"));
+            order.setStatusEnum(PaymentStatus.PROCESSING);
+            order.setDescription("test");
+            order.setCreateTime(LocalDateTime.now().minusMinutes(10));
+            assertTrue(paymentService.save(order), "应能保存测试订单");
+            paymentId = order.getId();
+        } finally {
+            TenantContext.clear();
+        }
+
+        // Act
+        ProcessingPaymentReconciliationService.ProcessingPaymentReconciliationResult result =
+            reconciliationService.reconcileOnce();
+
+        // Assert
+        assertNotNull(result, "应返回轮询结果");
+        assertEquals(1, result.getTenantCount(), "应扫描到1个租户");
+        assertEquals(1, result.getScannedOrderCount(), "应扫描到1笔订单");
+        assertEquals(1, result.getFinalizedOrderCount(), "应将订单最终态化");
+
+        try {
+            TenantContext.setTenantId(tenantId);
+            PaymentOrder updated = paymentService.getById(paymentId);
+            assertNotNull(updated, "应能查询到更新后的订单");
+            assertEquals(PaymentStatus.CLOSED, updated.getStatusEnum(), "订单应更新为CLOSED");
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
     private PaymentResponse buildChannelQueryResponse(PaymentStatus status) {
         PaymentResponse resp = new PaymentResponse();
         resp.setStatus(status);

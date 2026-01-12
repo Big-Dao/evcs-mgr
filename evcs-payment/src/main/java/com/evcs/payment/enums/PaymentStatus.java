@@ -9,7 +9,9 @@ public enum PaymentStatus {
     SUCCESS(2, "支付成功"),
     FAILED(3, "支付失败"),
     REFUNDING(4, "退款中"),
-    REFUNDED(5, "已退款");
+    REFUNDED(5, "已退款"),
+    CLOSED(6, "已关闭"),
+    PARTIALLY_REFUNDED(7, "部分退款");
 
     private final Integer code;
     private final String description;
