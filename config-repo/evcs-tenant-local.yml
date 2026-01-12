@@ -129,6 +129,11 @@ knife4j:
     password: 123456
 
 evcs:
+  internal:
+    api:
+      enabled: true
+      token: ${EVCS_INTERNAL_API_TOKEN:dev-internal-token-change-me}
+      header-name: X-Internal-Token
   tenant:
     enabled: true
     tenant-id-column: tenant_id
