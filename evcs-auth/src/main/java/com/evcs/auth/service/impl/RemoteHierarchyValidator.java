@@ -1,21 +1,46 @@
 package com.evcs.auth.service.impl;
 
+import com.evcs.auth.client.TenantHierarchyClient;
 import com.evcs.common.tenant.HierarchyValidator;
+import com.evcs.common.result.Result;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * 临时层级校验器实现 (Mock)
- * TODO: 应替换为通过Feign调用evcs-tenant服务的真正实现
+ * 层级校验器实现：通过Feign调用 evcs-tenant 的内部接口。
+ *
+ * 安全策略：fail-closed（远程不可用或返回异常时，一律拒绝跨租户访问）。
  */
 @Slf4j
 @Component
+@RequiredArgsConstructor
 public class RemoteHierarchyValidator implements HierarchyValidator {
+
+    private final TenantHierarchyClient tenantHierarchyClient;
 
     @Override
     public boolean isDescendant(Long currentTenantId, Long targetTenantId) {
-        log.warn("Using Mock HierarchyValidator. Allowing access from {} to {}", currentTenantId, targetTenantId);
-        // 暂时允许所有跨租户访问，以免阻塞启动。生产环境必须修复！
-        return true;
+        try {
+            Result<Boolean> result = tenantHierarchyClient.isDescendant(currentTenantId, targetTenantId);
+            if (result == null) {
+                log.warn("Tenant hierarchy check returned null (fail-closed): current={}, target={}", currentTenantId, targetTenantId);
+                return false;
+            }
+            if (!result.isSuccess()) {
+                log.warn(
+                        "Tenant hierarchy check failed (fail-closed): current={}, target={}, code={}, message={}",
+                        currentTenantId,
+                        targetTenantId,
+                        result.getCode(),
+                        result.getMessage()
+                );
+                return false;
+            }
+            return Boolean.TRUE.equals(result.getData());
+        } catch (Exception e) {
+            log.error("Tenant hierarchy check exception (fail-closed): current={}, target={}", currentTenantId, targetTenantId, e);
+            return false;
+        }
     }
 }
