@@ -22,6 +22,11 @@ public class MonitoringController {
         return Result.success(monitoringQueryService.getOverview());
     }
 
+    @GetMapping("/versions")
+    public Result<List<ServiceVersionDTO>> getServiceVersions() {
+        return Result.success(monitoringQueryService.getServiceVersions());
+    }
+
     @GetMapping("/services/health")
     public Result<List<ServiceHealthDTO>> getAllServicesHealth() {
         return Result.success(monitoringQueryService.getAllServicesHealth());

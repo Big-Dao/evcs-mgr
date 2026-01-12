@@ -35,6 +35,37 @@ public class MonitoringQueryService {
                 .build();
     }
 
+    public List<ServiceVersionDTO> getServiceVersions() {
+        List<String> services = new ArrayList<>(discoveryClient.getServices());
+        services.sort(Comparator.naturalOrder());
+
+        List<ServiceVersionDTO> results = new ArrayList<>();
+        for (String serviceName : services) {
+            List<ServiceInstance> instances;
+            try {
+                instances = discoveryClient.getInstances(serviceName);
+            } catch (Exception e) {
+                log.warn("Discovery lookup failed (versions): serviceName={}", serviceName, e);
+                instances = Collections.emptyList();
+            }
+
+            if (instances.isEmpty()) {
+                results.add(ServiceVersionDTO.builder()
+                        .serviceName(serviceName)
+                        .reachable(false)
+                        .error("NO_INSTANCE")
+                        .build());
+                continue;
+            }
+
+            for (ServiceInstance instance : instances) {
+                results.add(probeInstanceVersion(serviceName, instance));
+            }
+        }
+
+        return results;
+    }
+
     public List<ServiceHealthDTO> getAllServicesHealth() {
         List<String> services = new ArrayList<>(discoveryClient.getServices());
         services.sort(Comparator.naturalOrder());
@@ -183,6 +214,92 @@ public class MonitoringQueryService {
                 .lastCheckTime(OffsetDateTime.now().toString())
                 .details(details)
                 .build();
+    }
+
+    private ServiceVersionDTO probeInstanceVersion(String serviceName, ServiceInstance instance) {
+        String instanceId = instance.getInstanceId();
+        if (instanceId == null || instanceId.isBlank()) {
+            instanceId = instance.getHost() + ":" + instance.getPort();
+        }
+
+        String buildVersion = null;
+        String buildTime = null;
+        String gitCommit = null;
+        String imageTag = null;
+        String registry = null;
+
+        boolean reachable = false;
+        String error = null;
+
+        try {
+            String baseUrl = instance.getUri().toString();
+            if (baseUrl.endsWith("/")) {
+                baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
+            }
+            String infoUrl = baseUrl + "/actuator/info";
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> body = monitoringRestTemplate.getForObject(infoUrl, Map.class);
+            reachable = true;
+
+            if (body != null) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> build = (Map<String, Object>) body.get("build");
+                if (build != null) {
+                    buildVersion = asString(build.get("version"));
+                    buildTime = asString(build.get("time"));
+                }
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> git = (Map<String, Object>) body.get("git");
+                if (git != null) {
+                    @SuppressWarnings("unchecked")
+                    Map<String, Object> commit = (Map<String, Object>) git.get("commit");
+                    if (commit != null) {
+                        @SuppressWarnings("unchecked")
+                        Map<String, Object> id = (Map<String, Object>) commit.get("id");
+                        if (id != null) {
+                            gitCommit = asString(id.get("abbrev"));
+                            if (gitCommit == null || gitCommit.isBlank()) {
+                                gitCommit = asString(id.get("full"));
+                            }
+                        }
+                        if (gitCommit == null || gitCommit.isBlank()) {
+                            gitCommit = asString(commit.get("id"));
+                        }
+                    }
+                }
+
+                @SuppressWarnings("unchecked")
+                Map<String, Object> evcs = (Map<String, Object>) body.get("evcs");
+                if (evcs != null) {
+                    imageTag = asString(evcs.get("imageTag"));
+                    registry = asString(evcs.get("registry"));
+                }
+            }
+        } catch (Exception e) {
+            reachable = false;
+            error = e.getClass().getSimpleName();
+            log.debug("Info probe failed: serviceName={}, instanceId={}, uri={}", serviceName, instanceId, instance.getUri(), e);
+        }
+
+        return ServiceVersionDTO.builder()
+                .serviceName(serviceName)
+                .instanceId(instanceId)
+                .host(instance.getHost())
+                .port(instance.getPort())
+                .reachable(reachable)
+                .error(error)
+                .buildVersion(buildVersion)
+                .buildTime(buildTime)
+                .gitCommit(gitCommit)
+                .imageTag(imageTag)
+                .registry(registry)
+                .build();
+    }
+
+    private String asString(Object v) {
+        return v == null ? null : String.valueOf(v);
     }
 
     private ServiceHealthDetailDTO probeInstanceHealth(ServiceInstance instance) {

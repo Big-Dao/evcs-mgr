@@ -46,10 +46,13 @@ service.interceptors.request.use(
 service.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
     const res = response.data
+    const silent = Boolean((response.config as any)?.silent)
 
     // 后端返回格式: { code: number, success?: boolean, message?: string, data: any }
     if (res.success === false || (res.success === undefined && res.code && res.code !== 200)) {
-      ElMessage.error(res.message || 'Error')
+      if (!silent) {
+        ElMessage.error(res.message || 'Error')
+      }
 
       // 401: 未授权
       if (response.status === 401) {
@@ -64,10 +67,16 @@ service.interceptors.response.use(
   },
   (error) => {
     console.error('Response error:', error)
+
+    const silent = Boolean((error?.config as any)?.silent)
     
     if (error.response) {
       const status = error.response.status
       const message = error.response.data?.message || error.message || '网络错误'
+
+      if (silent) {
+        return Promise.reject(error)
+      }
       
       switch (status) {
         case 401:
@@ -109,7 +118,9 @@ service.interceptors.response.use(
           ElMessage.error(message)
       }
     } else {
-      ElMessage.error('网络错误，请检查后端服务')
+      if (!silent) {
+        ElMessage.error('网络错误，请检查后端服务')
+      }
     }
     
     return Promise.reject(error)

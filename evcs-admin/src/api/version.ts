@@ -28,11 +28,11 @@ export async function getFrontendVersionInfo(): Promise<FrontendVersionInfo> {
 }
 
 export async function getActuatorHealth(component: string): Promise<ActuatorHealthResponse> {
-  const resp = await service.get<ActuatorHealthResponse>(`/actuator/${component}/health`)
+  const resp = await service.get<ActuatorHealthResponse>(`/actuator/${component}/health`, { silent: true })
   return resp.data
 }
 
 export async function getActuatorInfo(component: string): Promise<ActuatorInfoResponse> {
-  const resp = await service.get<ActuatorInfoResponse>(`/actuator/${component}/info`)
+  const resp = await service.get<ActuatorInfoResponse>(`/actuator/${component}/info`, { silent: true })
   return resp.data
 }
