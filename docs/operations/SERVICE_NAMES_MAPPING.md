@@ -31,7 +31,7 @@
 | `evcs-integration` | 第三方集成服务 | 开发中 | 外部系统对接 |
 | `evcs-common` | 公共组件库 | 核心依赖 | JWT、Redis、工具类 |
 | `evcs-gateway-backup` | 网关备份服务 | 备用 | 高可用方案 |
-| `evcs-web` | Web服务 | 空目录 | 预留扩展 |
+| （已移除）`evcs-web` | Web服务 | 已清理 | 历史目录（已废弃） |
 
 ## 服务名使用规则
 
