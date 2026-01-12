@@ -136,3 +136,8 @@ evcs:
       internal-api-block:
         enabled: true
         path-prefix: /internal/api/
+
+      internal-api-route-guard:
+        enabled: true
+        forbidden-path-prefixes:
+          - /internal/api/
