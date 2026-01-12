@@ -849,6 +849,14 @@ subprojects {
         enabled = hasBootApplication.isEmpty()
     }
 
+    // Expose build metadata via Spring Boot Actuator /actuator/info (build.*)
+    // This generates build-info.properties during bootJar builds.
+    plugins.withId('org.springframework.boot') {
+        springBoot {
+            buildInfo()
+        }
+    }
+
 }
 
 // Docker构建配置

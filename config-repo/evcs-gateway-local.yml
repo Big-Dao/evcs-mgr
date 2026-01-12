@@ -73,6 +73,14 @@ spring:
             - Path=/api/station/**
           filters:
             - StripPrefix=1  # 去掉/api，转发到station服务的/station/**
+
+        # 站点服务 v1 API 路由（聚合/版本化接口）
+        - id: evcs-station-v1
+          uri: http://${EVCS_STATION_IP}:8082
+          predicates:
+            - Path=/api/v1/charging-stations/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到station服务的/v1/charging-stations/**
         
         # 充电桩路由（属于station服务）
         - id: evcs-charger
@@ -105,6 +113,58 @@ spring:
             - Path=/api/payment/**, /api/reconciliation/**
           filters:
             - StripPrefix=1  # 去掉/api，转发到payment服务的/payments/** 或 /reconciliation/**
+
+        # ===== Actuator 透传（版本识别/排障） =====
+        # 约定：前端通过 /api/actuator/<component>/info 或 /api/actuator/<component>/health 访问。
+        # 注意：这里使用 RewritePath 保留 /actuator 前缀，避免 StripPrefix 误删。
+
+        # Gateway 自身 Actuator（通过 /api 前缀访问，便于前端同源调用）
+        - id: evcs-gateway-actuator
+          uri: http://127.0.0.1:8080
+          predicates:
+            - Path=/api/actuator/gateway/**
+          filters:
+            - RewritePath=/api/actuator/gateway/(?<segment>.*), /actuator/${segment}
+
+        # Auth 服务 Actuator
+        - id: evcs-auth-actuator
+          uri: http://${EVCS_AUTH_IP}:8081
+          predicates:
+            - Path=/api/actuator/auth/**
+          filters:
+            - RewritePath=/api/actuator/auth/(?<segment>.*), /actuator/${segment}
+
+        # Tenant 服务 Actuator
+        - id: evcs-tenant-actuator
+          uri: http://${EVCS_TENANT_IP}:8086
+          predicates:
+            - Path=/api/actuator/tenant/**
+          filters:
+            - RewritePath=/api/actuator/tenant/(?<segment>.*), /actuator/${segment}
+
+        # Station 服务 Actuator
+        - id: evcs-station-actuator
+          uri: http://${EVCS_STATION_IP}:8082
+          predicates:
+            - Path=/api/actuator/station/**
+          filters:
+            - RewritePath=/api/actuator/station/(?<segment>.*), /actuator/${segment}
+
+        # Order 服务 Actuator
+        - id: evcs-order-actuator
+          uri: http://${EVCS_ORDER_IP}:8083
+          predicates:
+            - Path=/api/actuator/order/**
+          filters:
+            - RewritePath=/api/actuator/order/(?<segment>.*), /actuator/${segment}
+
+        # Payment 服务 Actuator
+        - id: evcs-payment-actuator
+          uri: http://${EVCS_PAYMENT_IP}:8084
+          predicates:
+            - Path=/api/actuator/payment/**
+          filters:
+            - RewritePath=/api/actuator/payment/(?<segment>.*), /actuator/${segment}
     loadbalancer:
       retry:
         enabled: true

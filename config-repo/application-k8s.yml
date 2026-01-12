@@ -24,6 +24,21 @@ spring:
     username: guest
     password: guest
 
+# Actuator /actuator/info 默认不会输出 info.*（env contributor 默认关闭），
+# 这里开启后可用于“版本识别/排障”页面展示镜像 tag / registry 等。
+management:
+  info:
+    env:
+      enabled: true
+
+# 版本识别信息（用于 /actuator/info，便于排障确认是否为版本问题）
+info:
+  evcs:
+    imageTag: ${EVCS_IMAGE_TAG:unknown}
+    registry: ${EVCS_K8S_REGISTRY:unknown}
+    gitCommit: ${EVCS_GIT_COMMIT:unknown}
+    gitBranch: ${EVCS_GIT_BRANCH:unknown}
+
 # 支付服务补偿轮询（默认关闭；仅支付服务读取该配置）
 evcs:
   payment:
