@@ -139,6 +139,21 @@ export interface AlertQueryParams {
   size?: number
 }
 
+// 服务版本信息（来自 evcs-monitoring 聚合接口 /monitoring/versions）
+export interface ServiceVersion {
+  serviceName: string
+  instanceId?: string
+  host?: string
+  port?: number
+  reachable: boolean
+  error?: string
+  buildVersion?: string
+  buildTime?: string
+  gitCommit?: string
+  imageTag?: string
+  registry?: string
+}
+
 /**
  * 获取系统总览
  */
@@ -150,6 +165,16 @@ export function getSystemOverview() {
     alerts: Alert[]
   }>({
     url: '/monitoring/overview',
+    method: 'get'
+  })
+}
+
+/**
+ * 获取所有服务版本信息（best-effort）
+ */
+export function getServiceVersions() {
+  return request<ServiceVersion[]>({
+    url: '/monitoring/versions',
     method: 'get'
   })
 }

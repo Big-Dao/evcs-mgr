@@ -3,20 +3,24 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh, CopyDocument } from '@element-plus/icons-vue'
 import {
-  getActuatorHealth,
-  getActuatorInfo,
   getFrontendVersionInfo,
-  type ActuatorInfoResponse,
   type FrontendVersionInfo
 } from '@/api/version'
+import {
+  getSystemOverview,
+  getServiceVersions,
+  type ServiceHealth,
+  type ServiceVersion
+} from '@/api/monitoring'
 
 type ComponentKey = 'gateway' | 'auth' | 'tenant' | 'station' | 'order' | 'payment'
 
 interface ComponentRow {
   key: ComponentKey
   name: string
+  serviceName: string
   healthStatus?: string
-  info?: ActuatorInfoResponse
+  version?: ServiceVersion
   error?: string
 }
 
@@ -28,12 +32,12 @@ const loading = reactive({
 const frontend = ref<FrontendVersionInfo | null>(null)
 
 const rows = ref<ComponentRow[]>([
-  { key: 'gateway', name: 'evcs-gateway' },
-  { key: 'auth', name: 'evcs-auth' },
-  { key: 'tenant', name: 'evcs-tenant' },
-  { key: 'station', name: 'evcs-station' },
-  { key: 'order', name: 'evcs-order' },
-  { key: 'payment', name: 'evcs-payment' }
+  { key: 'gateway', name: 'evcs-gateway', serviceName: 'evcs-gateway' },
+  { key: 'auth', name: 'evcs-auth', serviceName: 'evcs-auth' },
+  { key: 'tenant', name: 'evcs-tenant', serviceName: 'evcs-tenant' },
+  { key: 'station', name: 'evcs-station', serviceName: 'evcs-station' },
+  { key: 'order', name: 'evcs-order', serviceName: 'evcs-order' },
+  { key: 'payment', name: 'evcs-payment', serviceName: 'evcs-payment' }
 ])
 
 const safeJson = (v: unknown) => {
@@ -44,48 +48,9 @@ const safeJson = (v: unknown) => {
   }
 }
 
-const extractGitCommit = (info?: ActuatorInfoResponse): string => {
-  if (!info) return ''
-
-  // 常见结构：git.commit.id.abbrev / git.commit.id / git
-  const git = info.git as any
-  const commit = git?.commit
-  return (
-    commit?.id?.abbrev ||
-    commit?.id ||
-    (info['git.commit.id.abbrev'] as string) ||
-    (info['git.commit.id'] as string) ||
-    ''
-  )
-}
-
-const extractBuildVersion = (info?: ActuatorInfoResponse): string => {
-  if (!info) return ''
-
-  // 常见结构：build.version / build
-  const build = info.build as any
-  return (build?.version || (info['build.version'] as string) || '')
-}
-
-const extractBuildTime = (info?: ActuatorInfoResponse): string => {
-  if (!info) return ''
-
-  const build = info.build as any
-  return (build?.time || (info['build.time'] as string) || '')
-}
-
-const extractImageTag = (info?: ActuatorInfoResponse): string => {
-  if (!info) return ''
-
-  const evcs = info.evcs as any
-  return (evcs?.imageTag || '')
-}
-
-const extractRegistry = (info?: ActuatorInfoResponse): string => {
-  if (!info) return ''
-
-  const evcs = info.evcs as any
-  return (evcs?.registry || '')
+const pickBestVersion = (versions: ServiceVersion[]): ServiceVersion | undefined => {
+  if (!versions.length) return undefined
+  return versions.find(v => v.reachable) || versions[0]
 }
 
 const copyToClipboard = async (text: string) => {
@@ -114,26 +79,35 @@ const loadFrontend = async () => {
 const loadComponents = async () => {
   loading.components = true
   try {
-    const tasks = rows.value.map(async (row) => {
+    const [overviewResp, versionsResp] = await Promise.all([
+      getSystemOverview(),
+      getServiceVersions()
+    ])
+
+    const healthList: ServiceHealth[] = overviewResp.data?.services || []
+    const versionList: ServiceVersion[] = versionsResp.data || []
+
+    rows.value.forEach((row) => {
       row.error = undefined
       row.healthStatus = undefined
-      row.info = undefined
+      row.version = undefined
 
-      try {
-        const [health, info] = await Promise.all([
-          getActuatorHealth(row.key),
-          getActuatorInfo(row.key)
-        ])
-        row.healthStatus = health?.status || 'UNKNOWN'
-        row.info = info
-      } catch (e: any) {
-        console.error(`load component failed: ${row.key}`, e)
-        row.error = e?.message || 'UNKNOWN_ERROR'
-        row.healthStatus = 'UNREACHABLE'
+      const health = healthList.find((h) => h.serviceName === row.serviceName)
+      row.healthStatus = health?.status || 'UNKNOWN'
+
+      const candidates = versionList.filter((v) => v.serviceName === row.serviceName)
+      const picked = pickBestVersion(candidates)
+
+      if (!picked) {
+        row.error = 'NO_VERSION_INFO'
+        return
+      }
+
+      row.version = picked
+      if (!picked.reachable) {
+        row.error = picked.error || 'UNREACHABLE'
       }
     })
-
-    await Promise.all(tasks)
   } finally {
     loading.components = false
   }
@@ -145,17 +119,17 @@ const refreshAll = async () => {
 
 const tableData = computed(() => {
   return rows.value.map((r) => {
-    const info = r.info
+    const v = r.version
 
     return {
       key: r.key,
       name: r.name,
       healthStatus: r.healthStatus || 'UNKNOWN',
-      imageTag: extractImageTag(info) || '-',
-      registry: extractRegistry(info) || '-',
-      buildVersion: extractBuildVersion(info) || '-',
-      gitCommit: extractGitCommit(info) || '-',
-      buildTime: extractBuildTime(info) || '-',
+      imageTag: v?.imageTag || '-',
+      registry: v?.registry || '-',
+      buildVersion: v?.buildVersion || '-',
+      gitCommit: v?.gitCommit || '-',
+      buildTime: v?.buildTime || '-',
       error: r.error || ''
     }
   })
@@ -202,7 +176,7 @@ onMounted(() => {
     <el-card class="block" shadow="never">
       <template #header>
         <div class="card-header">
-          <span>后端组件（通过 Gateway 的 /api/actuator 透传）</span>
+          <span>后端组件（通过 Monitoring 聚合接口）</span>
         </div>
       </template>
 
@@ -238,7 +212,7 @@ onMounted(() => {
               type="primary"
               size="small"
               :icon="CopyDocument"
-              @click="copyToClipboard(safeJson(rows.find(r => r.key === row.key)?.info || { error: row.error }))"
+              @click="copyToClipboard(safeJson(rows.find(r => r.key === row.key)?.version || { error: row.error }))"
             >
               复制详情
             </el-button>
@@ -248,7 +222,7 @@ onMounted(() => {
 
       <div class="hint">
         <div>说明：</div>
-        <div>1) 该页面依赖网关路由：/api/actuator/&lt;component&gt;/** → 对应服务 /actuator/**。</div>
+        <div>1) 该页面只调用聚合接口：/api/monitoring/overview 与 /api/monitoring/versions。</div>
         <div>2) 如果 build/git 信息为空，请在对应服务开启 Actuator info 的 build/git 贡献项。</div>
       </div>
     </el-card>

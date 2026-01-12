@@ -127,6 +127,33 @@ EVCS_PUSH_JAVA_IMAGES=false \
 bash k8s/push-images-from-local.sh
 ```
 
+#### WSL 场景：本机 Docker 不可用（推荐）
+
+> 适用：WSL 环境没有 Docker Desktop / docker daemon，导致 `k8s/push-images-from-local.sh` 无法构建前端镜像。
+
+改用“本地构建 dist + 集群内 Kaniko 构建/推送 runtime 镜像”的路径（不依赖本机 Docker）：
+
+```bash
+# 1)（仅首次/镜像缺失时）在 K3s 节点上把 node/nginx 基础镜像镜像到集群 registry
+#    该脚本需要 root/containerd 权限，通常在节点上执行：
+sudo bash k8s/mirror-frontend-base-images.sh
+
+# 2) 在开发机/WSL 本地构建 dist，然后上传上下文并用 Kaniko 推送 admin-frontend 镜像
+export EVCS_K8S_REGISTRY=192.168.20.235:5000
+export EVCS_IMAGE_TAG=dev
+bash k8s/build-admin-frontend-prebuilt-from-local.sh
+
+# 3) 最后部署/重启
+bash k8s/deploy.sh
+kubectl -n evcs rollout restart deploy/admin-frontend
+kubectl -n evcs rollout status deploy/admin-frontend --timeout=180s
+```
+
+说明：
+
+- `k8s/build-admin-frontend-prebuilt-from-local.sh` 会先在本机执行 `npm install && npm run build` 生成 `dist/`，然后通过 `k8s/build-admin-frontend-from-local.sh` 将上下文上传到 PVC，最后由 Kaniko 在集群内构建并推送镜像（使用 `Dockerfile.prebuilt`，避免集群内 npm 安装）。
+- 若集群可以访问 Git（且 npm 源可达），也可使用 `bash k8s/build-admin-frontend.sh`（git context 模式）。
+
 ### 3) 部署到 K3S
 
 ```bash

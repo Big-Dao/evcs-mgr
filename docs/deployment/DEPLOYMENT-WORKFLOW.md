@@ -40,6 +40,9 @@
    - 后端：`./gradlew :evcs-tenant:build :evcs-station:build -x test --no-daemon`（测试环境最小集）
    - 全量镜像：`./gradlew clean build`（Compose）或 `./gradlew pushK8sImages -Devcs.k8s.registry=<REG> -Devcs.k8s.tag=<TAG>`
    - 前端镜像：`EVCS_PUSH_JAVA_IMAGES=false bash k8s/push-images-from-local.sh`
+    - 若本机 Docker 不可用（常见于 WSL）：
+       - （推荐）`bash k8s/build-admin-frontend-prebuilt-from-local.sh`（本机 npm 构建 dist，集群内 Kaniko 构建镜像，无需本机 Docker）
+       - 或 `bash k8s/deploy-admin-frontend.sh`（集群内 git clone + Kaniko，要求集群可访问 Git/npm）
 
 3. **镜像归档与分发**
    - 需要离线缓存时：`workflow.sh local-registry` → 推送至 `127.0.0.1:5000`

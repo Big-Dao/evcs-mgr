@@ -158,14 +158,13 @@ spring:
           filters:
             - RewritePath=/api/actuator/order/(?<segment>.*), /actuator/${segment}
 
-        # Payment 服务 Actuator（health 端点避免向前端冒泡 503）
+        # Payment 服务 Actuator（health 端点遵循 Actuator 语义：DOWN 时可能返回 503）
         - id: evcs-payment-actuator-health
           uri: http://${EVCS_PAYMENT_IP}:8084
           predicates:
             - Path=/api/actuator/payment/health
           filters:
             - RewritePath=/api/actuator/payment/health, /actuator/health
-            - SetStatus=200
 
         # Payment 服务 Actuator
         - id: evcs-payment-actuator

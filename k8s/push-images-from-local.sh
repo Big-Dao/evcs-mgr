@@ -100,7 +100,21 @@ fi
 
 # Push admin frontend image
 if [ "${EVCS_PUSH_ADMIN_FRONTEND}" = "true" ]; then
-  require_cmd docker
+  if ! has_cmd docker; then
+    echo "ERROR: docker not found in PATH (admin-frontend push requires docker)." >&2
+    echo "" >&2
+    echo "If Docker is unavailable (e.g. WSL without Docker Desktop), use one of these supported alternatives:" >&2
+    echo "  A) Build dist locally, then Kaniko build/push in-cluster (no local Docker):" >&2
+    echo "     EVCS_K8S_REGISTRY=192.168.20.235:5000 EVCS_IMAGE_TAG=${EVCS_IMAGE_TAG} \\" >&2
+    echo "       bash k8s/build-admin-frontend-prebuilt-from-local.sh" >&2
+    echo "" >&2
+    echo "  B) Deploy admin-frontend via Kaniko (git clone inside cluster):" >&2
+    echo "     EVCS_IMAGE_TAG=${EVCS_IMAGE_TAG} bash k8s/deploy-admin-frontend.sh" >&2
+    echo "     (requires cluster network access to EVCS_GIT_URL + npm registry)" >&2
+    echo "" >&2
+    echo "  C) Run this script on a Linux node that has Docker." >&2
+    exit 1
+  fi
 
   # Node/npm are often installed via shell-initialized version managers.
   # When this script runs under bash, npm may be missing from PATH.

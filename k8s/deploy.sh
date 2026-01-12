@@ -81,6 +81,7 @@ export EVCS_GIT_BRANCH
 #     kubectl -n evcs port-forward deploy/registry 5000:5000
 #     ./gradlew pushK8sImages -Devcs.k8s.registry=127.0.0.1:5000 -Devcs.k8s.tag=$EVCS_IMAGE_TAG
 # - 前端镜像：使用 k8s/push-images-from-local.sh。
+# - 若本机 Docker 不可用（常见于 WSL），前端可使用 Kaniko + 预构建 dist：k8s/build-admin-frontend-prebuilt-from-local.sh。
 #
 # 本脚本只负责：渲染占位符并 apply manifests。
 export EVCS_K8S_REGISTRY="${EVCS_K8S_REGISTRY:-192.168.20.235:5000}"
