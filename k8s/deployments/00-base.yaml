@@ -41,3 +41,6 @@ stringData:
   SPRING_RABBITMQ_USERNAME: "guest"
   SPRING_RABBITMQ_PASSWORD: "guest"
   JWT_SECRET: "evcs-secret-key-change-in-production"
+  # Internal service-to-service token used to protect /internal/api/**.
+  # For production, DO NOT use repo defaults; inject via your secret manager.
+  EVCS_INTERNAL_API_TOKEN: "dev-internal-token-change-me"

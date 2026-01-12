@@ -2,7 +2,7 @@
 
 > 一句话说明：EVCS Manager 的生产部署与发布基线（Day-0/Day-1），以现有 Compose/K8s 资产为准，本文件只做规划与验收口径。
 
-**最后更新**: 2025-12-21  \
+**最后更新**: 2026-01-12  \
 **维护者**: DevOps 团队  \
 **状态**: 已发布
 
@@ -238,6 +238,7 @@ kubectl -n evcs rollout status deploy/gateway --timeout=180s
 - Redis：地址/密码/超时
 - RabbitMQ：地址/账号/密码/虚拟主机
 - JWT/认证：JWT 密钥、Token 过期时间、允许的 CORS/回调域名
+- 内部接口鉴权：`EVCS_INTERNAL_API_TOKEN`（用于保护 `/internal/api/**`，需在调用方与被调方服务保持一致）
 - 观测：日志级别、指标采集端点、告警阈值（告警规则本身请落在 operations）
 
 提示：生产环境请使用密钥管理服务（或 K8s Secret/External Secret）注入敏感值；本仓库中出现的默认凭据仅用于演示/测试，见 [docs/operations/DEFAULT-CREDENTIALS.md](../operations/DEFAULT-CREDENTIALS.md)。
@@ -284,6 +285,7 @@ curl -fsS http://localhost:8080/actuator/health
 ## 安全基线（生产必须）
 
 - 生产环境禁用默认口令与演示账号；所有凭据走 Secret 注入。
+- 内部接口（`/internal/api/**`）必须启用共享 token 防护：通过 Secret 注入 `EVCS_INTERNAL_API_TOKEN`，并确保 `evcs-auth` 与 `evcs-tenant` 等内部互调服务使用同一值。
 - 对外暴露端口应最小化；基础设施端口仅内网可达。
 - 任何跨租户访问能力必须受权限控制（多租户/异步上下文要求参见 [docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md](../architecture/TENANT-CONTEXT-ASYNC-RFC.md)）。
 
