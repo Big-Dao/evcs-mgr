@@ -106,7 +106,7 @@ EVCS 的多租户不仅要求“tenant_id 隔离”，还必须支持**多层级
 - `timestamp`：操作时间
 - `detail`：变更前后差异（脱敏后）
 
-注：具体 Schema 实现见 [tenant_audit.sql](../evcs-tenant/src/main/resources/sql/tenant_audit.sql)。
+注：具体 Schema 实现见 [tenant_audit.sql](../../evcs-tenant/src/main/resources/sql/tenant_audit.sql)。
 
 ### 3.3 异步与消息（可靠性）
 

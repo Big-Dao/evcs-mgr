@@ -4,6 +4,8 @@
 > **修复时间**: 2025-11-01\
 > **最后更新**: 2025-12-18
 
+> **归档声明**: 本文档已于 2026-01-12 归档为历史快照；权威入口以 `docs/DOCUMENTATION-INDEX.md` 为准。
+
 本文记录一次典型的 Spring MVC 路径匹配冲突问题：`/charger/list` 被误匹配到 `/{chargerId}`，导致后端返回 500。
 
 ## 现象
@@ -47,7 +49,7 @@ public Result<?> detail(@PathVariable Long chargerId) { ... }
 
 ## 相关文档
 
-- [文档总索引](../DOCUMENTATION-INDEX.md)
-- [API 文档](../references/API-DOCUMENTATION.md)
-- [编码与架构规范](../overview/PROJECT-CODING-STANDARDS.md)
+- [文档总索引](../../DOCUMENTATION-INDEX.md)
+- [API 文档](../../references/API-DOCUMENTATION.md)
+- [编码与架构规范](../../overview/PROJECT-CODING-STANDARDS.md)
 - [Spring MVC 路径匹配规则](https://docs.spring.io/spring-framework/docs/current/reference/html/web.html#mvc-ann-requestmapping-uri-templates)

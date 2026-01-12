@@ -2,11 +2,27 @@
 
 > 一句话说明：本文件是当前仓库“非归档文档”的统一导航入口；各主题只保留一个权威 SSOT，其它文档尽量通过链接引用避免重复维护。
 
-**最后更新**: 2025-12-18  \
+**最后更新**: 2026-01-12  \
 **维护者**: 技术负责人 / 各领域维护团队  \
 **状态**: 已发布
 
 ---
+
+## 快速入口（按任务）
+
+- 读规范（必读）：[docs/overview/PROJECT-CODING-STANDARDS.md](overview/PROJECT-CODING-STANDARDS.md)
+- 开发上手：
+  - 开发者指南：[docs/development/DEVELOPER-GUIDE.md](development/DEVELOPER-GUIDE.md)
+  - 代码质量清单：[docs/development/CODE-QUALITY-CHECKLIST.md](development/CODE-QUALITY-CHECKLIST.md)
+- 跑测试：
+  - 统一测试指南：[docs/testing/UNIFIED-TESTING-GUIDE.md](testing/UNIFIED-TESTING-GUIDE.md)
+  - 集成测试指南：[docs/testing/INTEGRATION-TEST-GUIDE.md](testing/INTEGRATION-TEST-GUIDE.md)
+- 部署：
+  - 生产部署规划：[docs/deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md)
+  - 测试环境部署：[docs/deployment/TEST-ENVIRONMENT-GUIDE.md](deployment/TEST-ENVIRONMENT-GUIDE.md)
+- 查接口：API 文档：[docs/references/API-DOCUMENTATION.md](references/API-DOCUMENTATION.md)
+- 常见故障预防： [docs/troubleshooting/ERROR_PREVENTION_CHECKLIST.md](troubleshooting/ERROR_PREVENTION_CHECKLIST.md)
+- 看历史：版本历史记录：[docs/overview/VERSION-HISTORY.md](overview/VERSION-HISTORY.md)
 
 ## 项目与规范（SSOT）
 
@@ -73,7 +89,7 @@
 ## 参考（references）
 
 - API 文档：[docs/references/API-DOCUMENTATION.md](references/API-DOCUMENTATION.md)
-- 变更日志（已归档，请查看版本历史）：[docs/references/CHANGELOG.md](references/CHANGELOG.md)
+- 版本历史记录（权威）：[docs/overview/VERSION-HISTORY.md](overview/VERSION-HISTORY.md)
 
 ## 归档（archive）
 

@@ -481,6 +481,8 @@ docker run -d \
   evcs-manager/evcs-tenant:2.0.0
 ```
 
+> **归档声明**: 本文档已于 2026-01-12 归档为历史快照；权威入口以 `docs/DOCUMENTATION-INDEX.md` 为准。
+
 ## 📚 更多资源
 
 ### 官方文档
@@ -489,16 +491,17 @@ docker run -d \
 - [OpenAPI 3.0 规范](https://swagger.io/specification/)
 
 ### 示例代码
-- [Postman 集合下载](examples/postman-collection.json)
-- [cURL 示例脚本](examples/curl-examples.sh)
-- [Java SDK 示例](examples/java-sdk/)
+- [Postman 集合下载](../../references/examples/postman-collection.json)
+- [cURL 示例脚本](../../references/examples/curl-examples.sh)
+- [示例目录（参考）](../../references/examples/)
 
 ### 社区支持
 - **GitHub Issues**: [提交问题](https://github.com/Big-Dao/evcs-mgr/issues)
-- **技术讨�?*: [GitHub Discussions](https://github.com/Big-Dao/evcs-mgr/discussions)
+- **技术讨论**: [GitHub Discussions](https://github.com/Big-Dao/evcs-mgr/discussions)
 - **API反馈**: api-feedback@evcs-manager.com
 
 ---
 
-**最后更�?*: 2025-11-02
-**文档维护**: EVCS Manager 开发团�?**版本**: v2.0
+**最后更新**: 2025-11-02  
+**文档维护**: EVCS Manager 开发团队  
+**版本**: v2.0

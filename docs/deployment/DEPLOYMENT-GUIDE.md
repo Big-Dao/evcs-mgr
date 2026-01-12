@@ -73,12 +73,12 @@
 export EVCS_K8S_REGISTRY=192.168.20.235:5000
 export EVCS_IMAGE_TAG=dev
 
-# 将渲染结果输出到临时目录，再 apply
-mkdir -p /tmp/evcs-k8s-rendered
+# 将渲染结果输出到项目临时目录（仓库根目录 tmp/，不入 git），再 apply
+mkdir -p tmp/evcs-k8s-rendered
 for f in k8s/deployments/*.yaml; do
-  envsubst < "$f" > /tmp/evcs-k8s-rendered/"$(basename "$f")"
+  envsubst < "$f" > tmp/evcs-k8s-rendered/"$(basename "$f")"
 done
-kubectl apply -f /tmp/evcs-k8s-rendered
+kubectl apply -f tmp/evcs-k8s-rendered
 ```
 
 最低验收建议（发布后 5 分钟内）：

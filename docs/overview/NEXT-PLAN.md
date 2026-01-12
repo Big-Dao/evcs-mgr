@@ -352,7 +352,7 @@
 
 ## 🔗 相关文档
 
-- **项目概述**: [README.md](../README.md)
+- **项目概述**: [README.md](../../README.md)
 - **编码规范**: [PROJECT-CODING-STANDARDS.md](./PROJECT-CODING-STANDARDS.md)
 - **部署指南**: [DEPLOYMENT-GUIDE.md](../deployment/DEPLOYMENT-GUIDE.md)
 - **测试指南**: [UNIFIED-TESTING-GUIDE.md](../testing/UNIFIED-TESTING-GUIDE.md)

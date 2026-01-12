@@ -1006,7 +1006,8 @@ JAVA_OPTS="
 #### JVM监控
 ```bash
 # JFR诊断记录
--XX:StartFlightRecording=dumponexit=true,filename=/tmp/flight.jfr
+-XX:StartFlightRecording=dumponexit=true,filename=tmp/flight.jfr
+# 确保目录存在（以项目根目录运行）：mkdir -p tmp
 -XX:FlightRecorderOptions=stackdepth=128
 ```
 
