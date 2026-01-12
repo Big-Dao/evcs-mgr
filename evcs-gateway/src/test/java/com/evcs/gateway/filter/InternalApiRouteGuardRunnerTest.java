@@ -73,6 +73,34 @@ class InternalApiRouteGuardRunnerTest {
     }
 
     @Test
+    @DisplayName("启动期路由校验 - 暴露 /internal/api（无尾斜杠）时应 fail-fast")
+    void testRun_shouldThrow_whenRouteExposesInternalApiWithoutTrailingSlash() {
+        // Arrange
+        InternalApiRouteGuardProperties properties = new InternalApiRouteGuardProperties();
+        properties.setEnabled(true);
+        properties.setStartupTimeout(Duration.ofSeconds(5));
+        properties.setForbiddenPathPrefixes(List.of("/internal/api"));
+
+        RouteDefinition badRoute = new RouteDefinition();
+        badRoute.setId("bad-route-no-slash");
+
+        PredicateDefinition pathPredicate = new PredicateDefinition();
+        pathPredicate.setName("Path");
+        Map<String, String> args = new HashMap<>();
+        args.put("_genkey_0", "/internal/api");
+        pathPredicate.setArgs(args);
+
+        badRoute.setPredicates(List.of(pathPredicate));
+
+        RouteDefinitionLocator locator = () -> Flux.just(badRoute);
+        InternalApiRouteGuardRunner runner = new InternalApiRouteGuardRunner(locator, properties);
+
+        // Act & Assert
+        assertThrows(IllegalStateException.class, () -> runner.run(null),
+                "暴露 internal api（无尾斜杠）的路由也应导致启动失败");
+    }
+
+    @Test
     @DisplayName("启动期路由校验 - 逗号分隔 patterns 中包含 internal 时应 fail-fast")
     void testRun_shouldThrow_whenCommaSeparatedContainsInternalApi() {
         // Arrange
