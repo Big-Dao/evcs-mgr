@@ -6,6 +6,16 @@
 
 ---
 
+## 目录
+
+- [测试环境要求](#测试环境要求)
+- [测试场景设计](#测试场景设计)
+- [JMeter 测试脚本结构](#jmeter-测试脚本结构)
+- [执行步骤](#执行步骤)
+- [报告生成](#报告生成)
+- [预期输出](#预期输出)
+- [下一步计划](#下一步计划)
+
 ## 测试环境要求
 
 ### 1. 软件依赖
@@ -188,12 +198,11 @@ Test Plan: JVM Tuning Performance Test
 ### 1. 准备阶段
 
 ```bash
-# 1.1 启动所有服务
-cd c:\Users\andyz\Projects\evcs-mgr
-docker-compose up -d
+# 1.1 启动所有服务（在项目根目录执行）
+docker compose up -d
 
 # 1.2 等待服务就绪
-Start-Sleep -Seconds 60
+sleep 60
 
 # 1.3 验证服务健康状态
 curl http://localhost:8080/actuator/health
@@ -207,24 +216,32 @@ curl http://localhost:8082/actuator/health
 # 2.1 切换到测试目录
 cd performance-tests
 
-# 2.2 运行基线测试（非 GUI 模式）
-jmeter -n -t jvm-tuning-test.jmx `
-  -l results/baseline/results.jtl `
-  -e -o results/baseline/report `
-  -Jjwt.token=your-test-token
+# 2.2 推荐：使用 Linux 执行脚本（统一输出到仓库根目录 tmp/，不入 git）
+./run-test.sh --scenario all --base-url http://127.0.0.1:8080 --duration 600
 
-# 2.3 等待测试完成（约 25 分钟）
+# 2.3 或者：直接运行 JMeter（同样建议输出到仓库根目录 tmp/）
+# 注意：从项目根目录运行，确保 tmp/ 目录存在
+#   mkdir -p tmp/perf/jmeter
+# jmeter -n -t performance-tests/jvm-tuning-test.jmx \
+#   -l tmp/perf/jmeter/results.jtl \
+#   -e -o tmp/perf/jmeter/report \
+#   -Jjwt.token=your-test-token
+
+# 2.4 等待测试完成（约 25 分钟）
 ```
 
 ### 3. 收集 JFR 数据
 
 ```bash
-# 3.1 从容器复制 JFR 文件
-docker cp evcs-order:/app/logs/flight.jfr ./results/baseline/order-flight.jfr
-docker cp evcs-station:/app/logs/flight.jfr ./results/baseline/station-flight.jfr
+# 3.1 从容器复制 JFR 文件（保存到仓库根目录 tmp/）
+mkdir -p tmp/jfr
+
+# JFR 文件在容器内的位置取决于你的 JVM 参数（常见：/tmp/flight.jfr）
+docker cp evcs-order:/tmp/flight.jfr tmp/jfr/order-flight.jfr
+docker cp evcs-station:/tmp/flight.jfr tmp/jfr/station-flight.jfr
 
 # 3.2 使用 JDK Mission Control 分析
-# jmc results/baseline/order-flight.jfr
+# jmc tmp/jfr/order-flight.jfr
 ```
 
 ---
@@ -235,7 +252,7 @@ docker cp evcs-station:/app/logs/flight.jfr ./results/baseline/station-flight.jf
 
 测试完成后，JMeter 会自动生成 HTML 报告：
 ```
-results/baseline/report/index.html
+tmp/perf/jmeter/report-<timestamp>/index.html
 ```
 
 **关键指标**:
@@ -259,16 +276,14 @@ results/baseline/report/index.html
 ### 基线测试报告结构
 
 ```
-results/
-└── baseline/
-    ├── results.jtl              # 原始数据
-    ├── report/                  # HTML 报告
-    │   ├── index.html
-    │   ├── content/
-    │   └── sbadmin2-1.0.7/
-    ├── order-flight.jfr         # Order 服务 JFR
-    ├── station-flight.jfr       # Station 服务 JFR
-    └── summary.md               # 人工总结
+tmp/
+├── perf/
+│   └── jmeter/
+│       ├── results-<timestamp>.jtl
+│       └── report-<timestamp>/index.html
+└── jfr/
+  ├── order-flight.jfr
+  └── station-flight.jfr
 ```
 
 ### summary.md 模板

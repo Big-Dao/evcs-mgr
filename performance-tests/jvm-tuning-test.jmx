@@ -343,7 +343,7 @@
             <connectTime>true</connectTime>
           </value>
         </objProp>
-        <stringProp name="filename">performance-tests/results/aggregate-report.csv</stringProp>
+        <stringProp name="filename">${__P(artifact_dir,.)}/aggregate-report.csv</stringProp>
       </ResultCollector>
       <hashTree/>
 
@@ -382,7 +382,7 @@
             <connectTime>true</connectTime>
           </value>
         </objProp>
-        <stringProp name="filename">performance-tests/results/response-time-graph.csv</stringProp>
+        <stringProp name="filename">${__P(artifact_dir,.)}/response-time-graph.csv</stringProp>
       </ResultCollector>
       <hashTree/>
 
