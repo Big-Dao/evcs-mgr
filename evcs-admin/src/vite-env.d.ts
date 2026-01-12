@@ -1,5 +1,7 @@
 /// <reference types="vite/client" />
 
+import 'axios'
+
 declare module '*.vue' {
   import type { DefineComponent } from 'vue'
   const component: DefineComponent<{}, {}, any>
@@ -7,7 +9,7 @@ declare module '*.vue' {
 }
 
 declare module 'axios' {
-  export interface AxiosRequestConfig {
+  interface AxiosRequestConfig {
     /**
      * If true, suppress global ElMessage errors in interceptors.
      * Useful for pages that handle errors per-row.
