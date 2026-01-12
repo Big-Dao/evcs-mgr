@@ -52,6 +52,31 @@ export interface StationForm {
   status: number
 }
 
+// v1: 充电站-桩-枪树形 DTO
+export interface ConnectorTreeDTO {
+  connectorId: number
+  connectorNo: number
+  status: number
+}
+
+export interface ChargerTreeDTO {
+  chargerId: number
+  chargerCode: string
+  chargerName: string
+  status: number
+  enabled: number
+  gunCount: number
+  connectors: ConnectorTreeDTO[]
+}
+
+export interface ChargingStationTreeDTO {
+  stationId: number
+  stationCode: string
+  stationName: string
+  status: number
+  chargers: ChargerTreeDTO[]
+}
+
 /**
  * 获取充电站列表
  */
@@ -112,5 +137,17 @@ export function getStationChargers(stationId: number) {
   return request({
     url: `/station/${stationId}/chargers`,
     method: 'get'
+  })
+}
+
+/**
+ * v1: 获取充电站-桩-枪树形列表
+ * 后端为 /v1/charging-stations/tree；前端 axios baseURL 为 /api
+ */
+export function getChargingStationTree(params?: StationQueryParams) {
+  return request<ChargingStationTreeDTO[]>({
+    url: '/v1/charging-stations/tree',
+    method: 'get',
+    params
   })
 }

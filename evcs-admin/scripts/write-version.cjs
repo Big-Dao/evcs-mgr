@@ -7,8 +7,11 @@ function safe(cmd) {
   try { return execSync(cmd, { stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim() } catch { return '' }
 }
 
-const commit = safe('git rev-parse --short HEAD') || 'unknown'
-const branch = safe('git rev-parse --abbrev-ref HEAD') || 'unknown'
+const envCommit = process.env.GIT_COMMIT || process.env.EVCS_GIT_COMMIT || ''
+const envBranch = process.env.GIT_BRANCH || process.env.EVCS_GIT_BRANCH || ''
+
+const commit = envCommit || safe('git rev-parse --short HEAD') || 'unknown'
+const branch = envBranch || safe('git rev-parse --abbrev-ref HEAD') || 'unknown'
 const date = new Date().toISOString()
 let buildNumber = process.env.BUILD_NUMBER
 if (!buildNumber || !/^[0-9]+$/.test(buildNumber)) {

@@ -68,6 +68,12 @@ const routes: RouteRecordRaw[] = [
         meta: { title: '充电站管理', icon: 'Location' }
       },
       {
+        path: 'stations/device-tree',
+        name: 'StationDeviceTree',
+        component: () => import('@/views/station/StationDeviceTree.vue'),
+        meta: { title: '站点设备树', icon: 'Tree' }
+      },
+      {
         path: 'stations/map-analytics',
         name: 'StationMapAnalytics',
         component: () => import('@/views/station/StationMapAnalytics.vue'),
@@ -186,6 +192,12 @@ const routes: RouteRecordRaw[] = [
         name: 'Monitoring',
         component: () => import('@/views/monitoring/SystemMonitor.vue'),
         meta: { title: '系统监控', icon: 'Monitor' }
+      },
+      {
+        path: 'monitoring/versions',
+        name: 'VersionInfo',
+        component: () => import('@/views/monitoring/VersionInfo.vue'),
+        meta: { title: '运行版本', icon: 'Monitor' }
       },
       {
         path: 'test',

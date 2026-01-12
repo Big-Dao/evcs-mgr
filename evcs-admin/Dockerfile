@@ -9,6 +9,11 @@ ARG NGINX_IMAGE=nginx:alpine
 FROM ${NODE_IMAGE} AS build
 ARG BUILD_NUMBER=0
 ENV BUILD_NUMBER=${BUILD_NUMBER}
+
+ARG GIT_COMMIT=unknown
+ARG GIT_BRANCH=unknown
+ENV GIT_COMMIT=${GIT_COMMIT}
+ENV GIT_BRANCH=${GIT_BRANCH}
 WORKDIR /app
 
 # Copy package files for better caching

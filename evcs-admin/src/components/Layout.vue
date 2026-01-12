@@ -7,7 +7,7 @@
       </div>
       <el-menu
         :default-active="activeMenu"
-        :default-openeds="['common', 'operation', 'device', 'station', 'finance', 'org']"
+        :default-openeds="['common', 'operation', 'device', 'station', 'finance', 'org', 'system']"
         router
         class="sidebar-menu"
         text-color="#606266"
@@ -62,6 +62,7 @@
             <span>场站</span>
           </template>
           <el-menu-item index="/stations">充电站</el-menu-item>
+          <el-menu-item index="/stations/device-tree">站点设备树</el-menu-item>
         </el-sub-menu>
 
         <el-sub-menu index="finance">
@@ -80,6 +81,15 @@
           <el-menu-item index="/tenants">租户管理</el-menu-item>
           <el-menu-item index="/users">账号管理</el-menu-item>
           <el-menu-item index="/roles">角色管理</el-menu-item>
+        </el-sub-menu>
+
+        <el-sub-menu index="system">
+          <template #title>
+            <el-icon><Monitor /></el-icon>
+            <span>系统</span>
+          </template>
+          <el-menu-item index="/monitoring">系统监控</el-menu-item>
+          <el-menu-item index="/monitoring/versions">运行版本</el-menu-item>
         </el-sub-menu>
       </el-menu>
     </el-aside>
@@ -175,7 +185,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { 
   User, Location, 
-  ArrowDown, HomeFilled, Menu, TrendCharts, Tools, Money, Download, Setting, Bell
+  ArrowDown, HomeFilled, Menu, TrendCharts, Tools, Money, Download, Setting, Bell, Monitor
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
@@ -224,7 +234,8 @@ const allMenus = [
     id: 'station',
     title: '场站',
     children: [
-      { index: '/stations', title: '充电站' }
+      { index: '/stations', title: '充电站' },
+      { index: '/stations/device-tree', title: '站点设备树' }
     ]
   },
   {
@@ -241,6 +252,14 @@ const allMenus = [
       { index: '/tenants', title: '租户管理' },
       { index: '/users', title: '账号管理' },
       { index: '/roles', title: '角色管理' }
+    ]
+  },
+  {
+    id: 'system',
+    title: '系统',
+    children: [
+      { index: '/monitoring', title: '系统监控' },
+      { index: '/monitoring/versions', title: '运行版本' }
     ]
   }
 ]
