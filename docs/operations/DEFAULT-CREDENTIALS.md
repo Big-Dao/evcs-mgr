@@ -2,11 +2,11 @@
 
 > **版本**: v1.1 | **最后更新**: 2025-12-18 | **维护者**: DevOps 团队 | **状态**: 活跃
 >
-> 🔐 **用途**: 演示 / 测试环境账号密码清单（禁止用于生产）
+> **用途**: 演示 / 测试环境账号密码清单（禁止用于生产）
 
 ## 默认管理员账号
 
-### 管理员账号 ✅
+### 管理员账号
 - **用户名**: `admin`
 - **登录账号**: `admin@tenant1`  _(租户ID自动写入 Token，无需手工输入)_
 - **密码**: `password`
@@ -40,10 +40,10 @@ curl -X POST http://localhost:8080/api/auth/login `
 
 已完成以下更新：
 
-1. ✅ 创建 `src/api/auth.ts` - 登录API接口
-2. ✅ 更新 `src/views/Login.vue` - 集成真实登录API
-3. ✅ 更新 `src/utils/request.ts` - 修正响应格式处理（success字段）
-4. ✅ 登录账号自动解析租户，无需手工输入租户ID
+1. 创建 `src/api/auth.ts` - 登录 API 接口
+2. 更新 `src/views/Login.vue` - 集成真实登录 API
+3. 更新 `src/utils/request.ts` - 修正响应格式处理（success 字段）
+4. 登录账号自动解析租户，无需手工输入租户 ID
 
 ## 登录流程
 

@@ -2,28 +2,31 @@
 
 > **版本**: v1.2 | **最后更新**: 2025-12-18 | **维护者**: 技术负责人 | **状态**: 活跃
 >
-> 📋 **本文档定义EVCS项目RESTful API的设计标准和规范**
+> **本文档定义 EVCS 项目 RESTful API 的设计标准和规范**
 
-## 🎯 概述
+## 概述
 
-本文档为EVCS充电站管理系统建立统一的API设计标准，确保所有微服务API的一致性、可维护性和易用性�?
-## 📋 API设计原则
+本文档为 EVCS 充电站管理系统建立统一的 API 设计标准，确保所有微服务 API 的一致性、可维护性和易用性。
+
+## API设计原则
 
 ### 1. RESTful设计
 - 使用HTTP动词表示操作：GET（查询）、POST（创建）、PUT（更新）、DELETE（删除）
-- 使用名词表示资源，避免动�?- 使用复数形式表示资源集合
+- 使用名词表示资源，避免动词
+- 使用复数形式表示资源集合
 - 使用嵌套路径表示资源关系
 
 ### 2. 统一响应格式
 所有API响应都遵循统一的JSON格式
 - 成功响应：包含data字段
 - 错误响应：包含error字段
-- 分页响应：包含分页信�?
+- 分页响应：包含分页信息
 ### 3. 版本控制
 - 使用URL路径版本控制：`/api/v1/`
 - 向后兼容原则
-- 废弃API的优雅过�?
-## 🏗�?URL设计规范
+- 废弃API的优雅过渡
+
+## URL设计规范
 
 ### 基础URL结构
 ```
@@ -34,21 +37,24 @@ https://evcs.example.com/api/v1/{resource}
 | 资源类型 | URL示例 | 说明 |
 |----------|---------|------|
 | 用户管理 | `/api/v1/users` | 用户资源集合 |
-| 充电�?| `/api/v1/stations` | 充电站资源集�?|
+| 充电站 | `/api/v1/stations` | 充电站资源集合 |
 | 订单 | `/api/v1/orders` | 订单资源集合 |
 | 支付 | `/api/v1/payments` | 支付记录集合 |
 | 租户 | `/api/v1/tenants` | 租户管理 |
 
 ### 嵌套资源设计
 ```
-# 获取特定充电站的充电�?GET /api/v1/stations/{stationId}/charging-poles
+# 获取特定充电站的充电桩
+GET /api/v1/stations/{stationId}/charging-poles
 
-# 获取特定用户的订�?GET /api/v1/users/{userId}/orders
+# 获取特定用户的订单
+GET /api/v1/users/{userId}/orders
 
-# 获取订单的支付记�?GET /api/v1/orders/{orderId}/payments
+# 获取订单的支付记录
+GET /api/v1/orders/{orderId}/payments
 ```
 
-## 📊 HTTP状态码规范
+## HTTP状态码规范
 
 ### 成功状态码
 | 状态码 | 含义 | 使用场景 |
@@ -61,20 +67,20 @@ https://evcs.example.com/api/v1/{resource}
 | 状态码 | 含义 | 使用场景 |
 |--------|------|----------|
 | 400 Bad Request | 请求参数错误 | 参数验证失败 |
-| 401 Unauthorized | 未认�?| 缺少token或token无效 |
-| 403 Forbidden | 无权�?| 认证成功但权限不�?|
-| 404 Not Found | 资源不存�?| 请求的资源不存在 |
+| 401 Unauthorized | 未认证 | 缺少 token 或 token 无效 |
+| 403 Forbidden | 无权限 | 认证成功但权限不足 |
+| 404 Not Found | 资源不存在 | 请求的资源不存在 |
 | 409 Conflict | 资源冲突 | 数据冲突，如重复创建 |
-| 422 Unprocessable Entity | 请求格式正确但语义错�?| 业务逻辑验证失败 |
+| 422 Unprocessable Entity | 请求格式正确但语义错误 | 业务逻辑验证失败 |
 
 ### 服务端错误状态码
 | 状态码 | 含义 | 使用场景 |
 |--------|------|----------|
-| 500 Internal Server Error | 服务器内部错�?| 未知异常 |
-| 502 Bad Gateway | 网关错误 | 下游服务不可�?|
-| 503 Service Unavailable | 服务不可�?| 服务暂时不可�?|
+| 500 Internal Server Error | 服务器内部错误 | 未知异常 |
+| 502 Bad Gateway | 网关错误 | 下游服务不可用 |
+| 503 Service Unavailable | 服务不可用 | 服务暂时不可用 |
 
-## 📦 请求响应格式
+## 请求响应格式
 
 ### 统一响应结构
 
@@ -102,7 +108,7 @@ https://evcs.example.com/api/v1/{resource}
     "details": [
       {
         "field": "orderNo",
-        "message": "订单号不能为�?
+            "message": "订单号不能为空"
       }
     ]
   },
@@ -161,7 +167,7 @@ Content-Type: application/json
 }
 ```
 
-## 🔐 认证授权规范
+## 认证授权规范
 
 ### JWT Token格式
 ```http
@@ -196,7 +202,7 @@ public List<OrderDTO> getUserOrders() {
 }
 ```
 
-## 📝 API文档规范
+## API文档规范
 
 ### OpenAPI 3.0规范
 ```yaml
@@ -250,7 +256,7 @@ public class OrderController {
 }
 ```
 
-## 🧪 API测试规范
+## API测试规范
 
 ### 单元测试示例
 ```java
@@ -310,7 +316,7 @@ class OrderControllerIntegrationTest {
 }
 ```
 
-## 🔍 错误处理规范
+## 错误处理规范
 
 ### 全局异常处理
 ```java
@@ -337,16 +343,18 @@ public class GlobalExceptionHandler {
 }
 ```
 
-### 错误码规�?| 错误�?| 错误类型 | 说明 |
-|--------|----------|------|
-| 1001 | USER_NOT_FOUND | 用户不存�?|
+### 错误码规范
+
+| 错误码 | 错误标识 | 说明 |
+|------|----------|------|
+| 1001 | USER_NOT_FOUND | 用户不存在 |
 | 1002 | PASSWORD_INCORRECT | 密码错误 |
-| 2001 | ORDER_NOT_FOUND | 订单不存�?|
-| 2002 | ORDER_STATUS_INVALID | 订单状态无�?|
+| 2001 | ORDER_NOT_FOUND | 订单不存在 |
+| 2002 | ORDER_STATUS_INVALID | 订单状态无效 |
 | 3001 | STATION_NOT_FOUND | 充电站不存在 |
 | 3002 | STATION_NOT_AVAILABLE | 充电站不可用 |
 
-## 📈 性能优化规范
+## 性能优化规范
 
 ### 分页查询
 ```java
@@ -387,7 +395,7 @@ public ResponseEntity<ApiResponse<OrderDTO>> updateOrder(
 }
 ```
 
-## 🔒 安全规范
+## 安全规范
 
 ### 输入验证
 ```java
@@ -398,12 +406,12 @@ public ResponseEntity<ApiResponse<OrderDTO>> createOrder(
 }
 
 public class CreateOrderRequest {
-    @NotBlank(message = "订单号不能为�?)
-    @Length(max = 50, message = "订单号长度不能超�?0")
+  @NotBlank(message = "订单号不能为空")
+  @Length(max = 50, message = "订单号长度不能超过 50")
     private String orderNo;
 
     @NotNull(message = "充电站ID不能为空")
-    @Positive(message = "充电站ID必须为正�?)
+    @Positive(message = "充电站ID必须为正数")
     private Long stationId;
 
     @NotNull(message = "金额不能为空")
@@ -414,13 +422,15 @@ public class CreateOrderRequest {
 
 ### SQL注入防护
 ```java
-// �?使用参数化查�?@Query("SELECT o FROM Order o WHERE o.tenantId = :tenantId AND o.status = :status")
+// 推荐：使用参数化查询
+@Query("SELECT o FROM Order o WHERE o.tenantId = :tenantId AND o.status = :status")
 List<Order> findByTenantAndStatus(@Param("tenantId") Long tenantId, @Param("status") String status);
 
-// �?避免字符串拼�?// "SELECT * FROM orders WHERE tenant_id = " + tenantId
+// 避免字符串拼接
+// "SELECT * FROM orders WHERE tenant_id = " + tenantId
 ```
 
-## 📚 相关文档
+## 相关文档
 
 - [项目编码标准](../overview/PROJECT-CODING-STANDARDS.md)
 - [统一测试指南](../testing/TEST-FIX-GUIDE.md)
@@ -429,4 +439,4 @@ List<Order> findByTenantAndStatus(@Param("tenantId") Long tenantId, @Param("stat
 
 ---
 
-**遵循本API设计规范可以确保EVCS项目API的一致性、可维护性和安全性�?*
+遵循本 API 设计规范可以确保 EVCS 项目 API 的一致性、可维护性和安全性。
