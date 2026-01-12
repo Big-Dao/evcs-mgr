@@ -165,6 +165,14 @@ spring:
             - Path=/api/actuator/payment/**
           filters:
             - RewritePath=/api/actuator/payment/(?<segment>.*), /actuator/${segment}
+
+        # 监控聚合服务路由（前端使用 /api/monitoring/**）
+        - id: evcs-monitoring
+          uri: http://${EVCS_MONITORING_IP}:8087
+          predicates:
+            - Path=/api/monitoring/**, /api/v1/monitoring/**
+          filters:
+            - StripPrefix=1  # 去掉/api，转发到monitoring服务的/monitoring/** 或 /v1/monitoring/**
     loadbalancer:
       retry:
         enabled: true

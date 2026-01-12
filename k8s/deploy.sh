@@ -162,6 +162,7 @@ if $DRY_RUN; then
     EVCS_STATION_IP=""
     EVCS_ORDER_IP=""
     EVCS_PAYMENT_IP=""
+    EVCS_MONITORING_IP=""
 else
     get_cluster_ip() {
         local svc="$1"
@@ -200,6 +201,7 @@ EVCS_TENANT_IP="$(get_cluster_ip evcs-tenant)"; require_ip evcs-tenant "${EVCS_T
 EVCS_STATION_IP="$(get_cluster_ip evcs-station)"; require_ip evcs-station "${EVCS_STATION_IP}"
 EVCS_ORDER_IP="$(get_cluster_ip evcs-order)"; require_ip evcs-order "${EVCS_ORDER_IP}"
 EVCS_PAYMENT_IP="$(get_cluster_ip evcs-payment)"; require_ip evcs-payment "${EVCS_PAYMENT_IP}"
+EVCS_MONITORING_IP="$(get_cluster_ip evcs-monitoring)"; require_ip evcs-monitoring "${EVCS_MONITORING_IP}"
 
 echo "  evcs-postgres:  ${EVCS_POSTGRES_IP}"
 echo "  evcs-redis:     ${EVCS_REDIS_IP}"
@@ -211,6 +213,7 @@ echo "  evcs-tenant:    ${EVCS_TENANT_IP}"
 echo "  evcs-station:   ${EVCS_STATION_IP}"
 echo "  evcs-order:     ${EVCS_ORDER_IP}"
 echo "  evcs-payment:   ${EVCS_PAYMENT_IP}"
+echo "  evcs-monitoring:${EVCS_MONITORING_IP}"
 
 kubectl patch configmap -n "${NAMESPACE}" evcs-common-config --type merge --patch "$(cat <<EOF
 {"data":{
@@ -230,7 +233,8 @@ kubectl patch configmap -n "${NAMESPACE}" evcs-common-config --type merge --patc
     "EVCS_TENANT_IP":"${EVCS_TENANT_IP}",
     "EVCS_STATION_IP":"${EVCS_STATION_IP}",
     "EVCS_ORDER_IP":"${EVCS_ORDER_IP}",
-    "EVCS_PAYMENT_IP":"${EVCS_PAYMENT_IP}"
+    "EVCS_PAYMENT_IP":"${EVCS_PAYMENT_IP}",
+    "EVCS_MONITORING_IP":"${EVCS_MONITORING_IP}"
 }}
 EOF
 )"
