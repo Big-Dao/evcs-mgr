@@ -1,0 +1,30 @@
+name: Docs Link Check
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - "**/*.md"
+    paths-ignore:
+      - "docs/archive/**"
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - "**/*.md"
+    paths-ignore:
+      - "docs/archive/**"
+
+jobs:
+  docs-link-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Check non-archive markdown links
+        run: python3 scripts/check_non_archive_md_links.py
