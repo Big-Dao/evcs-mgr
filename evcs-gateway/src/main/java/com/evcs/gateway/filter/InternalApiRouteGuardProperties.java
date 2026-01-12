@@ -10,7 +10,10 @@ public class InternalApiRouteGuardProperties {
 
     private Duration startupTimeout = Duration.ofSeconds(5);
 
-    private List<String> forbiddenPathPrefixes = new ArrayList<>(List.of("/internal/api/"));
+        private List<String> forbiddenPathPrefixes = new ArrayList<>(List.of(
+            "/internal/api/",
+            "/internal/api"
+        ));
 
     public boolean isEnabled() {
         return enabled;

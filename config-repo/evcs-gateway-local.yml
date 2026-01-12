@@ -141,3 +141,4 @@ evcs:
         enabled: true
         forbidden-path-prefixes:
           - /internal/api/
+          - /internal/api
