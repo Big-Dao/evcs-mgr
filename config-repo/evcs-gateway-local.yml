@@ -129,3 +129,10 @@ management:
   endpoint:
     prometheus:
       enabled: true
+
+evcs:
+  gateway:
+    security:
+      internal-api-block:
+        enabled: true
+        path-prefix: /internal/api/
