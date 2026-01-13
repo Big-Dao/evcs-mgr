@@ -191,6 +191,7 @@ EVCS 的多租户不仅是“租户隔离”，还需要支持**租户的分级�
 
 - 数据库设计与字段基线见：[docs/development/DATABASE-DESIGN-STANDARDS.md](../development/DATABASE-DESIGN-STANDARDS.md)
 - 租户字段 `tenant_id` 必须参与隔离与索引策略；软删除字段遵循项目约定。
+- 海量数据分区策略见：[docs/architecture/DATA-PARTITIONING-RFC.md](DATA-PARTITIONING-RFC.md)（51张表分区分析）
 
 ## 9. 验收清单（最小可执行）
 

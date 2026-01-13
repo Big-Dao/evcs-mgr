@@ -31,6 +31,7 @@ EVCS 采用 PostgreSQL + MyBatis Plus（多租户）为核心的数据存储方�
 - 订单/计费表：[sql/evcs_order_tables.sql](../../sql/evcs_order_tables.sql)
 - 索引优化示例：[sql/performance-indexes.sql](../../sql/performance-indexes.sql)
 - **C端用户表设计**：[docs/architecture/EVCS-USER-MODULE-RFC.md](../architecture/EVCS-USER-MODULE-RFC.md)（含 charging_user、user_oauth、user_coupon 等 30+ 张表）
+- **海量数据分区方案**：[docs/architecture/DATA-PARTITIONING-RFC.md](../architecture/DATA-PARTITIONING-RFC.md)（51张表分区分析、自动分区管理、归档策略）
 
 ## 命名规范
 

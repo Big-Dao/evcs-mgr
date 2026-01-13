@@ -94,6 +94,27 @@
 | Grafana Dashboard | P99 < 200ms |
 | Prometheus 业务指标 + 告警规则 | 核心指标 100% 覆盖 |
 
+### 🔵 P2.5 - 海量数据分区（Week 6-8）
+
+**目标**: 为高增长表实施 PostgreSQL 原生分区，保障系统长期稳定运行。
+
+**详细规划**: [海量数据分区方案 RFC](../architecture/DATA-PARTITIONING-RFC.md)
+
+| 阶段 | 周期 | 核心任务 |
+|------|------|----------|
+| Phase 1 | W6-7 | P0 表分区（7张：曲线点、行为事件、订单、支付、会话、流水） |
+| Phase 2 | W7-8 | P1 表分区（9张：日志、消息、优惠券、签到等） |
+| Phase 3 | W8 | 归档机制（对象存储集成、归档查询接口） |
+
+**分区优先级汇总**:
+
+| 优先级 | 表数量 | 关键表 |
+|--------|--------|--------|
+| P0 必须 | 7 | `charger_connector_curve_point`, `charging_order`, `payment_order` |
+| P1 建议 | 9 | `user_login_log`, `user_message`, `user_coupon` |
+| P2 可选 | 6 | `complaint`, `reconciliation_task` |
+| P3 无需 | 29 | 配置表、主数据表 |
+
 ---
 
 ### 🟢 P3 - C 端用户管理模块（Week 7-28）
@@ -136,7 +157,8 @@
 | **W3** | 代码质量 | 测试模板完善、覆盖率提升 |
 | **W4** | 性能 | 压测、基线建立、Dashboard |
 | **W5-6** | 监控 + 文档 | Prometheus/Grafana、API 文档、运维手册 |
-| **W7-28** | evcs-user | C 端用户模块开发（详见 [RFC](../architecture/EVCS-USER-MODULE-RFC.md)） |
+| **W6-8** | 数据分区 | P0/P1 表分区、归档机制（详见 [分区 RFC](../architecture/DATA-PARTITIONING-RFC.md)） |
+| **W7-28** | evcs-user | C 端用户模块开发（详见 [用户 RFC](../architecture/EVCS-USER-MODULE-RFC.md)） |
 
 ---
 
@@ -176,6 +198,7 @@
 
 | 日期 | 版本 | 变更 |
 |------|------|------|
+| 2026-01-13 | v3.2 | 新增 P2.5 海量数据分区规划（详见 DATA-PARTITIONING-RFC.md） |
 | 2026-01-13 | v3.1 | 新增 P3 evcs-user 模块规划（22周，详见 RFC） |
 | 2026-01-13 | v3.0 | 合并 TODO-ITEMS-TRACKING.md；精简重复内容 |
 | 2026-01-13 | v2.1 | 刷新 K8s 状态；更新完成项 |

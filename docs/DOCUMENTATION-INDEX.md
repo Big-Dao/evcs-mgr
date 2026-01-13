@@ -44,6 +44,7 @@
 - 多租户异步上下文 RFC：[docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md](architecture/TENANT-CONTEXT-ASYNC-RFC.md)
 - 服务标识与端口规范（SSOT）：[docs/architecture/SERVICE-IDENTIFIERS-AND-PORTS.md](architecture/SERVICE-IDENTIFIERS-AND-PORTS.md)
 - C 端用户模块 RFC：[docs/architecture/EVCS-USER-MODULE-RFC.md](architecture/EVCS-USER-MODULE-RFC.md)
+- 海量数据分区方案 RFC：[docs/architecture/DATA-PARTITIONING-RFC.md](architecture/DATA-PARTITIONING-RFC.md)
 
 ## 5. 功能（features）
 
