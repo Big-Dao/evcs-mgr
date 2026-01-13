@@ -1,6 +1,6 @@
 # evcs-user 模块规划 RFC
 
-> **版本**: v1.8  
+> **版本**: v1.9  
 > **最后更新**: 2026-01-13  
 > **维护者**: 架构团队  
 > **状态**: 草稿
@@ -176,6 +176,36 @@ CREATE TABLE charging_user (
     notification_push INTEGER DEFAULT 1,         -- 推送通知开关 0-关 1-开
     notification_email INTEGER DEFAULT 0,        -- 邮件通知开关 0-关 1-开
     
+    -- 车辆快捷引用
+    default_vehicle_id BIGINT,                   -- 默认车辆ID（关联 user_vehicle）
+    is_vehicle_owner_verified INTEGER DEFAULT 0, -- 是否车主认证 0-否 1-是
+    
+    -- 支付便捷
+    default_payment_method VARCHAR(20),          -- 默认支付方式: WECHAT/ALIPAY/BALANCE
+    auto_pay_enabled INTEGER DEFAULT 0,          -- 是否开通免密支付 0-否 1-是
+    auto_pay_limit DECIMAL(10,2),                -- 免密支付单笔限额
+    
+    -- 发票快捷
+    default_invoice_id BIGINT,                   -- 默认发票抬头ID（关联 user_invoice_info）
+    user_type INTEGER DEFAULT 1,                 -- 用户类型: 1-个人 2-企业
+    
+    -- 推荐关系
+    referrer_id BIGINT,                          -- 推荐人用户ID
+    referral_code VARCHAR(20),                   -- 用户专属推荐码
+    first_order_time TIMESTAMP,                  -- 首单完成时间
+    
+    -- 客服/服务
+    is_vip INTEGER DEFAULT 0,                    -- VIP 标记 0-否 1-是
+    service_note TEXT,                           -- 客服备注（仅B端可见）
+    is_blacklisted INTEGER DEFAULT 0,            -- 是否黑名单 0-否 1-是
+    blacklist_reason VARCHAR(200),               -- 黑名单原因
+    
+    -- 生命周期
+    first_visit_time TIMESTAMP,                  -- 首次访问时间
+    register_complete_time TIMESTAMP,            -- 注册完成时间（激活时间）
+    destroy_request_time TIMESTAMP,              -- 账户注销申请时间
+    destroy_scheduled_time TIMESTAMP,            -- 账户注销执行时间（冷静期后）
+    
     -- 会员信息
     member_level INTEGER DEFAULT 1,             -- 会员等级 1-普通 2-银卡 3-金卡 4-钻石
     total_points BIGINT DEFAULT 0,              -- 累计积分
@@ -214,11 +244,15 @@ CREATE TABLE charging_user (
 
 -- 索引
 CREATE UNIQUE INDEX uk_charging_user_phone ON charging_user(phone) WHERE deleted = 0;
+CREATE UNIQUE INDEX uk_charging_user_referral_code ON charging_user(referral_code) WHERE referral_code IS NOT NULL AND deleted = 0;
 CREATE INDEX idx_charging_user_tenant ON charging_user(tenant_id, status, deleted);
 CREATE INDEX idx_charging_user_member ON charging_user(tenant_id, member_level);
 CREATE INDEX idx_charging_user_phone_tenant ON charging_user(tenant_id, phone) WHERE deleted = 0;
 CREATE INDEX idx_charging_user_email ON charging_user(email) WHERE email IS NOT NULL AND deleted = 0;
 CREATE INDEX idx_charging_user_city ON charging_user(tenant_id, province, city) WHERE deleted = 0;
+CREATE INDEX idx_charging_user_referrer ON charging_user(referrer_id) WHERE referrer_id IS NOT NULL;
+CREATE INDEX idx_charging_user_vip ON charging_user(tenant_id, is_vip) WHERE is_vip = 1 AND deleted = 0;
+CREATE INDEX idx_charging_user_blacklist ON charging_user(tenant_id, is_blacklisted) WHERE is_blacklisted = 1 AND deleted = 0;
 
 COMMENT ON TABLE charging_user IS '充电用户表（C端用户）';
 ```
@@ -2121,6 +2155,7 @@ public boolean isRiskyLogin(Long userId, LoginRequest request) {
 
 | 日期 | 版本 | 变更说明 |
 |------|------|----------|
+| 2026-01-13 | v1.9 | 新增快捷引用与业务字段：车辆快捷(默认车辆/车主认证)、支付便捷(默认支付方式/免密支付)、推荐关系、VIP/黑名单、生命周期追踪(首访/注册完成/注销申请) |
 | 2026-01-13 | v1.8 | 全面扩展用户信息：证件类型(+军官证/驾驶证/外国人永居证)、联系方式(+企业微信/钉钉/Telegram/WhatsApp)、职业信息、紧急联系人、偏好设置(语言/时区/货币/通知开关) |
 | 2026-01-13 | v1.7 | 扩展用户信息字段：多证件类型（身份证/护照/港澳通行证/台胞证）、联系方式（email/微信/QQ/备用手机）、地址信息（省市区/详细地址/邮编） |
 | 2026-01-13 | v1.6 | 新增账户安全与风险控制：用户识别机制、手机号销号防范、换绑手机号流程、多设备登录策略、风险登录检测 |
