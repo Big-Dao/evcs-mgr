@@ -1,6 +1,6 @@
 # evcs-user 模块规划 RFC
 
-> **版本**: v1.5  
+> **版本**: v1.6  
 > **最后更新**: 2026-01-13  
 > **维护者**: 架构团队  
 > **状态**: 草稿
@@ -158,6 +158,9 @@ CREATE TABLE charging_user (
     -- 登录信息
     last_login_time TIMESTAMP,
     last_login_ip VARCHAR(50),
+    last_active_time TIMESTAMP,                 -- 最后活跃时间（用于风险检测）
+    phone_bindtime TIMESTAMP,                   -- 手机号绑定时间
+    risk_level INTEGER DEFAULT 0,               -- 风险等级 0正常 1低 2中 3高
     
     -- 标准字段
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -423,6 +426,10 @@ CREATE TABLE user_login_log (
     ip VARCHAR(50),
     location VARCHAR(100),
     
+    -- 风险检测
+    risk_flag INTEGER DEFAULT 0,         -- 0正常 1可疑 2高危
+    risk_reason VARCHAR(200),            -- 风险原因
+    
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -451,6 +458,8 @@ CREATE TABLE user_device (
     is_trusted INTEGER DEFAULT 0,        -- 是否信任设备
     last_login_time TIMESTAMP,
     last_login_ip VARCHAR(50),
+    last_active_time TIMESTAMP,          -- 最后活跃时间
+    status INTEGER DEFAULT 1,            -- 1正常 0已踢出 2已过期
     
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -667,6 +676,29 @@ CREATE UNIQUE INDEX uk_user_sign_in ON user_sign_in(user_id, sign_date);
 CREATE INDEX idx_sign_in_user ON user_sign_in(user_id, sign_date);
 
 COMMENT ON TABLE user_sign_in IS '用户签到记录表';
+```
+
+### 18. 手机号换绑记录表 (phone_bindchange_log)
+
+```sql
+CREATE TABLE phone_bindchange_log (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    
+    old_phone VARCHAR(20),                -- 原手机号（脱敏存储）
+    new_phone VARCHAR(20) NOT NULL,       -- 新手机号（脱敏存储）
+    verify_type VARCHAR(30) NOT NULL,     -- 验证方式: OLD_PHONE/WECHAT/ALIPAY/FACE
+    
+    ip VARCHAR(50),
+    device_id VARCHAR(64),
+    location VARCHAR(100),
+    
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_phone_change_user ON phone_bindchange_log(user_id, create_time);
+
+COMMENT ON TABLE phone_bindchange_log IS '手机号换绑记录表';
 ```
 
 ### 18. 用户群组表 (user_group)
@@ -1357,12 +1389,15 @@ END $$;
 | GET | `/api/v1/users/profile` | 获取用户信息 |
 | PUT | `/api/v1/users/profile` | 更新用户信息 |
 | POST | `/api/v1/users/profile/complete` | 完善用户信息（扫码注册后） |
+| POST | `/api/v1/users/phone/change` | 换绑手机号 |
+| POST | `/api/v1/users/phone/change/verify` | 换绑手机号验证（原手机/OAuth/人脸） |
 | POST | `/api/v1/users/bind-oauth` | 绑定第三方账号 |
 | DELETE | `/api/v1/users/unbind-oauth/{type}` | 解绑第三方账号 |
 | POST | `/api/v1/users/verify` | 实名认证 |
 | POST | `/api/v1/users/destroy` | 账号注销申请 |
 | GET | `/api/v1/users/devices` | 登录设备列表 |
 | DELETE | `/api/v1/users/devices/{deviceId}` | 移除登录设备 |
+| PUT | `/api/v1/users/devices/{deviceId}/trust` | 标记为信任设备 |
 
 ### 2. 钱包/余额接口
 
@@ -1922,6 +1957,96 @@ public interface UserFeignClient {
 - 日志中禁止打印敏感信息
 - 接口返回时进行脱敏处理
 
+### 账户安全与风险控制
+
+#### 用户识别机制
+
+采用 **OAuth 优先 + 手机号备用** 的多因子识别策略：
+
+```
+扫码进入
+    │
+    ▼
+1️⃣ 先查 OAuth（微信OpenID/支付宝user_id）
+    │
+    ├── 命中 → 直接登录（即使手机号已换）
+    │
+    └── 未命中
+            │
+            ▼
+2️⃣ 请求手机号授权
+    │
+    ├── 手机号存在 → 登录 + 自动绑定当前OAuth
+    │
+    └── 手机号不存在 → 创建新用户
+```
+
+#### 手机号销号风险防范
+
+当运营商回收手机号并分配给新用户时，可能导致账户被盗用。防范措施：
+
+| 措施 | 说明 |
+|------|------|
+| **OAuth 绑定校验** | 手机号匹配但 OAuth 不匹配时，触发二次验证 |
+| **活跃度检测** | 账户超过 180 天未活跃 + 全新设备/IP → 触发额外验证 |
+| **敏感操作二次验证** | 余额提现、换绑手机号、账户注销需 OAuth 确认或人脸验证 |
+| **登录风险标记** | 记录可疑登录并通知用户 |
+
+#### 风险登录判定规则
+
+```java
+public boolean isRiskyLogin(Long userId, LoginRequest request) {
+    User user = userService.getById(userId);
+    
+    // 规则1：长期未活跃 + 全新设备
+    if (daysSinceLastActive(user) > 180 && isNewDevice(request)) {
+        return true;
+    }
+    
+    // 规则2：手机号绑定很久 + 从未绑定OAuth + 异地登录
+    if (daysSincePhoneBind(user) > 365 
+        && !hasOAuthBinding(userId) 
+        && isNewLocation(request)) {
+        return true;
+    }
+    
+    // 规则3：OAuth 与历史记录不匹配
+    if (hasOAuthBinding(userId) && !matchesExistingOAuth(request)) {
+        return true;
+    }
+    
+    return false;
+}
+```
+
+#### 换绑手机号流程
+
+用户更换手机号时需通过身份验证：
+
+```
+用户发起换绑
+    │
+    ▼
+验证身份（任选其一）
+├── 原手机号验证码（如还能收到）
+├── 已绑定的微信/支付宝确认
+├── 人脸识别（如已实名）
+    │
+    ▼
+输入新手机号 + 验证码
+    │
+    ▼
+更新手机号，账户数据不变 ✅
+记录换绑日志用于审计
+```
+
+#### 多设备登录策略
+
+- 支持同一账户多设备同时登录（默认最多 5 台）
+- 设备 Token 独立管理，互不影响
+- 用户可在"我的设备"中查看并踢出可疑设备
+- 设备超过 90 天未活跃自动标记为失效
+
 ### 性能优化
 
 - 用户信息缓存（Redis）
@@ -1953,6 +2078,7 @@ public interface UserFeignClient {
 
 | 日期 | 版本 | 变更说明 |
 |------|------|----------|
+| 2026-01-13 | v1.6 | 新增账户安全与风险控制：用户识别机制、手机号销号防范、换绑手机号流程、多设备登录策略、风险登录检测 |
 | 2026-01-13 | v1.5 | 完善用户创建方式：支持扫码自动注册、管理员创建、批量导入；新增扫码注册流程图 |
 | 2026-01-13 | v1.4 | 新增用户运营最佳实践：营销活动中心、权益包/月卡、任务中心、站点评价 |
 | 2026-01-13 | v1.3 | 新增用户画像与标签功能：画像数据表、标签体系、行为事件采集、RFM模型、用户分群、画像统计 |
