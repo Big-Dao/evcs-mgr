@@ -117,8 +117,9 @@ evcs:
       health:
         database-validation-query: SELECT 1
         api:
-          endpoints:
-            - http://localhost:8084/actuator/health
+          # 外部API健康检查端点（可选）：用于探测第三方/外部依赖。
+          # 注意：不要配置为本服务的 /actuator/health，否则会造成“自我探测”并导致健康状态误判。
+          endpoints: []
           timeout-ms: 3000
           expected-response-keyword: "UP"
 

@@ -245,21 +245,25 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
     public Health health() {
         try {
             MetricsResponse.HealthStatus status = getHealthStatus();
-            if (status.getOverall() == MetricsResponse.Status.HEALTHY) {
-                return Health.up()
-                    .withDetail("components", Map.of(
-                        "paymentSystem", status.getPaymentSystem().getDescription(),
-                        "callbackSystem", status.getCallbackSystem().getDescription(),
-                        "database", status.getDatabase().getDescription(),
-                        "externalApis", status.getExternalApis().getDescription()
-                    ))
-                    .build();
-            } else {
+            Map<String, Object> components = Map.of(
+                "paymentSystem", status.getPaymentSystem().getDescription(),
+                "callbackSystem", status.getCallbackSystem().getDescription(),
+                "database", status.getDatabase().getDescription(),
+                "externalApis", status.getExternalApis().getDescription()
+            );
+
+            if (status.getOverall() == MetricsResponse.Status.UNHEALTHY) {
                 return Health.down()
-                    .withDetail("status", status.getOverall().getDescription())
+                    .withDetail("overall", status.getOverall().getDescription())
+                    .withDetail("components", components)
                     .withDetail("error", status.getErrorMessage())
                     .build();
             }
+
+            return Health.up()
+                .withDetail("overall", status.getOverall().getDescription())
+                .withDetail("components", components)
+                .build();
         } catch (Exception e) {
             return Health.down().withDetail("error", e.getMessage()).build();
         }
@@ -312,11 +316,11 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
     private MetricsResponse.Status checkPaymentSystemHealth() {
         // 检查支付成功率
         double successRate = paymentMetrics.getPaymentSuccessRate();
-        if (successRate < 90.0) {
-            return MetricsResponse.Status.WARNING;
-        }
         if (successRate < 80.0) {
             return MetricsResponse.Status.UNHEALTHY;
+        }
+        if (successRate < 90.0) {
+            return MetricsResponse.Status.WARNING;
         }
         return MetricsResponse.Status.HEALTHY;
     }
@@ -324,11 +328,11 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
     private MetricsResponse.Status checkCallbackSystemHealth() {
         // 检查回调成功率
         double callbackRate = paymentMetrics.getCallbackSuccessRate();
-        if (callbackRate < 95.0) {
-            return MetricsResponse.Status.WARNING;
-        }
         if (callbackRate < 85.0) {
             return MetricsResponse.Status.UNHEALTHY;
+        }
+        if (callbackRate < 95.0) {
+            return MetricsResponse.Status.WARNING;
         }
         return MetricsResponse.Status.HEALTHY;
     }
@@ -353,8 +357,8 @@ public class PaymentMonitoringServiceImpl implements PaymentMonitoringService, H
     private MetricsResponse.Status checkExternalApiHealth() {
         List<String> endpoints = getExternalApiEndpoints();
         if (CollectionUtils.isEmpty(endpoints)) {
-            log.debug("未配置外部API健康检查端点，返回WARNING以提醒配置");
-            return MetricsResponse.Status.WARNING;
+            log.debug("未配置外部API健康检查端点，跳过检查并返回HEALTHY");
+            return MetricsResponse.Status.HEALTHY;
         }
 
         int healthyCount = 0;
