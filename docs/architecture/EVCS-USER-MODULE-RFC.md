@@ -1,6 +1,6 @@
 # evcs-user 模块规划 RFC
 
-> **版本**: v1.7  
+> **版本**: v1.8  
 > **最后更新**: 2026-01-13  
 > **维护者**: 架构团队  
 > **状态**: 草稿
@@ -132,7 +132,7 @@ CREATE TABLE charging_user (
     
     -- 实名/证件信息（可选，脱敏存储）
     real_name VARCHAR(50),                       -- 真实姓名
-    id_card_type INTEGER DEFAULT 1,              -- 证件类型: 1-身份证 2-护照 3-港澳通行证 4-台胞证 5-其他
+    id_card_type INTEGER DEFAULT 1,              -- 证件类型: 1-身份证 2-护照 3-港澳通行证 4-台胞证 5-其他 6-军官证 7-驾驶证 8-外国人永居证
     id_card VARCHAR(30),                         -- 证件号码（脱敏存储）
     id_card_front_url VARCHAR(500),              -- 证件正面照URL
     id_card_back_url VARCHAR(500),               -- 证件背面照URL
@@ -144,6 +144,10 @@ CREATE TABLE charging_user (
     backup_phone VARCHAR(20),                    -- 备用手机号
     wechat_id VARCHAR(50),                       -- 微信号
     qq_number VARCHAR(20),                       -- QQ号
+    wework_id VARCHAR(50),                       -- 企业微信ID
+    dingtalk_id VARCHAR(50),                     -- 钉钉ID
+    telegram_id VARCHAR(50),                     -- Telegram（海外用户）
+    whatsapp VARCHAR(20),                        -- WhatsApp（海外用户）
     
     -- 地址信息
     country VARCHAR(50),                         -- 国家
@@ -152,6 +156,25 @@ CREATE TABLE charging_user (
     district VARCHAR(50),                        -- 区县
     address VARCHAR(200),                        -- 详细地址
     postal_code VARCHAR(20),                     -- 邮编
+    
+    -- 职业信息
+    occupation VARCHAR(50),                      -- 职业
+    company VARCHAR(100),                        -- 公司名称
+    job_title VARCHAR(50),                       -- 职位
+    industry VARCHAR(50),                        -- 行业
+    
+    -- 紧急联系人
+    emergency_contact_name VARCHAR(50),          -- 紧急联系人姓名
+    emergency_contact_phone VARCHAR(20),         -- 紧急联系人电话
+    emergency_contact_relation VARCHAR(20),      -- 关系: PARENT/SPOUSE/SIBLING/FRIEND/OTHER
+    
+    -- 偏好设置
+    language VARCHAR(10) DEFAULT 'zh-CN',        -- 语言偏好
+    timezone VARCHAR(50) DEFAULT 'Asia/Shanghai',-- 时区
+    currency VARCHAR(10) DEFAULT 'CNY',          -- 货币偏好
+    notification_sms INTEGER DEFAULT 1,          -- 短信通知开关 0-关 1-开
+    notification_push INTEGER DEFAULT 1,         -- 推送通知开关 0-关 1-开
+    notification_email INTEGER DEFAULT 0,        -- 邮件通知开关 0-关 1-开
     
     -- 会员信息
     member_level INTEGER DEFAULT 1,             -- 会员等级 1-普通 2-银卡 3-金卡 4-钻石
@@ -2098,6 +2121,7 @@ public boolean isRiskyLogin(Long userId, LoginRequest request) {
 
 | 日期 | 版本 | 变更说明 |
 |------|------|----------|
+| 2026-01-13 | v1.8 | 全面扩展用户信息：证件类型(+军官证/驾驶证/外国人永居证)、联系方式(+企业微信/钉钉/Telegram/WhatsApp)、职业信息、紧急联系人、偏好设置(语言/时区/货币/通知开关) |
 | 2026-01-13 | v1.7 | 扩展用户信息字段：多证件类型（身份证/护照/港澳通行证/台胞证）、联系方式（email/微信/QQ/备用手机）、地址信息（省市区/详细地址/邮编） |
 | 2026-01-13 | v1.6 | 新增账户安全与风险控制：用户识别机制、手机号销号防范、换绑手机号流程、多设备登录策略、风险登录检测 |
 | 2026-01-13 | v1.5 | 完善用户创建方式：支持扫码自动注册、管理员创建、批量导入；新增扫码注册流程图 |
