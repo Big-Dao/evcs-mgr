@@ -30,6 +30,7 @@ EVCS 采用 PostgreSQL + MyBatis Plus（多租户）为核心的数据存储方�
 - 站点/充电桩表：[sql/charging_station_tables.sql](../../sql/charging_station_tables.sql)
 - 订单/计费表：[sql/evcs_order_tables.sql](../../sql/evcs_order_tables.sql)
 - 索引优化示例：[sql/performance-indexes.sql](../../sql/performance-indexes.sql)
+- **C端用户表设计**：[docs/architecture/EVCS-USER-MODULE-RFC.md](../architecture/EVCS-USER-MODULE-RFC.md)（含 charging_user、user_oauth、user_coupon 等 30+ 张表）
 
 ## 命名规范
 
