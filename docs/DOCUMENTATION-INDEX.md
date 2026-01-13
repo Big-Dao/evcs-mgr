@@ -46,6 +46,8 @@
 - C 端用户模块 RFC：[docs/architecture/EVCS-USER-MODULE-RFC.md](architecture/EVCS-USER-MODULE-RFC.md)
 - 海量数据处理方案 RFC：[docs/architecture/DATA-PARTITIONING-RFC.md](architecture/DATA-PARTITIONING-RFC.md)
 - 系统架构风险审计报告：[docs/architecture/RISK-AUDIT-REPORT.md](architecture/RISK-AUDIT-REPORT.md)
+- 消息队列设计规范：[docs/architecture/MESSAGE-QUEUE-DESIGN.md](architecture/MESSAGE-QUEUE-DESIGN.md)
+- 分布式锁使用规范：[docs/architecture/DISTRIBUTED-LOCK-DESIGN.md](architecture/DISTRIBUTED-LOCK-DESIGN.md)
 
 ## 5. 功能（features）
 
@@ -74,6 +76,9 @@
 - 默认凭据（演示/测试）：[docs/operations/DEFAULT-CREDENTIALS.md](operations/DEFAULT-CREDENTIALS.md)
 - 服务参考：[docs/operations/SERVICES-REFERENCE.md](operations/SERVICES-REFERENCE.md)
 - 监控指南：[docs/operations/MONITORING-GUIDE.md](operations/MONITORING-GUIDE.md)
+- 监控告警配置指南：[docs/operations/MONITORING-ALERTING-GUIDE.md](operations/MONITORING-ALERTING-GUIDE.md)
+- 故障排查手册：[docs/operations/TROUBLESHOOTING-GUIDE.md](operations/TROUBLESHOOTING-GUIDE.md)
+- 备份恢复操作手册：[docs/operations/BACKUP-RECOVERY-GUIDE.md](operations/BACKUP-RECOVERY-GUIDE.md)
 
 ## 10. 仓库结构（以代码为准）
 
