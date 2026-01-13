@@ -49,9 +49,23 @@
 
 ## 🎯 待办事项
 
-> 原 `TODO-ITEMS-TRACKING.md` 已合并至此。剩余 3 项功能规划如下。
+> 原 `TODO-ITEMS-TRACKING.md` 已合并至此。剩余功能规划如下。
+> 
+> **风险审计报告**: [RISK-AUDIT-REPORT.md](../architecture/RISK-AUDIT-REPORT.md) — 识别出 3 项 P0 严重风险需立即处理
 
-### 🔴 P0 - 关键功能（Week 1-2）
+### 🔴 P0 - 关键功能 + 风险修复（Week 1-2）
+
+#### 0. 架构风险修复（新增）
+
+| 任务 | 风险等级 | 状态 | 预计工时 |
+|------|----------|------|---------|
+| 引入 Redisson 分布式锁（充电桩启停/支付） | 🔴 P0 | ⏳ | 2天 |
+| 引入 Resilience4j 熔断/限流 | 🔴 P0 | ⏳ | 2天 |
+| 补充缺失的 `@PreAuthorize` 权限注解 | 🔴 P0 | ⏳ | 1天 |
+| 修复协议栈 fallback 返回 true 问题 | 🟠 P1 | ⏳ | 1天 |
+| 统一异常处理规范 | 🟠 P1 | ⏳ | 1天 |
+
+**详细分析**: [系统架构风险审计报告](../architecture/RISK-AUDIT-REPORT.md)
 
 #### 1. 多层级租户治理（Part 2）
 

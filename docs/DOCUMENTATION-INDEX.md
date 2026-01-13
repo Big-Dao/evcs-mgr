@@ -45,6 +45,7 @@
 - 服务标识与端口规范（SSOT）：[docs/architecture/SERVICE-IDENTIFIERS-AND-PORTS.md](architecture/SERVICE-IDENTIFIERS-AND-PORTS.md)
 - C 端用户模块 RFC：[docs/architecture/EVCS-USER-MODULE-RFC.md](architecture/EVCS-USER-MODULE-RFC.md)
 - 海量数据处理方案 RFC：[docs/architecture/DATA-PARTITIONING-RFC.md](architecture/DATA-PARTITIONING-RFC.md)
+- 系统架构风险审计报告：[docs/architecture/RISK-AUDIT-REPORT.md](architecture/RISK-AUDIT-REPORT.md)
 
 ## 5. 功能（features）
 
