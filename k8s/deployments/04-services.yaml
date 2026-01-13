@@ -230,7 +230,7 @@ spec:
         - name: EVCS_GIT_BRANCH
           value: "${EVCS_GIT_BRANCH}"
         - name: JAVA_OPTS
-          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+          value: "-Xms256m -Xmx512m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
           valueFrom:
             configMapKeyRef:
@@ -238,11 +238,11 @@ spec:
               key: EUREKA_SERVER_URL
         resources:
           limits:
-            cpu: "0.8"
-            memory: "512Mi"
+            cpu: "1"
+            memory: "768Mi"
           requests:
-            cpu: "0.3"
-            memory: "256Mi"
+            cpu: "0.5"
+            memory: "384Mi"
 ---
 apiVersion: v1
 kind: Service
@@ -384,7 +384,7 @@ spec:
         - name: EVCS_GIT_BRANCH
           value: "${EVCS_GIT_BRANCH}"
         - name: JAVA_OPTS
-          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+          value: "-Xms384m -Xmx768m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0 -XX:+UseG1GC"
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
           valueFrom:
             configMapKeyRef:
@@ -392,11 +392,11 @@ spec:
               key: EUREKA_SERVER_URL
         resources:
           limits:
-            cpu: "0.8"
-            memory: "512Mi"
+            cpu: "1.5"
+            memory: "1Gi"
           requests:
-            cpu: "0.3"
-            memory: "256Mi"
+            cpu: "0.5"
+            memory: "512Mi"
 ---
 apiVersion: v1
 kind: Service

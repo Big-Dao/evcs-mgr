@@ -31,6 +31,7 @@ EVCS 采用 PostgreSQL + MyBatis Plus（多租户）为核心的数据存储方�
 - 订单/计费表：[sql/evcs_order_tables.sql](../../sql/evcs_order_tables.sql)
 - 索引优化示例：[sql/performance-indexes.sql](../../sql/performance-indexes.sql)
 - **C端用户表设计**：[docs/architecture/EVCS-USER-MODULE-RFC.md](../architecture/EVCS-USER-MODULE-RFC.md)（含 charging_user、user_oauth、user_coupon 等 30+ 张表）
+- **海量数据分区方案**：[docs/architecture/DATA-PARTITIONING-RFC.md](../architecture/DATA-PARTITIONING-RFC.md)（51张表分区分析、自动分区管理、归档策略）
 
 ## 命名规范
 
@@ -156,6 +157,40 @@ WHERE deleted = 0;
 ## ⏱️ update_time 自动维护
 
 若选择数据库触发器自动维护 `update_time`，请采用与现有脚本一致的方式（参考 [sql/charging_station_tables.sql](../../sql/charging_station_tables.sql)）。
+
+## 海量数据处理规范
+
+### 表分区（强制）
+
+高增长表必须实施 PostgreSQL 原生分区，详见 [海量数据处理方案 RFC](../architecture/DATA-PARTITIONING-RFC.md)。
+
+| 优先级 | 表类型 | 分区策略 |
+|--------|--------|----------|
+| P0 必须 | 订单、支付、曲线点、行为事件 | 按天/月分区 |
+| P1 建议 | 日志、消息、优惠券 | 按月分区 |
+| P2/P3 | 配置表、主数据表 | 无需分区 |
+
+### 查询规范（强制）
+
+```sql
+-- ✅ 正确：带时间范围
+SELECT * FROM charging_order 
+WHERE tenant_id = 1 AND start_time BETWEEN '2026-01-01' AND '2026-01-31';
+
+-- ❌ 错误：无时间范围（可能扫描所有分区）
+SELECT * FROM charging_order WHERE tenant_id = 1;
+```
+
+### 分页规范（强制）
+
+- 单次查询最多返回 1000 条
+- 必须使用分页参数（`LIMIT` + `OFFSET` 或游标分页）
+- 禁止无界查询
+
+### 超时控制
+
+- 查询超时：`statement_timeout = 30s`
+- 慢查询日志：`log_min_duration_statement = 1000`（超过1秒记录）
 
 ## 变更与迁移规范
 

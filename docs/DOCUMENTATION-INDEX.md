@@ -35,6 +35,8 @@
 - 管理层摘要：[docs/overview/EXECUTIVE-SUMMARY.md](overview/EXECUTIVE-SUMMARY.md)
 - 版本历史记录：[docs/overview/VERSION-HISTORY.md](overview/VERSION-HISTORY.md)
 - 规划/路线图：[docs/overview/NEXT-PLAN.md](overview/NEXT-PLAN.md)（含待办事项跟踪）
+- 日志规范：[docs/overview/LOGGING-STANDARDS.md](overview/LOGGING-STANDARDS.md)
+- 错误码规范：[docs/overview/ERROR-CODE-STANDARDS.md](overview/ERROR-CODE-STANDARDS.md)
 
 ## 4. 架构（architecture）
 
@@ -44,6 +46,10 @@
 - 多租户异步上下文 RFC：[docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md](architecture/TENANT-CONTEXT-ASYNC-RFC.md)
 - 服务标识与端口规范（SSOT）：[docs/architecture/SERVICE-IDENTIFIERS-AND-PORTS.md](architecture/SERVICE-IDENTIFIERS-AND-PORTS.md)
 - C 端用户模块 RFC：[docs/architecture/EVCS-USER-MODULE-RFC.md](architecture/EVCS-USER-MODULE-RFC.md)
+- 海量数据处理方案 RFC：[docs/architecture/DATA-PARTITIONING-RFC.md](architecture/DATA-PARTITIONING-RFC.md)
+- 系统架构风险审计报告：[docs/architecture/RISK-AUDIT-REPORT.md](architecture/RISK-AUDIT-REPORT.md)
+- 消息队列设计规范：[docs/architecture/MESSAGE-QUEUE-DESIGN.md](architecture/MESSAGE-QUEUE-DESIGN.md)
+- 分布式锁使用规范：[docs/architecture/DISTRIBUTED-LOCK-DESIGN.md](architecture/DISTRIBUTED-LOCK-DESIGN.md)
 
 ## 5. 功能（features）
 
@@ -65,12 +71,17 @@
 
 - 生产部署规划（发布/回滚/验收基线）：[docs/deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md)
 - 测试部署规划（CI/CD 与集成验证）：[docs/deployment/TEST-ENVIRONMENT-GUIDE.md](deployment/TEST-ENVIRONMENT-GUIDE.md)
+- 资源规划指南：[docs/deployment/RESOURCE-PLANNING-GUIDE.md](deployment/RESOURCE-PLANNING-GUIDE.md)
 
 ## 9. 运维（operations）
 
 - 默认凭据（演示/测试）：[docs/operations/DEFAULT-CREDENTIALS.md](operations/DEFAULT-CREDENTIALS.md)
 - 服务参考：[docs/operations/SERVICES-REFERENCE.md](operations/SERVICES-REFERENCE.md)
 - 监控指南：[docs/operations/MONITORING-GUIDE.md](operations/MONITORING-GUIDE.md)
+- 监控告警配置指南：[docs/operations/MONITORING-ALERTING-GUIDE.md](operations/MONITORING-ALERTING-GUIDE.md)
+- 故障排查手册：[docs/operations/TROUBLESHOOTING-GUIDE.md](operations/TROUBLESHOOTING-GUIDE.md)
+- 备份恢复操作手册：[docs/operations/BACKUP-RECOVERY-GUIDE.md](operations/BACKUP-RECOVERY-GUIDE.md)
+- 应急预案：[docs/operations/EMERGENCY-RESPONSE-PLAN.md](operations/EMERGENCY-RESPONSE-PLAN.md)
 
 ## 10. 仓库结构（以代码为准）
 
@@ -83,6 +94,7 @@
 
 - 统一测试指南：[docs/testing/UNIFIED-TESTING-GUIDE.md](testing/UNIFIED-TESTING-GUIDE.md)
 - 集成测试指南：[docs/testing/INTEGRATION-TEST-GUIDE.md](testing/INTEGRATION-TEST-GUIDE.md)
+- 性能测试指南：[docs/testing/PERFORMANCE-TESTING-GUIDE.md](testing/PERFORMANCE-TESTING-GUIDE.md)
 - 测试修复指南：[docs/testing/TEST-FIX-GUIDE.md](testing/TEST-FIX-GUIDE.md)
 - 上下文传播验收清单（多租户/traceId/异步）：[docs/testing/CONTEXT-PROPAGATION-ACCEPTANCE-CHECKLIST.md](testing/CONTEXT-PROPAGATION-ACCEPTANCE-CHECKLIST.md)
 - 按枪口控制测试报告：[docs/testing/CHARGER-CONNECTOR-CONTROL-TEST-REPORT.md](testing/CHARGER-CONNECTOR-CONTROL-TEST-REPORT.md)
