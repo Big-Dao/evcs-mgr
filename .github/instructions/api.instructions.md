@@ -9,7 +9,7 @@ priority: high
 
 本规范适用于所有 RESTful API 的设计与实现。
 
-## 🚨 关键要求
+## 关键要求
 
 ### 1. URL 风格
 **Kebab-case 与 资源导向**

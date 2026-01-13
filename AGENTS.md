@@ -21,7 +21,7 @@
 - 引入与 SSOT 矛盾的实现建议
 - 在不同 AI 助手配置中写出冲突策略
 
-## 🚨 AI 助手必读 (CRITICAL INSTRUCTION)
+## AI 助手必读 (CRITICAL INSTRUCTION)
 在开始任何任务前，**必须**先读取并理解 `docs/overview/PROJECT-CODING-STANDARDS.md`。这是本项目的最高法律。
 任何生成的代码若违反该文档中的规范，将被视为**严重错误**。
 
