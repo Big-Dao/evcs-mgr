@@ -5,14 +5,10 @@ on:
     branches: [ main, develop ]
     paths:
       - "**/*.md"
-    paths-ignore:
-      - "docs/archive/**"
   pull_request:
     branches: [ main, develop ]
     paths:
       - "**/*.md"
-    paths-ignore:
-      - "docs/archive/**"
 
 jobs:
   docs-link-check:
@@ -28,3 +24,25 @@ jobs:
 
       - name: Check non-archive markdown links
         run: python3 scripts/check_non_archive_md_links.py
+
+      - name: Check markdown style (numbering + emoji)
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "pull_request" ]]; then
+            base="${{ github.event.pull_request.base.sha }}"
+            head="${{ github.event.pull_request.head.sha }}"
+          else
+            base="${{ github.event.before }}"
+            head="${{ github.sha }}"
+          fi
+
+          mapfile -t files < <(git diff --name-only "$base" "$head" -- '*.md' ':!docs/archive/**' || true)
+          if [[ ${#files[@]} -eq 0 ]]; then
+            echo "No non-archive markdown files changed; skipping style check."
+            exit 0
+          fi
+
+          echo "Checking markdown style for changed files:";
+          printf '%s\n' "${files[@]}"
+          python3 scripts/check_markdown_style.py "${files[@]}"
