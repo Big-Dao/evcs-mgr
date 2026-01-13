@@ -1,6 +1,6 @@
 # evcs-user 模块规划 RFC
 
-> **版本**: v1.9  
+> **版本**: v2.0  
 > **最后更新**: 2026-01-13  
 > **维护者**: 架构团队  
 > **状态**: 草稿
@@ -115,123 +115,46 @@ evcs-auth   evcs-user    evcs-order  evcs-station  evcs-payment
 
 ## 数据库设计
 
-### 1. 充电用户表 (charging_user)
+### 1. 充电用户主表 (charging_user)
+
+> **设计原则**：主表仅保留高频访问字段（~25个），低频/扩展信息拆分至子表，通过 `user_id` 1:1 关联。
 
 ```sql
 CREATE TABLE charging_user (
     id BIGSERIAL PRIMARY KEY,
     tenant_id BIGINT NOT NULL,
     
-    -- 账户信息
+    -- 账户信息（高频）
     phone VARCHAR(20) NOT NULL,                  -- 手机号（登录标识）
     password VARCHAR(100),                       -- 密码（可选，支持验证码登录）
     nickname VARCHAR(50),                        -- 昵称
     avatar VARCHAR(500),                         -- 头像URL
     gender INTEGER DEFAULT 0,                    -- 0-未知 1-男 2-女
     birthday DATE,                               -- 生日
-    
-    -- 实名/证件信息（可选，脱敏存储）
     real_name VARCHAR(50),                       -- 真实姓名
-    id_card_type INTEGER DEFAULT 1,              -- 证件类型: 1-身份证 2-护照 3-港澳通行证 4-台胞证 5-其他 6-军官证 7-驾驶证 8-外国人永居证
-    id_card VARCHAR(30),                         -- 证件号码（脱敏存储）
-    id_card_front_url VARCHAR(500),              -- 证件正面照URL
-    id_card_back_url VARCHAR(500),               -- 证件背面照URL
     is_verified INTEGER DEFAULT 0,               -- 0-未实名 1-已实名 2-实名审核中
-    verified_time TIMESTAMP,                     -- 实名认证时间
     
-    -- 联系方式（预留扩展）
-    email VARCHAR(100),                          -- 电子邮箱
-    backup_phone VARCHAR(20),                    -- 备用手机号
-    wechat_id VARCHAR(50),                       -- 微信号
-    qq_number VARCHAR(20),                       -- QQ号
-    wework_id VARCHAR(50),                       -- 企业微信ID
-    dingtalk_id VARCHAR(50),                     -- 钉钉ID
-    telegram_id VARCHAR(50),                     -- Telegram（海外用户）
-    whatsapp VARCHAR(20),                        -- WhatsApp（海外用户）
-    
-    -- 地址信息
-    country VARCHAR(50),                         -- 国家
-    province VARCHAR(50),                        -- 省份
-    city VARCHAR(50),                            -- 城市
-    district VARCHAR(50),                        -- 区县
-    address VARCHAR(200),                        -- 详细地址
-    postal_code VARCHAR(20),                     -- 邮编
-    
-    -- 职业信息
-    occupation VARCHAR(50),                      -- 职业
-    company VARCHAR(100),                        -- 公司名称
-    job_title VARCHAR(50),                       -- 职位
-    industry VARCHAR(50),                        -- 行业
-    
-    -- 紧急联系人
-    emergency_contact_name VARCHAR(50),          -- 紧急联系人姓名
-    emergency_contact_phone VARCHAR(20),         -- 紧急联系人电话
-    emergency_contact_relation VARCHAR(20),      -- 关系: PARENT/SPOUSE/SIBLING/FRIEND/OTHER
-    
-    -- 偏好设置
-    language VARCHAR(10) DEFAULT 'zh-CN',        -- 语言偏好
-    timezone VARCHAR(50) DEFAULT 'Asia/Shanghai',-- 时区
-    currency VARCHAR(10) DEFAULT 'CNY',          -- 货币偏好
-    notification_sms INTEGER DEFAULT 1,          -- 短信通知开关 0-关 1-开
-    notification_push INTEGER DEFAULT 1,         -- 推送通知开关 0-关 1-开
-    notification_email INTEGER DEFAULT 0,        -- 邮件通知开关 0-关 1-开
-    
-    -- 车辆快捷引用
-    default_vehicle_id BIGINT,                   -- 默认车辆ID（关联 user_vehicle）
-    is_vehicle_owner_verified INTEGER DEFAULT 0, -- 是否车主认证 0-否 1-是
-    
-    -- 支付便捷
-    default_payment_method VARCHAR(20),          -- 默认支付方式: WECHAT/ALIPAY/BALANCE
-    auto_pay_enabled INTEGER DEFAULT 0,          -- 是否开通免密支付 0-否 1-是
-    auto_pay_limit DECIMAL(10,2),                -- 免密支付单笔限额
-    
-    -- 发票快捷
-    default_invoice_id BIGINT,                   -- 默认发票抬头ID（关联 user_invoice_info）
+    -- 会员/钱包（高频）
+    member_level INTEGER DEFAULT 1,              -- 会员等级 1-普通 2-银卡 3-金卡 4-钻石
+    available_points BIGINT DEFAULT 0,           -- 可用积分
+    balance DECIMAL(12,2) DEFAULT 0,             -- 账户余额
     user_type INTEGER DEFAULT 1,                 -- 用户类型: 1-个人 2-企业
     
-    -- 推荐关系
+    -- 状态（高频）
+    status INTEGER DEFAULT 1,                    -- 0-禁用 1-正常 2-冻结 3-待完善
+    is_vip INTEGER DEFAULT 0,                    -- VIP 标记
+    is_blacklisted INTEGER DEFAULT 0,            -- 是否黑名单
+    risk_level INTEGER DEFAULT 0,                -- 风险等级 0正常 1低 2中 3高
+    
+    -- 注册来源
+    register_source VARCHAR(20),                 -- 注册来源: APP/MINI_PROGRAM/WEB/SCAN_QR/ADMIN
+    register_channel VARCHAR(50),                -- 注册渠道
     referrer_id BIGINT,                          -- 推荐人用户ID
     referral_code VARCHAR(20),                   -- 用户专属推荐码
-    first_order_time TIMESTAMP,                  -- 首单完成时间
     
-    -- 客服/服务
-    is_vip INTEGER DEFAULT 0,                    -- VIP 标记 0-否 1-是
-    service_note TEXT,                           -- 客服备注（仅B端可见）
-    is_blacklisted INTEGER DEFAULT 0,            -- 是否黑名单 0-否 1-是
-    blacklist_reason VARCHAR(200),               -- 黑名单原因
-    
-    -- 生命周期
-    first_visit_time TIMESTAMP,                  -- 首次访问时间
-    register_complete_time TIMESTAMP,            -- 注册完成时间（激活时间）
-    destroy_request_time TIMESTAMP,              -- 账户注销申请时间
-    destroy_scheduled_time TIMESTAMP,            -- 账户注销执行时间（冷静期后）
-    
-    -- 会员信息
-    member_level INTEGER DEFAULT 1,             -- 会员等级 1-普通 2-银卡 3-金卡 4-钻石
-    total_points BIGINT DEFAULT 0,              -- 累计积分
-    available_points BIGINT DEFAULT 0,          -- 可用积分
-    
-    -- 钱包
-    balance DECIMAL(12,2) DEFAULT 0,            -- 账户余额
-    
-    -- 状态
-    status INTEGER DEFAULT 1,                    -- 0-禁用 1-正常 2-冻结 3-待完善(扫码注册)
-    register_source VARCHAR(20),                -- 注册来源: APP/MINI_PROGRAM/WEB/SCAN_QR/ADMIN
-    register_channel VARCHAR(50),               -- 注册渠道
-    register_connector_id BIGINT,               -- 注册时扫码的充电枪ID（扫码注册场景）
-    
-    -- 统计
-    total_charge_count INTEGER DEFAULT 0,       -- 累计充电次数
-    total_charge_energy DECIMAL(12,4) DEFAULT 0,-- 累计充电度数
-    total_charge_amount DECIMAL(12,2) DEFAULT 0,-- 累计消费金额
-    last_charge_time TIMESTAMP,                 -- 最后充电时间
-    
-    -- 登录信息
+    -- 登录信息（高频）
     last_login_time TIMESTAMP,
-    last_login_ip VARCHAR(50),
-    last_active_time TIMESTAMP,                 -- 最后活跃时间（用于风险检测）
-    phone_bindtime TIMESTAMP,                   -- 手机号绑定时间
-    risk_level INTEGER DEFAULT 0,               -- 风险等级 0正常 1低 2中 3高
+    last_active_time TIMESTAMP,                  -- 最后活跃时间
     
     -- 标准字段
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -247,15 +170,248 @@ CREATE UNIQUE INDEX uk_charging_user_phone ON charging_user(phone) WHERE deleted
 CREATE UNIQUE INDEX uk_charging_user_referral_code ON charging_user(referral_code) WHERE referral_code IS NOT NULL AND deleted = 0;
 CREATE INDEX idx_charging_user_tenant ON charging_user(tenant_id, status, deleted);
 CREATE INDEX idx_charging_user_member ON charging_user(tenant_id, member_level);
-CREATE INDEX idx_charging_user_phone_tenant ON charging_user(tenant_id, phone) WHERE deleted = 0;
-CREATE INDEX idx_charging_user_email ON charging_user(email) WHERE email IS NOT NULL AND deleted = 0;
-CREATE INDEX idx_charging_user_city ON charging_user(tenant_id, province, city) WHERE deleted = 0;
 CREATE INDEX idx_charging_user_referrer ON charging_user(referrer_id) WHERE referrer_id IS NOT NULL;
 CREATE INDEX idx_charging_user_vip ON charging_user(tenant_id, is_vip) WHERE is_vip = 1 AND deleted = 0;
-CREATE INDEX idx_charging_user_blacklist ON charging_user(tenant_id, is_blacklisted) WHERE is_blacklisted = 1 AND deleted = 0;
 
-COMMENT ON TABLE charging_user IS '充电用户表（C端用户）';
+COMMENT ON TABLE charging_user IS '充电用户主表（C端用户，高频字段）';
 ```
+
+### 1.1 用户证件信息表 (user_identity)
+
+```sql
+CREATE TABLE user_identity (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL UNIQUE,              -- 关联 charging_user.id，1:1
+    
+    -- 证件信息
+    id_card_type INTEGER DEFAULT 1,              -- 证件类型: 1-身份证 2-护照 3-港澳通行证 4-台胞证 5-其他 6-军官证 7-驾驶证 8-外国人永居证
+    id_card VARCHAR(30),                         -- 证件号码（脱敏存储）
+    id_card_front_url VARCHAR(500),              -- 证件正面照URL
+    id_card_back_url VARCHAR(500),               -- 证件背面照URL
+    verified_time TIMESTAMP,                     -- 实名认证时间
+    
+    -- 标准字段
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE UNIQUE INDEX uk_user_identity_user ON user_identity(user_id) WHERE deleted = 0;
+CREATE INDEX idx_user_identity_tenant ON user_identity(tenant_id);
+
+COMMENT ON TABLE user_identity IS '用户证件信息表（1:1 扩展）';
+```
+
+### 1.2 用户联系方式表 (user_contact)
+
+```sql
+CREATE TABLE user_contact (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL UNIQUE,              -- 关联 charging_user.id，1:1
+    
+    -- 联系方式
+    email VARCHAR(100),                          -- 电子邮箱
+    backup_phone VARCHAR(20),                    -- 备用手机号
+    wechat_id VARCHAR(50),                       -- 微信号
+    qq_number VARCHAR(20),                       -- QQ号
+    wework_id VARCHAR(50),                       -- 企业微信ID
+    dingtalk_id VARCHAR(50),                     -- 钉钉ID
+    telegram_id VARCHAR(50),                     -- Telegram（海外用户）
+    whatsapp VARCHAR(20),                        -- WhatsApp（海外用户）
+    
+    -- 紧急联系人
+    emergency_contact_name VARCHAR(50),          -- 紧急联系人姓名
+    emergency_contact_phone VARCHAR(20),         -- 紧急联系人电话
+    emergency_contact_relation VARCHAR(20),      -- 关系: PARENT/SPOUSE/SIBLING/FRIEND/OTHER
+    
+    -- 标准字段
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE UNIQUE INDEX uk_user_contact_user ON user_contact(user_id) WHERE deleted = 0;
+CREATE INDEX idx_user_contact_email ON user_contact(email) WHERE email IS NOT NULL AND deleted = 0;
+
+COMMENT ON TABLE user_contact IS '用户联系方式表（1:1 扩展）';
+```
+
+### 1.3 用户地址表 (user_address)
+
+```sql
+CREATE TABLE user_address (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL,                     -- 关联 charging_user.id，1:N（支持多地址）
+    
+    -- 地址信息
+    address_type INTEGER DEFAULT 1,              -- 地址类型: 1-家庭 2-公司 3-其他
+    is_default INTEGER DEFAULT 0,                -- 是否默认地址
+    contact_name VARCHAR(50),                    -- 联系人姓名
+    contact_phone VARCHAR(20),                   -- 联系电话
+    country VARCHAR(50) DEFAULT '中国',          -- 国家
+    province VARCHAR(50),                        -- 省份
+    city VARCHAR(50),                            -- 城市
+    district VARCHAR(50),                        -- 区县
+    address VARCHAR(200),                        -- 详细地址
+    postal_code VARCHAR(20),                     -- 邮编
+    
+    -- 标准字段
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE INDEX idx_user_address_user ON user_address(user_id, is_default) WHERE deleted = 0;
+CREATE INDEX idx_user_address_city ON user_address(tenant_id, province, city) WHERE deleted = 0;
+
+COMMENT ON TABLE user_address IS '用户地址表（1:N，支持多地址）';
+```
+
+### 1.4 用户扩展信息表 (user_profile_ext)
+
+```sql
+CREATE TABLE user_profile_ext (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL UNIQUE,              -- 关联 charging_user.id，1:1
+    
+    -- 职业信息
+    occupation VARCHAR(50),                      -- 职业
+    company VARCHAR(100),                        -- 公司名称
+    job_title VARCHAR(50),                       -- 职位
+    industry VARCHAR(50),                        -- 行业
+    
+    -- 客服备注
+    service_note TEXT,                           -- 客服备注（仅B端可见）
+    blacklist_reason VARCHAR(200),               -- 黑名单原因
+    
+    -- 标准字段
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE UNIQUE INDEX uk_user_profile_ext_user ON user_profile_ext(user_id) WHERE deleted = 0;
+
+COMMENT ON TABLE user_profile_ext IS '用户扩展信息表（职业/备注，1:1）';
+```
+
+### 1.5 用户偏好设置表 (user_preference)
+
+```sql
+CREATE TABLE user_preference (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL UNIQUE,              -- 关联 charging_user.id，1:1
+    
+    -- 偏好设置
+    language VARCHAR(10) DEFAULT 'zh-CN',        -- 语言偏好
+    timezone VARCHAR(50) DEFAULT 'Asia/Shanghai',-- 时区
+    currency VARCHAR(10) DEFAULT 'CNY',          -- 货币偏好
+    notification_sms INTEGER DEFAULT 1,          -- 短信通知开关 0-关 1-开
+    notification_push INTEGER DEFAULT 1,         -- 推送通知开关 0-关 1-开
+    notification_email INTEGER DEFAULT 0,        -- 邮件通知开关 0-关 1-开
+    
+    -- 快捷引用
+    default_vehicle_id BIGINT,                   -- 默认车辆ID（关联 user_vehicle）
+    default_payment_method VARCHAR(20),          -- 默认支付方式: WECHAT/ALIPAY/BALANCE
+    default_invoice_id BIGINT,                   -- 默认发票抬头ID（关联 user_invoice_info）
+    auto_pay_enabled INTEGER DEFAULT 0,          -- 是否开通免密支付 0-否 1-是
+    auto_pay_limit DECIMAL(10,2),                -- 免密支付单笔限额
+    
+    -- 标准字段
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE UNIQUE INDEX uk_user_preference_user ON user_preference(user_id) WHERE deleted = 0;
+
+COMMENT ON TABLE user_preference IS '用户偏好设置表（1:1）';
+```
+
+### 1.6 用户统计表 (user_stats)
+
+```sql
+CREATE TABLE user_stats (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL UNIQUE,              -- 关联 charging_user.id，1:1
+    
+    -- 积分统计
+    total_points BIGINT DEFAULT 0,               -- 累计积分
+    
+    -- 充电统计
+    total_charge_count INTEGER DEFAULT 0,        -- 累计充电次数
+    total_charge_energy DECIMAL(12,4) DEFAULT 0, -- 累计充电度数
+    total_charge_amount DECIMAL(12,2) DEFAULT 0, -- 累计消费金额
+    last_charge_time TIMESTAMP,                  -- 最后充电时间
+    first_order_time TIMESTAMP,                  -- 首单完成时间
+    
+    -- 车主认证
+    is_vehicle_owner_verified INTEGER DEFAULT 0, -- 是否车主认证 0-否 1-是
+    
+    -- 标准字段
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE UNIQUE INDEX uk_user_stats_user ON user_stats(user_id) WHERE deleted = 0;
+
+COMMENT ON TABLE user_stats IS '用户统计表（高频更新，独立维护）';
+```
+
+### 1.7 用户生命周期表 (user_lifecycle)
+
+```sql
+CREATE TABLE user_lifecycle (
+    id BIGSERIAL PRIMARY KEY,
+    tenant_id BIGINT NOT NULL,
+    user_id BIGINT NOT NULL UNIQUE,              -- 关联 charging_user.id，1:1
+    
+    -- 生命周期节点
+    first_visit_time TIMESTAMP,                  -- 首次访问时间
+    register_complete_time TIMESTAMP,            -- 注册完成时间（激活时间）
+    register_connector_id BIGINT,                -- 注册时扫码的充电枪ID（扫码注册场景）
+    phone_bindtime TIMESTAMP,                    -- 手机号绑定时间
+    last_login_ip VARCHAR(50),                   -- 最后登录IP
+    
+    -- 注销流程
+    destroy_request_time TIMESTAMP,              -- 账户注销申请时间
+    destroy_scheduled_time TIMESTAMP,            -- 账户注销执行时间（冷静期后）
+    destroy_reason VARCHAR(200),                 -- 注销原因
+    
+    -- 标准字段
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    deleted INTEGER DEFAULT 0
+);
+
+CREATE UNIQUE INDEX uk_user_lifecycle_user ON user_lifecycle(user_id) WHERE deleted = 0;
+
+COMMENT ON TABLE user_lifecycle IS '用户生命周期表（注册/注销流程）';
+```
+
+---
+
+### 表结构拆分总结
+
+| 表名 | 关系 | 字段数 | 用途 |
+|------|------|--------|------|
+| `charging_user` | 主表 | ~25 | 高频访问的核心信息 |
+| `user_identity` | 1:1 | ~8 | 证件信息 |
+| `user_contact` | 1:1 | ~12 | 联系方式、紧急联系人 |
+| `user_address` | 1:N | ~12 | 收货/常用地址（支持多个） |
+| `user_profile_ext` | 1:1 | ~8 | 职业信息、客服备注 |
+| `user_preference` | 1:1 | ~12 | 偏好设置、快捷引用 |
+| `user_stats` | 1:1 | ~10 | 统计数据（高频更新） |
+| `user_lifecycle` | 1:1 | ~10 | 生命周期节点 |
+
+---
 
 ### 2. 用户第三方账号绑定表 (user_oauth)
 
@@ -2155,6 +2311,7 @@ public boolean isRiskyLogin(Long userId, LoginRequest request) {
 
 | 日期 | 版本 | 变更说明 |
 |------|------|----------|
+| 2026-01-13 | v2.0 | **重构表结构**：将宽表 charging_user (~90字段) 拆分为 8 张表（主表+7张扩展表），遵循高频/低频分离、按业务域聚合原则 |
 | 2026-01-13 | v1.9 | 新增快捷引用与业务字段：车辆快捷(默认车辆/车主认证)、支付便捷(默认支付方式/免密支付)、推荐关系、VIP/黑名单、生命周期追踪(首访/注册完成/注销申请) |
 | 2026-01-13 | v1.8 | 全面扩展用户信息：证件类型(+军官证/驾驶证/外国人永居证)、联系方式(+企业微信/钉钉/Telegram/WhatsApp)、职业信息、紧急联系人、偏好设置(语言/时区/货币/通知开关) |
 | 2026-01-13 | v1.7 | 扩展用户信息字段：多证件类型（身份证/护照/港澳通行证/台胞证）、联系方式（email/微信/QQ/备用手机）、地址信息（省市区/详细地址/邮编） |
