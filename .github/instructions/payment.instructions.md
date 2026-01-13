@@ -9,7 +9,7 @@ applyTo: "evcs-payment/**/*.java"
 本模块负责支付网关集成、退款处理和对账。涉及资金安全，必须严格遵守以下规范。
 请遵循 [PROJECT-CODING-STANDARDS.md](../../docs/overview/PROJECT-CODING-STANDARDS.md) 中的核心规范。
 
-## 🚨 关键要求
+## 关键要求
 
 ### 1. 资金安全
 **金额计算必须精确**
@@ -48,7 +48,7 @@ applyTo: "evcs-payment/**/*.java"
 
 ---
 
-## 📝 常见模式
+## 常见模式
 
 ### 金额计算
 

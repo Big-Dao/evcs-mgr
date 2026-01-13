@@ -9,7 +9,7 @@ applyTo: "evcs-protocol/**/*.java"
 本模块负责与充电桩设备通信（OCPP/云快充）。涉及高并发连接和状态管理。
 请遵循 [PROJECT-CODING-STANDARDS.md](../../docs/overview/PROJECT-CODING-STANDARDS.md) 中的核心规范。
 
-## 🚨 关键要求
+## 关键要求
 
 ### 1. 异步上下文传播
 **必须确保租户上下文在异步线程中可用**
@@ -40,7 +40,7 @@ applyTo: "evcs-protocol/**/*.java"
 
 ---
 
-## 📝 常见模式
+## 常见模式
 
 ### 异步任务提交
 

@@ -2,9 +2,9 @@
 
 > **版本**: v2.2 | **最后更新**: 2026-01-13 | **维护者**: 架构团队 | **状态**: 活跃
 >
-> 🏗️ **用途**: 描述 EVCS 微服务架构、组件依赖与关键技术决策
+> **用途**: 描述 EVCS 微服务架构、组件依赖与关键技术决策
 
-## 🏗️ 总体架构
+## 总体架构
 
 ### 1.1 架构概览
 
@@ -113,7 +113,7 @@ graph TB
 | Knife4j | 4.4.0 | API文档 | 增强的Swagger UI |
 | Gradle | 8.5 | 构建工具 | 高效的构建系统 |
 
-## 🔧 微服务设计
+## 微服务设计
 
 ### 2.1 服务拆分原则
 
@@ -197,7 +197,7 @@ public void handlePaymentEvent(PaymentEvent event) {
 }
 ```
 
-## 🔒 多租户架构
+## 多租户架构
 
 ### 3.0 多层级多租户（分级治理口径）
 
@@ -381,7 +381,7 @@ public class TenantContext {
 }
 ```
 
-## 🗄️ 数据架构设计
+## 数据架构设计
 
 ### 4.1 数据库设计
 
@@ -560,7 +560,7 @@ public class CacheServiceImpl implements ICacheService {
 - **缓存更新**: 数据变更时主动更新缓存
 - **缓存预热**: 系统启动时预加载热点数据
 
-## 🔌 协议架构
+## 协议架构
 
 ### 5.1 支持的协议
 
@@ -629,7 +629,7 @@ public class ChargingStartEvent {
 }
 ```
 
-## 🛡️ 安全架构
+## 安全架构
 
 ### 6.1 认证授权
 
@@ -739,7 +739,7 @@ public class StationController {
 }
 ```
 
-## 📊 监控架构
+## 监控架构
 
 ### 7.1 系统监控
 
@@ -845,7 +845,7 @@ public class LogInterceptor implements HandlerInterceptor {
 }
 ```
 
-## 🚀 部署架构
+## 部署架构
 
 ### 8.1 容器化部署
 
@@ -990,7 +990,7 @@ services:
       POSTGRES_REPLICATION_PASSWORD: replicator_password
 ```
 
-## 🎯 性能优化
+## 性能优化
 
 ### 9.1 JVM调优
 
@@ -1086,7 +1086,7 @@ public class CachePreloadRunner implements CommandLineRunner {
 }
 ```
 
-## 📈 扩展性设计
+## 扩展性设计
 
 ### 10.1 水平扩展
 
@@ -1171,7 +1171,7 @@ public class PaymentProperties {
 }
 ```
 
-## 🔧 技术债务管理
+## 技术债务管理
 
 ### 11.1 当前技术债务
 

@@ -34,7 +34,7 @@
 
 - 管理层摘要：[docs/overview/EXECUTIVE-SUMMARY.md](overview/EXECUTIVE-SUMMARY.md)
 - 版本历史记录：[docs/overview/VERSION-HISTORY.md](overview/VERSION-HISTORY.md)
-- 规划/路线图：[docs/overview/NEXT-PLAN.md](overview/NEXT-PLAN.md)、[docs/overview/NEXT-STEP-ACTION-PLAN.md](overview/NEXT-STEP-ACTION-PLAN.md)
+- 规划/路线图：[docs/overview/NEXT-PLAN.md](overview/NEXT-PLAN.md)（含待办事项跟踪）
 
 ## 4. 架构（architecture）
 

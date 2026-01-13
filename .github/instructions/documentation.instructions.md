@@ -12,7 +12,7 @@ priority: high
 
 ---
 
-## 🎯 核心原则
+## 核心原则
 
 ### 1. 单一职责原则（SRP）
 - 每个文档只关注一个主题或功能领域
@@ -31,7 +31,7 @@ priority: high
 
 ---
 
-## 📁 文档结构规范
+## 文档结构规范
 
 ### 根目录文档（仅限核心文档）
 
@@ -58,26 +58,26 @@ priority: high
 ```
 docs/
 ├── DOCUMENTATION-INDEX.md       # 文档导航总索引（唯一入口）
-├── deployment/                  # 🚢 部署相关
+├── deployment/                  # 部署相关
 │   ├── DEPLOYMENT-GUIDE.md      # 完整部署指南
 │   └── TEST-ENVIRONMENT-GUIDE.md
 │
-├── testing/                     # 🧪 测试相关
+├── testing/                     # 测试相关
 │   ├── UNIFIED-TESTING-GUIDE.md
 │   └── TEST-*-REPORT.md         # 测试报告
 │
-├── development/                 # 👨‍💻 开发相关
+├── development/                 # 开发相关
 │   ├── DEVELOPER-GUIDE.md
 │   └── [其他开发文档...]
 │
-├── architecture/                # 🏗️ 架构设计（可选）
+├── architecture/                # 架构设计（可选）
 │   ├── TECHNICAL-DESIGN.md
 │   └── *.puml / *.drawio        # 架构图
 │
-├── api/                         # 📡 API 文档（可选）
+├── api/                         # API 文档（可选）
 │   └── API-DOCUMENTATION.md
 │
-├── archive/                     # 📦 归档区
+├── archive/                     # 归档区
 │   ├── documentation-history/   # 文档维护历史
 │   │   └── YYYY-MM-DD-*.md
 │   └── progress-reports/        # 进度报告归档
@@ -98,7 +98,7 @@ docs/
 
 ---
 
-## 📝 文档命名规范
+## 文档命名规范
 
 ### 命名模式
 
@@ -126,7 +126,7 @@ docs/
 
 ---
 
-## ✍️ 文档内容规范
+## 文档内容规范
 
 ### 文档头部（必需）
 
@@ -151,7 +151,7 @@ docs/
 
 ### 内容质量标准
 
-#### ✅ DO - 推荐做法
+#### 推荐做法
 
 1. **使用清晰的层级结构**
    - H1 (`#`) - 文档标题（仅一个）
@@ -161,7 +161,7 @@ docs/
 
 2. **提供代码示例**
    ```java
-   // ✅ 正确 - 包含注释和上下文
+   // 正确 - 包含注释和上下文
    @Service
    public class StationService extends ServiceImpl<StationMapper, Station> {
        // 查询时自动应用租户过滤
@@ -179,7 +179,7 @@ docs/
    | 复杂度 | 低 | 高 |
 
 4. **添加视觉辅助**
-   - 使用 emoji 增强可读性（适度）：✅ ❌ ⚠️ 📝 🚀
+   - 使用 emoji 增强可读性（适度）：✅ ❌
    - 使用引用块突出重要信息
    - 使用代码块标注语言：\`\`\`java, \`\`\`bash
 
@@ -192,7 +192,7 @@ docs/
    - 不要只说"配置数据库"，提供具体配置示例
    - 不要只说"运行测试"，提供具体命令
 
-#### ❌ DON'T - 避免做法
+#### 避免做法
 
 1. **避免模糊描述**
    - ❌ "配置好环境"
@@ -216,7 +216,7 @@ docs/
 
 ---
 
-## 🔄 文档生命周期管理
+## 文档生命周期管理
 
 ### 创建新文档
 
@@ -346,7 +346,7 @@ docs: 归档 P3 阶段文档
 
 ---
 
-## 🔍 文档维护
+## 文档维护
 
 ### 定期审查（推荐频率）
 
@@ -371,7 +371,7 @@ docs: 归档 P3 阶段文档
 
 ---
 
-## 📊 文档度量指标
+## 文档度量指标
 
 ### 健康指标
 
@@ -394,7 +394,7 @@ docs: 归档 P3 阶段文档
 
 ---
 
-## 🤖 AI 助手（GitHub Copilot）特殊规范
+## AI 助手（GitHub Copilot）特殊规范
 
 ### 创建文档时
 
@@ -466,7 +466,7 @@ docs: 归档 P3 阶段文档
 
 ---
 
-## 📖 参考资源
+## 参考资源
 
 ### 业界最佳实践
 
@@ -483,7 +483,7 @@ docs: 归档 P3 阶段文档
 
 ---
 
-## 🔄 本规范的维护
+## 本规范的维护
 
 - **版本**: v1.0
 - **生效日期**: 2025-10-20

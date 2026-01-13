@@ -9,7 +9,7 @@ priority: high
 
 本规范适用于 `evcs-admin` 模块的所有 Vue 3 + TypeScript 开发工作。
 
-## 🚨 关键要求
+## 关键要求
 
 ### 1. 架构风格
 **强制使用 Composition API**
