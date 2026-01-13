@@ -63,7 +63,7 @@
 
 ### 3.1 核心业务场景
 
-#### 场景 1: 用户登录
+#### 3.1.1 场景 1: 用户登录
 
 ```yaml
 name: 用户登录
@@ -75,7 +75,7 @@ validations:
   - response_time_p95: < 200ms
 ```
 
-#### 场景 2: 查询站点列表
+#### 3.1.2 场景 2: 查询站点列表
 
 ```yaml
 name: 查询站点列表
@@ -93,7 +93,7 @@ validations:
   - response_time_p95: < 300ms
 ```
 
-#### 场景 3: 创建充电订单
+#### 3.1.3 场景 3: 创建充电订单
 
 ```yaml
 name: 创建充电订单
@@ -108,7 +108,7 @@ validations:
   - response_time_p95: < 500ms
 ```
 
-#### 场景 4: 支付订单
+#### 3.1.4 场景 4: 支付订单
 
 ```yaml
 name: 支付订单
@@ -122,7 +122,7 @@ validations:
   - response_time_p95: < 500ms
 ```
 
-#### 场景 5: 充电状态查询
+#### 3.1.5 场景 5: 充电状态查询
 
 ```yaml
 name: 充电状态查询
@@ -606,7 +606,7 @@ java -Xlog:gc*:gc.log:time,uptime:filecount=5,filesize=10M
 ## 9. 相关文档
 
 - [资源规划指南](../deployment/RESOURCE-PLANNING-GUIDE.md)
-- [监控告警配置指南](MONITORING-ALERTING-GUIDE.md)
+- [监控告警配置指南](../operations/MONITORING-ALERTING-GUIDE.md)
 - [系统架构风险审计报告](../architecture/RISK-AUDIT-REPORT.md)
 
 ---

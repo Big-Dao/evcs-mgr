@@ -446,7 +446,7 @@ public class ErrorMessageSource {
 
 ## 7. 相关文档
 
-- [API 设计规范](.github/instructions/api.instructions.md)
+- [API 设计规范](../../.github/instructions/api.instructions.md)
 - [日志规范](LOGGING-STANDARDS.md)
 - [项目编码规范](PROJECT-CODING-STANDARDS.md)
 
