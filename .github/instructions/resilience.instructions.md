@@ -10,7 +10,7 @@ priority: high
 本规范适用于所有涉及外部通信（HTTP/RPC/MQ）的模块，特别是 `evcs-integration`, `evcs-payment`, `evcs-protocol`。
 请遵循 [PROJECT-CODING-STANDARDS.md](../../docs/overview/PROJECT-CODING-STANDARDS.md) 中的核心规范。
 
-## 🚨 关键要求
+## 关键要求
 
 ### 1. 超时控制 (Timeouts)
 **所有外部调用必须显式设置超时**
@@ -41,7 +41,7 @@ priority: high
 
 ---
 
-## 📝 常见模式
+## 常见模式
 
 ### 使用 Resilience4j 进行重试
 

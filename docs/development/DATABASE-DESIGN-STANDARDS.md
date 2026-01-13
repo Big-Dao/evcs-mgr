@@ -4,7 +4,7 @@
 >
 > 本文档定义 EVCS Manager 的数据库设计基线：命名、字段、索引、多租户与迁移方式。
 
-## 🎯 概述
+## 概述
 
 EVCS 采用 PostgreSQL + MyBatis Plus（多租户）为核心的数据存储方案。
 
@@ -13,7 +13,7 @@ EVCS 采用 PostgreSQL + MyBatis Plus（多租户）为核心的数据存储方�
 - 文档总索引（SSOT）：[docs/DOCUMENTATION-INDEX.md](../DOCUMENTATION-INDEX.md)
 - 项目编码与架构规范（SSOT）：[docs/overview/PROJECT-CODING-STANDARDS.md](../overview/PROJECT-CODING-STANDARDS.md)
 
-## 🏗️ 技术与目录约定
+## 技术与目录约定
 
 ### 技术选型（基线）
 
@@ -31,7 +31,7 @@ EVCS 采用 PostgreSQL + MyBatis Plus（多租户）为核心的数据存储方�
 - 订单/计费表：[sql/evcs_order_tables.sql](../../sql/evcs_order_tables.sql)
 - 索引优化示例：[sql/performance-indexes.sql](../../sql/performance-indexes.sql)
 
-## 📋 命名规范
+## 命名规范
 
 ### 表与字段命名
 
@@ -46,7 +46,7 @@ EVCS 采用 PostgreSQL + MyBatis Plus（多租户）为核心的数据存储方�
 - 唯一索引：`uk_<table>_<col1>_<col2>`（或 `uk_...`）
 - 外键：`fk_<table>_<ref>`
 
-## 🧱 通用字段规范（强制）
+## 通用字段规范（强制）
 
 EVCS 的多数业务表遵循同一套审计/多租户/软删除字段（与现有 DDL 一致）：
 
@@ -87,7 +87,7 @@ ON charging_station(station_code, tenant_id)
 WHERE deleted = 0;
 ```
 
-## 🔐 多租户设计
+## 多租户设计
 
 ### 基线策略（默认）
 
@@ -99,7 +99,7 @@ WHERE deleted = 0;
 - 跨表引用尽量在同一领域内建立外键（例如 `charger.station_id → charging_station.station_id`）。
 - 若引用租户表：根据实际字段选择 `sys_tenant.id` 或 `sys_tenant.tenant_id`，并确保被引用列具备唯一约束。
 
-## 🧾 字段类型与约束
+## 字段类型与约束
 
 ### 推荐类型
 
@@ -126,7 +126,7 @@ COMMENT ON TABLE charging_station IS '充电站表';
 COMMENT ON COLUMN charging_station.station_code IS '站点编码';
 ```
 
-## 🚀 索引与性能基线
+## 索引与性能基线
 
 ### 设计原则
 
@@ -156,7 +156,7 @@ WHERE deleted = 0;
 
 若选择数据库触发器自动维护 `update_time`，请采用与现有脚本一致的方式（参考 [sql/charging_station_tables.sql](../../sql/charging_station_tables.sql)）。
 
-## 📦 变更与迁移规范
+## 变更与迁移规范
 
 ### 脚本落地位置
 
@@ -171,12 +171,12 @@ WHERE deleted = 0;
 - 尽量使用 `IF NOT EXISTS` / `DO $$ ... $$;` 防御重复执行。
 - 变更脚本必须可在“已存在部分对象”的情况下安全运行。
 
-## 🧪 测试建议（与项目实践对齐）
+## 测试建议（与项目实践对齐）
 
 - SQL 级别：优先使用真实 PostgreSQL（如集成测试环境或容器化环境）验证 DDL/索引。
 - 应用级别：在服务测试中覆盖“tenant_id + deleted”过滤、唯一键、关键索引路径的查询。
 
-## 📚 相关文档
+## 相关文档
 
 - [项目编码与架构规范（SSOT）](../overview/PROJECT-CODING-STANDARDS.md)
 - [API 设计规范](API-DESIGN-STANDARDS.md)

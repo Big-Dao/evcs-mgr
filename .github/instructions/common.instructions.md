@@ -9,7 +9,7 @@ applyTo: "evcs-common/**/*.java"
 本模块包含共享工具类、多租户框架和通用注解。此模块的变更会影响所有其他模块。
 请严格遵循 [PROJECT-CODING-STANDARDS.md](../../docs/overview/PROJECT-CODING-STANDARDS.md) 中的核心规范。
 
-## 🚨 关键准则
+## 关键准则
 
 ### 1. 向后兼容性
 **必须保持向后兼容**
@@ -48,11 +48,11 @@ applyTo: "evcs-common/**/*.java"
 
 ---
 
-## 📝 常见模式
+## 常见模式
 
 ### 租户上下文管理
 
-> ⚠️ **重要提示**：关于异步任务中的上下文传播（线程池、@Async），请务必阅读 [TENANT-CONTEXT-ASYNC-RFC.md](../../docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md)。
+> **重要提示**：关于异步任务中的上下文传播（线程池、@Async），请务必阅读 [TENANT-CONTEXT-ASYNC-RFC.md](../../docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md)。
 > 禁止直接使用 `new Thread()` 或未装饰的线程池，这会导致租户上下文丢失。
 
 ```java
@@ -75,7 +75,7 @@ try {
 public Executor taskExecutor() {
     ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
     // ... 核心参数配置 ...
-    // 🚨 关键：设置任务装饰器以传播租户上下文
+    // 关键：设置任务装饰器以传播租户上下文
     executor.setTaskDecorator(new TenantContextTaskDecorator());
     executor.initialize();
     return executor;
@@ -96,7 +96,7 @@ public class TenantAccessException extends RuntimeException {
 
 ---
 
-## ⚠️ 重要注意事项
+## 重要注意事项
 
 ### 配置管理
 - `IGNORE_TABLES` 列表的变更必须经过仔细审查
@@ -116,7 +116,7 @@ public class TenantAccessException extends RuntimeException {
 
 ---
 
-## 🔧 修改本模块时的检查清单
+## 修改本模块时的检查清单
 
 - [ ] 是否保持了向后兼容性？
 - [ ] 是否添加了充分的单元测试？

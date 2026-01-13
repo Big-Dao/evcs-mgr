@@ -8,7 +8,7 @@ applyTo: "**/src/test/**/*.java"
 
 全模块通用的测试代码编写指南。本规范是 [PROJECT-CODING-STANDARDS.md](../../docs/overview/PROJECT-CODING-STANDARDS.md) 中“质量与性能要求”章节的具体实现指南。
 
-## 🏗️ 测试结构 (AAA 模式)
+## 测试结构 (AAA 模式)
 
 所有测试必须遵循 AAA 三段式模式：
 - **Arrange** (准备)：设置测试数据与上下文
@@ -36,7 +36,7 @@ void testSaveStation_shouldSucceed_whenValidData() {
 }
 ```
 
-## 📝 命名规范
+## 命名规范
 
 ### 测试方法命名模板
 
@@ -63,7 +63,7 @@ void test操作名_should预期行为_when特定条件() {
 @DisplayName("查询站点列表 - 多租户场景下应只返回当前租户数据")
 ```
 
-## 🧪 基础测试类
+## 基础测试类
 
 **必须**继承合适的基础测试类，不要从零开始编写测试基础设施：
 
@@ -83,9 +83,9 @@ class StationServiceTest extends BaseServiceTest {
 }
 ```
 
-## 🔒 租户上下文管理
+## 租户上下文管理
 
-### ⚠️ 关键原则：**必须在 finally 中清理**
+### 关键原则：**必须在 finally 中清理**
 
 ```java
 @Test
@@ -97,7 +97,7 @@ void testWithTenant() {
         // Act & Assert - 执行测试
         // 测试代码
     } finally {
-        TenantContext.clear(); // 🚨 必须清理，否则影响其他测试
+        TenantContext.clear(); // 必须清理，否则影响其他测试
     }
 }
 ```
@@ -128,7 +128,7 @@ void testMultipleTenantSwitch() {
 }
 ```
 
-## 🏭 测试数据生成
+## 测试数据生成
 
 ### 使用 TestDataFactory
 
@@ -164,7 +164,7 @@ void testUsingFactory() {
 }
 ```
 
-## 🛡️ 多租户隔离测试
+## 多租户隔离测试
 
 ### 必测场景
 
@@ -225,7 +225,7 @@ void testUpdate_shouldFail_whenCrossTenantAccess() {
 }
 ```
 
-## ⚡ 性能测试
+## 性能测试
 
 对性能敏感的代码添加基准测试：
 
@@ -268,7 +268,7 @@ void testComplexQuery_shouldHaveIndexOptimization() {
 }
 ```
 
-## ✅ 断言最佳实践
+## 断言最佳实践
 
 ### 必须添加断言消息
 
@@ -332,17 +332,17 @@ void testBoundaryConditions() {
 }
 ```
 
-## 🚫 不要测试的内容
+## 不要测试的内容
 
 为提高测试效率，**不要**测试以下内容：
 
-- ❌ 框架功能（Spring、MyBatis Plus 的标准行为）
-- ❌ Getter/Setter（除非有业务逻辑）
-- ❌ 明显的委托调用（仅转发到其他服务）
-- ❌ DTO 转换（除非有复杂映射逻辑）
-- ✅ **专注于**：业务逻辑、多租户隔离、数据一致性
+- 框架功能（Spring、MyBatis Plus 的标准行为）
+- Getter/Setter（除非有业务逻辑）
+- 明显的委托调用（仅转发到其他服务）
+- DTO 转换（除非有复杂映射逻辑）
+- **专注于**：业务逻辑、多租户隔离、数据一致性
 
-## 🔧 测试覆盖率要求
+## 测试覆盖率要求
 
 | 层级 | 最低覆盖率 | 说明 |
 |------|-----------|------|
@@ -357,7 +357,7 @@ void testBoundaryConditions() {
 # 报告位置: build/reports/jacoco/test/html/index.html
 ```
 
-## 📋 测试代码检查清单
+## 测试代码检查清单
 
 编写或修改测试时，确认以下各项：
 
