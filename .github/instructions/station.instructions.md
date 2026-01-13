@@ -9,7 +9,7 @@ applyTo: "evcs-station/**/*.java"
 本模块负责充电站和充电桩管理。这是最成熟的模块，可作为多租户模式的参考实现。
 请遵循 [PROJECT-CODING-STANDARDS.md](../../docs/overview/PROJECT-CODING-STANDARDS.md) 中的核心规范。
 
-## 🚨 关键要求
+## 关键要求
 
 ### 1. 多租户隔离
 **每个查询都必须遵守租户边界**
@@ -55,7 +55,7 @@ applyTo: "evcs-station/**/*.java"
 
 ---
 
-## 📝 常见模式
+## 常见模式
 
 ### Service 层 - 租户隔离
 
@@ -113,7 +113,7 @@ public Result<ChargingStation> getById(@PathVariable Long id) {
 
 ---
 
-## 🗄️ 数据库 Schema 说明
+## 数据库 Schema 说明
 
 ### charging_station 表
 - `tenant_id` - 租户ID，必须有索引
@@ -134,7 +134,7 @@ public Result<ChargingStation> getById(@PathVariable Long id) {
 
 ---
 
-## ⚠️ 重要注意事项
+## 重要注意事项
 
 ### 性能优化
 - 站点列表查询应该分页
@@ -153,7 +153,7 @@ public Result<ChargingStation> getById(@PathVariable Long id) {
 
 ---
 
-## 🔧 修改本模块时的检查清单
+## 修改本模块时的检查清单
 
 - [ ] 是否添加了 `@DataScope` 注解？
 - [ ] 是否测试了多租户隔离？

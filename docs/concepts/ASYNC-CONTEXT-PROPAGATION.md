@@ -8,7 +8,7 @@
 
 ---
 
-## 📖 目录
+## 目录
 
 - [什么是异步上下文传播](#什么是异步上下文传播)
 - [为什么需要异步上下文传播](#为什么需要异步上下文传播)
@@ -454,7 +454,7 @@ public class OrderEventListener {
 
 ## 最佳实践
 
-### ✅ DO - 推荐做法
+### 推荐做法
 
 #### 1. 优先使用已配置的 Spring Executor
 
@@ -525,7 +525,7 @@ void shouldPropagateContextToAsyncTask() throws Exception {
 }
 ```
 
-### ❌ DON'T - 避免做法
+### 避免做法
 
 #### 1. 不要使用未配置的 Executor
 
@@ -674,9 +674,9 @@ public void innerTask() {
 
 ### 项目内部文档
 
-- 📖 **[租户上下文异步传播 RFC](../architecture/TENANT-CONTEXT-ASYNC-RFC.md)** - 技术设计和迁移计划
-- 📖 **[项目编码规范](../overview/PROJECT-CODING-STANDARDS.md)** - 多租户开发规范
-- 📖 **[测试指南](../testing/UNIFIED-TESTING-GUIDE.md)** - 如何测试异步代码
+- **[租户上下文异步传播 RFC](../architecture/TENANT-CONTEXT-ASYNC-RFC.md)** - 技术设计和迁移计划
+- **[项目编码规范](../overview/PROJECT-CODING-STANDARDS.md)** - 多租户开发规范
+- **[测试指南](../testing/UNIFIED-TESTING-GUIDE.md)** - 如何测试异步代码
 
 ### 源代码
 
