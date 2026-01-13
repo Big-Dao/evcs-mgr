@@ -94,17 +94,18 @@
 | Grafana Dashboard | P99 < 200ms |
 | Prometheus 业务指标 + 告警规则 | 核心指标 100% 覆盖 |
 
-### 🔵 P2.5 - 海量数据分区（Week 6-8）
+### 🔵 P2.5 - 海量数据处理（Week 6-10）
 
-**目标**: 为高增长表实施 PostgreSQL 原生分区，保障系统长期稳定运行。
+**目标**: 为高增长表实施 PostgreSQL 原生分区，建立完整的海量数据处理机制。
 
-**详细规划**: [海量数据分区方案 RFC](../architecture/DATA-PARTITIONING-RFC.md)
+**详细规划**: [海量数据处理方案 RFC](../architecture/DATA-PARTITIONING-RFC.md)
 
 | 阶段 | 周期 | 核心任务 |
 |------|------|----------|
 | Phase 1 | W6-7 | P0 表分区（7张：曲线点、行为事件、订单、支付、会话、流水） |
 | Phase 2 | W7-8 | P1 表分区（9张：日志、消息、优惠券、签到等） |
-| Phase 3 | W8 | 归档机制（对象存储集成、归档查询接口） |
+| Phase 3 | W8-9 | 归档机制（对象存储集成、归档查询接口） |
+| Phase 4 | W9-10 | 读写分离 + 缓存策略 + 慢查询治理 |
 
 **分区优先级汇总**:
 
@@ -114,6 +115,16 @@
 | P1 建议 | 9 | `user_login_log`, `user_message`, `user_coupon` |
 | P2 可选 | 6 | `complaint`, `reconciliation_task` |
 | P3 无需 | 29 | 配置表、主数据表 |
+
+**补充能力**:
+
+| 能力 | 优先级 | 说明 |
+|------|--------|------|
+| 读写分离 | P1 | 报表/导出走只读副本 |
+| 缓存策略 | P1 | Redis + 本地缓存分层 |
+| 慢查询治理 | P0 | 强制时间范围、分页上限、超时控制 |
+| 连接池优化 | P2 | HikariCP 调优、PgBouncer 预留 |
+| 灾备恢复 | P1 | 每日备份、WAL 归档、PITR |
 
 ---
 
@@ -157,7 +168,8 @@
 | **W3** | 代码质量 | 测试模板完善、覆盖率提升 |
 | **W4** | 性能 | 压测、基线建立、Dashboard |
 | **W5-6** | 监控 + 文档 | Prometheus/Grafana、API 文档、运维手册 |
-| **W6-8** | 数据分区 | P0/P1 表分区、归档机制（详见 [分区 RFC](../architecture/DATA-PARTITIONING-RFC.md)） |
+| **W6-8** | 数据分区 | P0/P1 表分区、归档机制 |
+| **W9-10** | 数据优化 | 读写分离、缓存策略、慢查询治理、灾备 |
 | **W7-28** | evcs-user | C 端用户模块开发（详见 [用户 RFC](../architecture/EVCS-USER-MODULE-RFC.md)） |
 
 ---

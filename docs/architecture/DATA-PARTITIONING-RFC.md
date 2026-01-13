@@ -1,6 +1,6 @@
-# EVCS 海量数据分区方案 RFC
+# EVCS 海量数据处理方案 RFC
 
-> **版本**: v1.0  
+> **版本**: v1.1  
 > **创建日期**: 2026-01-13  
 > **维护者**: 数据架构组  
 > **状态**: 草稿
@@ -11,18 +11,21 @@
 
 ### 1.1 背景
 
-随着 EVCS 充电站管理系统运行时间增长，订单、支付、充电曲线等业务数据将持续累积至海量规模。当前系统尚未实现完整的海量数据处理机制，需要提前规划表分区、数据归档等策略，以保障系统长期稳定运行。
+随着 EVCS 充电站管理系统运行时间增长，订单、支付、充电曲线等业务数据将持续累积至海量规模。当前系统尚未实现完整的海量数据处理机制，需要提前规划表分区、数据归档、读写分离、缓存策略等，以保障系统长期稳定运行。
 
 ### 1.2 目标
 
 1. 建立基于 PostgreSQL 原生表分区的海量数据处理机制
 2. 确保分区对应用层透明，无需修改业务代码
 3. 定义数据保留策略与归档方案
-4. 为未来可能的分库分表预留扩展点
+4. 建立读写分离与缓存策略，优化查询性能
+5. 规范慢查询治理与连接池管理
+6. 完善灾备与恢复机制
+7. 为未来可能的分库分表预留扩展点
 
 ### 1.3 范围
 
-- **IN SCOPE**: 表分区设计、自动分区管理、数据归档策略、性能优化
+- **IN SCOPE**: 表分区设计、自动分区管理、数据归档策略、读写分离、缓存策略、慢查询治理、连接池管理、灾备恢复
 - **OUT OF SCOPE**: 分库分表（ShardingSphere）、跨数据中心复制
 
 ---
@@ -482,7 +485,279 @@ ORDER BY SUM(pg_relation_size(child.oid)) DESC;
 
 ---
 
-## 9. 风险与应对
+## 9. 读写分离方案
+
+### 9.1 架构设计
+
+```
+┌─────────────────┐     流复制      ┌─────────────────┐
+│     主库        │───────────────▶│    只读副本      │
+│  (读写操作)     │                 │  (报表/导出)     │
+└─────────────────┘                 └─────────────────┘
+        │                                   │
+        ▼                                   ▼
+   业务写入/实时查询               统计报表/批量导出/跨租户分析
+```
+
+### 9.2 实施阶段
+
+| 阶段 | 数据量 | 方案 |
+|------|--------|------|
+| 当前 | < 1000万 | 单库 + 分区 |
+| 中期 | 1000万-1亿 | 读写分离 + TimescaleDB（时序数据） |
+| 远期 | > 1亿 | ShardingSphere 分库分表 |
+
+### 9.3 应用层适配
+
+```java
+// 使用 @Transactional(readOnly = true) 路由到只读库
+@Transactional(readOnly = true)
+public List<OrderStatistics> getStatistics(Long tenantId, LocalDate date) {
+    return orderMapper.selectStatistics(tenantId, date);
+}
+```
+
+---
+
+## 10. 缓存策略
+
+### 10.1 缓存层级
+
+| 层级 | 数据类型 | TTL | 失效策略 |
+|------|----------|-----|----------|
+| L1 本地缓存 | 计费方案、系统配置 | 5分钟 | 变更事件广播 |
+| L2 Redis | 站点/桩信息、用户会话 | 30分钟 | 主动失效 |
+| L3 预计算 | 订单统计、报表数据 | 1小时 | 定时刷新 |
+
+### 10.2 缓存键设计
+
+```
+# 站点信息
+station:{tenantId}:{stationId}
+
+# 用户会话
+user:session:{userId}
+
+# 订单统计（预计算）
+order:stats:{tenantId}:{date}
+```
+
+### 10.3 缓存穿透/雪崩防护
+
+| 问题 | 解决方案 |
+|------|----------|
+| 缓存穿透 | 布隆过滤器 + 空值缓存（TTL 1分钟） |
+| 缓存雪崩 | TTL 随机化（±10%）+ 限流降级 |
+| 缓存击穿 | 互斥锁（Redisson）+ 热点数据预加载 |
+
+---
+
+## 11. 慢查询治理
+
+### 11.1 强制规范
+
+| 规范 | 说明 |
+|------|------|
+| **强制时间范围** | 订单/日志/流水查询必须带 `start_time`/`end_time` |
+| **分页上限** | 单次最多 1000 条，禁止无界查询 |
+| **查询超时** | `statement_timeout = 30s` |
+| **禁止全表扫描** | 关键表必须有覆盖索引 |
+
+### 11.2 PostgreSQL 配置
+
+```sql
+-- 慢查询日志
+ALTER SYSTEM SET log_min_duration_statement = 1000; -- 超过1秒记录
+ALTER SYSTEM SET log_statement = 'none'; -- 不记录所有语句
+ALTER SYSTEM SET statement_timeout = '30s'; -- 查询超时
+
+SELECT pg_reload_conf();
+```
+
+### 11.3 慢查询监控
+
+```sql
+-- 查看当前慢查询
+SELECT pid, now() - pg_stat_activity.query_start AS duration, query
+FROM pg_stat_activity
+WHERE state != 'idle' 
+  AND now() - pg_stat_activity.query_start > interval '5 seconds';
+
+-- 查看最耗时的查询（需要 pg_stat_statements 扩展）
+SELECT query, calls, total_time, mean_time, rows
+FROM pg_stat_statements
+ORDER BY mean_time DESC
+LIMIT 10;
+```
+
+---
+
+## 12. 连接池与 PgBouncer
+
+### 12.1 HikariCP 配置
+
+```yaml
+spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 30          # 最大连接数
+      minimum-idle: 10               # 最小空闲连接
+      connection-timeout: 30000      # 获取连接超时(ms)
+      idle-timeout: 600000           # 空闲连接回收(10分钟)
+      max-lifetime: 1800000          # 连接最大生命周期(30分钟)
+      leak-detection-threshold: 60000 # 连接泄漏检测(1分钟)
+```
+
+### 12.2 PgBouncer 部署（超高并发）
+
+当连接数超过数据库承载能力时，引入 PgBouncer：
+
+```ini
+[databases]
+evcs = host=postgres port=5432 dbname=evcs
+
+[pgbouncer]
+pool_mode = transaction          # 事务模式
+max_client_conn = 1000           # 最大客户端连接
+default_pool_size = 50           # 每个数据库的连接池大小
+reserve_pool_size = 10           # 预留连接
+reserve_pool_timeout = 3         # 预留连接超时(秒)
+```
+
+---
+
+## 13. 批量操作优化
+
+### 13.1 批量插入
+
+```java
+// 推荐：使用 COPY 或批量 VALUES
+@Insert("<script>" +
+    "INSERT INTO charging_order (tenant_id, station_id, ...) VALUES " +
+    "<foreach collection='list' item='item' separator=','>" +
+    "(#{item.tenantId}, #{item.stationId}, ...)" +
+    "</foreach>" +
+    "</script>")
+void batchInsert(@Param("list") List<ChargingOrder> orders);
+```
+
+### 13.2 流式导出
+
+```java
+// 使用游标分批导出，避免内存溢出
+@Options(fetchSize = 1000)
+@Select("SELECT * FROM charging_order WHERE tenant_id = #{tenantId} AND start_time BETWEEN #{start} AND #{end}")
+Cursor<ChargingOrder> exportOrders(@Param("tenantId") Long tenantId, 
+                                    @Param("start") LocalDateTime start,
+                                    @Param("end") LocalDateTime end);
+```
+
+---
+
+## 14. 索引管理
+
+### 14.1 索引维护
+
+```sql
+-- 查看索引使用情况
+SELECT schemaname, relname, indexrelname, idx_scan, idx_tup_read
+FROM pg_stat_user_indexes
+ORDER BY idx_scan ASC;
+
+-- 查看索引膨胀
+SELECT schemaname, tablename, indexname, 
+       pg_size_pretty(pg_relation_size(indexrelid)) AS index_size
+FROM pg_stat_user_indexes
+ORDER BY pg_relation_size(indexrelid) DESC;
+
+-- 在线重建索引（不阻塞写入）
+REINDEX INDEX CONCURRENTLY idx_order_tenant_status;
+```
+
+### 14.2 索引清理策略
+
+| 条件 | 操作 |
+|------|------|
+| `idx_scan = 0` 超过 30 天 | 考虑删除 |
+| 索引膨胀 > 50% | `REINDEX CONCURRENTLY` |
+| 重复索引 | 保留最优，删除冗余 |
+
+---
+
+## 15. 灾备与恢复
+
+### 15.1 备份策略
+
+| 类型 | 频率 | 保留 | 工具 |
+|------|------|------|------|
+| 物理全量备份 | 每日 | 7 天 | `pg_basebackup` |
+| 逻辑备份（核心表） | 每日 | 30 天 | `pg_dump` |
+| WAL 归档 | 持续 | 7 天 | `archive_command` |
+
+### 15.2 恢复目标
+
+| 指标 | 目标值 |
+|------|--------|
+| RPO（数据丢失容忍） | < 1 分钟 |
+| RTO（恢复时间目标） | < 30 分钟 |
+
+### 15.3 备份脚本示例
+
+```bash
+#!/bin/bash
+# 每日物理备份
+BACKUP_DIR="/backup/pg/$(date +%Y-%m-%d)"
+mkdir -p $BACKUP_DIR
+pg_basebackup -h localhost -U postgres -D $BACKUP_DIR -Ft -z -P
+
+# 保留 7 天
+find /backup/pg -type d -mtime +7 -exec rm -rf {} \;
+```
+
+---
+
+## 16. 数据压缩
+
+### 16.1 PostgreSQL TOAST 压缩
+
+PostgreSQL 默认对大字段（> 2KB）自动 TOAST 压缩，无需额外配置。
+
+### 16.2 归档数据压缩
+
+| 数据类型 | 格式 | 压缩率 |
+|----------|------|--------|
+| 充电曲线 | Parquet + Zstd | ~10:1 |
+| 订单归档 | CSV + Gzip | ~5:1 |
+| 日志归档 | JSON + Gzip | ~8:1 |
+
+---
+
+## 17. 监控告警增强
+
+### 17.1 数据库健康指标
+
+| 指标 | 告警阈值 | 说明 |
+|------|----------|------|
+| 连接数使用率 | > 80% | 考虑扩容或引入 PgBouncer |
+| 表膨胀率 | > 50% | 执行 VACUUM FULL |
+| 死元组比例 | > 20% | 检查 autovacuum 配置 |
+| 慢查询数/分钟 | > 10 | 查询优化 |
+| WAL 堆积 | > 10GB | 检查复制延迟 |
+| 磁盘使用率 | > 85% | 扩容或清理归档 |
+
+### 17.2 Prometheus 采集配置
+
+```yaml
+# postgres_exporter 配置
+scrape_configs:
+  - job_name: 'postgresql'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+```
+
+---
+
+## 18. 风险与应对
 
 | 风险 | 等级 | 应对措施 |
 |------|------|----------|
@@ -490,20 +765,24 @@ ORDER BY SUM(pg_relation_size(child.oid)) DESC;
 | 分区自动创建失败 | 🟠 | 提前 7 天创建；告警通知；手动补救 |
 | 归档数据丢失 | 🔴 | 双重备份；归档前校验；对象存储版本控制 |
 | 跨分区查询性能下降 | 🟠 | 强制时间范围；查询改写指导 |
+| 连接池耗尽 | 🟠 | 监控连接数；引入 PgBouncer |
+| 缓存雪崩 | 🟠 | TTL 随机化；限流降级 |
 
 ---
 
-## 10. 相关文档
+## 19. 相关文档
 
 - [数据库设计规范](../development/DATABASE-DESIGN-STANDARDS.md)
 - [C端用户模块 RFC](./EVCS-USER-MODULE-RFC.md)
 - [项目编码规范](../overview/PROJECT-CODING-STANDARDS.md)
 - [部署指南](../deployment/DEPLOYMENT-GUIDE.md)
+- [监控指南](../operations/MONITORING-GUIDE.md)
 
 ---
 
-## 11. 变更历史
+## 20. 变更历史
 
 | 日期 | 版本 | 变更说明 |
 |------|------|----------|
+| 2026-01-13 | v1.1 | 新增读写分离、缓存策略、慢查询治理、连接池、灾备等章节 |
 | 2026-01-13 | v1.0 | 初始版本，完成 51 张表分区分析 |
