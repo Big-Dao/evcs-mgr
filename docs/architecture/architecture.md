@@ -1,6 +1,6 @@
 # EVCS Manager 技术架构设计
 
-> **版本**: v2.1 | **最后更新**: 2025-12-18 | **维护者**: 架构团队 | **状态**: 活跃
+> **版本**: v2.2 | **最后更新**: 2026-01-13 | **维护者**: 架构团队 | **状态**: 活跃
 >
 > 🏗️ **用途**: 描述 EVCS 微服务架构、组件依赖与关键技术决策
 
@@ -32,6 +32,7 @@ graph TB
         PROTOCOL[协议服务<br/>evcs-protocol]
         MONITOR[监控服务<br/>evcs-monitoring]
         INTEGRATION[集成服务<br/>evcs-integration]
+        USER[用户服务<br/>evcs-user]
     end
 
     subgraph "基础设施层"
@@ -54,6 +55,7 @@ graph TB
     GW --> PROTOCOL
     GW --> MONITOR
     GW --> INTEGRATION
+    GW --> USER
 
     AUTH --> EUREKA
     TENANT --> EUREKA
@@ -63,6 +65,7 @@ graph TB
     PROTOCOL --> EUREKA
     MONITOR --> EUREKA
     INTEGRATION --> EUREKA
+    USER --> EUREKA
 
     STATION --> CONFIG
     ORDER --> CONFIG
@@ -82,6 +85,10 @@ graph TB
     STATION --> DB
     ORDER --> DB
     PAYMENT --> DB
+    USER --> DB
+
+    USER --> REDIS
+    USER --> MQ
 ```
 
 ### 1.2 技术栈选择
@@ -119,6 +126,7 @@ graph TB
 - **协议领域**: 设备通信、协议处理
 - **监控领域**: 系统监控、告警管理
 - **集成领域**: 第三方系统集成
+- **用户领域**: C 端用户管理、积分/优惠券/会员、营销活动（规划中，详见 [evcs-user 模块 RFC](EVCS-USER-MODULE-RFC.md)）
 
 #### 服务职责边界
 ```mermaid

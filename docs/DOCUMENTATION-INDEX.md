@@ -2,7 +2,7 @@
 
 > 一句话说明：本文件是当前仓库“非归档文档”的统一导航入口；各主题只保留一个权威 SSOT，其它文档尽量通过链接引用避免重复维护。
 
-**最后更新**: 2026-01-12  \
+**最后更新**: 2026-01-13  \
 **维护者**: 技术负责人 / 各领域维护团队  \
 **状态**: 已发布
 
@@ -43,6 +43,7 @@
 - 数据模型：[docs/architecture/data-model.md](architecture/data-model.md)
 - 多租户异步上下文 RFC：[docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md](architecture/TENANT-CONTEXT-ASYNC-RFC.md)
 - 服务标识与端口规范（SSOT）：[docs/architecture/SERVICE-IDENTIFIERS-AND-PORTS.md](architecture/SERVICE-IDENTIFIERS-AND-PORTS.md)
+- C 端用户模块 RFC：[docs/architecture/EVCS-USER-MODULE-RFC.md](architecture/EVCS-USER-MODULE-RFC.md)
 
 ## 5. 功能（features）
 
