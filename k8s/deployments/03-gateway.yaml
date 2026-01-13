@@ -66,7 +66,7 @@ spec:
         - name: EVCS_GIT_BRANCH
           value: "${EVCS_GIT_BRANCH}"
         - name: JAVA_OPTS
-          value: "-Xms128m -Xmx384m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
+          value: "-Xms256m -Xmx512m -XX:+UseContainerSupport -XX:MaxRAMPercentage=65.0"
         - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
           valueFrom:
             configMapKeyRef:
@@ -74,10 +74,10 @@ spec:
               key: EUREKA_SERVER_URL
         resources:
           limits:
-            cpu: "0.8"
-            memory: "512Mi"
+            cpu: "1"
+            memory: "768Mi"
           requests:
-            cpu: "0.3"
+            cpu: "0.5"
             memory: "256Mi"
 
 ---

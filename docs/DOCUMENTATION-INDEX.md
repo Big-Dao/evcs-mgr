@@ -67,6 +67,7 @@
 
 - 生产部署规划（发布/回滚/验收基线）：[docs/deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md)
 - 测试部署规划（CI/CD 与集成验证）：[docs/deployment/TEST-ENVIRONMENT-GUIDE.md](deployment/TEST-ENVIRONMENT-GUIDE.md)
+- 资源规划指南：[docs/deployment/RESOURCE-PLANNING-GUIDE.md](deployment/RESOURCE-PLANNING-GUIDE.md)
 
 ## 9. 运维（operations）
 
