@@ -35,6 +35,8 @@
 - 管理层摘要：[docs/overview/EXECUTIVE-SUMMARY.md](overview/EXECUTIVE-SUMMARY.md)
 - 版本历史记录：[docs/overview/VERSION-HISTORY.md](overview/VERSION-HISTORY.md)
 - 规划/路线图：[docs/overview/NEXT-PLAN.md](overview/NEXT-PLAN.md)（含待办事项跟踪）
+- 日志规范：[docs/overview/LOGGING-STANDARDS.md](overview/LOGGING-STANDARDS.md)
+- 错误码规范：[docs/overview/ERROR-CODE-STANDARDS.md](overview/ERROR-CODE-STANDARDS.md)
 
 ## 4. 架构（architecture）
 
@@ -79,6 +81,7 @@
 - 监控告警配置指南：[docs/operations/MONITORING-ALERTING-GUIDE.md](operations/MONITORING-ALERTING-GUIDE.md)
 - 故障排查手册：[docs/operations/TROUBLESHOOTING-GUIDE.md](operations/TROUBLESHOOTING-GUIDE.md)
 - 备份恢复操作手册：[docs/operations/BACKUP-RECOVERY-GUIDE.md](operations/BACKUP-RECOVERY-GUIDE.md)
+- 应急预案：[docs/operations/EMERGENCY-RESPONSE-PLAN.md](operations/EMERGENCY-RESPONSE-PLAN.md)
 
 ## 10. 仓库结构（以代码为准）
 
@@ -91,6 +94,7 @@
 
 - 统一测试指南：[docs/testing/UNIFIED-TESTING-GUIDE.md](testing/UNIFIED-TESTING-GUIDE.md)
 - 集成测试指南：[docs/testing/INTEGRATION-TEST-GUIDE.md](testing/INTEGRATION-TEST-GUIDE.md)
+- 性能测试指南：[docs/testing/PERFORMANCE-TESTING-GUIDE.md](testing/PERFORMANCE-TESTING-GUIDE.md)
 - 测试修复指南：[docs/testing/TEST-FIX-GUIDE.md](testing/TEST-FIX-GUIDE.md)
 - 上下文传播验收清单（多租户/traceId/异步）：[docs/testing/CONTEXT-PROPAGATION-ACCEPTANCE-CHECKLIST.md](testing/CONTEXT-PROPAGATION-ACCEPTANCE-CHECKLIST.md)
 - 按枪口控制测试报告：[docs/testing/CHARGER-CONNECTOR-CONTROL-TEST-REPORT.md](testing/CHARGER-CONNECTOR-CONTROL-TEST-REPORT.md)
