@@ -1,6 +1,6 @@
 # evcs-user 模块规划 RFC
 
-> **版本**: v1.6  
+> **版本**: v1.7  
 > **最后更新**: 2026-01-13  
 > **维护者**: 架构团队  
 > **状态**: 草稿
@@ -130,10 +130,28 @@ CREATE TABLE charging_user (
     gender INTEGER DEFAULT 0,                    -- 0-未知 1-男 2-女
     birthday DATE,                               -- 生日
     
-    -- 实名信息（可选）
+    -- 实名/证件信息（可选，脱敏存储）
     real_name VARCHAR(50),                       -- 真实姓名
-    id_card VARCHAR(30),                         -- 身份证号（脱敏存储）
-    is_verified INTEGER DEFAULT 0,              -- 0-未实名 1-已实名
+    id_card_type INTEGER DEFAULT 1,              -- 证件类型: 1-身份证 2-护照 3-港澳通行证 4-台胞证 5-其他
+    id_card VARCHAR(30),                         -- 证件号码（脱敏存储）
+    id_card_front_url VARCHAR(500),              -- 证件正面照URL
+    id_card_back_url VARCHAR(500),               -- 证件背面照URL
+    is_verified INTEGER DEFAULT 0,               -- 0-未实名 1-已实名 2-实名审核中
+    verified_time TIMESTAMP,                     -- 实名认证时间
+    
+    -- 联系方式（预留扩展）
+    email VARCHAR(100),                          -- 电子邮箱
+    backup_phone VARCHAR(20),                    -- 备用手机号
+    wechat_id VARCHAR(50),                       -- 微信号
+    qq_number VARCHAR(20),                       -- QQ号
+    
+    -- 地址信息
+    country VARCHAR(50),                         -- 国家
+    province VARCHAR(50),                        -- 省份
+    city VARCHAR(50),                            -- 城市
+    district VARCHAR(50),                        -- 区县
+    address VARCHAR(200),                        -- 详细地址
+    postal_code VARCHAR(20),                     -- 邮编
     
     -- 会员信息
     member_level INTEGER DEFAULT 1,             -- 会员等级 1-普通 2-银卡 3-金卡 4-钻石
@@ -176,6 +194,8 @@ CREATE UNIQUE INDEX uk_charging_user_phone ON charging_user(phone) WHERE deleted
 CREATE INDEX idx_charging_user_tenant ON charging_user(tenant_id, status, deleted);
 CREATE INDEX idx_charging_user_member ON charging_user(tenant_id, member_level);
 CREATE INDEX idx_charging_user_phone_tenant ON charging_user(tenant_id, phone) WHERE deleted = 0;
+CREATE INDEX idx_charging_user_email ON charging_user(email) WHERE email IS NOT NULL AND deleted = 0;
+CREATE INDEX idx_charging_user_city ON charging_user(tenant_id, province, city) WHERE deleted = 0;
 
 COMMENT ON TABLE charging_user IS '充电用户表（C端用户）';
 ```
@@ -2078,6 +2098,7 @@ public boolean isRiskyLogin(Long userId, LoginRequest request) {
 
 | 日期 | 版本 | 变更说明 |
 |------|------|----------|
+| 2026-01-13 | v1.7 | 扩展用户信息字段：多证件类型（身份证/护照/港澳通行证/台胞证）、联系方式（email/微信/QQ/备用手机）、地址信息（省市区/详细地址/邮编） |
 | 2026-01-13 | v1.6 | 新增账户安全与风险控制：用户识别机制、手机号销号防范、换绑手机号流程、多设备登录策略、风险登录检测 |
 | 2026-01-13 | v1.5 | 完善用户创建方式：支持扫码自动注册、管理员创建、批量导入；新增扫码注册流程图 |
 | 2026-01-13 | v1.4 | 新增用户运营最佳实践：营销活动中心、权益包/月卡、任务中心、站点评价 |
