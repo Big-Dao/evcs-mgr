@@ -2,7 +2,7 @@
 
 > 一句话说明：统一使用 Docker Compose 的 service key 作为“文档主标识”，并定义 Compose / Kubernetes / Spring 的命名映射与端口规范。
 
-**最后更新**: 2026-01-12  \
+**最后更新**: 2026-01-13  \
 **维护者**: 技术负责人 / 架构组  \
 **状态**: 已发布
 
@@ -64,6 +64,7 @@
 | `payment-service` | Service | `evcs-payment` | `evcs-payment` | `evcs-payment` | `8084:8084` |
 | `protocol-service` | Service | `evcs-protocol` | `evcs-protocol` | `evcs-protocol` | `8085:8085` |
 | `monitoring-service` | Service | `evcs-monitoring` | `evcs-monitoring` | `evcs-monitoring` | `8087:8087` |
+| `user-service` | Service | `evcs-user` | `evcs-user` | `evcs-user` | `8088:8088` |
 | `admin-frontend` | Frontend | `evcs-admin` | 无 | `evcs-admin` | `3000:80` |
 
 ---
