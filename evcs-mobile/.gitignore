@@ -1,0 +1,34 @@
+# evcs-mobile 忽略规则
+
+# 依赖
+node_modules/
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# 构建输出
+dist/
+unpackage/
+
+# 编辑器
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
+npm-debug.log*
+
+# 临时文件
+*.local
+.env.local
+.env.*.local
+
+# 小程序开发工具
+project.config.json
+project.private.config.json

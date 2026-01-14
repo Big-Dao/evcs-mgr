@@ -1,0 +1,312 @@
+@import './variables.scss';
+
+// 全局样式重置
+page {
+  background-color: $bg-color;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: $font-size-md;
+  color: $text-color;
+  line-height: $line-height-md;
+  box-sizing: border-box;
+}
+
+view, text, image {
+  box-sizing: border-box;
+}
+
+// 安全区域
+.safe-area-bottom {
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-area-top {
+  padding-top: constant(safe-area-inset-top);
+  padding-top: env(safe-area-inset-top);
+}
+
+// Flex 布局工具类
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  display: flex;
+  flex-direction: column;
+}
+
+.flex-row {
+  display: flex;
+  flex-direction: row;
+}
+
+.flex-wrap {
+  flex-wrap: wrap;
+}
+
+.flex-1 {
+  flex: 1;
+}
+
+.flex-shrink-0 {
+  flex-shrink: 0;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.items-start {
+  align-items: flex-start;
+}
+
+.items-end {
+  align-items: flex-end;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-around {
+  justify-content: space-around;
+}
+
+.justify-end {
+  justify-content: flex-end;
+}
+
+// 文字工具类
+.text-center {
+  text-align: center;
+}
+
+.text-left {
+  text-align: left;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-primary {
+  color: $primary-color;
+}
+
+.text-secondary {
+  color: $text-color-secondary;
+}
+
+.text-tertiary {
+  color: $text-color-tertiary;
+}
+
+.text-success {
+  color: $success-color;
+}
+
+.text-warning {
+  color: $warning-color;
+}
+
+.text-error {
+  color: $error-color;
+}
+
+.font-bold {
+  font-weight: 600;
+}
+
+.font-medium {
+  font-weight: 500;
+}
+
+// 单行省略
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// 多行省略
+.ellipsis-2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+// 间距工具类
+.m-0 { margin: 0; }
+.mt-sm { margin-top: $spacing-sm; }
+.mt-md { margin-top: $spacing-md; }
+.mt-lg { margin-top: $spacing-lg; }
+.mt-xl { margin-top: $spacing-xl; }
+.mb-sm { margin-bottom: $spacing-sm; }
+.mb-md { margin-bottom: $spacing-md; }
+.mb-lg { margin-bottom: $spacing-lg; }
+.mb-xl { margin-bottom: $spacing-xl; }
+.ml-sm { margin-left: $spacing-sm; }
+.ml-md { margin-left: $spacing-md; }
+.mr-sm { margin-right: $spacing-sm; }
+.mr-md { margin-right: $spacing-md; }
+
+.p-0 { padding: 0; }
+.p-sm { padding: $spacing-sm; }
+.p-md { padding: $spacing-md; }
+.p-lg { padding: $spacing-lg; }
+.p-xl { padding: $spacing-xl; }
+.px-md { padding-left: $spacing-md; padding-right: $spacing-md; }
+.px-lg { padding-left: $spacing-lg; padding-right: $spacing-lg; }
+.py-md { padding-top: $spacing-md; padding-bottom: $spacing-md; }
+.py-lg { padding-top: $spacing-lg; padding-bottom: $spacing-lg; }
+
+// 圆角工具类
+.rounded-sm { border-radius: $radius-sm; }
+.rounded-md { border-radius: $radius-md; }
+.rounded-lg { border-radius: $radius-lg; }
+.rounded-xl { border-radius: $radius-xl; }
+.rounded-full { border-radius: $radius-full; }
+
+// 卡片样式
+.card {
+  background-color: $bg-color-white;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-sm;
+}
+
+// 分割线
+.divider {
+  height: 1px;
+  background-color: $border-color-light;
+  margin: $spacing-md 0;
+}
+
+// 按钮基础样式
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 88rpx;
+  border-radius: $radius-lg;
+  font-size: $font-size-lg;
+  font-weight: 500;
+  transition: opacity $transition-fast;
+
+  &:active {
+    opacity: 0.8;
+  }
+
+  &.btn-primary {
+    background: linear-gradient(135deg, $primary-color 0%, $primary-color-dark 100%);
+    color: #FFFFFF;
+  }
+
+  &.btn-secondary {
+    background-color: $fill-color-light;
+    color: $text-color;
+  }
+
+  &.btn-outline {
+    background-color: transparent;
+    border: 2rpx solid $primary-color;
+    color: $primary-color;
+  }
+
+  &.btn-disabled {
+    background-color: $text-color-disabled;
+    color: #FFFFFF;
+    pointer-events: none;
+  }
+
+  &.btn-sm {
+    height: 64rpx;
+    font-size: $font-size-md;
+    border-radius: $radius-md;
+  }
+
+  &.btn-lg {
+    height: 96rpx;
+    font-size: $font-size-xl;
+  }
+}
+
+// 状态标签
+.tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-sm;
+  font-size: $font-size-sm;
+
+  &.tag-success {
+    background-color: rgba($success-color, 0.1);
+    color: $success-color;
+  }
+
+  &.tag-warning {
+    background-color: rgba($warning-color, 0.1);
+    color: $warning-color;
+  }
+
+  &.tag-error {
+    background-color: rgba($error-color, 0.1);
+    color: $error-color;
+  }
+
+  &.tag-info {
+    background-color: rgba($info-color, 0.1);
+    color: $info-color;
+  }
+}
+
+// 空状态
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80rpx 40rpx;
+
+  .empty-icon {
+    width: 200rpx;
+    height: 200rpx;
+    margin-bottom: $spacing-lg;
+  }
+
+  .empty-text {
+    color: $text-color-tertiary;
+    font-size: $font-size-md;
+  }
+
+  .empty-action {
+    margin-top: $spacing-xl;
+  }
+}
+
+// 加载状态
+.loading-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: $spacing-xl;
+
+  .loading-text {
+    margin-left: $spacing-sm;
+    color: $text-color-tertiary;
+    font-size: $font-size-sm;
+  }
+}
+
+// 页面容器
+.page-container {
+  min-height: 100vh;
+  background-color: $bg-color;
+  padding-bottom: constant(safe-area-inset-bottom);
+  padding-bottom: env(safe-area-inset-bottom);
+}
