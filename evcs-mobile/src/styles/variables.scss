@@ -1,0 +1,71 @@
+// 主题色
+$primary-color: #00B42A;
+$primary-color-light: #7BE188;
+$primary-color-dark: #009A29;
+
+// 功能色
+$success-color: #00B42A;
+$warning-color: #FF7D00;
+$error-color: #F53F3F;
+$info-color: #165DFF;
+
+// 中性色
+$text-color: #1D2129;
+$text-color-secondary: #4E5969;
+$text-color-tertiary: #86909C;
+$text-color-quaternary: #C9CDD4;
+$text-color-disabled: #C9CDD4;
+
+// 边框色
+$border-color: #E5E6EB;
+$border-color-light: #F2F3F5;
+
+// 背景色
+$bg-color: #F7F8FA;
+$bg-color-white: #FFFFFF;
+$bg-color-light: #F2F3F5;
+
+// 填充色
+$fill-color: #F7F8FA;
+$fill-color-light: #F2F3F5;
+
+// 遮罩色
+$mask-color: rgba(0, 0, 0, 0.6);
+
+// 阴影
+$shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+$shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+$shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+
+// 圆角
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-full: 9999px;
+
+// 间距
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 12px;
+$spacing-lg: 16px;
+$spacing-xl: 20px;
+$spacing-xxl: 24px;
+
+// 字体大小
+$font-size-xs: 20rpx;
+$font-size-sm: 24rpx;
+$font-size-md: 28rpx;
+$font-size-lg: 32rpx;
+$font-size-xl: 36rpx;
+$font-size-xxl: 40rpx;
+
+// 行高
+$line-height-sm: 1.25;
+$line-height-md: 1.5;
+$line-height-lg: 1.75;
+
+// 动画
+$transition-fast: 0.15s ease;
+$transition-normal: 0.3s ease;
+$transition-slow: 0.5s ease;

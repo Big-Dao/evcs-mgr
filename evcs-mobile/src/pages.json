@@ -1,0 +1,160 @@
+{
+  "pages": [
+    {
+      "path": "pages/home/index",
+      "style": {
+        "navigationBarTitleText": "EVCS充电",
+        "enablePullDownRefresh": true
+      }
+    },
+    {
+      "path": "pages/station/list",
+      "style": {
+        "navigationBarTitleText": "充电站"
+      }
+    },
+    {
+      "path": "pages/station/detail",
+      "style": {
+        "navigationBarTitleText": "充电站详情"
+      }
+    },
+    {
+      "path": "pages/station/map",
+      "style": {
+        "navigationBarTitleText": "地图找桩"
+      }
+    },
+    {
+      "path": "pages/charging/scan",
+      "style": {
+        "navigationBarTitleText": "扫码充电"
+      }
+    },
+    {
+      "path": "pages/charging/session",
+      "style": {
+        "navigationBarTitleText": "充电中",
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/order/list",
+      "style": {
+        "navigationBarTitleText": "我的订单"
+      }
+    },
+    {
+      "path": "pages/order/detail",
+      "style": {
+        "navigationBarTitleText": "订单详情"
+      }
+    },
+    {
+      "path": "pages/user/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/user/profile",
+      "style": {
+        "navigationBarTitleText": "个人资料"
+      }
+    },
+    {
+      "path": "pages/user/wallet",
+      "style": {
+        "navigationBarTitleText": "我的钱包"
+      }
+    },
+    {
+      "path": "pages/user/vehicles",
+      "style": {
+        "navigationBarTitleText": "我的车辆"
+      }
+    },
+    {
+      "path": "pages/login/index",
+      "style": {
+        "navigationStyle": "custom"
+      }
+    },
+    {
+      "path": "pages/login/phone",
+      "style": {
+        "navigationBarTitleText": "手机号登录"
+      }
+    }
+  ],
+  "subPackages": [
+    {
+      "root": "pages-sub/settings",
+      "pages": [
+        {
+          "path": "index",
+          "style": {
+            "navigationBarTitleText": "设置"
+          }
+        },
+        {
+          "path": "about",
+          "style": {
+            "navigationBarTitleText": "关于我们"
+          }
+        },
+        {
+          "path": "help",
+          "style": {
+            "navigationBarTitleText": "帮助中心"
+          }
+        }
+      ]
+    }
+  ],
+  "globalStyle": {
+    "navigationBarTextStyle": "black",
+    "navigationBarTitleText": "EVCS充电",
+    "navigationBarBackgroundColor": "#FFFFFF",
+    "backgroundColor": "#F5F5F5",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#00B42A",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "white",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "首页",
+        "iconPath": "static/tabbar/home.png",
+        "selectedIconPath": "static/tabbar/home-active.png"
+      },
+      {
+        "pagePath": "pages/station/list",
+        "text": "充电站",
+        "iconPath": "static/tabbar/station.png",
+        "selectedIconPath": "static/tabbar/station-active.png"
+      },
+      {
+        "pagePath": "pages/order/list",
+        "text": "订单",
+        "iconPath": "static/tabbar/order.png",
+        "selectedIconPath": "static/tabbar/order-active.png"
+      },
+      {
+        "pagePath": "pages/user/index",
+        "text": "我的",
+        "iconPath": "static/tabbar/user.png",
+        "selectedIconPath": "static/tabbar/user-active.png"
+      }
+    ]
+  },
+  "easycom": {
+    "autoscan": true,
+    "custom": {
+      "^uni-(.*)": "@dcloudio/uni-ui/lib/uni-$1/uni-$1.vue"
+    }
+  }
+}
