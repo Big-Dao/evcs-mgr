@@ -2,7 +2,7 @@
 
 > 一句话说明：本文件是当前仓库“非归档文档”的统一导航入口；各主题只保留一个权威 SSOT，其它文档尽量通过链接引用避免重复维护。
 
-**最后更新**: 2026-01-13  \
+**最后更新**: 2026-01-14  \
 **维护者**: 技术负责人 / 各领域维护团队  \
 **状态**: 已发布
 
@@ -50,6 +50,7 @@
 - 系统架构风险审计报告：[docs/architecture/RISK-AUDIT-REPORT.md](architecture/RISK-AUDIT-REPORT.md)
 - 消息队列设计规范：[docs/architecture/MESSAGE-QUEUE-DESIGN.md](architecture/MESSAGE-QUEUE-DESIGN.md)
 - 分布式锁使用规范：[docs/architecture/DISTRIBUTED-LOCK-DESIGN.md](architecture/DISTRIBUTED-LOCK-DESIGN.md)
+- 身份与网关统一契约 RFC：[docs/architecture/IDENTITY-GATEWAY-CONTEXT-CONTRACT-RFC.md](architecture/IDENTITY-GATEWAY-CONTEXT-CONTRACT-RFC.md)
 
 ## 5. 功能（features）
 
