@@ -11,8 +11,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * JWT工具类
@@ -26,20 +29,49 @@ public class JwtUtil {
     
     @Value("${jwt.expire:7200}")
     private Long expire;
+
+    @Value("${jwt.issuer:}")
+    private String issuer;
+
+    @Value("${jwt.audience:}")
+    private String audience;
+
+    @Value("${jwt.user-type:}")
+    private String userType;
     
     /**
      * 生成JWT Token
      */
     public String generateToken(Long userId, String username, Long tenantId) {
         Date expireDate = new Date(System.currentTimeMillis() + expire * 1000);
-        
-        return JWT.create()
-                .withClaim("userId", userId)
-                .withClaim("username", username)
-                .withClaim("tenantId", tenantId)
+
+        var creator = JWT.create()
+                .withJWTId(UUID.randomUUID().toString())
                 .withExpiresAt(expireDate)
                 .withIssuedAt(new Date())
-                .sign(Algorithm.HMAC256(secret));
+                // Legacy claims (migration compatibility)
+                .withClaim("userId", userId)
+                .withClaim("username", username)
+                .withClaim("tenantId", tenantId);
+
+        if (userId != null) {
+            // Standard claim: subject
+            creator = creator.withSubject(String.valueOf(userId));
+        }
+        if (issuer != null && !issuer.trim().isEmpty()) {
+            creator = creator.withIssuer(issuer.trim());
+        }
+
+        List<String> audiences = parseAudienceList(audience);
+        if (!audiences.isEmpty()) {
+            creator = creator.withAudience(audiences.toArray(new String[0]));
+        }
+
+        if (userType != null && !userType.trim().isEmpty()) {
+            creator = creator.withClaim("userType", userType.trim());
+        }
+
+        return creator.sign(Algorithm.HMAC256(secret));
     }
     
     /**
@@ -62,7 +94,19 @@ public class JwtUtil {
     public Long getUserId(String token) {
         try {
             DecodedJWT jwt = JWT.decode(token);
-            return jwt.getClaim("userId").asLong();
+            Long claimUserId = jwt.getClaim("userId").asLong();
+            if (claimUserId != null) {
+                return claimUserId;
+            }
+            String subject = jwt.getSubject();
+            if (subject == null || subject.trim().isEmpty()) {
+                return null;
+            }
+            try {
+                return Long.parseLong(subject);
+            } catch (NumberFormatException ex) {
+                return null;
+            }
         } catch (JWTDecodeException e) {
             log.error("获取用户ID失败", e);
             return null;
@@ -114,7 +158,7 @@ public class JwtUtil {
     public String refreshToken(String token) {
         try {
             DecodedJWT jwt = JWT.decode(token);
-            Long userId = jwt.getClaim("userId").asLong();
+            Long userId = getUserId(token);
             String username = jwt.getClaim("username").asString();
             Long tenantId = jwt.getClaim("tenantId").asLong();
 
@@ -123,6 +167,18 @@ public class JwtUtil {
             log.error("刷新Token失败", e);
             return null;
         }
+    }
+
+    private static List<String> parseAudienceList(String configuredAudience) {
+        if (configuredAudience == null || configuredAudience.trim().isEmpty()) {
+            return List.of();
+        }
+        List<String> results = new ArrayList<>();
+        Arrays.stream(configuredAudience.split(","))
+                .map(String::trim)
+                .filter(v -> !v.isEmpty())
+                .forEach(results::add);
+        return results;
     }
 
     /**

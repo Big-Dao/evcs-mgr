@@ -53,6 +53,9 @@ mybatis-plus:
 jwt:
   secret: ${JWT_SECRET:evcs-secret-key}
   expire: ${JWT_EXPIRE:7200}
+  issuer: ${JWT_ISSUER:evcs-auth-b}
+  audience: ${JWT_AUDIENCE:evcs-b-mobile}
+  user-type: ${JWT_USER_TYPE:B}
 
 eureka:
   client:
