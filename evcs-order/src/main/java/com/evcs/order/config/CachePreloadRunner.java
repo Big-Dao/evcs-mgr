@@ -8,10 +8,6 @@ import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
-import org.springframework.beans.factory.annotation.Value;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * 缓存预热启动器
@@ -27,23 +23,22 @@ import java.util.List;
 public class CachePreloadRunner implements ApplicationRunner {
     
     private final IBillingPlanCacheService billingPlanCacheService;
-
-    @Value("${evcs.tenant.default-tenant-id:1}")
-    private Long defaultTenantId;
-
-    @Value("${evcs.order.cache.hot-stations:1,2,3,4,5}")
-    private List<Long> hotStationIds;
+    private final TenantProperties tenantProperties;
+    private final OrderCachePreloadProperties cachePreloadProperties;
     
     @Override
     public void run(ApplicationArguments args) throws Exception {
         log.info("Starting cache preload for hot stations...");
         
         try {
-            TenantContext.setCurrentTenantId(defaultTenantId);
+            TenantContext.setCurrentTenantId(tenantProperties.getDefaultTenantId());
             
-            if (hotStationIds != null && !hotStationIds.isEmpty()) {
-                log.info("Preloading {} hot stations: {}", hotStationIds.size(), hotStationIds);
-                billingPlanCacheService.preloadHotStations(hotStationIds);
+            if (cachePreloadProperties.getHotStations() != null
+                && !cachePreloadProperties.getHotStations().isEmpty()) {
+                log.info("Preloading {} hot stations: {}",
+                    cachePreloadProperties.getHotStations().size(),
+                    cachePreloadProperties.getHotStations());
+                billingPlanCacheService.preloadHotStations(cachePreloadProperties.getHotStations());
             } else {
                 log.info("No hot stations configured for preload");
             }
