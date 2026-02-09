@@ -16,6 +16,10 @@ import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactor
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.redisson.Redisson;
+import org.redisson.api.RedissonClient;
+import org.redisson.client.codec.JsonJacksonCodec;
+import org.redisson.config.Config;
 import redis.embedded.RedisServer;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.AlipayResponse;
@@ -224,6 +228,26 @@ public class TestConfig {
         template.setHashValueSerializer(jsonSerializer);
         template.afterPropertiesSet();
         return template;
+    }
+
+    /**
+     * RedissonClient - 连接嵌入式Redis
+     */
+    @Bean(destroyMethod = "shutdown")
+    @Primary
+    public RedissonClient redissonClient() {
+        Config config = new Config();
+        config.useSingleServer()
+            .setAddress("redis://localhost:6370")
+            .setDatabase(0)
+            .setConnectionPoolSize(16)
+            .setConnectionMinimumIdleSize(4)
+            .setConnectTimeout(10000)
+            .setTimeout(3000)
+            .setRetryAttempts(3)
+            .setRetryInterval(1500);
+        config.setCodec(new JsonJacksonCodec());
+        return Redisson.create(config);
     }
 
     /**

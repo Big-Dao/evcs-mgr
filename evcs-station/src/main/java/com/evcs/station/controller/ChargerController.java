@@ -20,6 +20,8 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -28,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -49,6 +52,7 @@ public class ChargerController {
     private final IChargerConnectorSessionCurveService chargerConnectorSessionCurveService;
     private final ProtocolClient protocolClient;
     private final OrderClient orderClient;
+    private final RedissonClient redissonClient;
 
     /**
      * 分页查询充电桩列表
@@ -331,59 +335,77 @@ public class ChargerController {
             return Result.fail("充电桩不存在");
         }
 
-        String actualSessionId = sessionId != null ? sessionId : UUID.randomUUID().toString();
+        String lockKey = "lock:charger:connector:" + chargerId + ":" + connectorNo;
+        RLock lock = redissonClient.getLock(lockKey);
+        boolean acquired = false;
 
-        // 1. Create Order (Pre-check)
         try {
-            Result<Boolean> orderResult = orderClient.startOrder(
-                charger.getStationId(),
-                chargerId,
-                actualSessionId,
-                userId,
-                null // billingPlanId optional
+            acquired = lock.tryLock(5, 30, TimeUnit.SECONDS);
+            if (!acquired) {
+                return Result.fail("充电桩正在处理中，请稍后重试");
+            }
+
+            String actualSessionId = sessionId != null ? sessionId : UUID.randomUUID().toString();
+
+            // 1. Create Order (Pre-check)
+            try {
+                Result<Boolean> orderResult = orderClient.startOrder(
+                    charger.getStationId(),
+                    chargerId,
+                    actualSessionId,
+                    userId,
+                    null // billingPlanId optional
+                );
+                if (!orderResult.isSuccess()) {
+                    log.warn("Order creation failed: {}", orderResult.getMessage());
+                    return Result.fail("创建订单失败: " + orderResult.getMessage());
+                }
+            } catch (Exception e) {
+                log.error("Order creation exception", e);
+                return Result.fail("创建订单异常: " + e.getMessage());
+            }
+
+            // 2. Call Protocol Service
+            try {
+                ProtocolRequest req = new ProtocolRequest();
+                req.setDeviceCode(charger.getChargerCode());
+                req.setSessionId(actualSessionId);
+                req.setUserId(userId);
+                req.setChargerId(chargerId);
+                req.setTenantId(charger.getTenantId());
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("connectorId", connectorNo);
+                req.setData(data);
+
+                Result<ProtocolResponse> protoResult = protocolClient.startCharging(req);
+                if (!protoResult.isSuccess()) {
+                    log.warn("Remote start failed: {}", protoResult.getMessage());
+                    // TODO: Cancel order if protocol fails?
+                    return Result.fail("远程启动失败: " + protoResult.getMessage());
+                }
+            } catch (Exception e) {
+                log.error("Remote start exception", e);
+                return Result.fail("远程启动异常: " + e.getMessage());
+            }
+
+            boolean ok = chargerConnectorService.updateSessionStart(
+                    chargerId,
+                    connectorNo,
+                    actualSessionId,
+                    userId,
+                    LocalDateTime.now(),
+                    initialEnergy
             );
-            if (!orderResult.isSuccess()) {
-                log.warn("Order creation failed: {}", orderResult.getMessage());
-                return Result.fail("创建订单失败: " + orderResult.getMessage());
+            return ok ? Result.successMessage("开始充电指令已下发") : Result.fail("开始充电失败");
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Result.fail("获取锁被中断");
+        } finally {
+            if (acquired && lock.isHeldByCurrentThread()) {
+                lock.unlock();
             }
-        } catch (Exception e) {
-            log.error("Order creation exception", e);
-            return Result.fail("创建订单异常: " + e.getMessage());
         }
-
-        // 2. Call Protocol Service
-        try {
-            ProtocolRequest req = new ProtocolRequest();
-            req.setDeviceCode(charger.getChargerCode());
-            req.setSessionId(actualSessionId);
-            req.setUserId(userId);
-            req.setChargerId(chargerId);
-            req.setTenantId(charger.getTenantId());
-            
-            Map<String, Object> data = new HashMap<>();
-            data.put("connectorId", connectorNo);
-            req.setData(data);
-
-            Result<ProtocolResponse> protoResult = protocolClient.startCharging(req);
-            if (!protoResult.isSuccess()) {
-                log.warn("Remote start failed: {}", protoResult.getMessage());
-                // TODO: Cancel order if protocol fails?
-                return Result.fail("远程启动失败: " + protoResult.getMessage());
-            }
-        } catch (Exception e) {
-            log.error("Remote start exception", e);
-            return Result.fail("远程启动异常: " + e.getMessage());
-        }
-
-        boolean ok = chargerConnectorService.updateSessionStart(
-                chargerId,
-                connectorNo,
-                actualSessionId,
-                userId,
-                LocalDateTime.now(),
-                initialEnergy
-        );
-        return ok ? Result.successMessage("开始充电指令已下发") : Result.fail("开始充电失败");
     }
 
     /**
@@ -405,26 +427,44 @@ public class ChargerController {
             return Result.fail("充电桩不存在");
         }
 
-        // 1. Call Protocol Service
-        try {
-            ProtocolRequest req = new ProtocolRequest();
-            req.setDeviceCode(charger.getChargerCode());
-            req.setSessionId(sessionId);
-            req.setChargerId(chargerId);
-            req.setTenantId(charger.getTenantId());
-            
-            Map<String, Object> data = new HashMap<>();
-            data.put("connectorId", connectorNo);
-            req.setData(data);
+        String lockKey = "lock:charger:connector:" + chargerId + ":" + connectorNo;
+        RLock lock = redissonClient.getLock(lockKey);
+        boolean acquired = false;
 
-            Result<ProtocolResponse> protoResult = protocolClient.stopCharging(req);
-            if (!protoResult.isSuccess()) {
-                 log.warn("Remote stop failed: {}", protoResult.getMessage());
-                 return Result.fail("远程停止失败: " + protoResult.getMessage());
+        try {
+            acquired = lock.tryLock(5, 30, TimeUnit.SECONDS);
+            if (!acquired) {
+                return Result.fail("充电桩正在处理中，请稍后重试");
             }
-        } catch (Exception e) {
-            log.error("Remote stop exception", e);
-            return Result.fail("远程停止异常: " + e.getMessage());
+
+            // 1. Call Protocol Service
+            try {
+                ProtocolRequest req = new ProtocolRequest();
+                req.setDeviceCode(charger.getChargerCode());
+                req.setSessionId(sessionId);
+                req.setChargerId(chargerId);
+                req.setTenantId(charger.getTenantId());
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("connectorId", connectorNo);
+                req.setData(data);
+
+                Result<ProtocolResponse> protoResult = protocolClient.stopCharging(req);
+                if (!protoResult.isSuccess()) {
+                     log.warn("Remote stop failed: {}", protoResult.getMessage());
+                     return Result.fail("远程停止失败: " + protoResult.getMessage());
+                }
+            } catch (Exception e) {
+                log.error("Remote stop exception", e);
+                return Result.fail("远程停止异常: " + e.getMessage());
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Result.fail("获取锁被中断");
+        } finally {
+            if (acquired && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
 
         Double energyValue = energy != null ? energy : 0.0;

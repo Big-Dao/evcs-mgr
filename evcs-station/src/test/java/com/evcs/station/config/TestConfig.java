@@ -4,8 +4,18 @@ import com.evcs.protocol.api.ProtocolEventListener;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
+
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * 测试配置类
@@ -47,5 +57,20 @@ public class TestConfig {
                 // 测试环境空实现
             }
         };
+    }
+
+    /**
+     * RedissonClient Mock - 避免测试环境依赖Redis
+     */
+    @Bean
+    @Primary
+    public RedissonClient redissonClient() throws Exception {
+        RedissonClient client = mock(RedissonClient.class);
+        RLock lock = mock(RLock.class);
+        when(lock.tryLock(anyLong(), anyLong(), any(TimeUnit.class))).thenReturn(true);
+        when(lock.isHeldByCurrentThread()).thenReturn(true);
+        doNothing().when(lock).unlock();
+        when(client.getLock(anyString())).thenReturn(lock);
+        return client;
     }
 }

@@ -7,8 +7,9 @@ import com.evcs.payment.metrics.PaymentMetrics;
 import com.evcs.payment.service.PaymentIdempotencyService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -29,11 +30,12 @@ import java.util.concurrent.TimeUnit;
 public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService {
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final RedissonClient redissonClient;
     private final PaymentOrderMapper paymentOrderMapper;
     private final PaymentMetrics paymentMetrics;
 
     // Redis键前缀
-    private static final String LOCK_KEY_PREFIX = "payment:lock:";
+    private static final String LOCK_KEY_PREFIX = "lock:payment:";
     private static final String CACHE_KEY_PREFIX = "payment:cache:";
 
     // 默认过期时间
@@ -50,15 +52,11 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
         try {
             java.util.Objects.requireNonNull(lockKey, "lockKey不能为null");
             java.util.Objects.requireNonNull(requestId, "requestId不能为null");
-            
-            Boolean success = redisTemplate.opsForValue().setIfAbsent(
-                lockKey,
-                requestId,
-                lockTime,
-                TimeUnit.SECONDS
-            );
 
-            if (Boolean.TRUE.equals(success)) {
+            RLock lock = redissonClient.getLock(lockKey);
+            boolean acquired = lock.tryLock(5, lockTime, TimeUnit.SECONDS);
+
+            if (acquired) {
                 log.debug("获取幂等性锁成功: idempotentKey={}, requestId={}", idempotentKey, requestId);
                 paymentMetrics.recordCustomMetric("payment.idempotency.lock.success", 1.0,
                     java.util.Map.of("operation", "try_lock"));
@@ -68,7 +66,13 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
                     java.util.Map.of("operation", "try_lock"));
             }
 
-            return Boolean.TRUE.equals(success);
+            return acquired;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            log.warn("获取幂等性锁被中断: idempotentKey={}, requestId={}", idempotentKey, requestId);
+            paymentMetrics.recordCustomMetric("payment.idempotency.lock.interrupted", 1.0,
+                java.util.Map.of("operation", "try_lock"));
+            return false;
         } catch (Exception e) {
             log.error("获取幂等性锁异常: idempotentKey={}, requestId={}", idempotentKey, requestId, e);
             paymentMetrics.recordCustomMetric("payment.idempotency.lock.error", 1.0,
@@ -85,37 +89,17 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
 
         String lockKey = buildLockKey(idempotentKey);
         try {
-            // Lua脚本确保原子性删除（只有持有锁的客户端才能删除）
-            String luaScript =
-                "if redis.call('get', KEYS[1]) == ARGV[1] then " +
-                "    return redis.call('del', KEYS[1]) " +
-                "else " +
-                "    return 0 " +
-                "end";
-
             java.util.Objects.requireNonNull(lockKey, "lockKey不能为null");
             java.util.Objects.requireNonNull(requestId, "requestId不能为null");
-            
-            // 使用RedisScript替代废弃的eval方法
-            DefaultRedisScript<Long> redisScript = new DefaultRedisScript<>();
-            redisScript.setScriptText(luaScript);
-            redisScript.setResultType(Long.class);
-            
-            java.util.List<String> keys = java.util.Collections.singletonList(lockKey);
-            java.util.Objects.requireNonNull(keys, "keys不能为null");
-            
-            Long result = redisTemplate.execute(
-                redisScript,
-                keys,
-                requestId
-            );
 
-            if (result != null && result > 0) {
+            RLock lock = redissonClient.getLock(lockKey);
+            if (lock.isHeldByCurrentThread()) {
+                lock.unlock();
                 log.debug("释放幂等性锁成功: idempotentKey={}, requestId={}", idempotentKey, requestId);
                 paymentMetrics.recordCustomMetric("payment.idempotency.unlock.success", 1.0,
                     java.util.Map.of("operation", "unlock"));
             } else {
-                log.warn("释放幂等性锁失败，可能不是锁持有者: idempotentKey={}, requestId={}", idempotentKey, requestId);
+                log.warn("释放幂等性锁跳过，当前线程未持有锁: idempotentKey={}, requestId={}", idempotentKey, requestId);
                 paymentMetrics.recordCustomMetric("payment.idempotency.unlock.failure", 1.0,
                     java.util.Map.of("operation", "unlock"));
             }

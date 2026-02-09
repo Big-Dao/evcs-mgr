@@ -28,6 +28,7 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.redisson:redisson-spring-boot-starter:3.24.3'
     
     // Database and ORM
     implementation "org.postgresql:postgresql:${postgresqlVersion}"
