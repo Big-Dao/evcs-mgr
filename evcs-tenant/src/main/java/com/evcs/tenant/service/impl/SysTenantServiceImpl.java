@@ -24,8 +24,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -543,9 +545,25 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
                         .in("parent_id", tenantIds)
                         .groupBy("parent_id"))
                         .stream()
-                        .collect(Collectors.toMap(
-                                m -> ((Number) m.get("parent_id")).longValue(),
-                                m -> ((Number) m.get("cnt")).intValue()));
+                        .map(m -> {
+                            Object parentId = m.get("parent_id");
+                            if (parentId == null) {
+                                parentId = m.get("PARENT_ID");
+                            }
+                            Object count = m.get("cnt");
+                            if (count == null) {
+                                count = m.get("CNT");
+                            }
+                            if (parentId == null || count == null) {
+                                return null;
+                            }
+                            return new AbstractMap.SimpleEntry<>(
+                                    ((Number) parentId).longValue(),
+                                    ((Number) count).intValue()
+                            );
+                        })
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         for (SysTenant tenant : tenants) {
             tenant.setTenantTypeName(resolveTenantTypeName(tenant.getTenantType()));

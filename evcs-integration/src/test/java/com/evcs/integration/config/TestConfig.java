@@ -10,6 +10,8 @@ import com.evcs.protocol.api.ProtocolEventListener;
 import com.evcs.payment.service.channel.AlipayClientFactory;
 import com.alipay.api.request.AlipayTradeAppPayRequest;
 import com.alipay.api.response.AlipayTradeAppPayResponse;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 
 import jakarta.annotation.PostConstruct;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -19,6 +21,7 @@ import redis.embedded.RedisServer;
 import java.time.LocalDateTime;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.concurrent.TimeUnit;
 
 import com.alipay.api.AlipayClient;
 import org.mockito.Mockito;
@@ -162,6 +165,21 @@ public class TestConfig {
                 // Test mock - do nothing
             }
         };
+    }
+
+    /**
+     * RedissonClient Mock - 避免测试环境依赖Redis
+     */
+    @Bean
+    @Primary
+    public RedissonClient redissonClient() throws Exception {
+        RedissonClient client = Mockito.mock(RedissonClient.class);
+        RLock lock = Mockito.mock(RLock.class);
+        Mockito.when(lock.tryLock(Mockito.anyLong(), Mockito.anyLong(), Mockito.any(TimeUnit.class))).thenReturn(true);
+        Mockito.when(lock.isHeldByCurrentThread()).thenReturn(true);
+        Mockito.doNothing().when(lock).unlock();
+        Mockito.when(client.getLock(Mockito.anyString())).thenReturn(lock);
+        return client;
     }
 
 }

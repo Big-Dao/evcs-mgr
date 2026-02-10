@@ -101,10 +101,14 @@ subprojects {
     
     tasks.named('test') {
         useJUnitPlatform()
-        
+
         // 测试失败后继续执行其他测试
         ignoreFailures = false
-        
+
+        jacoco {
+            excludes = ['net/sf/jsqlparser/**']
+        }
+
         // 显示测试输出
         testLogging {
             events "passed", "skipped", "failed"

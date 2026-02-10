@@ -386,14 +386,21 @@ Callback --> PSP: 按渠道规范返回 success/FAIL
 
 ## 13. Swagger/OpenAPI
 
-接口文档由各服务输出，常用入口如下：
+接口文档由各服务输出，当前未在网关做统一聚合，需访问各服务端口。
 
-- Swagger UI: `http://localhost:<service-port>/swagger-ui.html`
-- OpenAPI JSON: `http://localhost:<service-port>/v3/api-docs`
+### 13.1 服务 OpenAPI 入口（本地）
 
-示例（Auth 服务）：
-- `http://localhost:8081/swagger-ui.html`
-- `http://localhost:8081/v3/api-docs`
+| 服务 | 端口 | Swagger UI | OpenAPI JSON |
+| --- | --- | --- | --- |
+| evcs-auth | 8081 | `http://localhost:8081/swagger-ui.html` | `http://localhost:8081/v3/api-docs` |
+| evcs-tenant | 8086 | `http://localhost:8086/swagger-ui.html` | `http://localhost:8086/v3/api-docs` |
+| evcs-station | 8082 | `http://localhost:8082/swagger-ui.html` | `http://localhost:8082/v3/api-docs` |
+| evcs-order | 8083 | `http://localhost:8083/swagger-ui.html` | `http://localhost:8083/v3/api-docs` |
+| evcs-payment | 8084 | `http://localhost:8084/swagger-ui.html` | `http://localhost:8084/v3/api-docs` |
+| evcs-protocol | 8085 | `http://localhost:8085/swagger-ui.html` | `http://localhost:8085/v3/api-docs` |
+| evcs-monitoring | 8087 | `http://localhost:8087/swagger-ui.html` | `http://localhost:8087/v3/api-docs` |
+
+说明：Auth/Tenant 服务在 `config-repo` 中显式配置了 Springdoc/Knife4j，其它服务使用默认路径。
 
 ## 14. 更新日志
 

@@ -41,7 +41,9 @@ import org.springframework.test.context.TestPropertySource;
     "evcs.payment.order-sync.direct-api-enabled=true",
     "evcs.payment.order-sync.order-service-url=http://localhost:8080", // Placeholder, will be mocked
     "spring.rabbitmq.listener.simple.auto-startup=false",
-    "spring.cloud.discovery.enabled=false"
+    "spring.cloud.discovery.enabled=false",
+    "springdoc.api-docs.enabled=false",
+    "springdoc.swagger-ui.enabled=false"
 })
 @DisplayName("全链路集成测试")
 class FullFlowIntegrationTest extends BaseIntegrationTest {

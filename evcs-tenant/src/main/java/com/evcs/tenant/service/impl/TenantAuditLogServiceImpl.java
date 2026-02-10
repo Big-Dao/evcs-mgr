@@ -10,6 +10,7 @@ import com.evcs.tenant.service.ITenantAuditLogService;
 import com.evcs.tenant.service.ISysTenantService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -30,7 +31,7 @@ import java.util.Map;
 public class TenantAuditLogServiceImpl extends ServiceImpl<TenantAuditLogMapper, TenantAuditLog>
         implements ITenantAuditLogService {
 
-    private final ISysTenantService tenantService;
+    private final ObjectProvider<ISysTenantService> tenantServiceProvider;
 
     @Override
     public void logAudit(Long operatorTenantId, Long operatorUserId, Long targetTenantId,
@@ -47,9 +48,12 @@ public class TenantAuditLogServiceImpl extends ServiceImpl<TenantAuditLogMapper,
 
             // 获取目标租户名称
             if (targetTenantId != null) {
-                var targetTenant = tenantService.getTenantById(targetTenantId);
-                if (targetTenant != null) {
-                    auditLog.setTargetTenantName(targetTenant.getTenantName());
+                ISysTenantService tenantService = tenantServiceProvider.getIfAvailable();
+                if (tenantService != null) {
+                    var targetTenant = tenantService.getTenantById(targetTenantId);
+                    if (targetTenant != null) {
+                        auditLog.setTargetTenantName(targetTenant.getTenantName());
+                    }
                 }
             }
 

@@ -6,6 +6,16 @@ plugins {
 
 description = 'Multi-tenant Management Service'
 
+// 为了支持其他模块在测试中依赖本模块，需要配置jar任务
+jar {
+    enabled = true
+    archiveClassifier = ''
+}
+
+bootJar {
+    archiveClassifier = 'boot'
+}
+
 // 配置bootRun任务
 tasks.bootRun {
     jvmArgs = [
