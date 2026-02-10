@@ -1,6 +1,6 @@
 # EVCS Manager 下一步行动计划
 
-> **版本**: v3.3 | **创建日期**: 2025-12-07 | **更新日期**: 2026-02-10 | **维护者**: 项目管理办公室（PMO）
+> **版本**: v3.4 | **创建日期**: 2025-12-07 | **更新日期**: 2026-02-10 | **维护者**: 项目管理办公室（PMO）
 > **适用范围**: 开发团队、测试团队、运维团队
 
 ---
@@ -40,11 +40,12 @@ kubectl get pods -A | grep evcs || true
 ## 2. 近期完成
 
 ### 2.1 2026-02-10
-- P0 关键风险修复（4项）
+- P0 关键风险修复（5项）
   - 修复协议栈 fallback 返回 true 逻辑（`ChargerServiceImpl.java:549-599`）
   - 补充缺失的 `@PreAuthorize` 权限注解（4 Controller + 3 build.gradle）
   - 引入 Redisson 分布式锁保护充电操作（`ChargerServiceImpl.java:323-452`）
   - 引入 Resilience4j 熔断/限流机制（3 配置类 + YAML）
+  - 统一异常处理规范（BaseException + 4 特化异常 + GlobalExceptionHandler 增强）
 - 多层级租户治理 Part 2（审计日志 + 配额管理）
   - `TenantAuditLog` 实体 + Mapper + Service + Controller
   - `ITenantQuotaService` 配额检查与管理
@@ -86,7 +87,7 @@ kubectl get pods -A | grep evcs || true
 | 引入 Resilience4j 熔断/限流 | P0 | ✅ 已完成 | 2 天 |
 | 补充缺失的 `@PreAuthorize` 权限注解 | P0 | ✅ 已完成 | 1 天 |
 | 修复协议栈 fallback 返回 true 问题 | P0 | ✅ 已完成 | 1 天 |
-| 统一异常处理规范 | P1 | 待开始 | 1 天 |
+| 统一异常处理规范 | P1 | ✅ 已完成 | 1 天 |
 
 **详细分析**: [系统架构风险审计报告](../architecture/RISK-AUDIT-REPORT.md)
 
@@ -247,6 +248,7 @@ kubectl get pods -A | grep evcs || true
 
 | 日期 | 版本 | 变更 |
 |------|------|------|
+| 2026-02-10 | v3.4 | 统一异常处理规范完成（新增 5 项异常类 + GlobalExceptionHandler 增强）|
 | 2026-02-10 | v3.3 | P0 关键风险修复完成（4项）、多层级租户治理 Part2 完成、代码 TODO 清零 |
 | 2026-01-13 | v3.2 | 新增 P2.5 海量数据分区规划（详见 DATA-PARTITIONING-RFC.md） |
 | 2026-01-13 | v3.1 | 新增 P3 evcs-user 模块规划（22 周，详见 RFC） |

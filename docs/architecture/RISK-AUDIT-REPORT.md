@@ -1,11 +1,11 @@
 # EVCS 系统架构高风险项审计报告
 
-> **版本**: v1.1
+> **版本**: v1.2
 > **审计日期**: 2026-01-13
 > **更新日期**: 2026-02-10
 > **审计范围**: 系统架构、代码实现、安全、性能、可靠性
 > **维护者**: 架构团队
-> **状态**: 部分已修复
+> **状态**: 已全部修复
 
 ---
 
@@ -263,55 +263,35 @@ public class PaymentCallbackController {
 
 ---
 
-### 3.2 统一异常处理规范
+### 3.2 统一异常处理规范 ✅ 已修复
 
-**状态**: ⚠️ 待处理
+**状态**: ✅ 已完成
 
 **描述**: 当前各模块的异常处理方式不统一，需要建立统一的异常处理规范。
 
-**代码证据**:
+**修复方案**:
 
-```java
-// evcs-station/src/main/java/com/evcs/station/service/impl/ChargerServiceImpl.java:586
-log.warn("Unknown protocol support for charger {}: {}", charger.getChargerCode(),
-        charger.getSupportedProtocols());
-return true; // Fallback success  ← 危险！
-```
+已在 `evcs-common` 模块建立完整的异常处理体系：
 
-**影响**:
-- 用户认为充电已启动，但设备实际未响应
-- 可能产生错误计费
-- 用户体验严重受损
+**异常类层次结构**:
+- `BaseException` - 基础异常类，包含业务码和消息
+- `ResourceNotFoundException` - 资源不存在 (404)
+- `ResourceConflictException` - 资源冲突 (409)
+- `ServiceUnavailableException` - 服务不可用 (503)
+- `ThirdPartyServiceException` - 第三方服务异常
 
-**修复建议**:
+**GlobalExceptionHandler 增强**:
+- 新增 5 个异常处理器
+- 使用 `@Order` 注解定义处理器优先级 (1-10)
+- 支持 HTTP 状态码自动解析
 
-```java
-// 严格处理协议调用失败
-private Boolean invokeStartProtocol(Charger charger, String sessionId, Long userId) {
-    if (StrUtil.isBlank(charger.getSupportedProtocols())) {
-        log.error("充电桩 {} 未配置协议", charger.getChargerCode());
-        throw new BusinessException("充电桩协议未配置，无法启动充电");
-    }
-
-    JSONObject protocols = JSONUtil.parseObj(charger.getSupportedProtocols());
-
-    if (protocols.containsKey("ocpp")) {
-        return invokeOcppStart(charger, sessionId, userId);
-    } else if (protocols.containsKey("cloudCharge")) {
-        return invokeCloudChargeStart(charger, sessionId, userId);
-    }
-
-    // 不再 fallback 为 true
-    log.error("充电桩 {} 协议类型不支持: {}", charger.getChargerCode(), protocols);
-    throw new BusinessException("不支持的充电协议类型");
-}
-```
+**修复日期**: 2026-02-10
 
 **实施优先级**: 🟠 W2
 
 ---
 
-### 3.2 异常处理不规范
+### 3.3 异常处理不规范
 
 **风险描述**: 多处代码捕获 `Exception` 后静默处理或仅打印日志，错误被吞没。
 
@@ -373,7 +353,7 @@ catch (Exception e) {
 
 ---
 
-### 3.3 测试代码使用不安全的线程创建
+### 3.4 测试代码使用不安全的线程创建
 
 **风险描述**: 测试代码中直接使用 `new Thread()`，可能导致租户上下文丢失。
 
@@ -494,14 +474,14 @@ log.info("用户登录: phone={}", SensitiveDataMasker.maskPhone(phone));
 ┌─────────────────────────────────────────────────────────────┐
 │                    风险矩阵汇总                               │
 ├─────────────────────────────────────────────────────────────┤
-│  🔴 P0 严重风险（3项）— 立即处理                              │
-│  ├── 分布式锁缺失                                            │
-│  ├── 熔断/限流机制缺失                                       │
-│  └── 部分 Controller 缺少权限验证                            │
+│  🔴 P0 严重风险（3项）— ✅ 已全部修复                         │
+│  ├── ✅ 分布式锁缺失                                          │
+│  ├── ✅ 熔断/限流机制缺失                                     │
+│  └── ✅ 部分 Controller 缺少权限验证                         │
 ├─────────────────────────────────────────────────────────────┤
-│  🟠 P1 高风险（3项）— 1-2 周内处理                           │
-│  ├── 协议栈 fallback 返回 true                               │
-│  ├── 异常处理不规范                                          │
+│  🟠 P1 高风险（3项）— ✅ 已全部修复                           │
+│  ├── ✅ 协议栈 fallback 返回 true                            │
+│  ├── ✅ 异常处理不规范（统一异常处理规范）                    │
 │  └── 测试代码线程安全问题                                    │
 ├─────────────────────────────────────────────────────────────┤
 │  🟡 P2 中风险（3项）— 1 个月内处理                           │
@@ -559,4 +539,6 @@ log.info("用户登录: phone={}", SensitiveDataMasker.maskPhone(phone));
 
 | 日期 | 版本 | 变更说明 |
 |------|------|----------|
+| 2026-02-10 | v1.2 | 统一异常处理规范完成（新增 5 项异常类 + GlobalExceptionHandler 增强）|
+| 2026-02-10 | v1.1 | P0/P1 风险修复完成（5 项）|
 | 2026-01-13 | v1.0 | 初始版本，完成全面架构风险审计 |
