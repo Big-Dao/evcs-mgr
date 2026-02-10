@@ -24,8 +24,11 @@ import com.evcs.station.state.ChargerStatusManager;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -57,6 +60,9 @@ public class ChargerServiceImpl
 
     @Autowired
     private ChargerStatusManager statusManager;
+
+    @Autowired(required = false)
+    private RedissonClient redissonClient;
 
     @Override
     public Charger getByCode(String code) {
@@ -322,6 +328,7 @@ public class ChargerServiceImpl
 
     /**
      * 开始充电会话
+     * 使用分布式锁防止并发启动同一充电桩
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -330,50 +337,72 @@ public class ChargerServiceImpl
             Long chargerId,
             String sessionId,
             Long userId) {
-        // 检查充电桩状态
-        Charger charger = this.getById(chargerId);
-        if (charger == null) {
-            throw new RuntimeException("充电桩不存在");
+        String lockKey = "charger:lock:start:" + chargerId;
+        RLock lock = redissonClient != null ? redissonClient.getLock(lockKey) : null;
+
+        if (lock != null) {
+            try {
+                // 尝试获取锁，等待 5 秒，锁定 30 秒
+                if (!lock.tryLock(5, 30, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("充电桩正在处理中，请稍后重试");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("获取锁被中断", e);
+            }
         }
-        if (charger.getStatus() != 1) {
-            throw new RuntimeException("充电桩状态异常，无法开始充电");
-        }
-        if (charger.getEnabled() != 1) {
-            throw new RuntimeException("充电桩已禁用");
-        }
-        // 调用协议层开始充电
-        boolean protoOk = invokeStartProtocol(charger, sessionId, userId);
-        if (!protoOk) {
-            throw new RuntimeException("协议启动失败");
-        }
-        boolean dbOk = baseMapper.startChargingSession(
-                chargerId,
-                sessionId,
-                userId,
-                LocalDateTime.now()) > 0;
-        if (dbOk) {
-            // 发布充电开始事件，订单服务监听此事件创建订单
-            Long billingPlanId = null; // 可以从请求参数传入
-            eventPublisher.publishEvent(
-                    new ChargingStartEvent(
-                            this,
-                            charger.getStationId(),
-                            chargerId,
-                            sessionId,
-                            userId,
-                            billingPlanId,
-                            TenantContext.getCurrentTenantId()));
-            log.info(
-                    "充电会话开始，充电桩ID: {}, 会话ID: {}, 用户ID: {}",
+
+        try {
+            // 检查充电桩状态
+            Charger charger = this.getById(chargerId);
+            if (charger == null) {
+                throw new RuntimeException("充电桩不存在");
+            }
+            if (charger.getStatus() != 1) {
+                throw new RuntimeException("充电桩状态异常，无法开始充电");
+            }
+            if (charger.getEnabled() != 1) {
+                throw new RuntimeException("充电桩已禁用");
+            }
+            // 调用协议层开始充电
+            boolean protoOk = invokeStartProtocol(charger, sessionId, userId);
+            if (!protoOk) {
+                throw new RuntimeException("协议启动失败");
+            }
+            boolean dbOk = baseMapper.startChargingSession(
                     chargerId,
                     sessionId,
-                    userId);
+                    userId,
+                    LocalDateTime.now()) > 0;
+            if (dbOk) {
+                // 发布充电开始事件，订单服务监听此事件创建订单
+                Long billingPlanId = null; // 可以从请求参数传入
+                eventPublisher.publishEvent(
+                        new ChargingStartEvent(
+                                this,
+                                charger.getStationId(),
+                                chargerId,
+                                sessionId,
+                                userId,
+                                billingPlanId,
+                                TenantContext.getCurrentTenantId()));
+                log.info(
+                        "充电会话开始，充电桩ID: {}, 会话ID: {}, 用户ID: {}",
+                        chargerId,
+                        sessionId,
+                        userId);
+            }
+            return dbOk;
+        } finally {
+            if (lock != null && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
-        return dbOk;
     }
 
     /**
      * 结束充电会话
+     * 使用分布式锁防止并发停止同一充电桩
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -382,29 +411,50 @@ public class ChargerServiceImpl
             Long chargerId,
             Double energy,
             Long duration) {
-        Charger charger = this.getById(chargerId);
-        if (charger == null) {
-            return false;
+        String lockKey = "charger:lock:stop:" + chargerId;
+        RLock lock = redissonClient != null ? redissonClient.getLock(lockKey) : null;
+
+        if (lock != null) {
+            try {
+                // 尝试获取锁，等待 5 秒，锁定 30 秒
+                if (!lock.tryLock(5, 30, TimeUnit.SECONDS)) {
+                    throw new RuntimeException("充电桩正在处理中，请稍后重试");
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new RuntimeException("获取锁被中断", e);
+            }
         }
-        String sessionId = charger.getCurrentSessionId();
-        invokeStopProtocol(charger);
-        boolean ok = baseMapper.endChargingSession(chargerId, energy, duration) > 0;
-        if (ok && sessionId != null) {
-            // 发布充电停止事件，订单服务监听此事件完成订单
-            eventPublisher.publishEvent(
-                    new ChargingStopEvent(
-                            this,
-                            sessionId,
-                            energy,
-                            duration,
-                            TenantContext.getCurrentTenantId()));
-            log.info(
-                    "充电会话结束，会话ID: {}, 充电量: {}, 时长: {}",
-                    sessionId,
-                    energy,
-                    duration);
+
+        try {
+            Charger charger = this.getById(chargerId);
+            if (charger == null) {
+                return false;
+            }
+            String sessionId = charger.getCurrentSessionId();
+            invokeStopProtocol(charger);
+            boolean ok = baseMapper.endChargingSession(chargerId, energy, duration) > 0;
+            if (ok && sessionId != null) {
+                // 发布充电停止事件，订单服务监听此事件完成订单
+                eventPublisher.publishEvent(
+                        new ChargingStopEvent(
+                                this,
+                                sessionId,
+                                energy,
+                                duration,
+                                TenantContext.getCurrentTenantId()));
+                log.info(
+                        "充电会话结束，会话ID: {}, 充电量: {}, 时长: {}",
+                        sessionId,
+                        energy,
+                        duration);
+            }
+            return ok;
+        } finally {
+            if (lock != null && lock.isHeldByCurrentThread()) {
+                lock.unlock();
+            }
         }
-        return ok;
     }
 
     /**
@@ -546,44 +596,56 @@ public class ChargerServiceImpl
         return this.updateById(charger);
     }
 
+    /**
+     * 调用协议层启动充电
+     * <p>严格按照协议类型调用，不支持 fallback 为 true，确保充电真实启动
+     *
+     * @throws RuntimeException 当协议未配置、服务不可用或协议不支持时抛出异常
+     */
     private boolean invokeStartProtocol(
             Charger charger,
             String sessionId,
             Long userId) {
+        // 1. 检查协议是否配置
         if (StrUtil.isBlank(charger.getSupportedProtocols())) {
-            log.warn(
-                    "Charger {} has no supported protocols defined, defaulting to CloudCharge skip (simulated success)",
-                    charger.getChargerCode());
-            // For safety in this transition phase, return true if no protocol defined, or
-            // false?
-            // Given the previous requirement "Graceful degradation", let's return true but
-            // log warn.
-            return true;
+            log.error("Charger {} has no supported protocols configured", charger.getChargerCode());
+            throw new RuntimeException("充电桩协议未配置，无法启动充电: " + charger.getChargerCode());
         }
 
         cn.hutool.json.JSONObject protocols = cn.hutool.json.JSONUtil.parseObj(charger.getSupportedProtocols());
 
-        // Priority 1: OCPP
+        // 2. 优先处理 OCPP 协议
         if (protocols.containsKey("ocpp")) {
             if (ocppService == null) {
-                log.error("OCPP Service not available but charger {} requires OCPP", charger.getChargerCode());
-                return false;
+                log.error("OCPP protocol service not available for charger {}", charger.getChargerCode());
+                throw new RuntimeException("OCPP 协议服务不可用");
             }
-            return ocppService.startCharging(charger.getId(), sessionId, userId);
+            boolean result = ocppService.startCharging(charger.getId(), sessionId, userId);
+            if (!result) {
+                log.error("OCPP startCharging returned false for charger {}", charger.getChargerCode());
+                throw new RuntimeException("OCPP 协议启动充电失败");
+            }
+            return true;
         }
 
-        // Priority 2: CloudCharge
+        // 3. 处理 CloudCharge 协议
         if (protocols.containsKey("cloudCharge")) {
             if (cloudService == null) {
-                log.error("CloudCharge Service not available but charger {} requires it", charger.getChargerCode());
-                return false;
+                log.error("CloudCharge protocol service not available for charger {}", charger.getChargerCode());
+                throw new RuntimeException("CloudCharge 协议服务不可用");
             }
-            return cloudService.startCharging(charger.getId(), sessionId, userId);
+            boolean result = cloudService.startCharging(charger.getId(), sessionId, userId);
+            if (!result) {
+                log.error("CloudCharge startCharging returned false for charger {}", charger.getChargerCode());
+                throw new RuntimeException("CloudCharge 协议启动充电失败");
+            }
+            return true;
         }
 
-        log.warn("Unknown protocol support for charger {}: {}", charger.getChargerCode(),
-                charger.getSupportedProtocols());
-        return true; // Fallback success
+        // 4. 不支持的协议类型
+        log.error("Unsupported protocol type for charger {}: {}",
+                charger.getChargerCode(), charger.getSupportedProtocols());
+        throw new RuntimeException("不支持的充电协议类型: " + charger.getSupportedProtocols());
     }
 
     private void invokeStopProtocol(Charger charger) {

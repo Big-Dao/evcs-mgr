@@ -11,6 +11,7 @@ import com.evcs.payment.service.IReconciliationService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -20,12 +21,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/reconciliation")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN', 'FINANCE', 'TENANT_ADMIN')")
 public class ReconciliationController {
 
     private final IReconciliationService reconciliationService;
 
     @GetMapping("/tasks")
     @Operation(summary = "分页查询对账任务")
+    @PreAuthorize("hasPermission(null, 'reconciliation:query')")
     public Result<Page<ReconciliationTask>> getTaskList(ReconciliationQuery query) {
         return Result.success(reconciliationService.getTaskList(query));
     }
@@ -45,6 +48,7 @@ public class ReconciliationController {
     @PostMapping("/execute")
     @Operation(summary = "执行对账")
     @DataScope
+    @PreAuthorize("hasPermission(null, 'reconciliation:execute')")
     public Result<ReconciliationResult> executeReconciliation(@RequestBody ReconciliationRequest request) {
         ReconciliationResult result = reconciliationService.reconcile(request);
         return Result.success(result);

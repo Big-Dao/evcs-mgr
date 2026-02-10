@@ -9,6 +9,7 @@ import com.evcs.tenant.dto.PeriodDistributionDTO;
 import com.evcs.tenant.dto.RecentOrderDTO;
 import com.evcs.tenant.service.IDashboardService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -21,6 +22,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/dashboard")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR', 'TENANT_ADMIN', 'USER')")
 public class DashboardController {
     
     private final IDashboardService dashboardService;
@@ -32,6 +34,7 @@ public class DashboardController {
     @GetMapping({"/stats", "/statistics", "/summary"})
     @DataScope(value = DataScope.DataScopeType.TENANT,
               description = "仅查看当前租户统计数据")
+    @PreAuthorize("hasPermission(null, 'dashboard:stats')")
     public Result<DashboardStatsDTO> getDashboardStats() {
         DashboardStatsDTO stats = dashboardService.getDashboardStats();
         return Result.success(stats);

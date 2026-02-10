@@ -20,6 +20,9 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
 
+    // Security for @PreAuthorize support
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
     // Add Jakarta Servlet dependency for Spring Boot 3.x compatibility
     implementation 'jakarta.servlet:jakarta.servlet-api:6.0.0'
 

@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import io.swagger.v3.oas.annotations.Parameter;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -20,6 +21,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/tenant")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
 public class TenantController {
     
     private final ISysTenantService tenantService;
@@ -28,8 +30,9 @@ public class TenantController {
      * 创建租户
      */
     @PostMapping
-    @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY, 
+    @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能在当前租户下创建子租户")
+    @PreAuthorize("hasPermission(null, 'tenant:create')")
     public Result<SysTenant> createTenant(@Valid @RequestBody SysTenant tenant) {
         boolean created = tenantService.saveTenant(tenant);
         SysTenant payload = created ? tenantService.getTenantById(tenant.getId()) : null;
@@ -42,6 +45,7 @@ public class TenantController {
     @PutMapping("/{id}")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能更新本租户及下级租户信息")
+    @PreAuthorize("hasPermission(#id, 'tenant:update')")
     public Result<SysTenant> updateTenant(
             @Parameter(description = "租户ID") @PathVariable Long id,
             @Valid @RequestBody SysTenant tenant) {
@@ -57,6 +61,7 @@ public class TenantController {
     @DeleteMapping("/{id}")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能删除下级租户")
+    @PreAuthorize("hasPermission(#id, 'tenant:delete')")
     public Result<Void> deleteTenant(@Parameter(description = "租户ID") @PathVariable Long id) {
         tenantService.deleteTenant(id);
         return Result.successMessage("租户删除成功");

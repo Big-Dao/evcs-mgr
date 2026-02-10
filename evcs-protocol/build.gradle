@@ -25,6 +25,9 @@ dependencies {
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
 
+    // Security for @PreAuthorize support
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
     // Resilience (timeouts already configured in ProtocolServiceConfiguration)
     implementation "io.github.resilience4j:resilience4j-spring-boot3:${resilience4jVersion}"
     implementation "io.github.resilience4j:resilience4j-micrometer:${resilience4jVersion}"

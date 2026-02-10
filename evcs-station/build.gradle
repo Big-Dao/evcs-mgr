@@ -29,6 +29,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'org.springframework.boot:spring-boot-starter-security'
     implementation 'org.redisson:redisson-spring-boot-starter:3.24.3'
+
+    // Resilience4j for circuit breaker, rate limiter, and retry
+    implementation "io.github.resilience4j:resilience4j-spring-boot3:${resilience4jVersion}"
+    implementation "io.github.resilience4j:resilience4j-micrometer:${resilience4jVersion}"
+    implementation "io.github.resilience4j:resilience4j-feign:${resilience4jVersion}"
     
     // Database and ORM
     implementation "org.postgresql:postgresql:${postgresqlVersion}"

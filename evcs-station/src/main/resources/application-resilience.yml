@@ -1,0 +1,80 @@
+# Resilience4j Configuration for EVCS Station Service
+# This file provides local fallback configuration for development
+# In production, these values should be managed via Config Server
+
+resilience4j:
+  # 熔断器配置
+  circuitbreaker:
+    instances:
+      # 协议服务熔断器
+      protocolService:
+        failure-rate-threshold: 50              # 失败率阈值 50%
+        wait-duration-in-open-state: 30s        # 熔断打开后等待 30 秒
+        permitted-number-of-calls-in-half-open-state: 3  # 半开状态允许 3 次调用
+        sliding-window-size: 100                # 滑动窗口 100 次调用
+        minimum-number-of-calls: 10             # 最少 10 次调用后计算失败率
+        record-exceptions:
+          - java.lang.Exception
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+          - java.lang.IllegalStateException
+
+      # 数据库操作熔断器
+      database:
+        failure-rate-threshold: 60              # 数据库失败率阈值更高 60%
+        wait-duration-in-open-state: 15s        # 熔断打开后等待 15 秒
+        sliding-window-size: 50                 # 滑动窗口 50 次调用
+        minimum-number-of-calls: 5              # 最少 5 次调用
+
+  # 重试配置
+  retry:
+    instances:
+      # 协议服务重试
+      protocolService:
+        max-attempts: 3                         # 最多重试 3 次
+        wait-duration: 100ms                    # 初始等待 100ms
+        retry-exceptions:
+          - java.io.IOException
+          - java.net.SocketTimeoutException
+        ignore-exceptions:
+          - java.lang.IllegalArgumentException
+          - java.lang.IllegalStateException
+
+      # 数据库重试
+      database:
+        max-attempts: 2                         # 数据库最多重试 2 次
+        wait-duration: 50ms                     # 初始等待 50ms
+        retry-exceptions:
+          - java.sql.SQLException
+          - org.springframework.dao.DataIntegrityViolationException
+
+  # 超时配置
+  timelimiter:
+    instances:
+      # 协议服务超时
+      protocolService:
+        timeout-duration: 30s                   # 30 秒超时
+        cancel-running-future: true
+
+  # 限流配置（可选，根据需要启用）
+  ratelimiter:
+    instances:
+      # 充电启动限流
+      startCharging:
+        limit-for-period: 10                    # 每个周期最多 10 个请求
+        limit-refresh-period: 1s                # 周期 1 秒
+        timeout-duration: 5s                    # 等待许可的超时时间 5 秒
+
+      # 协议调用限流
+      protocolCall:
+        limit-for-period: 100                   # 每个周期最多 100 个请求
+        limit-refresh-period: 1s                # 周期 1 秒
+        timeout-duration: 1s                    # 等待许可的超时时间 1 秒
+
+# 配置日志
+logging:
+  level:
+    io.github.resilience4j: DEBUG
+    io.github.resilience4j.circuitbreaker: DEBUG
+    io.github.resilience4j.retry: DEBUG
+    io.github.resilience4j.timelimiter: DEBUG

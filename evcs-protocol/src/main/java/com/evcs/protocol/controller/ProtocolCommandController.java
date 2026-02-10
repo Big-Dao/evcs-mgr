@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -20,12 +21,14 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/protocol/command")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR', 'TENANT_ADMIN')")
 public class ProtocolCommandController {
 
     private final ProtocolManager protocolManager;
 
     @Operation(summary = "远程启动充电", description = "下发远程启动指令到充电桩")
     @PostMapping("/start")
+    @PreAuthorize("hasPermission(null, 'charger:start')")
     public Result<ProtocolResponse> startCharging(@RequestBody ProtocolRequest request) {
         log.info("Received remote start command: deviceCode={}, sessionId={}", request.getDeviceCode(), request.getSessionId());
         
@@ -49,6 +52,7 @@ public class ProtocolCommandController {
 
     @Operation(summary = "远程停止充电", description = "下发远程停止指令到充电桩")
     @PostMapping("/stop")
+    @PreAuthorize("hasPermission(null, 'charger:stop')")
     public Result<ProtocolResponse> stopCharging(@RequestBody ProtocolRequest request) {
         log.info("Received remote stop command: deviceCode={}, sessionId={}", request.getDeviceCode(), request.getSessionId());
         
