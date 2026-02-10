@@ -381,7 +381,8 @@ public class ChargerController {
                 Result<ProtocolResponse> protoResult = protocolClient.startCharging(req);
                 if (!protoResult.isSuccess()) {
                     log.warn("Remote start failed: {}", protoResult.getMessage());
-                    // TODO: Cancel order if protocol fails?
+                    // 注意：协议启动失败时，订单处于待启动状态，需要人工处理或自动取消
+                    // 建议订单服务实现超时自动取消机制
                     return Result.fail("远程启动失败: " + protoResult.getMessage());
                 }
             } catch (Exception e) {

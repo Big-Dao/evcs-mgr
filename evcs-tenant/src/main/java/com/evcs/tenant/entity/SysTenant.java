@@ -60,6 +60,8 @@ public class SysTenant extends BaseEntity {
     private Integer maxUsers;
     private Integer maxStations;
     private Integer maxChargers;
+    private Integer maxChildren;    // 最大子租户数
+    private Integer maxSessions;    // 最大并发会话数
     private String remark;
 
     @TableField(exist = false)

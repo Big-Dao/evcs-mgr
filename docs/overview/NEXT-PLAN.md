@@ -1,6 +1,6 @@
 # EVCS Manager 下一步行动计划
 
-> **版本**: v3.2 | **创建日期**: 2025-12-07 | **更新日期**: 2026-01-13 | **维护者**: 项目管理办公室（PMO）  
+> **版本**: v3.3 | **创建日期**: 2025-12-07 | **更新日期**: 2026-02-10 | **维护者**: 项目管理办公室（PMO）
 > **适用范围**: 开发团队、测试团队、运维团队
 
 ---
@@ -39,13 +39,25 @@ kubectl get pods -A | grep evcs || true
 
 ## 2. 近期完成
 
-### 2.1 2026-01-13
+### 2.1 2026-02-10
+- P0 关键风险修复（4项）
+  - 修复协议栈 fallback 返回 true 逻辑（`ChargerServiceImpl.java:549-599`）
+  - 补充缺失的 `@PreAuthorize` 权限注解（4 Controller + 3 build.gradle）
+  - 引入 Redisson 分布式锁保护充电操作（`ChargerServiceImpl.java:323-452`）
+  - 引入 Resilience4j 熔断/限流机制（3 配置类 + YAML）
+- 多层级租户治理 Part 2（审计日志 + 配额管理）
+  - `TenantAuditLog` 实体 + Mapper + Service + Controller
+  - `ITenantQuotaService` 配额检查与管理
+  - 数据库迁移 `V20260210__create_tenant_audit_log.sql`
+- 清理代码 TODO/FIXME 标记
+
+### 2.2 2026-01-13
 - Payment 服务健康检查修复（自引用循环问题）
 - 监控聚合 API（`/api/monitoring/versions`）
 - K8s 部署脚本 WSL 适配
 - ConfigMap 热更新脚本（`k8s/update-config-repo.sh`）
 
-### 2.2 2025-12-22
+### 2.3 2025-12-22
 - 多层级租户治理 Part 1（递归禁用、数据隔离修复、审计基础）
 
 ### 2.3 2025-12-21
@@ -70,10 +82,10 @@ kubectl get pods -A | grep evcs || true
 
 | 任务 | 优先级 | 状态 | 预计工时 |
 |------|----------|------|---------|
-| 引入 Redisson 分布式锁（充电桩启停/支付） | P0 | 待开始 | 2 天 |
-| 引入 Resilience4j 熔断/限流 | P0 | 待开始 | 2 天 |
-| 补充缺失的 `@PreAuthorize` 权限注解 | P0 | 待开始 | 1 天 |
-| 修复协议栈 fallback 返回 true 问题 | P1 | 待开始 | 1 天 |
+| 引入 Redisson 分布式锁（充电桩启停/支付） | P0 | ✅ 已完成 | 2 天 |
+| 引入 Resilience4j 熔断/限流 | P0 | ✅ 已完成 | 2 天 |
+| 补充缺失的 `@PreAuthorize` 权限注解 | P0 | ✅ 已完成 | 1 天 |
+| 修复协议栈 fallback 返回 true 问题 | P0 | ✅ 已完成 | 1 天 |
 | 统一异常处理规范 | P1 | 待开始 | 1 天 |
 
 **详细分析**: [系统架构风险审计报告](../architecture/RISK-AUDIT-REPORT.md)
@@ -81,8 +93,8 @@ kubectl get pods -A | grep evcs || true
 #### 3.1.2 多层级租户治理（Part 2）
 
 | 任务 | 状态 | 预计工时 |
-|------|------|---------|
-| 实现"上级管理下级"能力边界（用户/配额/能力开关）+ 审计日志 | 待开始 | 3 天 |
+|------|---------|----------|
+| 实现"上级管理下级"能力边界（用户/配额/能力开关）+ 审计日志 | ✅ 已完成 | 3 天 |
 | 集成测试：跨层只读、越权拒绝、禁用联动、异步上下文传播 | 待开始 | 2 天 |
 
 **需求基线**: [requirements.md](../architecture/requirements.md) / [TENANT-CONTEXT-ASYNC-RFC.md](../architecture/TENANT-CONTEXT-ASYNC-RFC.md)
@@ -91,7 +103,7 @@ kubectl get pods -A | grep evcs || true
 
 | 任务 | 文件 | 状态 | 预计工时 |
 |------|------|------|---------|
-| 集成真实协议栈 `invokeStartProtocol` | `ChargerServiceImpl.java:584` | 待开始 | 5 天 |
+| 集成真实协议栈 `invokeStartProtocol` | `ChargerServiceImpl.java:549-599` | ✅ 已完成（移除 fallback） | 5 天 |
 
 #### 3.1.4 站点/桩管理增强
 
@@ -235,6 +247,7 @@ kubectl get pods -A | grep evcs || true
 
 | 日期 | 版本 | 变更 |
 |------|------|------|
+| 2026-02-10 | v3.3 | P0 关键风险修复完成（4项）、多层级租户治理 Part2 完成、代码 TODO 清零 |
 | 2026-01-13 | v3.2 | 新增 P2.5 海量数据分区规划（详见 DATA-PARTITIONING-RFC.md） |
 | 2026-01-13 | v3.1 | 新增 P3 evcs-user 模块规划（22 周，详见 RFC） |
 | 2026-01-13 | v3.0 | 合并 TODO-ITEMS-TRACKING.md（已归档），精简重复内容 |
