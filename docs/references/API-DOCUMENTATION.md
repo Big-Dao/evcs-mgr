@@ -1,44 +1,32 @@
 # EVCS Manager API 文档
 
-> **版本**: v1.2 | **最后更新**: 2026-01-13 | **维护者**: 技术负责人 | **状态**: 活跃
+> **版本**: v1.3 | **最后更新**: 2026-02-10 | **维护者**: 技术负责人 | **状态**: 活跃
 >
-> ⚠️ **注意**: 支付回调与协议事件接口仍在真实联调阶段；C端用户接口详见 evcs-user 模块 RFC
+> ⚠️ **注意**: 以网关路由与服务控制器为准；完整接口以 Swagger/OpenAPI 输出为权威来源。
 
-## 概述
+## 1. 概述
 
-本文档详细说明 EVCS Manager 系统的所有 REST API 接口，包括请求/响应示例、错误码说明和调用时序图。
+本文档说明 EVCS Manager 的主要 REST API 接口与调用约定，覆盖认证、站点、充电桩、订单、支付、租户、监控、协议等模块。
 
-**当前版本**: v1.0.0  
-**基础URL**: `http://api.evcs-mgr.com`  
+**当前版本**: v1.0.0  \
+**本地网关**: `http://localhost:8080`  \
 **认证方式**: JWT Bearer Token
 
----
+说明：
+- 业务接口默认通过网关 `http://localhost:8080/api/**` 访问。
+- 协议服务的设备接口目前为直连 `evcs-protocol`（未在网关聚合）。
 
-## 目录
+## 2. 认证与授权
 
-- [认证与授权](#认证与授权)
-- [C端用户管理](#c端用户管理)
-- [充电站管理](#充电站管理)
-- [充电桩管理](#充电桩管理)
-- [订单管理](#订单管理)
-- [支付管理](#支付管理)
-- [租户管理](#租户管理)
-- [错误码说明](#错误码说明)
-- [调用时序图](#调用时序图)
-
----
-
-## 认证与授权
-
-### 登录
+### 2.1 登录
 
 **接口**: `POST /api/auth/login`
 
 **请求示例**:
 ```json
 {
-  "identifier": "admin@example.com",
-  "password": "password123"
+  "identifier": "admin@tenant1",
+  "password": "password"
 }
 ```
 
@@ -49,646 +37,226 @@
   "message": "登录成功",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expireTime": "2025-10-13T10:30:00Z",
+    "expireTime": "2026-02-10T10:30:00Z",
     "userInfo": {
       "userId": 1,
       "username": "admin",
       "tenantId": 1,
-      "identifier": "admin@example.com",
+      "identifier": "admin@tenant1",
       "roles": ["ADMIN"]
     }
   }
 }
 ```
 
-### 刷新Token
+### 2.2 用户信息
 
-**接口**: `POST /api/auth/refresh`
+**接口**: `GET /api/auth/userinfo`
 
 **请求头**:
 ```
 Authorization: Bearer {token}
 ```
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "Token刷新成功",
-  "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expireTime": "2025-10-13T11:30:00Z"
-  }
-}
-```
+说明：当前实现允许从 `Authorization` 或 `X-User-Id`/`X-Tenant-Id` 中解析上下文。
 
----
+## 3. C 端用户管理
 
-## C端用户管理
+C 端用户模块为规划中服务 `evcs-user`，接口定义详见 [evcs-user 模块 RFC](../architecture/EVCS-USER-MODULE-RFC.md)。
 
-> 完整接口定义详见 [evcs-user 模块 RFC](../architecture/EVCS-USER-MODULE-RFC.md)
+## 4. 充电站管理
 
-### 接口概览
+### 4.1 接口概览
 
-| 模块 | 接口数 | 说明 |
-|------|--------|------|
-| 用户注册/登录 | 6 | 手机号注册、扫码注册、OAuth登录、换绑手机号 |
-| 钱包/余额 | 4 | 余额查询、充值、提现、流水 |
-| 积分 | 4 | 积分查询、明细、兑换规则 |
-| 优惠券 | 5 | 可用优惠券、领取、核销 |
-| 车辆管理 | 4 | 车辆CRUD、默认车辆 |
-| 收藏/消息 | 4 | 收藏站点、站内消息 |
-| 客诉工单 | 4 | 工单创建、查询、回复 |
-| 用户画像 | 1 | 我的画像摘要 |
-| 营销活动 | 4 | 活动列表、参与、记录 |
-| 权益包 | 5 | 权益包列表、购买、我的权益 |
-| 任务中心 | 3 | 任务列表、进度、领奖 |
-| 站点评价 | 4 | 评价列表、提交、点赞 |
-| 管理端(B端) | 12 | 用户管理、积分调整、优惠券发放、客诉处理 |
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/station` | `POST` | 新增充电站 |
+| `/api/station/{stationId}` | `PUT` | 更新充电站 |
+| `/api/station/{stationId}` | `DELETE` | 删除充电站 |
+| `/api/station/{stationId}` | `GET` | 查询充电站详情 |
+| `/api/station` | `GET` | 分页/列表查询（含 `/page`、`/list`） |
+| `/api/station/nearby` | `GET` | 查询附近充电站 |
+| `/api/station/{stationId}/status` | `PUT` | 启用/停用充电站 |
+| `/api/station/check-code` | `GET` | 校验站点编码 |
+| `/api/station/count` | `GET` | 统计充电站数量 |
 
-### 用户注册
+### 4.2 查询附近充电站
 
-**接口**: `POST /api/v1/users/register`
-
-**请求示例**:
-```json
-{
-  "phone": "13800138000",
-  "verifyCode": "123456",
-  "password": "optional_password",
-  "referralCode": "ABC123"
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "注册成功",
-  "data": {
-    "userId": 10001,
-    "phone": "138****8000",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-### 扫码触发注册
-
-**接口**: `POST /api/v1/users/register/scan`
-
-**说明**: 用户扫描充电枪二维码时，如检测为新用户则静默创建账户
-
-**请求示例**:
-```json
-{
-  "connectorId": 1001,
-  "oauthType": "WECHAT",
-  "oauthId": "openid_xxx",
-  "phone": "13800138000"
-}
-```
-
-### 第三方登录
-
-**接口**: `POST /api/v1/users/login/oauth`
-
-**请求示例**:
-```json
-{
-  "oauthType": "WECHAT",
-  "code": "wx_auth_code_xxx"
-}
-```
-
----
-
-## 充电站管理
-
-### 创建充电站
-
-**接口**: `POST /api/stations`
-
-**权限**: `station:create`
-
-**请求示例**:
-```json
-{
-  "stationCode": "ST-BJ-001",
-  "stationName": "北京朝阳充电站",
-  "address": "北京市朝阳区xxx路123号",
-  "latitude": 39.9087,
-  "longitude": 116.4089,
-  "province": "北京市",
-  "city": "北京市",
-  "district": "朝阳区",
-  "status": 1
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "创建成功",
-  "data": {
-    "stationId": 1001,
-    "stationCode": "ST-BJ-001",
-    "stationName": "北京朝阳充电站",
-    "tenantId": 1,
-    "createTime": "2025-10-12T10:30:00Z"
-  }
-}
-```
-
-### 查询充电站列表
-
-**接口**: `GET /api/stations`
-
-**权限**: `station:query`
+**接口**: `GET /api/station/nearby`
 
 **请求参数**:
-- `page` (int, optional): 页码，默认1
-- `size` (int, optional): 每页数量，默认20，最大100
-- `stationName` (string, optional): 充电站名称（模糊查询）
-- `status` (int, optional): 状态（1-启用，0-停用）
+- `latitude` (double, required)
+- `longitude` (double, required)
+- `radius` (double, optional, 默认 10)
+- `limit` (int, optional, 默认 20)
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "查询成功",
-  "data": {
-    "records": [
-      {
-        "stationId": 1001,
-        "stationCode": "ST-BJ-001",
-        "stationName": "北京朝阳充电站",
-        "address": "北京市朝阳区xxx路123号",
-        "latitude": 39.9087,
-        "longitude": 116.4089,
-        "status": 1,
-        "totalChargers": 10,
-        "availableChargers": 7,
-        "chargingChargers": 3,
-        "faultChargers": 0
-      }
-    ],
-    "total": 1,
-    "page": 1,
-    "size": 20
-  }
-}
-```
+## 5. 充电桩管理
 
-### 查询附近充电站
+### 5.1 接口概览
 
-**接口**: `GET /api/stations/nearby`
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/charger` | `POST` | 新增充电桩 |
+| `/api/charger` | `PUT` | 更新充电桩 |
+| `/api/charger/{chargerId}` | `DELETE` | 删除充电桩 |
+| `/api/charger/{chargerId}` | `GET` | 查询充电桩详情 |
+| `/api/charger` | `GET` | 分页/列表查询（含 `/page`、`/list`） |
+| `/api/charger/{chargerId}/status` | `PUT` | 更新充电桩状态（`status` 参数） |
+| `/api/charger/{chargerId}/connectors/{connectorNo}/start` | `POST` | 启动充电（按枪口） |
+| `/api/charger/{chargerId}/connectors/{connectorNo}/stop` | `POST` | 停止充电（按枪口） |
+| `/api/charger/{chargerId}/reset` | `POST` | 设备复位 |
+| `/api/charger/{chargerId}/enable` | `PUT` | 启用/停用充电桩 |
+| `/api/charger/offline` | `GET` | 离线设备列表 |
+| `/api/charger/fault` | `GET` | 故障设备列表 |
+| `/api/charger/statistics` | `GET` | 统计信息 |
 
-**权限**: `station:query`
+## 6. 订单管理
 
-**请求参数**:
-- `latitude` (double, required): 纬度
-- `longitude` (double, required): 经度
-- `radius` (double, optional): 搜索半径（公里），默认5km
-- `limit` (int, optional): 返回数量，默认10
+### 6.1 订单状态说明（关键业务过程）
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "查询成功",
-  "data": [
-    {
-      "stationId": 1001,
-      "stationName": "北京朝阳充电站",
-      "distance": 0.8,
-      "availableChargers": 7,
-      "latitude": 39.9087,
-      "longitude": 116.4089
-    }
-  ]
-}
-```
-
----
-
-## 充电桩管理
-
-### 创建充电桩
-
-**接口**: `POST /api/chargers`
-
-**权限**: `charger:create`
-
-**请求示例**:
-```json
-{
-  "stationId": 1001,
-  "chargerCode": "CHG-001",
-  "chargerName": "1号充电桩",
-  "chargerType": 1,
-  "ratedPower": 60.0,
-  "status": 1
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "创建成功",
-  "data": {
-    "chargerId": 10001,
-    "chargerCode": "CHG-001",
-    "chargerName": "1号充电桩",
-    "stationId": 1001,
-    "createTime": "2025-10-12T10:30:00Z"
-  }
-}
-```
-
-### 更新充电桩状态
-
-**接口**: `PUT /api/chargers/{chargerId}/status`
-
-**权限**: `charger:update`
-
-**请求示例**:
-```json
-{
-  "status": 2
-}
-```
-
-**状态值说明**:
-- 0: 离线
-- 1: 空闲
-- 2: 充电中
-- 3: 故障
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "状态更新成功",
-  "data": {
-    "chargerId": 10001,
-    "status": 2,
-    "updateTime": "2025-10-12T10:35:00Z"
-  }
-}
-```
-
----
-
-## 订单管理
-
-### 订单状态说明（关键业务过程）
-
-订单状态字段 `status` 用于描述充电订单的生命周期（常量定义在订单服务实体 `ChargingOrder` 中）。常见流转为：
+订单状态字段 `status` 由订单服务 `ChargingOrder` 定义，常见流转为：
 
 `0(已创建/充电中)` → `1(已结束/已完成计量)` → `10(待支付)` → `11(已支付)`
 
 退款相关：`12(退款中)` → `13(已退款)`；取消：`2(已取消)`。
 
-| status | 含义 |
-|---:|---|
-| 0 | 已创建（通常在收到“开始充电”事件后创建，代表本次充电会话进行中） |
-| 1 | 已完成（收到“停止充电”事件后完成计量与金额计算） |
-| 10 | 待支付 |
-| 11 | 已支付 |
-| 12 | 退款中 |
-| 13 | 已退款 |
-| 2 | 已取消 |
+### 6.2 接口概览
 
-支付相关的简易字段（占位/兼容）：
-- `paymentTradeId`: 第三方支付交易号（tradeId/tradeNo 等）
-- `paidTime`: 支付完成时间
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/order` | `GET` | 分页/列表查询（`/page`、`/list`） |
+| `/api/order/by-session` | `GET` | 按会话查询订单 |
+| `/api/order/{id}` | `GET` | 根据 ID 查询订单 |
+| `/api/order/start` | `POST` | 协议事件：开始充电创建订单（幂等） |
+| `/api/order/stop` | `POST` | 协议事件：停止充电完成订单（幂等） |
+| `/api/order/{orderId}/to-pay` | `POST` | 进入待支付 |
+| `/api/order/{orderId}/paid` | `POST` | 标记已支付 |
+| `/api/order/{orderId}/cancel` | `POST` | 取消订单 |
+| `/api/order/{orderId}/refunding` | `POST` | 标记退款中 |
+| `/api/order/{orderId}/refunded` | `POST` | 标记已退款 |
+| `/api/order/payment/callback` | `POST` | 支付回调通知（内部） |
+| `/api/order/statistics/city` | `GET` | 城市级统计 |
 
-### 创建充电订单
+## 7. 支付管理
 
-**接口**: `POST /api/orders`
+### 7.1 接口概览
 
-**权限**: `order:create`
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/payment/create` | `POST` | 创建支付 |
+| `/api/payment/query/{tradeNo}` | `GET` | 查询支付状态 |
+| `/api/payment/refund` | `POST` | 退款 |
+| `/api/payment/callback/alipay` | `POST` | 支付宝回调 |
+| `/api/payment/callback/wechat` | `POST` | 微信回调 |
+| `/api/payment/callback/alipay/refund` | `POST` | 支付宝退款回调 |
+| `/api/payment/callback/wechat/refund` | `POST` | 微信退款回调 |
+| `/api/reconciliation/execute` | `POST` | 手工对账 |
+| `/api/reconciliation/daily/{channel}` | `POST` | 每日对账 |
 
-**请求示例**:
-```json
-{
-  "chargerId": 10001,
-  "userId": 1,
-  "vehicleId": "京A12345",
-  "estimatedDuration": 60
-}
-```
+说明：支付回调与退款回调由第三方支付平台调用，无需手工触发。
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "订单创建成功",
-  "data": {
-    "orderId": "ORD-202510120001",
-    "chargerId": 10001,
-    "status": 1,
-    "createTime": "2025-10-12T10:30:00Z",
-    "estimatedEndTime": "2025-10-12T11:30:00Z"
-  }
-}
-```
+## 8. 租户管理
 
-### 开始充电
+### 8.1 租户接口
 
-**接口**: `POST /api/orders/{orderId}/start`
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/tenant` | `POST` | 创建租户 |
+| `/api/tenant/{id}` | `PUT` | 更新租户 |
+| `/api/tenant/{id}` | `DELETE` | 删除租户 |
+| `/api/tenant/{id}` | `GET` | 查询租户 |
+| `/api/tenant/list` | `GET` | 租户列表 |
+| `/api/tenant/page` | `GET` | 租户分页 |
+| `/api/tenant/{parentId}/children` | `GET` | 子租户列表 |
+| `/api/tenant/tree` | `GET` | 租户树 |
+| `/api/tenant/{id}/status` | `PUT` | 启用/停用租户 |
+| `/api/tenant/check-code` | `GET` | 校验租户编码 |
 
-**权限**: `order:control`
+### 8.2 配额与审计
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "充电已开始",
-  "data": {
-    "orderId": "ORD-202510120001",
-    "status": 2,
-    "startTime": "2025-10-12T10:32:00Z"
-  }
-}
-```
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/tenant/quota/usage/{tenantId}` | `GET` | 查询配额使用 |
+| `/api/tenant/quota/{tenantId}` | `PUT` | 更新配额 |
+| `/api/tenant/quota/check/create-child/{parentId}` | `GET` | 校验创建子租户 |
+| `/api/tenant/quota/check/add-station/{tenantId}` | `GET` | 校验新增站点 |
+| `/api/tenant/quota/check/add-charger/{tenantId}` | `GET` | 校验新增充电桩 |
+| `/api/tenant/quota/check/add-user/{tenantId}` | `GET` | 校验新增用户 |
+| `/api/tenant/audit-log/page` | `GET` | 审计日志分页 |
+| `/api/tenant/audit-log/actions` | `GET` | 审计动作列表 |
+| `/api/tenant/audit-log/statistics/cross-layer` | `GET` | 跨层级访问统计 |
 
-### 停止充电
+### 8.3 Dashboard
 
-**接口**: `POST /api/orders/{orderId}/stop`
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/dashboard/stats` | `GET` | 统计摘要（兼容 `/statistics`、`/summary`） |
+| `/api/dashboard/charger-status` | `GET` | 充电桩状态统计 |
+| `/api/dashboard/charging-trend` | `GET` | 充电趋势 |
+| `/api/dashboard/revenue-trend` | `GET` | 收入趋势 |
+| `/api/dashboard/order-period-distribution` | `GET` | 订单时段分布 |
+| `/api/dashboard/recent-orders` | `GET` | 近期订单 |
+| `/api/dashboard/station-ranking` | `GET` | 站点排行 |
+| `/api/dashboard/charger-utilization` | `GET` | 桩使用率 |
 
-**权限**: `order:control`
+### 8.4 内部接口
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "充电已停止",
-  "data": {
-    "orderId": "ORD-202510120001",
-    "status": 3,
-    "stopTime": "2025-10-12T11:15:00Z",
-    "totalEnergy": 35.6,
-    "totalAmount": 78.32,
-    "duration": 43
-  }
-}
-```
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/internal/api/v1/tenant-hierarchy/descendant` | `GET` | 查询下级租户（内部） |
 
-### 查询订单详情
+## 9. 监控服务
 
-**接口**: `GET /api/orders/{orderId}`
+监控服务由网关透传至 `evcs-monitoring`，支持 `/api/monitoring/**` 与 `/api/v1/monitoring/**`。
 
-**权限**: `order:query`
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/monitoring/overview` | `GET` | 监控总览 |
+| `/api/monitoring/versions` | `GET` | 服务版本汇总 |
+| `/api/monitoring/services/health` | `GET` | 服务健康聚合 |
+| `/api/monitoring/services/{serviceName}/health` | `GET` | 指定服务健康 |
+| `/api/monitoring/metrics/system` | `GET` | 系统指标 |
+| `/api/monitoring/metrics/performance` | `GET` | 性能指标 |
+| `/api/monitoring/metrics/business` | `GET` | 业务指标 |
+| `/api/monitoring/alerts` | `GET` | 告警列表 |
+| `/api/monitoring/alerts/{id}` | `GET` | 告警详情 |
+| `/api/monitoring/alerts/{id}/acknowledge` | `POST` | 确认告警 |
+| `/api/monitoring/alerts/{id}/resolve` | `POST` | 关闭告警 |
+| `/api/monitoring/alerts/statistics` | `GET` | 告警统计 |
+| `/api/monitoring/logs/realtime` | `GET` | 实时日志 |
+| `/api/monitoring/logs/search` | `GET` | 日志搜索 |
 
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "查询成功",
-  "data": {
-    "orderId": "ORD-202510120001",
-    "chargerId": 10001,
-    "userId": 1,
-    "status": 4,
-    "totalEnergy": 35.6,
-    "totalAmount": 78.32,
-    "paidAmount": 78.32,
-    "paymentStatus": 2,
-    "createTime": "2025-10-12T10:30:00Z",
-    "startTime": "2025-10-12T10:32:00Z",
-    "stopTime": "2025-10-12T11:15:00Z",
-    "payTime": "2025-10-12T11:16:30Z"
-  }
-}
-```
+## 10. 协议服务
 
----
+云快充协议接口为设备直连 `evcs-protocol`，当前未在网关聚合：
 
-## 支付管理
+| 接口 | 方法 | 说明 |
+| --- | --- | --- |
+| `/api/cloudcharge/heartbeat` | `POST` | 心跳上报 |
+| `/api/cloudcharge/status` | `POST` | 状态上报 |
+| `/api/cloudcharge/start` | `POST` | 开始充电 |
+| `/api/cloudcharge/stop` | `POST` | 停止充电 |
 
-### 创建支付
+协议调试接口：`/debug/protocol/**`（内部联调使用）。
 
-**接口**: `POST /api/payments`
+## 11. 错误码说明
 
-**权限**: `payment:create`
+错误码以 [错误码规范](../overview/ERROR-CODE-STANDARDS.md) 为准。本节仅给出通用示例。
 
-**请求示例**:
-```json
-{
-  "orderId": "ORD-202510120001",
-  "paymentMethod": "WECHAT",
-  "amount": 78.32
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "支付创建成功",
-  "data": {
-    "paymentId": "PAY-202510120001",
-    "orderId": "ORD-202510120001",
-    "amount": 78.32,
-    "paymentUrl": "weixin://wxpay/bizpayurl?pr=xxx",
-    "expireTime": "2025-10-12T11:30:00Z"
-  }
-}
-```
-
-> ⚠️ 说明：仓库内同时存在“网关聚合路径/历史示例路径”和“服务直连路径”。
-> - 业务流程与回调/退款交互以当前支付服务实现为准（见下方“支付回调/退款回调/退款/对账”接口）。
-> - 对外统一入口最终以 Swagger/Knife4j（`/doc.html`）展示为准。
-
-### 查询支付状态
-
-**接口（支付服务现行实现）**: `GET /api/payment/query/{tradeNo}`
-
-**权限**: `payment:query`
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "查询成功",
-  "data": {
-    "paymentId": 1001,
-    "tradeNo": "PAY-202510120001",
-    "payParams": "{...}",
-    "payUrl": "weixin://wxpay/bizpayurl?pr=xxx",
-    "amount": 78.32,
-    "status": "PENDING"
-  }
-}
-```
-
-### 支付回调
-
-**接口（现行实现）**:
-- `POST /api/payment/callback/alipay`
-- `POST /api/payment/callback/wechat`
-
-**退款回调（现行实现）**:
-- `POST /api/payment/callback/alipay/refund`
-- `POST /api/payment/callback/wechat/refund`
-
-**说明**:
-- 路由以当前代码实现为准，暂不使用 `{provider}` 动态路径。
-- 由第三方支付平台回调，无需手动调用。
-
-**回调处理要点（现行实现口径）**:
-- **验签/解密**：微信回调包含加密字段，需按平台规范解密；支付宝按签名字段验签。
-- **幂等**：同一笔交易回调可能重复投递，服务端需要幂等处理。
-- **金额校验**：回调金额与本地订单金额不一致时应拒绝或标记异常（对应错误码 `4003`）。
-- **订单状态同步**：支付服务在处理回调后，会尝试通知订单服务更新支付结果（内部回调见“调用时序图-支付回调处理流程”）。
-
-**支持渠道**:
-- `wechat`: 微信支付
-- `alipay`: 支付宝
-- `union`: 银联支付（暂不支持，仅预留，如需启用需补齐渠道枚举与控制器入口）
-
-### 退款
-
-**接口（支付服务现行实现）**: `POST /api/payment/refund`
-
-**权限**: `payment:refund`
-
-**请求示例**:
-```json
-{
-  "paymentId": 1001,
-  "refundAmount": 50.00,
-  "refundReason": "用户申请退款"
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "退款受理成功",
-  "data": {
-    "refundNo": "WXRF202510120001",
-    "refundAmount": 50.00,
-    "refundStatus": "PROCESSING"
-  }
-}
-```
-
-### 对账
-
-**接口（支付服务现行实现）**:
-- `POST /api/reconciliation/execute`
-- `POST /api/reconciliation/daily/{channel}`
-
-**请求示例（手工对账）**:
-```json
-{
-  "reconciliationDate": "2025-12-16",
-  "channel": "alipay"
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "对账完成",
-  "data": {
-    "reconciliationDate": "2025-12-16",
-    "channel": "alipay",
-    "totalCount": 100,
-    "matchedCount": 98,
-    "mismatchCount": 2,
-    "systemTotalAmount": 8888.88,
-    "channelTotalAmount": 8888.88,
-    "amountDifference": 0.00,
-    "successRate": 98.00,
-    "status": "PARTIAL"
-  }
-}
-```
-
----
-
-## 租户管理
-
-### 创建租户
-
-**接口**: `POST /api/tenants`
-
-**权限**: `tenant:create` (系统管理员专用)
-
-**请求示例**:
-```json
-{
-  "tenantName": "示例运营商",
-  "contactName": "张三",
-  "contactPhone": "13800138000",
-  "contactEmail": "zhangsan@example.com",
-  "parentTenantId": null
-}
-```
-
-**响应示例**:
-```json
-{
-  "code": 200,
-  "message": "租户创建成功",
-  "data": {
-    "tenantId": 2,
-    "tenantName": "示例运营商",
-    "createTime": "2025-10-12T10:30:00Z"
-  }
-}
-```
-
----
-
-## 错误码说明
-
-### HTTP状态码
+### 11.1 HTTP 状态码
 
 | 状态码 | 说明 |
-|--------|------|
+| --- | --- |
 | 200 | 请求成功 |
-| 201 | 创建成功 |
-| 204 | 删除成功（无内容返回） |
 | 400 | 请求参数错误 |
-| 401 | 未认证（未登录或Token过期） |
+| 401 | 未认证 |
 | 403 | 无权限访问 |
 | 404 | 资源不存在 |
-| 409 | 资源冲突（如重复创建） |
+| 409 | 资源冲突 |
 | 500 | 服务器内部错误 |
 | 503 | 服务暂时不可用 |
 
-### 业务错误码
-
-| 错误码 | 说明 | HTTP状态 |
-|--------|------|----------|
-| 1001 | 充电站编码重复 | 409 |
-| 1002 | 充电站不存在 | 404 |
-| 1003 | 充电站状态异常 | 400 |
-| 2001 | 充电桩编码重复 | 409 |
-| 2002 | 充电桩不存在 | 404 |
-| 2003 | 充电桩状态异常（如正在充电中） | 400 |
-| 2004 | 充电桩离线 | 400 |
-| 3001 | 订单不存在 | 404 |
-| 3002 | 订单状态异常（如已完成的订单不能再次开始） | 400 |
-| 3003 | 订单已取消 | 400 |
-| 4001 | 支付失败 | 500 |
-| 4002 | 支付超时 | 408 |
-| 4003 | 支付金额不匹配 | 400 |
-| 5001 | 租户不存在 | 404 |
-| 5002 | 租户上下文缺失 | 401 |
-| 5003 | 跨租户访问被拒绝 | 403 |
-| 9999 | 系统内部错误 | 500 |
-
-### 错误响应示例
+### 11.2 错误响应示例
 
 ```json
 {
@@ -699,16 +267,14 @@ Authorization: Bearer {token}
     "currentStatus": 2,
     "orderId": "ORD-202510120001"
   },
-  "timestamp": "2025-10-12T10:35:00Z",
-  "path": "/api/chargers/10001/status"
+  "timestamp": "2026-02-10T10:35:00Z",
+  "path": "/api/charger/10001/status"
 }
 ```
 
----
+## 12. 调用时序图
 
-## 调用时序图
-
-### 充电流程时序图
+### 12.1 充电流程时序图
 
 ```plantuml
 @startuml
@@ -721,32 +287,25 @@ participant "支付服务" as Payment
 participant "充电桩硬件" as Hardware
 
 User -> App: 扫描充电桩二维码
-App -> Gateway: GET /api/chargers/{id}
+App -> Gateway: GET /api/charger/{id}
 Gateway -> Charger: 查询充电桩状态
 Charger --> Gateway: 返回充电桩信息
 Gateway --> App: 充电桩可用
 
-App -> Gateway: POST /api/orders
-Gateway -> Order: 创建充电订单
-Order -> Charger: 预占充电桩
-Charger --> Order: 预占成功
-Order --> Gateway: 订单创建成功
-Gateway --> App: 返回订单信息
-
-App -> Gateway: POST /api/orders/{orderId}/start
-Gateway -> Order: 开始充电
+App -> Gateway: POST /api/order/start
+Gateway -> Order: 创建订单(幂等)
 Order -> Charger: 发送启动指令
 Charger -> Hardware: 启动充电
 Hardware --> Charger: 启动成功
 Charger --> Order: 充电已开始
-Order --> Gateway: 更新订单状态
+Order --> Gateway: 返回订单信息
 Gateway --> App: 充电开始确认
 
 ... 充电进行中 ...
 
 User -> App: 点击停止充电
-App -> Gateway: POST /api/orders/{orderId}/stop
-Gateway -> Order: 停止充电
+App -> Gateway: POST /api/order/stop
+Gateway -> Order: 完成订单(幂等)
 Order -> Charger: 发送停止指令
 Charger -> Hardware: 停止充电
 Hardware --> Charger: 停止成功
@@ -755,7 +314,7 @@ Order -> Order: 计算费用
 Order --> Gateway: 返回订单结算信息
 Gateway --> App: 显示费用
 
-App -> Gateway: POST /api/payments
+App -> Gateway: POST /api/payment/create
 Gateway -> Payment: 创建支付
 Payment --> Gateway: 返回支付信息
 Gateway --> App: 显示支付二维码
@@ -770,7 +329,7 @@ Payment --> App: 支付成功通知
 @enduml
 ```
 
-### 租户隔离调用流程
+### 12.2 租户隔离调用流程
 
 ```plantuml
 @startuml
@@ -803,9 +362,7 @@ Gateway --> UserA: 返回数据（仅租户A数据）
 @enduml
 ```
 
-### 支付回调处理流程（现行实现）
-
-> 目的：补齐“第三方回调 → 支付服务验签/幂等 → 同步订单状态”的关键链路。
+### 12.3 支付回调处理流程（现行实现）
 
 ```plantuml
 @startuml
@@ -824,114 +381,28 @@ CallbackSvc -> Sync: syncPaymentSuccess/Failure(paymentOrder)
 Sync -> Order: POST /order/payment/callback\n(tradeId, success)
 Order --> Sync: Result<Boolean>
 Callback --> PSP: 按渠道规范返回 success/FAIL
-
-note right of Sync
-优先直接 API 同步；失败则降级为消息队列/重试记录（由支付服务内部策略决定）
-end note
-
 @enduml
 ```
 
-### 退款流程（提交 + 异步退款回调）
+## 13. Swagger/OpenAPI
 
-```plantuml
-@startuml
-actor "调用方" as Caller
-participant "支付服务\n(evcs-payment)" as Payment
-participant "第三方支付平台" as PSP
-participant "退款回调入口\n/api/payment/callback/*/refund" as RefundCb
+接口文档由各服务输出，常用入口如下：
 
-Caller -> Payment: POST /api/payment/refund
-Payment -> PSP: 发起退款（可能返回处理中）
-PSP --> Payment: 退款受理结果
-Payment --> Caller: RefundResponse(refundNo, refundStatus)
+- Swagger UI: `http://localhost:<service-port>/swagger-ui.html`
+- OpenAPI JSON: `http://localhost:<service-port>/v3/api-docs`
 
-PSP -> RefundCb: POST /api/payment/callback/{channel}/refund
-RefundCb -> Payment: 验签/解密 -> 更新退款状态
+示例（Auth 服务）：
+- `http://localhost:8081/swagger-ui.html`
+- `http://localhost:8081/v3/api-docs`
 
-note right of Payment
-当前实现会在退款成功后发送“退款成功消息”(RabbitMQ)。
-如需与订单状态联动（REFUNDING/REFUNDED），需在订单侧消费该消息或接入内部同步接口。
-end note
-
-@enduml
-```
-
-### 对账流程（手工/每日自动）
-
-```plantuml
-@startuml
-actor "运营人员/定时任务" as Trigger
-participant "对账接口\n/api/reconciliation" as ReconApi
-participant "对账服务\nReconciliationService" as ReconSvc
-database "支付订单库" as DB
-participant "渠道账单下载/解析" as Channel
-
-Trigger -> ReconApi: POST /api/reconciliation/execute\n(or /daily/{channel})
-ReconApi -> ReconSvc: reconcile(date, channel)
-ReconSvc -> DB: 查询当日支付成功订单
-ReconSvc -> Channel: 下载并解析对账单
-ReconSvc -> ReconSvc: 比对交易/统计差异/计算成功率
-ReconSvc --> ReconApi: ReconciliationResult
-ReconApi --> Trigger: 返回对账汇总
-
-@enduml
-```
-
-### 协议事件驱动的订单流转（Start/Stop，幂等）
-
-> 说明：协议侧事件模型与消息流转详见 [docs/architecture/PROTOCOL-EVENT-MODEL.md](../architecture/PROTOCOL-EVENT-MODEL.md)。
-
-```plantuml
-@startuml
-actor "充电桩设备" as Charger
-participant "协议服务\n(evcs-protocol)" as Protocol
-participant "消息队列\nRabbitMQ" as MQ
-participant "订单服务\n(evcs-order)" as Order
-
-Charger -> Protocol: 上报开始/停止事件
-Protocol -> MQ: 发布协议事件（protocol.* routingKey）
-
-alt 订单侧通过 MQ 消费
-  MQ -> Order: 消费 StartEvent/StopEvent
-else 订单侧通过 HTTP 入口（兼容/联调）
-  MQ -> Order: 触发 /order/start 或 /order/stop
-end
-
-Order -> Order: 按 sessionId 幂等创建/完成订单
-
-@enduml
-```
-
----
-
-## Swagger文档导出
-
-系统集成了Swagger/OpenAPI 3.0，可访问以下地址查看交互式API文档：
-
-**开发环境**: `http://localhost:8080/doc.html`  
-**生产环境**: `https://api.evcs-mgr.com/doc.html`
-
-### 导出JSON格式
-
-访问: `http://localhost:8080/v3/api-docs`
-
-### 导出YAML格式
-
-访问: `http://localhost:8080/v3/api-docs.yaml`
-
----
-
-## 更新日志
+## 14. 更新日志
 
 | 版本 | 日期 | 更新内容 |
-|------|------|----------|
-| 1.0.0 | 2025-10-12 | 初始版本，包含核心API文档 |
+| --- | --- | --- |
+| 1.3 | 2026-02-10 | 与实际控制器/网关路由对齐，修订路径与模块说明 |
+| 1.0 | 2025-10-12 | 初始版本 |
 
----
+## 15. 联系方式
 
-## 联系方式
-
-**技术支持**: tech-support@evcs-mgr.com  
-**API问题反馈**: api-feedback@evcs-mgr.com  
-**GitHub Issues**: https://github.com/Big-Dao/evcs-mgr/issues
+**技术支持**: tech-support@evcs-mgr.com  \
+**API问题反馈**: api-feedback@evcs-mgr.com
