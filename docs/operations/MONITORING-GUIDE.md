@@ -1,8 +1,8 @@
 # EVCS Manager 监控体系指南
 
-> **版本**: v1.1 | **最后更新**: 2025-12-18 | **维护者**: DevOps 团队 | **状态**: 活跃
+> **版本**: v1.2 | **最后更新**: 2026-02-10 | **维护者**: DevOps 团队 | **状态**: 活跃
 >
-> **提示**: Prometheus / Grafana 框架已部署，指标告警持续完善中
+> **说明**: 本文档整合了监控与告警配置的完整指南
 
 ## 概述
 
@@ -197,7 +197,20 @@ public class OrderMetrics extends BusinessMetrics {
 
 ---
 
-## Grafana Dashboard
+## Grafana 仪表板
+
+### 推荐仪表板
+
+| 仪表板 | Dashboard ID | 说明 |
+|--------|--------------|------|
+| Node Exporter Full | 1860 | 主机资源监控 |
+| PostgreSQL Database | 9628 | PostgreSQL 监控 |
+| Redis Dashboard | 763 | Redis 监控 |
+| RabbitMQ Overview | 10991 | RabbitMQ 监控 |
+| Spring Boot Statistics | 12900 | Spring Boot 应用监控 |
+| JVM Micrometer | 4701 | JVM 详细监控 |
+
+### 系统总览Dashboard
 
 ### 系统总览Dashboard
 
@@ -210,7 +223,25 @@ public class OrderMetrics extends BusinessMetrics {
 4. **错误率趋势图**: 显示5XX错误率
 5. **JVM内存使用**: 显示堆内存使用情况
 
-### 业务监控Dashboard
+### 自定义业务仪表板
+
+核心指标查询：
+
+```promql
+# 实时订单量 (每分钟)
+sum(rate(order_created_total[1m])) * 60
+
+# 支付成功率
+sum(rate(payment_success_total[5m])) / sum(rate(payment_total[5m])) * 100
+
+# 充电桩状态分布
+sum by (status) (charger_status)
+
+# API 响应时间 P99
+histogram_quantile(0.99, sum(rate(http_server_requests_seconds_bucket[5m])) by (le, application))
+```
+
+### Dashboard导入
 
 配置文件：`monitoring/grafana/dashboards/business-monitoring.json`
 
@@ -236,41 +267,120 @@ public class OrderMetrics extends BusinessMetrics {
 
 ## 告警规则
 
-配置文件：`monitoring/grafana/alerts/alert-rules.yml`
+配置文件：`monitoring/prometheus/rules/*.yml`
 
-### 系统告警
+### 基础设施告警
+
+| 告警名称 | 触发条件 | 严重程度 | 持续时间 |
+|---------|---------|---------|---------|
+| HighCpuUsage | CPU使用率 > 85% | warning | 5分钟 |
+| CriticalCpuUsage | CPU使用率 > 95% | critical | 2分钟 |
+| HighMemoryUsage | 内存使用率 > 85% | warning | 5分钟 |
+| CriticalMemoryUsage | 内存使用率 > 95% | critical | 2分钟 |
+| HighDiskUsage | 磁盘使用率 > 80% | warning | 10分钟 |
+| CriticalDiskUsage | 磁盘使用率 > 90% | critical | 5分钟 |
+
+### PostgreSQL 告警
+
+| 告警名称 | 触发条件 | 严重程度 | 持续时间 |
+|---------|---------|---------|---------|
+| PostgresqlHighConnectionUsage | 连接数使用率 > 80% | warning | 5分钟 |
+| PostgresqlSlowQueries | 慢查询 > 30秒 | warning | 5分钟 |
+| PostgresqlReplicationLag | 复制延迟 > 60秒 | warning | 5分钟 |
+| PostgresqlDeadlocks | 发生死锁 | warning | 1分钟 |
+
+### Redis 告警
+
+| 告警名称 | 触发条件 | 严重程度 | 持续时间 |
+|---------|---------|---------|---------|
+| RedisHighMemoryUsage | 内存使用率 > 80% | warning | 5分钟 |
+| RedisTooManyConnections | 连接数 > 500 | warning | 5分钟 |
+| RedisKeyEviction | 5分钟驱逐 > 100个键 | warning | 5分钟 |
+
+### RabbitMQ 告警
+
+| 告警名称 | 触发条件 | 严重程度 | 持续时间 |
+|---------|---------|---------|---------|
+| RabbitmqMessageBacklog | 消息积压 > 10000 | warning | 5分钟 |
+| RabbitmqNoConsumer | 队列无消费者但有消息 | critical | 5分钟 |
+| RabbitmqHighMemory | 内存使用 > 400MB | warning | 5分钟 |
+
+### 应用服务告警
 
 | 告警名称 | 触发条件 | 严重程度 | 持续时间 |
 |---------|---------|---------|---------|
 | ServiceDown | 服务不可用 | critical | 1分钟 |
-| HighErrorRate | 错误率 > 5% | warning | 5分钟 |
-| HighResponseTime | P95响应时间 > 2s | warning | 5分钟 |
-| HighMemoryUsage | 内存使用率 > 85% | warning | 5分钟 |
+| JvmHighHeapUsage | JVM堆内存 > 85% | warning | 5分钟 |
+| JvmHighGcTime | 平均GC暂停 > 0.5秒 | warning | 5分钟 |
+| HighHttpErrorRate | 5xx错误率 > 5% | warning | 5分钟 |
+| HighHttpLatency | P99延迟 > 1秒 | warning | 5分钟 |
 
 ### 业务告警
 
 | 告警名称 | 触发条件 | 严重程度 | 持续时间 |
 |---------|---------|---------|---------|
-| HighOrderFailureRate | 订单失败率 > 10% | warning | 5分钟 |
-| HighChargerOfflineRate | 充电桩离线率 > 20% | warning | 10分钟 |
-| HighPaymentFailureRate | 支付失败率 > 5% | critical | 5分钟 |
-| LowBillingAccuracy | 计费准确率 < 95% | critical | 10分钟 |
-| NoActiveOrders | 营业时间无活跃订单 | warning | 30分钟 |
+| LowOrderCreationRate | 营业时间订单率过低 | warning | 10分钟 |
+| LowPaymentSuccessRate | 支付成功率 < 95% | warning | 10分钟 |
+| HighChargerOfflineRate | 充电桩离线率 > 10% | warning | 10分钟 |
 
-### 告警配置
+### 告警分级响应
 
-将 `alert-rules.yml` 配置到Prometheus：
+| 级别 | 响应时间 | 处理人员 | 通知方式 |
+|------|----------|----------|----------|
+| Critical | 5 分钟 | 值班运维 + 开发主管 | 电话 + 钉钉 + 邮件 |
+| Warning | 30 分钟 | 值班运维 | 钉钉 + 邮件 |
+| Info | 工作时间 | 运维团队 | 邮件 |
+
+### Prometheus 配置
 
 ```yaml
-# prometheus.yml
-rule_files:
-  - /etc/prometheus/alerts/alert-rules.yml
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
 
 alerting:
   alertmanagers:
     - static_configs:
         - targets:
-            - alertmanager:9093
+          - alertmanager:9093
+
+rule_files:
+  - "/etc/prometheus/rules/*.yml"
+
+scrape_configs:
+  # EVCS 微服务 (通过 Eureka 发现)
+  - job_name: 'evcs-services'
+    metrics_path: '/actuator/prometheus'
+    eureka_sd_configs:
+      - server: 'http://eureka:8761/eureka'
+```
+
+### Alertmanager 配置
+
+```yaml
+global:
+  resolve_timeout: 5m
+
+route:
+  group_by: ['alertname', 'severity']
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 4h
+  receiver: 'default-receiver'
+  routes:
+    # 严重告警立即通知
+    - match:
+        severity: critical
+      receiver: 'critical-receiver'
+      group_wait: 10s
+      repeat_interval: 1h
+
+receivers:
+  - name: 'critical-receiver'
+    email_configs:
+      - to: 'ops-critical@evcs.com'
+    webhook_configs:
+      - url: 'http://dingtalk-webhook:8060/dingtalk/ops/send'
 ```
 
 ---

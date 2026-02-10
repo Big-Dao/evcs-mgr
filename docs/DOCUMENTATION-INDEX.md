@@ -2,7 +2,7 @@
 
 > 一句话说明：本文件是当前仓库“非归档文档”的统一导航入口；各主题只保留一个权威 SSOT，其它文档尽量通过链接引用避免重复维护。
 
-**最后更新**: 2026-02-10  \
+**最后更新**: 2026-02-10（深度内容简化完成）  \
 **维护者**: 技术负责人 / 各领域维护团队  \
 **状态**: 已发布
 
@@ -35,14 +35,13 @@
 - 管理层摘要：[docs/overview/EXECUTIVE-SUMMARY.md](overview/EXECUTIVE-SUMMARY.md)
 - 版本历史记录：[docs/overview/VERSION-HISTORY.md](overview/VERSION-HISTORY.md)
 - 规划/路线图：[docs/overview/NEXT-PLAN.md](overview/NEXT-PLAN.md)（含待办事项跟踪）
+- 规划快速参考：[docs/overview/PLANNING-QUICK-REFERENCE.md](overview/PLANNING-QUICK-REFERENCE.md)
 - 日志规范：[docs/overview/LOGGING-STANDARDS.md](overview/LOGGING-STANDARDS.md)
 - 错误码规范：[docs/overview/ERROR-CODE-STANDARDS.md](overview/ERROR-CODE-STANDARDS.md)
 
 ## 4. 架构（architecture）
 
 - 总体架构：[docs/architecture/architecture.md](architecture/architecture.md)
-- API 设计：[docs/architecture/api-design.md](architecture/api-design.md)
-- 数据模型：[docs/architecture/data-model.md](architecture/data-model.md)
 - 多租户异步上下文 RFC：[docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md](architecture/TENANT-CONTEXT-ASYNC-RFC.md)
 - 服务标识与端口规范（SSOT）：[docs/architecture/SERVICE-IDENTIFIERS-AND-PORTS.md](architecture/SERVICE-IDENTIFIERS-AND-PORTS.md)
 - C 端用户模块 RFC：[docs/architecture/EVCS-USER-MODULE-RFC.md](architecture/EVCS-USER-MODULE-RFC.md)
@@ -56,6 +55,7 @@
 
 - 站点地图分析：[docs/features/STATION-MAP-ANALYTICS.md](features/STATION-MAP-ANALYTICS.md)
 - 按枪口（Connector）控制与会话落库：[docs/features/CHARGER-CONNECTOR-CONTROL.md](features/CHARGER-CONNECTOR-CONTROL.md)
+- 固件管理：[docs/features/FIRMWARE-MANAGEMENT.md](features/FIRMWARE-MANAGEMENT.md)
 
 ## 6. 核心概念（concepts）
 
@@ -78,8 +78,7 @@
 
 - 默认凭据（演示/测试）：[docs/operations/DEFAULT-CREDENTIALS.md](operations/DEFAULT-CREDENTIALS.md)
 - 服务参考：[docs/operations/SERVICES-REFERENCE.md](operations/SERVICES-REFERENCE.md)
-- 监控指南：[docs/operations/MONITORING-GUIDE.md](operations/MONITORING-GUIDE.md)
-- 监控告警配置指南：[docs/operations/MONITORING-ALERTING-GUIDE.md](operations/MONITORING-ALERTING-GUIDE.md)
+- 监控与告警：[docs/operations/MONITORING-GUIDE.md](operations/MONITORING-GUIDE.md)
 - 故障排查手册：[docs/operations/TROUBLESHOOTING-GUIDE.md](operations/TROUBLESHOOTING-GUIDE.md)
 - 备份恢复操作手册：[docs/operations/BACKUP-RECOVERY-GUIDE.md](operations/BACKUP-RECOVERY-GUIDE.md)
 - 应急预案：[docs/operations/EMERGENCY-RESPONSE-PLAN.md](operations/EMERGENCY-RESPONSE-PLAN.md)
