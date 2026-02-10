@@ -111,6 +111,6 @@
 
 ## 14. 归档（archive）
 
-- 归档目录（历史文档/进度报告/旧版本）：[docs/archive/](archive/)
+- 历史记录：[docs/archive/historical/](archive/historical/) - 进度报告、清理活动等历史文档
 
-备注：归档区可能包含重复内容，这是为了保留历史快照；非归档区以本索引为准。
+备注：归档区已精简，历史进度报告合并存放。
