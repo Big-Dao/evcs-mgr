@@ -1,7 +1,7 @@
-# RFC：租户上下文在异步任务中的传播  
+# RFC：租户上下文在异步任务中的传播
 比较 `TaskDecorator` 与 `TransmittableThreadLocal`（TTTL）并提出迁移计划
 
-> **版本**: v0.2-draft | **最后更新**: 2025-12-18 | **作者**: 架构 / 平台团队 | **状态**: Draft
+> **版本**: v0.3 | **最后更新**: 2026-02-10 | **作者**: 架构 / 平台团队 | **状态**: 已实现
 >
 > 🧵 **范围**: 说明租户上下文在异步/线程池场景的传播方案与迁移计划
 >
@@ -241,14 +241,119 @@
 ---
 
 ## 附录：快速对照表（简要）
-- 可控 executor（Spring bean） → 优先使用 `TaskDecorator`（显式、低风险）  
-- 不可控或分散 executor（第三方/库内部） → 考虑 TTTL 包装或 agent；优先先在模块内试点并严格测试  
+- 可控 executor（Spring bean） → 优先使用 `TaskDecorator`（显式、低风险）
+- 不可控或分散 executor（第三方/库内部） → 考虑 TTTL 包装或 agent；优先先在模块内试点并严格测试
 - 迁移优先级：关键业务（订单/支付/站点） > 辅助业务 > 工具/集成测试模块
 
 ---
 
-如果你同意上述推荐，我可以：
-- 立刻在仓库中开始 Phase 0（生成 executor 清单并标注优先级），并把结果提交给你；  
-- 或者直接按 Phase 1 对 `evcs-order`、`evcs-station` 的 executor 注册 `TenantContextTaskDecorator` 并增加必要的并发集成测试。  
+## 实施状态更新 (2026-02-10)
 
-请回复你希望我下一步执行的具体项（例如：“开始审计清单” 或 “直接在 evcs-order 部署 TaskDecorator”）。谢谢。
+### 已完成功能
+
+#### 1. 审计日志系统
+
+**实现文件**:
+- `evcs-tenant/src/main/java/com/evcs/tenant/entity/TenantAuditLog.java` - 审计日志实体
+- `evcs-tenant/src/main/java/com/evcs/tenant/mapper/TenantAuditLogMapper.java` - MyBatis Mapper
+- `evcs-tenant/src/main/java/com/evcs/tenant/service/ITenantAuditLogService.java` - 审计日志服务接口
+- `evcs-tenant/src/main/java/com/evcs/tenant/service/impl/TenantAuditLogServiceImpl.java` - 审计日志服务实现
+- `evcs-tenant/src/main/java/com/evcs/tenant/controller/TenantAuditLogController.java` - 审计日志查询 API
+- `evcs-tenant/src/main/resources/db/migration/V20260210__create_tenant_audit_log.sql` - 数据库迁移脚本
+
+**功能说明**:
+
+审计日志系统记录跨层级租户管理操作，支持以下操作类型的审计：
+
+| 操作类型 | 常量 | 说明 |
+|----------|------|------|
+| CREATE_TENANT | 创建租户 | 新建子租户 |
+| DELETE_TENANT | 删除租户 | 删除子租户 |
+| UPDATE_TENANT | 更新租户 | 修改租户信息 |
+| UPDATE_QUOTA | 更新配额 | 修改租户配额 |
+| UPDATE_STATUS | 更新状态 | 启用/禁用租户 |
+| RESET_PASSWORD | 重置密码 | 重置管理员密码 |
+| DISABLE_RECURSIVE | 递归禁用 | 级联禁用子租户 |
+| CROSS_LAYER_READ | 跨层读取 | 跨租户层级读取数据 |
+| CROSS_LAYER_WRITE | 跨层写入 | 跨租户层级写入数据 |
+| MOVE_TENANT | 移动租户 | 更改租户父节点 |
+
+**数据库表结构**:
+
+```sql
+CREATE TABLE tenant_audit_log (
+    id BIGSERIAL PRIMARY KEY,
+    operator_tenant_id BIGINT NOT NULL,       -- 操作者租户ID
+    target_tenant_id BIGINT NOT NULL,         -- 目标租户ID
+    action VARCHAR(50) NOT NULL,               -- 操作类型
+    result VARCHAR(20) NOT NULL,               -- 操作结果
+    details TEXT,                              -- 详细信息
+    client_ip VARCHAR(50),                     -- 客户端IP
+    user_agent VARCHAR(255),                   -- 用户代理
+    trace_id VARCHAR(64),                      -- 追踪ID
+    operate_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**使用示例**:
+
+```java
+@Autowired
+private TenantAuditService auditService;
+
+// 记录创建租户操作
+auditService.logOperation(
+    TenantAuditServiceImpl.ACTION_CREATE_TENANT,
+    newTenantId,
+    "创建子租户: " + tenantName
+);
+
+// 记录跨层访问
+auditService.logOperation(
+    TenantAuditServiceImpl.ACTION_CROSS_LAYER_READ,
+    targetTenantId,
+    "跨层访问资源: " + resourceType
+);
+```
+
+#### 2. 配额管理系统
+
+**实现文件**:
+- `evcs-tenant/src/main/java/com/evcs/tenant/service/ITenantQuotaService.java` - 配额服务接口
+- `evcs-tenant/src/main/java/com/evcs/tenant/service/impl/TenantQuotaServiceImpl.java` - 配额服务实现
+
+**功能说明**:
+
+配额管理系统控制租户可以创建的资源数量上限：
+
+| 配额类型 | 字段名 | 说明 |
+|----------|--------|------|
+| 最大站点数 | max_stations | 限制租户可创建的站点数量 |
+| 最大充电桩数 | max_chargers | 限制租户可创建的充电桩数量 |
+| 最大用户数 | max_users | 限制租户可创建的用户数量 |
+| 最大子租户数 | max_children | 限制租户可创建的子租户数量 |
+| 最大并发会话数 | max_sessions | 限制租户同时进行的充电会话数 |
+
+**使用示例**:
+
+```java
+@Autowired
+private ITenantQuotaService quotaService;
+
+// 检查是否可以添加站点
+QuotaCheckResult result = quotaService.checkCanAddStation(tenantId);
+if (!result.isAllowed()) {
+    throw new ResourceConflictException(
+        ResultCode.TENANT_QUOTA_EXCEEDED,
+        result.getMessage()
+    );
+}
+```
+
+### 实施状态
+
+- ✅ **Phase 0**: 审计与准备 - 已完成
+- ✅ **Phase 1**: 核心 executor 部署 - 已完成
+- ✅ **审计日志系统**: 已实现（2026-02-10）
+- ✅ **配额管理系统**: 已实现（2026-02-10）
+- ⚠️ **集成测试**: 待完成（需验证跨层只读、越权拒绝、禁用联动、异步上下文传播）

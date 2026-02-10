@@ -1,8 +1,9 @@
 # EVCS 错误码规范
 
-> **版本**: v1.0  
-> **创建日期**: 2026-01-13  
-> **维护者**: 架构团队  
+> **版本**: v1.1
+> **创建日期**: 2026-01-13
+> **更新日期**: 2026-02-10
+> **维护者**: 架构团队
 > **状态**: 已发布
 
 ---
@@ -34,15 +35,16 @@ ZZZ - 具体错误 (3位)
 
 ### 2.2 错误类型 (X)
 
-| 类型 | 含义 | 说明 |
-|------|------|------|
-| **1** | 系统错误 | 服务器内部错误 |
-| **2** | 参数错误 | 请求参数校验失败 |
-| **3** | 业务错误 | 业务规则校验失败 |
-| **4** | 认证错误 | 身份认证失败 |
-| **5** | 权限错误 | 权限不足 |
-| **6** | 资源错误 | 资源不存在或冲突 |
-| **7** | 外部错误 | 第三方服务异常 |
+| 类型 | HTTP状态码 | 含义 | 说明 |
+|------|-----------|------|------|
+| **2** | 200 | 成功 | 请求成功 |
+| **4** | 400 | 参数错误 | 请求参数校验失败 |
+| **4** | 401 | 认证错误 | 身份认证失败 |
+| **4** | 403 | 权限错误 | 权限不足 |
+| **4** | 404 | 资源错误 | 资源不存在 |
+| **4** | 409 | 冲突错误 | 资源冲突 |
+| **5** | 500 | 系统错误 | 服务器内部错误 |
+| **5** | 503 | 服务不可用 | 服务暂时不可用 |
 
 ### 2.3 模块编码 (YY)
 
@@ -62,308 +64,409 @@ ZZZ - 具体错误 (3位)
 
 ---
 
-## 3. 错误码定义
+## 3. 统一异常体系
 
-### 3.1 通用错误 (X00XXX)
+### 3.1 异常类层次结构
 
-| 错误码 | 常量名 | 消息 | 说明 |
-|--------|--------|------|------|
-| 100000 | SYSTEM_ERROR | 系统错误 | 未知系统异常 |
-| 100001 | SERVICE_UNAVAILABLE | 服务暂不可用 | 服务不可用 |
-| 100002 | DATABASE_ERROR | 数据库错误 | 数据库异常 |
-| 100003 | CACHE_ERROR | 缓存错误 | Redis 异常 |
-| 100004 | MQ_ERROR | 消息队列错误 | RabbitMQ 异常 |
-| 100005 | TIMEOUT | 请求超时 | 操作超时 |
-| 200001 | PARAM_ERROR | 参数错误 | 通用参数错误 |
-| 200002 | PARAM_MISSING | 缺少必填参数 | 必填参数缺失 |
-| 200003 | PARAM_INVALID | 参数格式错误 | 参数格式不正确 |
-| 200004 | PARAM_OUT_OF_RANGE | 参数超出范围 | 参数值超出允许范围 |
+```
+RuntimeException
+    └── BaseException (基类)
+        ├── BusinessException (业务异常)
+        ├── ResourceNotFoundException (资源不存在 - 404)
+        ├── ResourceConflictException (资源冲突 - 409)
+        ├── ServiceUnavailableException (服务不可用 - 503)
+        └── ThirdPartyServiceException (第三方服务异常 - 5001)
+```
 
-### 3.2 认证错误 (X01XXX)
+### 3.2 异常类说明
 
-| 错误码 | 常量名 | 消息 | 说明 |
-|--------|--------|------|------|
-| 401001 | TOKEN_MISSING | Token 缺失 | 未提供 Token |
-| 401002 | TOKEN_INVALID | Token 无效 | Token 格式错误 |
-| 401003 | TOKEN_EXPIRED | Token 已过期 | Token 已过期 |
-| 401004 | LOGIN_FAILED | 登录失败 | 用户名或密码错误 |
-| 401005 | ACCOUNT_LOCKED | 账户已锁定 | 账户被锁定 |
-| 401006 | ACCOUNT_DISABLED | 账户已禁用 | 账户被禁用 |
-| 401007 | PASSWORD_EXPIRED | 密码已过期 | 密码需要更新 |
-| 401008 | CAPTCHA_ERROR | 验证码错误 | 验证码不正确 |
-| 401009 | SMS_CODE_ERROR | 短信验证码错误 | 短信验证码不正确 |
-| 401010 | SMS_CODE_EXPIRED | 短信验证码过期 | 短信验证码已过期 |
+| 异常类 | HTTP状态码 | 使用场景 | 实现状态 |
+|--------|-----------|----------|----------|
+| `BaseException` | 动态 | 所有自定义异常的基类 | ✅ 已实现 |
+| `BusinessException` | 400 | 通用业务异常 | ✅ 已实现 |
+| `ResourceNotFoundException` | 404 | 资源不存在 | ✅ 已实现 |
+| `ResourceConflictException` | 409 | 资源冲突（如重复创建） | ✅ 已实现 |
+| `ServiceUnavailableException` | 503 | 服务暂时不可用 | ✅ 已实现 |
+| `ThirdPartyServiceException` | 5001 | 第三方服务异常 | ✅ 已实现 |
 
-### 3.3 权限错误 (X01XXX)
+### 3.3 异常类实现
 
-| 错误码 | 常量名 | 消息 | 说明 |
-|--------|--------|------|------|
-| 501001 | ACCESS_DENIED | 访问被拒绝 | 无权限访问 |
-| 501002 | TENANT_ACCESS_DENIED | 租户访问被拒绝 | 跨租户访问 |
-| 501003 | RESOURCE_ACCESS_DENIED | 资源访问被拒绝 | 无资源权限 |
-| 501004 | OPERATION_NOT_ALLOWED | 操作不允许 | 当前状态不允许操作 |
+```java
+// evcs-common/src/main/java/com/evcs/common/exception/BaseException.java
+@Getter
+public class BaseException extends RuntimeException {
 
-### 3.4 租户错误 (X02XXX)
+    private final Integer code;
 
-| 错误码 | 常量名 | 消息 | 说明 |
-|--------|--------|------|------|
-| 302001 | TENANT_NOT_FOUND | 租户不存在 | 租户未找到 |
-| 302002 | TENANT_DISABLED | 租户已禁用 | 租户被禁用 |
-| 302003 | TENANT_EXPIRED | 租户已过期 | 租户服务已到期 |
-| 302004 | TENANT_QUOTA_EXCEEDED | 租户配额超限 | 超出租户配额 |
-| 602001 | TENANT_CODE_EXISTS | 租户编码已存在 | 编码重复 |
+    public BaseException(String message) {
+        super(message);
+        this.code = 500; // 默认服务器错误
+    }
 
-### 3.5 用户错误 (X03XXX)
+    public BaseException(Integer code, String message) {
+        super(message);
+        this.code = code;
+    }
 
-| 错误码 | 常量名 | 消息 | 说明 |
-|--------|--------|------|------|
-| 303001 | USER_NOT_FOUND | 用户不存在 | 用户未找到 |
-| 303002 | USER_DISABLED | 用户已禁用 | 用户被禁用 |
-| 303003 | PASSWORD_WRONG | 密码错误 | 密码不正确 |
-| 303004 | OLD_PASSWORD_WRONG | 原密码错误 | 修改密码时原密码错误 |
-| 303005 | PASSWORD_TOO_SIMPLE | 密码过于简单 | 密码不满足复杂度要求 |
-| 603001 | USERNAME_EXISTS | 用户名已存在 | 用户名重复 |
-| 603002 | PHONE_EXISTS | 手机号已存在 | 手机号重复 |
-| 603003 | EMAIL_EXISTS | 邮箱已存在 | 邮箱重复 |
+    public BaseException(ResultCode resultCode) {
+        super(resultCode.getMessage());
+        this.code = resultCode.getCode();
+    }
 
-### 3.6 站点错误 (X10XXX)
+    public BaseException(ResultCode resultCode, String message) {
+        super(message);
+        this.code = resultCode.getCode();
+    }
 
-| 错误码 | 常量名 | 消息 | 说明 |
-|--------|--------|------|------|
-| 310001 | STATION_NOT_FOUND | 站点不存在 | 站点未找到 |
-| 310002 | STATION_OFFLINE | 站点已下线 | 站点不在线 |
-| 310003 | STATION_MAINTENANCE | 站点维护中 | 站点正在维护 |
-| 610001 | STATION_CODE_EXISTS | 站点编码已存在 | 编码重复 |
-| 610002 | STATION_HAS_CHARGERS | 站点存在充电桩 | 删除前需移除充电桩 |
+    public BaseException(ResultCode resultCode, String message, Throwable cause) {
+        super(message, cause);
+        this.code = resultCode.getCode();
+    }
+}
 
-### 3.7 充电桩错误 (X11XXX)
+// 资源不存在异常
+public class ResourceNotFoundException extends BaseException {
 
-| 错误码 | 常量名 | 消息 | 说明 |
-|--------|--------|------|------|
-| 311001 | CHARGER_NOT_FOUND | 充电桩不存在 | 充电桩未找到 |
-| 311002 | CHARGER_OFFLINE | 充电桩离线 | 充电桩不在线 |
-| 311003 | CHARGER_BUSY | 充电桩使用中 | 充电桩正在使用 |
-| 311004 | CHARGER_FAULT | 充电桩故障 | 充电桩存在故障 |
-| 311005 | CHARGER_MAINTENANCE | 充电桩维护中 | 充电桩正在维护 |
-| 311006 | CONNECTOR_NOT_FOUND | 枪口不存在 | 枪口未找到 |
-| 311007 | CONNECTOR_BUSY | 枪口使用中 | 枪口正在使用 |
-| 311008 | CONNECTOR_FAULT | 枪口故障 | 枪口存在故障 |
-| 611001 | CHARGER_CODE_EXISTS | 充电桩编码已存在 | 编码重复 |
+    public ResourceNotFoundException(ResultCode code, String message) {
+        super(code, message);
+    }
 
-### 3.8 订单错误 (X20XXX)
+    public static ResourceNotFoundException of(String resource, Object id) {
+        return new ResourceNotFoundException(
+            ResultCode.NOT_FOUND,
+            String.format("%s不存在: %s", resource, id)
+        );
+    }
+}
 
-| 错误码 | 常量名 | 消息 | 说明 |
-|--------|--------|------|------|
-| 320001 | ORDER_NOT_FOUND | 订单不存在 | 订单未找到 |
-| 320002 | ORDER_STATUS_ERROR | 订单状态异常 | 订单状态不允许操作 |
-| 320003 | ORDER_EXPIRED | 订单已过期 | 订单已超时 |
-| 320004 | ORDER_CANCELLED | 订单已取消 | 订单已被取消 |
-| 320005 | ORDER_COMPLETED | 订单已完成 | 订单已结束 |
-| 320010 | CHARGING_IN_PROGRESS | 充电中 | 用户有未完成的充电 |
-| 320011 | CHARGING_START_FAILED | 启动充电失败 | 充电启动失败 |
-| 320012 | CHARGING_STOP_FAILED | 停止充电失败 | 充电停止失败 |
-| 320020 | BALANCE_INSUFFICIENT | 余额不足 | 用户余额不足 |
-| 320021 | PRICING_NOT_FOUND | 计费方案不存在 | 未配置计费方案 |
+// 资源冲突异常
+public class ResourceConflictException extends BaseException {
 
-### 3.9 支付错误 (X21XXX)
+    public ResourceConflictException(ResultCode code, String message) {
+        super(code, message);
+    }
 
-| 错误码 | 常量名 | 消息 | 说明 |
-|--------|--------|------|------|
-| 321001 | PAYMENT_NOT_FOUND | 支付单不存在 | 支付单未找到 |
-| 321002 | PAYMENT_FAILED | 支付失败 | 支付处理失败 |
-| 321003 | PAYMENT_TIMEOUT | 支付超时 | 支付请求超时 |
-| 321004 | PAYMENT_CANCELLED | 支付已取消 | 用户取消支付 |
-| 321005 | PAYMENT_COMPLETED | 支付已完成 | 重复支付 |
-| 321010 | REFUND_FAILED | 退款失败 | 退款处理失败 |
-| 321011 | REFUND_AMOUNT_EXCEEDED | 退款金额超限 | 退款金额超过可退金额 |
-| 721001 | PAYMENT_CHANNEL_ERROR | 支付渠道异常 | 第三方支付异常 |
-| 721002 | PAYMENT_SIGN_ERROR | 支付签名错误 | 签名验证失败 |
+    public ResourceConflictException(ResultCode code, String message, Throwable cause) {
+        super(code, message, cause);
+    }
+}
 
-### 3.10 协议错误 (X30XXX)
+// 服务不可用异常
+public class ServiceUnavailableException extends BaseException {
 
-| 错误码 | 常量名 | 消息 | 说明 |
-|--------|--------|------|------|
-| 330001 | PROTOCOL_ERROR | 协议错误 | 协议解析失败 |
-| 330002 | HEARTBEAT_TIMEOUT | 心跳超时 | 设备心跳超时 |
-| 330003 | COMMAND_FAILED | 指令执行失败 | 下发指令失败 |
-| 330004 | COMMAND_TIMEOUT | 指令超时 | 指令响应超时 |
-| 330005 | DEVICE_NOT_REGISTERED | 设备未注册 | 设备未在系统注册 |
+    public ServiceUnavailableException(String message) {
+        super(ResultCode.SERVICE_UNAVAILABLE, message);
+    }
+
+    public ServiceUnavailableException(String message, Throwable cause) {
+        super(ResultCode.SERVICE_UNAVAILABLE, message, cause);
+    }
+
+    public static ServiceUnavailableException forService(String serviceName) {
+        return new ServiceUnavailableException(
+            String.format("%s服务暂时不可用", serviceName)
+        );
+    }
+}
+
+// 第三方服务异常
+public class ThirdPartyServiceException extends BaseException {
+
+    private final String thirdParty;
+
+    public ThirdPartyServiceException(String thirdParty, String message) {
+        super(ResultCode.THIRD_PARTY_ERROR,
+              String.format("%s服务调用失败: %s", thirdParty, message));
+        this.thirdParty = thirdParty;
+    }
+
+    public ThirdPartyServiceException(ResultCode resultCode, String thirdParty,
+                                       String message, Throwable cause) {
+        super(resultCode,
+              String.format("%s服务调用失败: %s", thirdParty, message), cause);
+        this.thirdParty = thirdParty;
+    }
+
+    public String getThirdParty() {
+        return thirdParty;
+    }
+}
+```
+
+### 3.4 全局异常处理器
+
+```java
+// evcs-common/src/main/java/com/evcs/common/exception/GlobalExceptionHandler.java
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    // 优先级由 @Order 控制，数字越小优先级越高
+
+    @ExceptionHandler(TenantContextMissingException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    @Order(1)
+    public Result<Void> handleTenantContextMissingException(TenantContextMissingException e) {
+        log.error("租户上下文缺失: {}", e.getMessage());
+        return Result.failure(ResultCode.UNAUTHORIZED.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @Order(2)
+    public Result<Void> handleResourceNotFoundException(ResourceNotFoundException e) {
+        log.warn("资源不存在: {}", e.getMessage());
+        return Result.failure(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(ResourceConflictException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @Order(3)
+    public Result<Void> handleResourceConflictException(ResourceConflictException e) {
+        log.warn("资源冲突: {}", e.getMessage());
+        return Result.failure(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(ServiceUnavailableException.class)
+    @ResponseStatus(HttpStatus.SERVICE_UNAVAILABLE)
+    @Order(4)
+    public Result<Void> handleServiceUnavailableException(ServiceUnavailableException e) {
+        log.error("服务不可用: {}", e.getMessage());
+        return Result.failure(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(ThirdPartyServiceException.class)
+    @Order(5)
+    public Result<Void> handleThirdPartyServiceException(ThirdPartyServiceException e) {
+        log.error("第三方服务异常: thirdParty={}, message={}",
+                e.getThirdParty(), e.getMessage(), e);
+        return Result.failure(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(BaseException.class)
+    @Order(6)
+    public Result<Void> handleBaseException(BaseException e, HttpServletResponse response) {
+        log.warn("基础异常: code={}, message={}", e.getCode(), e.getMessage());
+        response.setStatus(resolveHttpStatus(e.getCode()));
+        return Result.failure(e.getCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    @Order(7)
+    public Result<Void> handleBusinessException(BusinessException e, HttpServletResponse response) {
+        log.warn("业务异常: {}", e.getMessage());
+        response.setStatus(resolveHttpStatus(e.getCode()));
+        return Result.failure(e.getCode(), e.getMessage());
+    }
+
+    // 参数校验异常
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Void> handleValidationException(MethodArgumentNotValidException e) {
+        String message = e.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage)
+                .collect(Collectors.joining(", "));
+        log.warn("参数校验异常: {}", message);
+        return Result.failure(ResultCode.PARAM_ERROR.getCode(), message);
+    }
+
+    // 通用异常
+    @ExceptionHandler(Exception.class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    @Order(Integer.MAX_VALUE)
+    public Result<Void> handleException(Exception e) {
+        log.error("未处理的异常", e);
+        return Result.failure(ResultCode.INTERNAL_SERVER_ERROR);
+    }
+
+    private int resolveHttpStatus(Integer code) {
+        if (code == null) {
+            return HttpStatus.BAD_REQUEST.value();
+        }
+        // 标准 HTTP 4xx/5xx 直接映射
+        if (code >= 400 && code < 600) {
+            return code;
+        }
+        // 非标准业务码（如 4xxx/5xxx）：统一返回 400，由 body.code 传递业务码
+        return HttpStatus.BAD_REQUEST.value();
+    }
+}
+```
 
 ---
 
-## 4. 错误码实现
+## 4. 错误码定义
 
-### 4.1 错误码枚举
+### 4.1 ResultCode 枚举（已实现）
 
 ```java
+// evcs-common/src/main/java/com/evcs/common/result/ResultCode.java
 @Getter
 @AllArgsConstructor
-public enum ErrorCode {
-    
-    // 成功
-    SUCCESS(0, "成功"),
-    
-    // 系统错误 100XXX
-    SYSTEM_ERROR(100000, "系统错误"),
-    SERVICE_UNAVAILABLE(100001, "服务暂不可用"),
-    DATABASE_ERROR(100002, "数据库错误"),
-    CACHE_ERROR(100003, "缓存错误"),
-    MQ_ERROR(100004, "消息队列错误"),
-    TIMEOUT(100005, "请求超时"),
-    
-    // 参数错误 200XXX
-    PARAM_ERROR(200001, "参数错误"),
-    PARAM_MISSING(200002, "缺少必填参数"),
-    PARAM_INVALID(200003, "参数格式错误"),
-    PARAM_OUT_OF_RANGE(200004, "参数超出范围"),
-    
-    // 业务错误 - 订单 320XXX
-    ORDER_NOT_FOUND(320001, "订单不存在"),
-    ORDER_STATUS_ERROR(320002, "订单状态异常"),
-    ORDER_EXPIRED(320003, "订单已过期"),
-    CHARGING_IN_PROGRESS(320010, "充电中"),
-    BALANCE_INSUFFICIENT(320020, "余额不足"),
-    
-    // 认证错误 401XXX
-    TOKEN_MISSING(401001, "Token缺失"),
-    TOKEN_INVALID(401002, "Token无效"),
-    TOKEN_EXPIRED(401003, "Token已过期"),
-    LOGIN_FAILED(401004, "登录失败"),
-    
-    // 权限错误 501XXX
-    ACCESS_DENIED(501001, "访问被拒绝"),
-    TENANT_ACCESS_DENIED(501002, "租户访问被拒绝"),
-    
-    // 资源错误 6XXXXX
-    CHARGER_CODE_EXISTS(611001, "充电桩编码已存在"),
-    
-    // 外部错误 7XXXXX
-    PAYMENT_CHANNEL_ERROR(721001, "支付渠道异常");
-    
-    private final int code;
+public enum ResultCode {
+
+    /* 成功状态码 */
+    SUCCESS(200, "操作成功"),
+
+    /* 客户端错误 */
+    FAILURE(400, "操作失败"),
+    PARAM_ERROR(400, "参数错误"),
+    PARAM_NULL(400, "参数为空"),
+    PARAM_FORMAT_ERROR(400, "参数格式错误"),
+
+    /* 认证授权相关 */
+    UNAUTHORIZED(401, "未认证"),
+    TOKEN_INVALID(401, "Token无效"),
+    TOKEN_EXPIRED(401, "Token已过期"),
+    FORBIDDEN(403, "无权限访问"),
+
+    /* 业务错误 */
+    NOT_FOUND(404, "资源不存在"),
+    METHOD_NOT_ALLOWED(405, "方法不被允许"),
+    CONFLICT(409, "资源冲突"),
+
+    /* 租户相关 */
+    TENANT_NOT_FOUND(4001, "租户不存在"),
+    TENANT_DISABLED(4002, "租户已禁用"),
+    TENANT_PERMISSION_DENIED(4003, "租户权限不足"),
+
+    /* 用户相关 */
+    USER_NOT_FOUND(4101, "用户不存在"),
+    USER_DISABLED(4102, "用户已禁用"),
+    USER_PASSWORD_ERROR(4103, "密码错误"),
+    USER_ACCOUNT_LOCKED(4104, "账户已锁定"),
+
+    /* 充电站相关 */
+    STATION_NOT_FOUND(4201, "充电站不存在"),
+    STATION_OFFLINE(4202, "充电站离线"),
+    CHARGER_NOT_FOUND(4203, "充电桩不存在"),
+    CHARGER_UNAVAILABLE(4204, "充电桩不可用"),
+    CHARGER_OCCUPIED(4205, "充电桩被占用"),
+
+    /* 订单相关 */
+    ORDER_NOT_FOUND(4301, "订单不存在"),
+    ORDER_STATUS_ERROR(4302, "订单状态错误"),
+    ORDER_EXPIRED(4303, "订单已过期"),
+    ORDER_PAYMENT_FAILED(4304, "订单支付失败"),
+
+    /* 支付相关 */
+    PAYMENT_NOT_FOUND(4401, "支付记录不存在"),
+    PAYMENT_FAILED(4402, "支付失败"),
+    PAYMENT_TIMEOUT(4403, "支付超时"),
+    PAYMENT_CANCELLED(4404, "支付已取消"),
+
+    /* 协议相关 */
+    PROTOCOL_ERROR(4501, "协议错误"),
+    OCPP_CONNECTION_FAILED(4502, "OCPP连接失败"),
+    OCPP_MESSAGE_ERROR(4503, "OCPP消息错误"),
+
+    /* 服务器错误 */
+    INTERNAL_SERVER_ERROR(500, "内部服务器错误"),
+    SERVICE_UNAVAILABLE(503, "服务不可用"),
+
+    /* 第三方服务错误 */
+    THIRD_PARTY_ERROR(5001, "第三方服务错误"),
+    ALIPAY_ERROR(5002, "支付宝服务错误"),
+    WECHAT_ERROR(5003, "微信支付服务错误"),
+    UNIONPAY_ERROR(5004, "网联支付服务错误");
+
+    private final Integer code;
     private final String message;
-    
-    /**
-     * 根据错误码获取枚举
-     */
-    public static ErrorCode fromCode(int code) {
-        for (ErrorCode errorCode : values()) {
-            if (errorCode.getCode() == code) {
-                return errorCode;
-            }
-        }
-        return SYSTEM_ERROR;
-    }
 }
 ```
 
-### 4.2 业务异常
+### 4.2 业务错误码扩展
 
-```java
-@Getter
-public class BusinessException extends RuntimeException {
-    
-    private final int code;
-    private final String message;
-    private final Object data;
-
-    public BusinessException(ErrorCode errorCode) {
-        super(errorCode.getMessage());
-        this.code = errorCode.getCode();
-        this.message = errorCode.getMessage();
-        this.data = null;
-    }
-
-    public BusinessException(ErrorCode errorCode, String message) {
-        super(message);
-        this.code = errorCode.getCode();
-        this.message = message;
-        this.data = null;
-    }
-
-    public BusinessException(ErrorCode errorCode, Object data) {
-        super(errorCode.getMessage());
-        this.code = errorCode.getCode();
-        this.message = errorCode.getMessage();
-        this.data = data;
-    }
-
-    public BusinessException(int code, String message) {
-        super(message);
-        this.code = code;
-        this.message = message;
-        this.data = null;
-    }
-}
-```
-
-### 4.3 全局异常处理
-
-```java
-@RestControllerAdvice
-@Slf4j
-public class GlobalExceptionHandler {
-
-    @ExceptionHandler(BusinessException.class)
-    public Result<?> handleBusinessException(BusinessException e) {
-        log.warn("业务异常: code={}, message={}", e.getCode(), e.getMessage());
-        return Result.fail(e.getCode(), e.getMessage());
-    }
-
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Result<?> handleValidationException(MethodArgumentNotValidException e) {
-        String message = e.getBindingResult().getFieldErrors().stream()
-            .map(error -> error.getField() + ": " + error.getDefaultMessage())
-            .collect(Collectors.joining(", "));
-        log.warn("参数校验失败: {}", message);
-        return Result.fail(ErrorCode.PARAM_ERROR.getCode(), message);
-    }
-
-    @ExceptionHandler(Exception.class)
-    public Result<?> handleException(Exception e) {
-        log.error("系统异常", e);
-        return Result.fail(ErrorCode.SYSTEM_ERROR);
-    }
-}
-```
+| 错误码 | 常量名 | HTTP状态 | 消息 | 说明 |
+|--------|--------|----------|------|------|
+| 4001 | TENANT_NOT_FOUND | 400 | 租户不存在 | 租户未找到 |
+| 4002 | TENANT_DISABLED | 400 | 租户已禁用 | 租户被禁用 |
+| 4003 | TENANT_PERMISSION_DENIED | 400 | 租户权限不足 | 跨租户访问 |
+| 4201 | STATION_NOT_FOUND | 404 | 充电站不存在 | 站点未找到 |
+| 4203 | CHARGER_NOT_FOUND | 404 | 充电桩不存在 | 充电桩未找到 |
+| 4204 | CHARGER_UNAVAILABLE | 503 | 充电桩不可用 | 充电桩离线/故障 |
+| 4205 | CHARGER_OCCUPIED | 409 | 充电桩被占用 | 充电桩正在使用 |
+| 4301 | ORDER_NOT_FOUND | 404 | 订单不存在 | 订单未找到 |
+| 5001 | THIRD_PARTY_ERROR | 500 | 第三方服务错误 | 第三方服务调用失败 |
+| 5002 | ALIPAY_ERROR | 500 | 支付宝服务错误 | 支付宝异常 |
+| 5003 | WECHAT_ERROR | 500 | 微信支付服务错误 | 微信支付异常 |
 
 ---
 
 ## 5. 统一响应格式
 
-### 5.1 响应结构
+### 5.1 Result 类（已实现）
 
 ```java
+// evcs-common/src/main/java/com/evcs/common/result/Result.java
 @Data
-@AllArgsConstructor
 @NoArgsConstructor
+@AllArgsConstructor
 public class Result<T> {
-    
-    private int code;
-    private String message;
-    private T data;
-    private String traceId;
-    private long timestamp;
 
+    /**
+     * 响应码
+     */
+    private Integer code;
+
+    /**
+     * 响应消息
+     */
+    private String message;
+
+    /**
+     * 响应数据
+     */
+    private T data;
+
+    /**
+     * 追踪ID
+     */
+    private String traceId;
+
+    /**
+     * 时间戳
+     */
+    private Long timestamp;
+
+    /**
+     * 成功响应（无数据）
+     */
     public static <T> Result<T> success() {
         return success(null);
     }
 
+    /**
+     * 成功响应（带数据）
+     */
     public static <T> Result<T> success(T data) {
         Result<T> result = new Result<>();
-        result.setCode(0);
-        result.setMessage("成功");
+        result.setCode(ResultCode.SUCCESS.getCode());
+        result.setMessage(ResultCode.SUCCESS.getMessage());
         result.setData(data);
         result.setTraceId(MDC.get("traceId"));
         result.setTimestamp(System.currentTimeMillis());
         return result;
     }
 
-    public static <T> Result<T> fail(ErrorCode errorCode) {
-        return fail(errorCode.getCode(), errorCode.getMessage());
+    /**
+     * 失败响应（带结果码）
+     */
+    public static <T> Result<T> failure(ResultCode resultCode) {
+        return failure(resultCode.getCode(), resultCode.getMessage());
     }
 
-    public static <T> Result<T> fail(int code, String message) {
+    /**
+     * 失败响应（自定义消息）
+     */
+    public static <T> Result<T> failure(ResultCode resultCode, String message) {
+        return failure(resultCode.getCode(), message);
+    }
+
+    /**
+     * 失败响应（完整自定义）
+     */
+    public static <T> Result<T> failure(Integer code, String message) {
         Result<T> result = new Result<>();
         result.setCode(code);
         result.setMessage(message);
@@ -372,8 +475,11 @@ public class Result<T> {
         return result;
     }
 
+    /**
+     * 判断是否成功
+     */
     public boolean isSuccess() {
-        return code == 0;
+        return ResultCode.SUCCESS.getCode().equals(this.code);
     }
 }
 ```
@@ -383,20 +489,38 @@ public class Result<T> {
 ```json
 // 成功响应
 {
-    "code": 0,
-    "message": "成功",
+    "code": 200,
+    "message": "操作成功",
     "data": {
         "id": 12345,
-        "orderNo": "ORD20260113001"
+        "orderNo": "ORD20260210001"
     },
     "traceId": "abc123def456",
     "timestamp": 1736766468114
 }
 
-// 失败响应
+// 失败响应 - 资源不存在
 {
-    "code": 320020,
-    "message": "余额不足",
+    "code": 4203,
+    "message": "充电桩不存在",
+    "data": null,
+    "traceId": "abc123def456",
+    "timestamp": 1736766468114
+}
+
+// 失败响应 - 资源冲突
+{
+    "code": 4205,
+    "message": "充电桩被占用",
+    "data": null,
+    "traceId": "abc123def456",
+    "timestamp": 1736766468114
+}
+
+// 失败响应 - 第三方服务异常
+{
+    "code": 5002,
+    "message": "支付宝服务调用失败: 网络超时",
     "data": null,
     "traceId": "abc123def456",
     "timestamp": 1736766468114
@@ -405,40 +529,69 @@ public class Result<T> {
 
 ---
 
-## 6. 国际化
+## 6. 最佳实践
 
-### 6.1 消息配置
-
-```properties
-# messages.properties (默认中文)
-error.100000=系统错误
-error.320020=余额不足，当前余额: {0}，需要: {1}
-
-# messages_en.properties (英文)
-error.100000=System error
-error.320020=Insufficient balance, current: {0}, required: {1}
-```
-
-### 6.2 国际化工具
+### 6.1 异常使用指南
 
 ```java
-@Component
-@RequiredArgsConstructor
-public class ErrorMessageSource {
-
-    private final MessageSource messageSource;
-
-    public String getMessage(int code, Object... args) {
-        try {
-            return messageSource.getMessage(
-                "error." + code, 
-                args, 
-                LocaleContextHolder.getLocale()
-            );
-        } catch (NoSuchMessageException e) {
-            return ErrorCode.fromCode(code).getMessage();
-        }
+// ✅ 推荐：使用具体异常类型
+public ChargingSession startSession(Long chargerId, Long userId) {
+    Charger charger = chargerMapper.selectById(chargerId);
+    if (charger == null) {
+        throw ResourceNotFoundException.of("充电桩", chargerId);
     }
+
+    if (charger.getStatus() == ChargerStatus.BUSY) {
+        throw new ResourceConflictException(
+            ResultCode.CHARGER_OCCUPIED,
+            "充电桩正在使用中"
+        );
+    }
+
+    if (!ocppService.isAvailable()) {
+        throw ServiceUnavailableException.forService("OCPP协议");
+    }
+
+    return createSession(charger, userId);
+}
+
+// ✅ 推荐：第三方服务异常处理
+public AlipayResponse callAlipay(AlipayRequest request) {
+    try {
+        return alipayClient.execute(request);
+    } catch (AlipayApiException e) {
+        throw new ThirdPartyServiceException(
+            ResultCode.ALIPAY_ERROR,
+            "支付宝",
+            e.getMessage(),
+            e
+        );
+    }
+}
+
+// ❌ 不推荐：使用通用异常
+public void doSomething(Long id) {
+    if (id == null) {
+        throw new BusinessException("ID不能为空"); // 不够明确
+    }
+}
+```
+
+### 6.2 错误日志规范
+
+```java
+// 使用异常处理器时，日志已在处理器中记录
+throw new ResourceConflictException("充电桩被占用");
+// GlobalExceptionHandler 会记录: log.warn("资源冲突: {}", e.getMessage());
+
+// 对于需要额外上下文的错误，可以在抛出前记录
+if (charger.getStatus() == ChargerStatus.BUSY) {
+    log.warn("尝试启动繁忙充电桩: chargerId={}, currentStatus={}, existingSession={}",
+             chargerId, charger.getStatus(), charger.getActiveSessionId());
+    throw new ResourceConflictException(
+        ResultCode.CHARGER_OCCUPIED,
+        "充电桩正在使用中"
+    );
 }
 ```
 
@@ -446,9 +599,10 @@ public class ErrorMessageSource {
 
 ## 7. 相关文档
 
-- [API 设计规范](../../.github/instructions/api.instructions.md)
+- [API 设计规范](../architecture/api-design.md)
 - [日志规范](LOGGING-STANDARDS.md)
 - [项目编码规范](PROJECT-CODING-STANDARDS.md)
+- [系统架构风险审计报告](../architecture/RISK-AUDIT-REPORT.md)
 
 ---
 
@@ -456,4 +610,5 @@ public class ErrorMessageSource {
 
 | 日期 | 版本 | 变更说明 |
 |------|------|----------|
+| 2026-02-10 | v1.1 | 新增统一异常体系说明、异常类层次结构、ResultCode 枚举定义 |
 | 2026-01-13 | v1.0 | 初始版本 |

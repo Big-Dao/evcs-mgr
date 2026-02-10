@@ -2,16 +2,17 @@
 
 > **简短描述**：EVCS充电站管理系统的完整版本变更历史
 
-**最后更新**: 2025-12-18  
-**维护者**: 技术负责人  
+**最后更新**: 2026-02-10
+**维护者**: 技术负责人
 **状态**: 活跃
 
 ---
 
 ## 目录
 
-- [当前版本](#当前版本-v11---2025-12-18)
+- [当前版本](#当前版本-v12---2026-02-10)
 - [历史版本](#历史版本)
+  - [v1.1 (2025-12-18)](#v11---2025-12-18)
   - [v1.0 (2025-11-10)](#v10---2025-11-10)
   - [P4 Week 2 (2025-10-28)](#p4-week-2---2025-10-28)
   - [P4 Week 1 (2025-10-20)](#p4-week-1---2025-10-20)
@@ -21,7 +22,71 @@
 
 ---
 
-## 当前版本: v1.1 - 2025-12-18
+## 当前版本: v1.2 - 2026-02-10
+
+### 架构增强（P0 风险修复完成）
+
+- **分布式锁**: 引入 Redisson 3.24.3 分布式锁
+  - 充电桩启停操作锁：`charger:lock:start:{chargerId}` / `charger:lock:stop:{chargerId}`
+  - 锁配置：等待 5 秒，锁定 30 秒
+  - 实现文件：`evcs-station/src/main/java/com/evcs/station/service/impl/ChargerServiceImpl.java:323-452`
+
+- **熔断/限流**: 引入 Resilience4j 2.2.0
+  - 熔断器：失败率阈值 50%，30秒恢复，3次半开探测
+  - 重试：最多 3 次，指数退避
+  - 超时：30 秒
+  - 充电启动限流：10 次/秒
+  - 协议调用限流：100 次/秒
+
+- **权限加固**: 补充缺失的 `@PreAuthorize` 注解
+  - `TenantController`: `@PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")`
+  - `ProtocolCommandController`: 类级别 + 方法级别权限
+  - `ReconciliationController`: `@PreAuthorize("hasRole('ADMIN')")`
+  - `DashboardController`: `@PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR')")`
+  - 新增 Spring Security 依赖：evcs-tenant, evcs-protocol, evcs-payment
+
+- **协议栈修复**: 移除危险的 `return true` fallback
+  - `ChargerServiceImpl.java:549-599` 的 `invokeStartProtocol()` 方法
+  - 当协议未配置、服务不可用或协议不支持时，现在抛出明确的异常
+
+- **统一异常处理**: 建立完整的异常处理体系
+  - `BaseException` - 基础异常类
+  - `ResourceNotFoundException` - 资源不存在 (404)
+  - `ResourceConflictException` - 资源冲突 (409)
+  - `ServiceUnavailableException` - 服务不可用 (503)
+  - `ThirdPartyServiceException` - 第三方服务异常
+  - `GlobalExceptionHandler` - 使用 `@Order` 定义处理器优先级
+
+### 多层级租户治理 Part 2
+
+- **审计日志**: 完整的审计追踪
+  - `TenantAuditLog` 实体 + Mapper + Service + Controller
+  - 支持跨层级管理行为审计
+  - 数据库迁移：`V20260210__create_tenant_audit_log.sql`
+
+- **配额管理**: 资源限制控制
+  - `ITenantQuotaService` 配额检查与管理
+  - 支持站点、充电桩、用户、子租户数量限制
+  - `QuotaCheckResult` 配额检查结果
+
+### 代码清理
+
+- **TODO/FIXME 清零**: 清理所有待办标记
+  - `ReconciliationServiceImpl` 对账服务 TODO 清理
+  - 代码注释规范化
+
+### 文档更新
+
+- **NEXT-PLAN.md**: 更新至 v3.4，记录 P0 任务完成状态
+- **RISK-AUDIT-REPORT.md**: 更新至 v1.2，标记所有 P0/P1 风险为已修复
+- **DISTRIBUTED-LOCK-DESIGN.md**: 更新至 v1.1，添加 Redisson 集成说明
+- **ERROR-CODE-STANDARDS.md**: 更新至 v1.1，新增统一异常体系说明
+
+---
+
+## 历史版本
+
+### v1.1 - 2025-12-18
 
 ### 文档刷新
 
@@ -307,5 +372,5 @@
 
 ---
 
-**最后更新**: 2025-12-18  
+**最后更新**: 2026-02-10
 **下次审查**: 随版本发布更新
