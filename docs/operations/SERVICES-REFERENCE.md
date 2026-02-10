@@ -47,11 +47,6 @@
 - **配置文件**: `config-repo/evcs-gateway-local.yml`
 - **健康检查**: http://localhost:8080/actuator/health
 
-#### 3.2.2 evcs-gateway-backup (网关备份)
-- **功能**: 网关服务的备用实现
-- **状态**: 备用配置，用于高可用场景
-- **部署方式**: 按需启用
-
 ### 3.3 认证授权
 
 #### 3.3.1 evcs-auth (认证授权服务) - 端口 8081
@@ -168,14 +163,14 @@
 - **API路径**: `/api/protocol/**`
 - **健康检查**: http://localhost:8085/actuator/health
 
-#### 3.5.6 evcs-integration (第三方集成服务) - 开发中
-- **功能**: 外部系统集成接口
+#### 3.5.6 evcs-integration (第三方集成服务，预留模块)
+- **功能**: 外部系统集成接口（预留）
 - **计划集成**:
   - 地图服务API
   - 支付渠道扩展
   - 第三方充电平台
   - 数据统计分析
-- **状态**: 开发中，按需启用
+- **状态**: 当前仅保留模块与依赖配置，未提供可运行的 Spring Boot 启动入口，未在 `docker-compose.yml` 中启用
 
 ### 3.6 监控运维
 
@@ -204,6 +199,11 @@
 - **生产端口**: 80 (Docker部署)
 - **部署文档**: [evcs-admin/DEPLOYMENT.md](../deployment/DEPLOYMENT-GUIDE.md)
 - **健康检查**: http://localhost:3000/ （前端构建可使用自定义心跳接口）
+
+#### 3.7.2 evcs-mobile (C 端移动端)
+- **技术栈**: uni-app + Vue 3
+- **运行方式**: 通过 `evcs-mobile/package.json` 中的 `dev:*` 脚本启动（小程序/App/H5）
+- **部署方式**: 不纳入 `docker-compose.yml`，按目标平台独立构建与发布
 
 ## 4. 基础设施服务
 
@@ -242,7 +242,7 @@
 1. 启动基础设施: PostgreSQL, Redis, RabbitMQ
 2. 启动核心服务: Eureka, Config
 3. 启动业务服务: Auth, Tenant, Station
-4. 启动前端: Vue开发服务器
+4. 启动前端: `evcs-admin`（Vite）/ `evcs-mobile`（uni-app）
 
 ### 6.2 Docker部署
 - **编排文件**: `docker-compose.yml`
@@ -261,8 +261,7 @@
 
 ## 7. 演示数据与测试账号
 
-- **平台租户**: `PLATFORM-001`（tenant_id = `1001`）
-- **管理员账号**: `admin.east` / `password`
+- **管理员账号**: `admin@tenant1` / `password`（初始化数据，详见 `sql/init.sql`）
 - **演示数据脚本**: `sql/demo-order-data.sql`
   - macOS/Linux: `cat sql/demo-order-data.sql | docker exec -i evcs-postgres psql -U postgres -d evcs_mgr`
   - Windows (PowerShell): `Get-Content sql/demo-order-data.sql | docker exec -i evcs-postgres psql -U postgres -d evcs_mgr`

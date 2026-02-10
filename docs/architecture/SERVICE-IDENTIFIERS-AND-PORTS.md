@@ -64,8 +64,15 @@
 | `payment-service` | Service | `evcs-payment` | `evcs-payment` | `evcs-payment` | `8084:8084` |
 | `protocol-service` | Service | `evcs-protocol` | `evcs-protocol` | `evcs-protocol` | `8085:8085` |
 | `monitoring-service` | Service | `evcs-monitoring` | `evcs-monitoring` | `evcs-monitoring` | `8087:8087` |
-| `user-service` | Service | `evcs-user` | `evcs-user` | `evcs-user` | `8088:8088` |
-| `admin-frontend` | Frontend | `evcs-admin` | 无 | `evcs-admin` | `3000:80` |
+| `admin-frontend` | Frontend | `evcs-admin (frontend)` | 无 | `evcs-admin` | `3000:80` |
+
+### 3.1 规划中的服务（未在 Compose 中启用）
+
+说明：以下服务在代码或规划中存在，但当前未出现在 `docker-compose.yml` 的 `services:` 列表，故不作为主标识映射表的一部分。
+
+| 规划服务 | 状态 | 参考 |
+| --- | --- | --- |
+| `evcs-user` | 规划中 | [docs/architecture/EVCS-USER-MODULE-RFC.md](EVCS-USER-MODULE-RFC.md) |
 
 ---
 

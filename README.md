@@ -1,6 +1,6 @@
 # EVCS Manager（充电站管理平台）
 
-> 一句话说明：基于 Spring Boot 3.2 + Java 21 的微服务架构充电站管理系统，支持多租户隔离、站点/桩/订单/支付/协议与可观测性。
+> 一句话说明：基于 Spring Boot 3.2.12 + Java 21 的微服务架构充电站管理系统，支持多租户隔离、站点/桩/订单/支付/协议与可观测性。
 
 **最后更新**: 2026-01-13  \
 **维护者**: 技术负责人 / 各领域维护团队  \
@@ -59,7 +59,8 @@ evcs-mgr/
 ├── evcs-config          # 配置中心（Spring Cloud Config）
 ├── evcs-eureka          # 服务注册中心
 ├── evcs-integration     # 外部系统集成
-└── evcs-admin           # 管理后台前端（Vue 3 + Vite）
+├── evcs-admin           # 管理后台前端（Vue 3 + Vite）
+└── evcs-mobile          # C 端移动端（uni-app）
 ```
 
 ### 3.1 规划中的模块：C 端充电用户（evcs-user）
@@ -140,4 +141,3 @@ curl -fsS http://localhost:8080/actuator/health
 ## 7. 许可证
 
 许可证信息以仓库声明为准。
-

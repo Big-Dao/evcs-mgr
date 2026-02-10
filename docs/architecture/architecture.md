@@ -4,11 +4,11 @@
 >
 > **用途**: 描述 EVCS 微服务架构、组件依赖与关键技术决策
 
-## 总体架构
+## 1. 总体架构
 
 ### 1.1 架构概览
 
-EVCS Manager 采用现代化的微服务架构设计，基于 Spring Boot 3.2 + Spring Cloud 2023 技术栈，支持高并发、高可用、可扩展的充电站管理平台。
+EVCS Manager 采用现代化的微服务架构设计，基于 Spring Boot 3.2.12 + Spring Cloud 2023.0.6 技术栈，支持高并发、高可用、可扩展的充电站管理平台。
 
 ```mermaid
 graph TB
@@ -31,8 +31,11 @@ graph TB
         PAYMENT[支付服务<br/>evcs-payment]
         PROTOCOL[协议服务<br/>evcs-protocol]
         MONITOR[监控服务<br/>evcs-monitoring]
-        INTEGRATION[集成服务<br/>evcs-integration]
-        USER[用户服务<br/>evcs-user]
+    end
+
+    subgraph "规划/预留服务"
+        INTEGRATION[集成服务（预留）<br/>evcs-integration]
+        USER[用户服务（规划）<br/>evcs-user]
     end
 
     subgraph "基础设施层"
@@ -54,8 +57,8 @@ graph TB
     GW --> PAYMENT
     GW --> PROTOCOL
     GW --> MONITOR
-    GW --> INTEGRATION
-    GW --> USER
+    GW -.-> INTEGRATION
+    GW -.-> USER
 
     AUTH --> EUREKA
     TENANT --> EUREKA
@@ -64,8 +67,8 @@ graph TB
     PAYMENT --> EUREKA
     PROTOCOL --> EUREKA
     MONITOR --> EUREKA
-    INTEGRATION --> EUREKA
-    USER --> EUREKA
+    INTEGRATION -.-> EUREKA
+    USER -.-> EUREKA
 
     STATION --> CONFIG
     ORDER --> CONFIG
@@ -85,15 +88,11 @@ graph TB
     STATION --> DB
     ORDER --> DB
     PAYMENT --> DB
-    USER --> DB
-
-    USER --> REDIS
-    USER --> MQ
 ```
 
 ### 1.2 技术栈选择
 
-#### 核心技术栈
+#### 1.2.1 核心技术栈
 | 技术 | 版本 | 用途 | 选择理由 |
 |------|------|------|----------|
 | Java | 21 | 编程语言 | 现代化特性，性能优秀 |
@@ -101,23 +100,23 @@ graph TB
 | Spring Cloud | 2023.0.6 | 微服务框架 | 完整的微服务解决方案 |
 | PostgreSQL | 17-alpine | 关系数据库 | 强一致性，支持复杂查询 |
 | Redis | 7-alpine | 缓存数据库 | 高性能，支持多种数据结构 |
-| RabbitMQ | 3.12 | 消息队列 | 可靠的消息传递 |
+| RabbitMQ | 3-management-alpine | 消息队列 | 可靠的消息传递 |
 | Docker | 28.5+ | 容器化 | 标准化部署 |
 
-#### 辅助技术栈
+#### 1.2.2 辅助技术栈
 | 技术 | 版本 | 用途 | 选择理由 |
 |------|------|------|----------|
-| MyBatis Plus | 3.5.7 | ORM框架 | 简化数据库操作 |
-| HikariCP | 5.0 | 连接池 | 高性能数据库连接池 |
-| JWT | 4.4.0 | 身份认证 | 无状态认证 |
-| Knife4j | 4.4.0 | API文档 | 增强的Swagger UI |
-| Gradle | 8.5 | 构建工具 | 高效的构建系统 |
+| MyBatis Plus | 3.5.8 | ORM框架 | 简化数据库操作 |
+| HikariCP | Spring Boot BOM (5.x) | 连接池 | 高性能数据库连接池 |
+| JWT | 3.19.2 | 身份认证 | 无状态认证 |
+| Knife4j | 4.5.0 | API文档 | 增强的Swagger UI |
+| Gradle | 8.11.1 | 构建工具 | 高效的构建系统 |
 
-## 微服务设计
+## 2. 微服务设计
 
 ### 2.1 服务拆分原则
 
-#### 按业务领域拆分
+#### 2.1.1 按业务领域拆分
 - **认证领域**: 用户认证、权限管理
 - **租户领域**: 多租户管理、数据隔离
 - **充电站领域**: 充电站、充电桩管理
@@ -128,7 +127,7 @@ graph TB
 - **集成领域**: 第三方系统集成
 - **用户领域**: C 端用户管理、积分/优惠券/会员、营销活动（规划中，详见 [evcs-user 模块 RFC](EVCS-USER-MODULE-RFC.md)）
 
-#### 服务职责边界
+#### 2.1.2 服务职责边界
 ```mermaid
 graph LR
     subgraph "核心业务服务"
@@ -171,12 +170,12 @@ graph LR
 
 ### 2.2 服务间通信
 
-#### 同步通信
+#### 2.2.1 同步通信
 - **HTTP/REST**: 标准的HTTP API调用
 - **Feign Client**: Spring Cloud声明式HTTP客户端
 - **负载均衡**: Spring Cloud LoadBalancer
 
-#### 异步通信
+#### 2.2.2 异步通信
 - **消息队列**: RabbitMQ实现事件驱动
 - **事件发布**: ApplicationEventPublisher
 - **消息消费**: @RabbitListener注解
@@ -197,7 +196,7 @@ public void handlePaymentEvent(PaymentEvent event) {
 }
 ```
 
-## 多租户架构
+## 3. 多租户架构
 
 ### 3.0 多层级多租户（分级治理口径）
 
@@ -241,7 +240,7 @@ graph TB
     DB1 --> TENANT2
 ```
 
-#### 第一层：数据库层隔离
+#### 3.1.1 第一层：数据库层隔离
 ```sql
 -- 所有业务表包含租户字段
 CREATE TABLE charging_station (
@@ -257,7 +256,7 @@ CREATE TABLE charging_station (
 CREATE INDEX idx_station_tenant ON charging_station(tenant_id, deleted);
 ```
 
-#### 第二层：SQL层自动过滤
+#### 3.1.2 第二层：SQL层自动过滤
 ```java
 @Configuration
 public class MybatisPlusConfig {
@@ -293,7 +292,7 @@ public class CustomTenantLineHandler implements TenantLineHandler {
 }
 ```
 
-#### 第三层：服务层权限控制
+#### 3.1.3 第三层：服务层权限控制
 ```java
 @Aspect
 @Component
@@ -321,7 +320,7 @@ public List<Station> getStations() {
 }
 ```
 
-#### 第四层：API层访问控制
+#### 3.1.4 第四层：API层访问控制
 ```java
 @RestController
 @RequestMapping("/station")
@@ -340,7 +339,7 @@ public class StationController {
 
 ### 3.2 租户上下文管理
 
-#### 线程安全的上下文
+#### 3.2.1 线程安全的上下文
 ```java
 public class TenantContext {
     private static final ThreadLocal<Long> TENANT_ID = new ThreadLocal<>();
@@ -381,18 +380,18 @@ public class TenantContext {
 }
 ```
 
-## 数据架构设计
+## 4. 数据架构设计
 
 ### 4.1 数据库设计
 
-#### 数据库分片策略
+#### 4.1.1 数据库分片策略
 - **按租户分片**: 不同租户数据物理隔离
 - **按业务分片**: 不同业务模块使用独立数据库
 - **读写分离**: 主库写入，从库查询
 
-#### 核心表结构设计
+#### 4.1.2 核心表结构设计
 
-##### 用户认证表
+##### 4.1.2.1 用户认证表
 ```sql
 -- 租户表
 CREATE TABLE sys_tenant (
@@ -432,7 +431,7 @@ CREATE TABLE sys_user (
 );
 ```
 
-##### 充电站管理表
+##### 4.1.2.2 充电站管理表
 ```sql
 -- 充电站表
 CREATE TABLE charging_station (
@@ -485,7 +484,7 @@ CREATE TABLE charger (
 );
 ```
 
-##### 订单管理表
+##### 4.1.2.3 订单管理表
 ```sql
 -- 充电订单表
 CREATE TABLE charging_order (
@@ -524,7 +523,7 @@ CREATE TABLE charging_order (
 
 ### 4.2 缓存架构
 
-#### Redis缓存设计
+#### 4.2.1 Redis缓存设计
 ```java
 @Service
 public class CacheServiceImpl implements ICacheService {
@@ -554,17 +553,17 @@ public class CacheServiceImpl implements ICacheService {
 }
 ```
 
-#### 缓存策略
+#### 4.2.2 缓存策略
 - **热点数据**: 租户信息、用户信息、计费方案
 - **缓存时间**: 根据数据更新频率设置不同TTL
 - **缓存更新**: 数据变更时主动更新缓存
 - **缓存预热**: 系统启动时预加载热点数据
 
-## 协议架构
+## 5. 协议架构
 
 ### 5.1 支持的协议
 
-#### OCPP 1.6协议
+#### 5.1.1 OCPP 1.6协议
 ```java
 @Component
 public class OcppProtocolHandler implements ProtocolHandler {
@@ -593,7 +592,7 @@ public class OcppProtocolHandler implements ProtocolHandler {
 }
 ```
 
-#### 云快充协议
+#### 5.1.2 云快充协议
 ```java
 @Component
 public class CloudProtocolHandler implements ProtocolHandler {
@@ -629,11 +628,11 @@ public class ChargingStartEvent {
 }
 ```
 
-## 安全架构
+## 6. 安全架构
 
 ### 6.1 认证授权
 
-#### JWT认证
+#### 6.1.1 JWT认证
 ```java
 @Component
 public class JwtUtil {
@@ -671,7 +670,7 @@ public class JwtUtil {
 }
 ```
 
-#### 权限控制
+#### 6.1.2 权限控制
 ```java
 @Component
 public class SimplePermissionEvaluator {
@@ -700,7 +699,7 @@ public class SimplePermissionEvaluator {
 
 ### 6.2 数据安全
 
-#### 数据加密
+#### 6.2.1 数据加密
 ```java
 @Component
 public class DataEncryption {
@@ -718,7 +717,7 @@ public class DataEncryption {
 }
 ```
 
-#### SQL注入防护
+#### 6.2.2 SQL注入防护
 ```java
 @RestController
 @RequestMapping("/station")
@@ -739,11 +738,11 @@ public class StationController {
 }
 ```
 
-## 监控架构
+## 7. 监控架构
 
 ### 7.1 系统监控
 
-#### Spring Boot Actuator
+#### 7.1.1 Spring Boot Actuator
 ```yaml
 management:
   endpoints:
@@ -759,7 +758,7 @@ management:
         enabled: true
 ```
 
-#### 自定义监控指标
+#### 7.1.2 自定义监控指标
 ```java
 @Component
 public class BusinessMetrics {
@@ -796,7 +795,7 @@ public class BusinessMetrics {
 
 ### 7.2 日志架构
 
-#### 结构化日志
+#### 7.2.1 结构化日志
 ```xml
 <!-- logback-spring.xml -->
 <configuration>
@@ -820,7 +819,7 @@ public class BusinessMetrics {
 </configuration>
 ```
 
-#### 日志追踪
+#### 7.2.2 日志追踪
 ```java
 @Component
 public class LogInterceptor implements HandlerInterceptor {
@@ -845,11 +844,11 @@ public class LogInterceptor implements HandlerInterceptor {
 }
 ```
 
-## 部署架构
+## 8. 部署架构
 
 ### 8.1 容器化部署
 
-#### Dockerfile设计
+#### 8.1.1 Dockerfile设计
 ```dockerfile
 # 基础镜像
 FROM openjdk:21-jre-slim
@@ -875,7 +874,7 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=90s --retries=3 \
 ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]
 ```
 
-#### Docker Compose编排
+#### 8.1.2 Docker Compose编排
 ```yaml
 version: '3.8'
 
@@ -946,7 +945,7 @@ volumes:
 
 ### 8.2 高可用部署
 
-#### 负载均衡
+#### 8.2.1 负载均衡
 ```yaml
 # nginx.conf
 upstream gateway {
@@ -966,7 +965,7 @@ server {
 }
 ```
 
-#### 数据库主从复制
+#### 8.2.2 数据库主从复制
 ```yaml
 # docker-compose.replication.yml
 services:
@@ -990,11 +989,11 @@ services:
       POSTGRES_REPLICATION_PASSWORD: replicator_password
 ```
 
-## 性能优化
+## 9. 性能优化
 
 ### 9.1 JVM调优
 
-#### G1GC配置
+#### 9.1.1 G1GC配置
 ```bash
 # 生产环境JVM参数
 JAVA_OPTS="
@@ -1011,7 +1010,7 @@ JAVA_OPTS="
 "
 ```
 
-#### JVM监控
+#### 9.1.2 JVM监控
 ```bash
 # JFR诊断记录
 -XX:StartFlightRecording=dumponexit=true,filename=tmp/flight.jfr
@@ -1021,7 +1020,7 @@ JAVA_OPTS="
 
 ### 9.2 数据库优化
 
-#### 索引优化
+#### 9.2.1 索引优化
 ```sql
 -- 复合索引
 CREATE INDEX idx_station_tenant_status ON charging_station(tenant_id, status);
@@ -1032,7 +1031,7 @@ CREATE INDEX idx_payment_tenant_status ON payment_order(tenant_id, status);
 CREATE INDEX idx_active_chargers ON charger(tenant_id, status) WHERE status = 1;
 ```
 
-#### 连接池优化
+#### 9.2.2 连接池优化
 ```yaml
 spring:
   datasource:
@@ -1047,7 +1046,7 @@ spring:
 
 ### 9.3 缓存优化
 
-#### Redis集群
+#### 9.3.1 Redis集群
 ```yaml
 spring:
   redis:
@@ -1063,7 +1062,7 @@ spring:
         min-idle: 5
 ```
 
-#### 缓存预热
+#### 9.3.2 缓存预热
 ```java
 @Component
 public class CachePreloadRunner implements CommandLineRunner {
@@ -1086,11 +1085,11 @@ public class CachePreloadRunner implements CommandLineRunner {
 }
 ```
 
-## 扩展性设计
+## 10. 扩展性设计
 
 ### 10.1 水平扩展
 
-#### 服务无状态化
+#### 10.1.1 服务无状态化
 ```java
 @RestController
 public class StationController {
@@ -1105,7 +1104,7 @@ public class StationController {
 }
 ```
 
-#### 分布式缓存
+#### 10.1.2 分布式缓存
 ```java
 @Configuration
 public class RedisConfig {
@@ -1126,7 +1125,7 @@ public class RedisConfig {
 
 ### 10.2 功能扩展
 
-#### 插件化架构
+#### 10.2.1 插件化架构
 ```java
 public interface PaymentPlugin {
     String getPluginName();
@@ -1151,7 +1150,7 @@ public class AlipayPlugin implements PaymentPlugin {
 }
 ```
 
-#### 配置化管理
+#### 10.2.2 配置化管理
 ```java
 @ConfigurationProperties(prefix = "evcs.payment")
 @Data
@@ -1171,23 +1170,23 @@ public class PaymentProperties {
 }
 ```
 
-## 技术债务管理
+## 11. 技术债务管理
 
 ### 11.1 当前技术债务
 
-#### 高优先级债务
+#### 11.1.1 高优先级债务
 1. **支付系统不完整** - 仅有模拟实现，缺少真实SDK集成
 2. **协议处理薄弱** - OCPP协议支持不完整
 3. **测试覆盖率低** - 仅45%，低于80%目标
 4. **监控体系缺失** - 缺少完整的监控告警
 
-#### 中等优先级债务
+#### 11.1.2 中等优先级债务
 1. **网关功能不完善** - 缺少限流、熔断机制
 2. **文档体系混乱** - 180个文档，冗余严重
 3. **权限验证不完整** - 部分接口缺少权限检查
 4. **日志规范不统一** - 日志格式和级别需要标准化
 
-#### 低优先级债务
+#### 11.1.3 低优先级债务
 1. **代码重复** - 部分实体类和工具类存在重复
 2. **配置管理** - 配置分散，需要统一管理
 3. **异常处理** - 异常处理机制需要完善
@@ -1195,17 +1194,17 @@ public class PaymentProperties {
 
 ### 11.2 债务偿还计划
 
-#### 短期计划 (1-2个月)
+#### 11.2.1 短期计划 (1-2个月)
 1. **修复支付系统** - 集成支付宝/微信SDK
 2. **提升测试质量** - 重构测试用例，提高覆盖率
 3. **完善权限验证** - 为所有接口添加权限检查
 
-#### 中期计划 (3-6个月)
+#### 11.2.2 中期计划 (3-6个月)
 1. **完善协议处理** - 实现OCPP 1.6完整协议
 2. **建立监控体系** - 集成Prometheus + Grafana
 3. **增强网关功能** - 添加限流、熔断、日志收集
 
-#### 长期计划 (6-12个月)
+#### 11.2.3 长期计划 (6-12个月)
 1. **架构优化** - 微服务治理优化
 2. **性能提升** - 全面性能优化
 3. **安全加固** - 安全机制完善
