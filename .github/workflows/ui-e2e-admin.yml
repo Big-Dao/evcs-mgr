@@ -1,0 +1,91 @@
+name: UI E2E Admin
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+jobs:
+  ui-e2e-admin:
+    name: ui-e2e-admin
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build backend jars for docker compose
+        run: |
+          ./gradlew \
+            :evcs-common:build \
+            :evcs-eureka:build \
+            :evcs-config:build \
+            :evcs-gateway:build \
+            :evcs-auth:build \
+            :evcs-tenant:build \
+            :evcs-station:build \
+            :evcs-order:build \
+            :evcs-payment:build \
+            :evcs-protocol:build \
+            :evcs-monitoring:build \
+            -x test \
+            --no-daemon
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: evcs-admin/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: evcs-admin
+        run: npm ci
+
+      - name: Install Playwright Chromium and deps
+        working-directory: evcs-admin
+        run: npm run e2e:install
+
+      - name: Make e2e scripts executable
+        run: chmod +x scripts/start-e2e-admin.sh scripts/stop-e2e-admin.sh
+
+      - name: Start e2e environment
+        env:
+          E2E_HEALTH_TIMEOUT_SECONDS: '900'
+        run: ./scripts/start-e2e-admin.sh
+
+      - name: Run Playwright tests
+        working-directory: evcs-admin
+        run: npm run e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-e2e-admin-playwright-report
+          path: evcs-admin/playwright-report
+          if-no-files-found: ignore
+
+      - name: Upload Playwright test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-e2e-admin-test-results
+          path: evcs-admin/test-results
+          if-no-files-found: ignore
+
+      - name: Stop e2e environment
+        if: always()
+        run: ./scripts/stop-e2e-admin.sh

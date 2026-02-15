@@ -1,6 +1,6 @@
 <template>
   <div class="login-container">
-    <el-card class="login-card">
+    <el-card class="login-card" data-testid="login-form">
       <div class="logo-section">
         <el-icon style="font-size: 48px; color: #409eff;"><Lightning /></el-icon>
         <h1>EVCS Manager</h1>
@@ -13,6 +13,7 @@
             placeholder="手机号或邮箱"
             prefix-icon="User"
             size="large"
+            data-testid="login-identifier"
           />
         </el-form-item>
         <el-form-item prop="password">
@@ -22,6 +23,7 @@
             placeholder="密码"
             prefix-icon="Lock"
             size="large"
+            data-testid="login-password"
             @keyup.enter="handleLogin"
           />
         </el-form-item>
@@ -32,6 +34,7 @@
             style="width: 100%"
             :loading="loading"
             @click="handleLogin"
+            data-testid="login-submit"
           >
             登录
           </el-button>

@@ -1,9 +1,9 @@
 <template>
-  <div class="order-list">
+  <div class="order-list" data-testid="order-page">
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>订单列表</span>
+          <span data-testid="order-page-title">订单列表</span>
           <el-button type="success" @click="handleExport">
             <el-icon><Download /></el-icon>
             导出Excel
@@ -28,7 +28,7 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="tableData" v-loading="loading" style="width: 100%">
+      <el-table :data="tableData" v-loading="loading" style="width: 100%" data-testid="order-table">
         <el-table-column prop="id" label="订单ID" width="80" />
         <el-table-column prop="orderNo" label="订单号" width="150" />
         <el-table-column prop="stationName" label="充电站" />

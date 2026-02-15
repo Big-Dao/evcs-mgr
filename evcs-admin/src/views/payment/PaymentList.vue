@@ -1,9 +1,9 @@
 <template>
-  <div class="payment-list">
+  <div class="payment-list" data-testid="payment-page">
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>支付管理</span>
+          <span data-testid="payment-page-title">支付管理</span>
           <el-button type="success" @click="handleExport">
             <el-icon><Download /></el-icon>
             导出数据
@@ -49,7 +49,7 @@
         </el-form-item>
       </el-form>
 
-      <el-table :data="tableData" v-loading="loading" style="width: 100%">
+      <el-table :data="tableData" v-loading="loading" style="width: 100%" data-testid="payment-table">
         <el-table-column prop="id" label="ID" width="80" />
         <el-table-column prop="tradeNo" label="交易号" width="160" />
         <el-table-column prop="orderNo" label="订单号" width="140" />

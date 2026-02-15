@@ -1,9 +1,9 @@
 <template>
-  <div class="station-list">
+  <div class="station-list" data-testid="station-page">
     <el-card>
       <template #header>
         <div class="card-header">
-          <span>充电站列表</span>
+          <span data-testid="station-page-title">充电站列表</span>
           <el-button-group>
             <el-button :type="viewMode === 'list' ? 'primary' : ''" @click="viewMode = 'list'">
               <el-icon><List /></el-icon>
@@ -39,7 +39,7 @@
       </el-form>
 
       <!-- List View -->
-      <el-table v-if="viewMode === 'list'" :data="tableData" v-loading="loading" style="width: 100%">
+      <el-table v-if="viewMode === 'list'" :data="tableData" v-loading="loading" style="width: 100%" data-testid="station-table">
         <el-table-column prop="id" label="站点ID" width="80" />
         <el-table-column prop="stationCode" label="站点编码" width="120" />
         <el-table-column prop="stationName" label="站点名称" />

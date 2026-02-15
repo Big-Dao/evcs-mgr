@@ -26,6 +26,10 @@
 
 - [按枪口（Connector）控制 - 测试报告](CHARGER-CONNECTOR-CONTROL-TEST-REPORT.md)
 
+Web UI 自动化测试：
+
+- [Web UI 自动化测试指南（evcs-admin）](WEB-UI-AUTOMATION-GUIDE.md)
+
 ---
 
 ## 推荐运行方式
