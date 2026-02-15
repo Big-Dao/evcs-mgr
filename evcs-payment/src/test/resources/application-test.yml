@@ -31,6 +31,7 @@ spring:
       - org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration
       - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
       - org.springframework.amqp.rabbit.annotation.RabbitBootstrapConfiguration
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
 
   cloud:
     discovery:
