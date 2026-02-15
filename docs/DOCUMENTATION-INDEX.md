@@ -73,6 +73,7 @@
 - 生产部署规划（发布/回滚/验收基线）：[docs/deployment/DEPLOYMENT-GUIDE.md](deployment/DEPLOYMENT-GUIDE.md)
 - 测试部署规划（CI/CD 与集成验证）：[docs/deployment/TEST-ENVIRONMENT-GUIDE.md](deployment/TEST-ENVIRONMENT-GUIDE.md)
 - 资源规划指南：[docs/deployment/RESOURCE-PLANNING-GUIDE.md](deployment/RESOURCE-PLANNING-GUIDE.md)
+- Kubernetes 部署分析报告（现状/风险/改进阶段）：[docs/deployment/K8S-DEPLOYMENT-ANALYSIS-REPORT.md](deployment/K8S-DEPLOYMENT-ANALYSIS-REPORT.md)
 
 ## 9. 运维（operations）
 
@@ -93,6 +94,7 @@
 ## 11. 测试（testing）
 
 - 统一测试指南：[docs/testing/UNIFIED-TESTING-GUIDE.md](testing/UNIFIED-TESTING-GUIDE.md)
+- Web UI 自动化测试指南：[docs/testing/WEB-UI-AUTOMATION-GUIDE.md](testing/WEB-UI-AUTOMATION-GUIDE.md)
 - 集成测试指南：[docs/testing/INTEGRATION-TEST-GUIDE.md](testing/INTEGRATION-TEST-GUIDE.md)
 - 性能测试指南：[docs/testing/PERFORMANCE-TESTING-GUIDE.md](testing/PERFORMANCE-TESTING-GUIDE.md)
 - 测试修复指南：[docs/testing/TEST-FIX-GUIDE.md](testing/TEST-FIX-GUIDE.md)
