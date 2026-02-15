@@ -26,6 +26,7 @@ spring:
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
+      - org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.metrics.MetricsAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.metrics.task.TaskExecutorMetricsAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration
