@@ -286,6 +286,6 @@ class ChargerServiceTest extends BaseServiceTest {
         });
 
         // Assert
-        assertEquals("协议启动失败", exception.getMessage());
+        assertEquals("OCPP 协议服务不可用", exception.getMessage());
     }
 }
