@@ -43,6 +43,10 @@ jobs:
       continue-on-error: true
       run: ./gradlew :evcs-integration:test --no-daemon
 
+    - name: Coverage verification (gradual gate - warning only)
+      continue-on-error: true
+      run: ./gradlew jacocoTestCoverageVerification -PevcsCoverageGate=true --no-daemon
+
     - name: Upload test results
       if: always()
       uses: actions/upload-artifact@v4

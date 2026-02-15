@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
@@ -25,7 +26,12 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(classes = ProtocolServiceApplication.class)
+@SpringBootTest(
+        classes = ProtocolServiceApplication.class,
+        properties = {
+                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration,org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration"
+        }
+)
 @DisplayName("云快充 userId 上报测试")
 @SuppressWarnings("null")
 class CloudChargeControllerUserIdTest extends BaseControllerTest {
@@ -35,6 +41,9 @@ class CloudChargeControllerUserIdTest extends BaseControllerTest {
 
     @MockBean
     private org.springframework.web.client.RestTemplate restTemplate;
+
+        @MockBean
+        private RabbitTemplate rabbitTemplate;
 
     @Autowired
     private ProtocolEventPublisher eventPublisher;
@@ -173,6 +182,50 @@ class CloudChargeControllerUserIdTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.success").value(false))
                 .andExpect(jsonPath("$.code").value("400"));
     }
+
+        @Test
+        @DisplayName("开始充电 - stationId 缺失时应返回 400")
+        void testStartCharging_shouldReturn400_whenStationIdMissing() throws Exception {
+                // Arrange
+                Mockito.when(signatureValidator.validateSignature(Mockito.any())).thenReturn(true);
+
+                ChargerBasicInfo chargerInfo = new ChargerBasicInfo();
+                chargerInfo.setId(1L);
+                chargerInfo.setTenantId(1L);
+                chargerInfo.setStationId(null);
+                chargerInfo.setChargerCode("DEVICE_1");
+                chargerInfo.setChargerName("TEST");
+
+                Mockito.when(restTemplate.exchange(
+                                Mockito.any(RequestEntity.class),
+                                Mockito.<ParameterizedTypeReference<Object>>any()
+                )).thenReturn(ResponseEntity.ok(com.evcs.common.result.Result.success(chargerInfo)));
+
+                Map<String, Object> body = new HashMap<>();
+                body.put("requestId", "req-005");
+                body.put("apiVersion", "3.0");
+                body.put("timestamp", "2025-12-16T00:00:00");
+                body.put("signature", "sig");
+                body.put("deviceCode", "DEVICE_1");
+                body.put("sessionId", "SESSION_005");
+                body.put("action", "start");
+
+                Map<String, Object> data = new HashMap<>();
+                data.put("userId", 100L);
+                data.put("connectorId", 1);
+                body.put("data", data);
+
+                // Act & Assert
+                mockMvc.perform(
+                                                MockMvcRequestBuilders.post("/api/cloudcharge/start")
+                                                                .contentType(MediaType.APPLICATION_JSON)
+                                                                .content(toJson(body))
+                                )
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.success").value(false))
+                                .andExpect(jsonPath("$.code").value("400"))
+                                .andExpect(jsonPath("$.message").value("Missing stationId"));
+        }
 
         @Test
         @DisplayName("停止充电 - data.connectorId 存在时应发布 StopEvent 并携带 connectorId")

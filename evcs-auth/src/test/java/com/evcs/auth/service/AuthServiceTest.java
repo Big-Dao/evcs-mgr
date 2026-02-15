@@ -219,6 +219,13 @@ class AuthServiceTest {
     }
 
     @Test
+    @DisplayName("获取用户信息 - 缺少用户或租户ID应抛未登录异常")
+    void testGetUserInfo_shouldThrowException_whenUserOrTenantIdMissing() {
+        assertThrows(BusinessException.class, () -> authService.getUserInfo(null, 1001L));
+        assertThrows(BusinessException.class, () -> authService.getUserInfo(1001L, null));
+    }
+
+    @Test
     @DisplayName("获取用户信息 - 有效用户应返回用户信息")
     void testGetUserInfo_shouldReturnUserInfo_whenUserExists() {
         // Arrange

@@ -143,10 +143,14 @@ subprojects {
     }
     
     // JaCoCo覆盖率验证
+    def coverageGateEnabled = ((findProperty('evcsCoverageGate')
+            ?: System.getenv('EVCS_COVERAGE_GATE')
+            ?: 'false').toString().toBoolean())
+
     jacocoTestCoverageVerification {
         violationRules {
             rule {
-                enabled = false // 暂时禁用，项目成熟后可启用
+                enabled = coverageGateEnabled
                 limit {
                     minimum = 0.60 // 60%覆盖率
                 }

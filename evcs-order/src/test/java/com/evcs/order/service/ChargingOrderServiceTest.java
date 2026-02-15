@@ -139,6 +139,16 @@ class ChargingOrderServiceTest extends BaseServiceTest {
     }
 
     @Test
+    @DisplayName("完成订单 - 会话不存在时应返回失败")
+    void testCompleteOrder_shouldReturnFalse_whenSessionNotFound() {
+        String nonExistingSessionId = "SESSION_NOT_FOUND_" + System.currentTimeMillis();
+
+        boolean result = chargingOrderService.completeOrderOnStop(nonExistingSessionId, 12.3, 60L);
+
+        assertThat(result).isFalse();
+    }
+
+    @Test
     @DisplayName("完成订单 - 正常流程")
     @org.junit.jupiter.api.Disabled("MyBatis Plus updateById 在 H2 测试环境绑定失败 - 待修复 (Day 4)")
     void testCompleteOrder() {
