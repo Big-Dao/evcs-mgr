@@ -18,11 +18,10 @@ import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSeriali
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
-import org.redisson.client.codec.JsonJacksonCodec;
+import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.config.Config;
 import redis.embedded.RedisServer;
 import com.alipay.api.AlipayClient;
-import com.alipay.api.AlipayResponse;
 import com.alipay.api.response.AlipayTradeAppPayResponse;
 import com.alipay.api.response.AlipayTradePrecreateResponse;
 import com.alipay.api.response.AlipayTradeQueryResponse;

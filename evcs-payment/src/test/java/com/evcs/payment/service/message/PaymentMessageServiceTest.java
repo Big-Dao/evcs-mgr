@@ -4,7 +4,6 @@ import com.evcs.payment.config.TestConfig;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.mapper.PaymentOrderMapper;
-import com.evcs.payment.service.message.impl.PaymentMessageServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -79,9 +78,6 @@ class PaymentMessageServiceTest {
     @Test
     @DisplayName("测试消息发送异常处理")
     void testSendMessageWithException() {
-        // 创建测试用的支付订单
-        PaymentOrder paymentOrder = createTestPaymentOrder();
-
         // 验证异常不会影响主流程
         assertDoesNotThrow(() -> {
             log.info("模拟消息发送异常处理测试");

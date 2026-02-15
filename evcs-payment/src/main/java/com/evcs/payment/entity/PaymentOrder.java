@@ -90,19 +90,19 @@ public class PaymentOrder extends BaseEntity {
     /**
      * 本次退款请求号（微信 out_refund_no / 支付宝 out_request_no）
      */
-    @TableField(updateStrategy = FieldStrategy.IGNORED)
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private String refundRequestNo;
 
     /**
      * 本次退款请求金额（用于退款中轮询收敛）
      */
-    @TableField(updateStrategy = FieldStrategy.IGNORED)
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private BigDecimal refundRequestAmount;
 
     /**
      * 本次退款请求时间
      */
-    @TableField(updateStrategy = FieldStrategy.IGNORED)
+    @TableField(updateStrategy = FieldStrategy.ALWAYS)
     private LocalDateTime refundRequestTime;
 
     /**

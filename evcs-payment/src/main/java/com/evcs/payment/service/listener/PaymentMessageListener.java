@@ -2,7 +2,6 @@ package com.evcs.payment.service.listener;
 
 import com.evcs.common.trace.TraceMdc;
 import com.evcs.payment.dto.message.PaymentMessage;
-import com.evcs.payment.service.message.PaymentMessageService;
 import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +21,6 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class PaymentMessageListener {
-
-    private final PaymentMessageService paymentMessageService;
 
     /**
      * 监听支付成功消息

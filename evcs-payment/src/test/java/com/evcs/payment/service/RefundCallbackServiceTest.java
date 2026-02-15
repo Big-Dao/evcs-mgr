@@ -5,7 +5,6 @@ import com.evcs.payment.dto.RefundCallbackRequest;
 import com.evcs.payment.entity.PaymentOrder;
 import com.evcs.payment.enums.PaymentStatus;
 import com.evcs.payment.mapper.PaymentOrderMapper;
-import com.evcs.payment.service.IRefundCallbackService;
 import com.evcs.payment.service.impl.RefundCallbackServiceImpl;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.AfterEach;

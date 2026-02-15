@@ -3,7 +3,6 @@ package com.evcs.payment.service.channel;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.request.AlipayTradeFastpayRefundQueryRequest;
 import com.alipay.api.response.AlipayTradeFastpayRefundQueryResponse;
-import com.evcs.payment.config.AlipayConfig;
 import com.evcs.payment.config.TestConfig;
 import com.evcs.payment.dto.PaymentRequest;
 import com.evcs.payment.dto.PaymentResponse;

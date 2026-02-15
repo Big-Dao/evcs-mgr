@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
@@ -45,6 +47,12 @@ class PaymentIdempotencyServiceTest {
     private PaymentMetrics paymentMetrics;
 
     @Mock
+    private RedissonClient redissonClient;
+
+    @Mock
+    private RLock rLock;
+
+    @Mock
     private ValueOperations<String, Object> valueOperations;
 
     private PaymentIdempotencyServiceImpl idempotencyService;
@@ -52,7 +60,13 @@ class PaymentIdempotencyServiceTest {
     @BeforeEach
     void setUp() {
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        idempotencyService = new PaymentIdempotencyServiceImpl(redisTemplate, paymentOrderMapper, paymentMetrics);
+        lenient().when(redissonClient.getLock(anyString())).thenReturn(rLock);
+        idempotencyService = new PaymentIdempotencyServiceImpl(
+            redisTemplate,
+            redissonClient,
+            paymentOrderMapper,
+            paymentMetrics
+        );
     }
 
     @Test
@@ -62,16 +76,23 @@ class PaymentIdempotencyServiceTest {
         String requestId = "request_456";
         long lockTime = 30L;
 
-        when(valueOperations.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class)))
-                .thenReturn(true);
+        try {
+            when(rLock.tryLock(5L, 30L, TimeUnit.SECONDS)).thenReturn(true);
+        } catch (InterruptedException e) {
+            fail("Mock setup failed unexpectedly");
+        }
 
         // When
         boolean result = idempotencyService.tryLock(idempotentKey, requestId, lockTime);
 
         // Then
         assertTrue(result);
-        verify(redisTemplate).opsForValue();
-        verify(valueOperations).setIfAbsent("payment:lock:test_key_123", requestId, 30L, TimeUnit.SECONDS);
+        verify(redissonClient).getLock("lock:payment:test_key_123");
+        try {
+            verify(rLock).tryLock(5L, 30L, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            fail("Verification failed unexpectedly");
+        }
         verify(paymentMetrics).recordCustomMetric(eq("payment.idempotency.lock.success"), eq(1.0), any(Map.class));
     }
 
@@ -82,8 +103,11 @@ class PaymentIdempotencyServiceTest {
         String requestId = "request_456";
         long lockTime = 30L;
 
-        when(valueOperations.setIfAbsent(anyString(), anyString(), anyLong(), any(TimeUnit.class)))
-                .thenReturn(false);
+        try {
+            when(rLock.tryLock(5L, 30L, TimeUnit.SECONDS)).thenReturn(false);
+        } catch (InterruptedException e) {
+            fail("Mock setup failed unexpectedly");
+        }
 
         // When
         boolean result = idempotencyService.tryLock(idempotentKey, requestId, lockTime);
@@ -283,7 +307,7 @@ class PaymentIdempotencyServiceTest {
         String idempotentKey = "test_key_123";
         String requestId = "request_456";
 
-        when(valueOperations.get("payment:lock:test_key_123")).thenReturn(requestId);
+        when(valueOperations.get("lock:payment:test_key_123")).thenReturn(requestId);
 
         // When
         boolean result = idempotencyService.isDuplicateRequest(idempotentKey, requestId);
@@ -299,7 +323,7 @@ class PaymentIdempotencyServiceTest {
         String idempotentKey = "test_key_123";
         String requestId = "request_456";
 
-        when(valueOperations.get("payment:lock:test_key_123")).thenReturn("different_request");
+        when(valueOperations.get("lock:payment:test_key_123")).thenReturn("different_request");
 
         // When
         boolean result = idempotencyService.isDuplicateRequest(idempotentKey, requestId);

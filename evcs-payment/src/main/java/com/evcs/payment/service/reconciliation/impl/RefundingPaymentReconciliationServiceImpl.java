@@ -118,7 +118,7 @@ public class RefundingPaymentReconciliationServiceImpl implements RefundingPayme
                         RefundResponse response = channel.queryRefund(order.getRefundRequestNo(), order.getTradeNo());
                         String refundStatus = response != null ? response.getRefundStatus() : null;
 
-                        if (!StringUtils.hasText(refundStatus)) {
+                        if (refundStatus == null || refundStatus.trim().isEmpty()) {
                             continue;
                         }
 

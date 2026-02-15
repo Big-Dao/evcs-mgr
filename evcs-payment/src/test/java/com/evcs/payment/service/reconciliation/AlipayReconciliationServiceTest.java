@@ -31,8 +31,6 @@ class AlipayReconciliationServiceTest {
     @MockBean
     private AlipayConfig alipayConfig;
 
-    private AlipayReconciliationService alipayReconciliationService;
-
     @Test
     @DisplayName("测试金额解析功能")
     void testParseAmount() {

@@ -1,6 +1,5 @@
 package com.evcs.payment.config;
 
-import com.evcs.payment.config.PaymentConfig;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.circuitbreaker.CircuitBreakerConfig;
 import io.github.resilience4j.core.IntervalFunction;

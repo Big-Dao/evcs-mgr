@@ -17,7 +17,7 @@ import org.mockito.Mockito;
 import org.slf4j.MDC;
 import org.springframework.mock.env.MockEnvironment;
 
-import java.net.URL;
+import java.net.URI;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -62,7 +62,7 @@ class WechatPayChannelServiceResilienceTest {
         ServiceException transient5xx = new ServiceException(
             new HttpRequest.Builder()
                 .httpMethod(HttpMethod.GET)
-                .url(new URL("https://api.mch.weixin.qq.com/v3/pay/transactions/out-trade-no/TRADE-001"))
+                .url(URI.create("https://api.mch.weixin.qq.com/v3/pay/transactions/out-trade-no/TRADE-001").toURL())
                 .build(),
             500,
             "{\"code\":\"ERROR\",\"message\":\"oops\"}"
@@ -125,7 +125,7 @@ class WechatPayChannelServiceResilienceTest {
         ServiceException business4xx = new ServiceException(
             new HttpRequest.Builder()
                 .httpMethod(HttpMethod.GET)
-                .url(new URL("https://api.mch.weixin.qq.com/v3/pay/transactions/out-trade-no/TRADE-001"))
+                .url(URI.create("https://api.mch.weixin.qq.com/v3/pay/transactions/out-trade-no/TRADE-001").toURL())
                 .build(),
             400,
             "{\"code\":\"PARAM_ERROR\",\"message\":\"bad request\"}"
