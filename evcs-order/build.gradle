@@ -15,6 +15,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-amqp'
     implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 
+    // Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
     // Database
     implementation "org.postgresql:postgresql:${postgresqlVersion}"
     implementation 'org.flywaydb:flyway-core'

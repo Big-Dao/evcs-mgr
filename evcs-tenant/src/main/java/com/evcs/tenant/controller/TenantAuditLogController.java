@@ -33,7 +33,7 @@ public class TenantAuditLogController {
 
     @Operation(summary = "分页查询审计日志", description = "支持按租户、操作类型、时间范围筛选")
     @GetMapping("/page")
-    @PreAuthorize("hasPermission(null, 'audit:query')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查看本租户及下级租户的审计日志")
     public Result<IPage<TenantAuditLog>> getAuditLogPage(
@@ -76,7 +76,7 @@ public class TenantAuditLogController {
 
     @Operation(summary = "跨层级操作统计", description = "统计最近一段时间内的跨层级操作情况")
     @GetMapping("/statistics/cross-layer")
-    @PreAuthorize("hasPermission(null, 'audit:statistics')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
     public Result<List<Map<String, Object>>> statisticsCrossLayer(
             @Parameter(description = "开始时间，默认7天前") @RequestParam(required = false)
             @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime startTime) {

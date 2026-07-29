@@ -85,20 +85,22 @@ EVCS 是多租户充电站管理平台，**租户数据隔离**与**认证授权
 | evcs-auth | ✅ | ✅ | ✅ | 完整 |
 | evcs-station | ✅ | ✅ | ✅ | 完整 |
 | evcs-payment | ✅ | ✅ | ✅ | 完整（2026-07-29 修复死 @PreAuthorize）|
+| evcs-tenant | ✅ | ✅ | ✅ | 完整（2026-07-29 接通）|
+| evcs-protocol | ✅ | ✅ | ✅ | 完整（2026-07-29 接通）|
+| evcs-order | ✅ | ✅ | ✅ | 完整（2026-07-29 建设）|
+| evcs-monitoring | ✅ | ✅ | ✅ | 完整（2026-07-29 建设）|
 
 ### 4.2 待达标（有安全依赖但未接通）
 
 | 服务 | 当前状态 | 待办 |
 |------|---------|------|
-| evcs-tenant | 有 security 依赖 + InternalApiTokenFilter，无 SecurityConfig/JWT filter | 新建 SecurityConfig + JwtAuthenticationFilter |
-| evcs-protocol | 有 security 依赖，无 SecurityConfig/JWT filter | 新建 SecurityConfig + JwtAuthenticationFilter |
+| （无）| — | — |
 
 ### 4.3 待建设（完全无安全）
 
 | 服务 | 当前状态 | 待办 |
 |------|---------|------|
-| evcs-order | 无任何安全依赖/filter/config | 加 security 依赖 + SecurityConfig + JWT filter |
-| evcs-monitoring | 无任何安全依赖/filter/config | 加 security 依赖 + SecurityConfig + JWT filter |
+| （无）| — | — |
 
 ---
 

@@ -2,13 +2,11 @@ package com.evcs.protocol;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(
-    scanBasePackages = "com.evcs",
-    exclude = {SecurityAutoConfiguration.class}
+    scanBasePackages = "com.evcs"
 )
 @EnableDiscoveryClient
 @EnableScheduling

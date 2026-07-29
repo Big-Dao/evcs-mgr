@@ -32,7 +32,7 @@ public class TenantController {
     @PostMapping
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能在当前租户下创建子租户")
-    @PreAuthorize("hasPermission(null, 'tenant:create')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
     public Result<SysTenant> createTenant(@Valid @RequestBody SysTenant tenant) {
         boolean created = tenantService.saveTenant(tenant);
         SysTenant payload = created ? tenantService.getTenantById(tenant.getId()) : null;
@@ -45,7 +45,7 @@ public class TenantController {
     @PutMapping("/{id}")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能更新本租户及下级租户信息")
-    @PreAuthorize("hasPermission(#id, 'tenant:update')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
     public Result<SysTenant> updateTenant(
             @Parameter(description = "租户ID") @PathVariable Long id,
             @Valid @RequestBody SysTenant tenant) {
@@ -61,7 +61,7 @@ public class TenantController {
     @DeleteMapping("/{id}")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能删除下级租户")
-    @PreAuthorize("hasPermission(#id, 'tenant:delete')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
     public Result<Void> deleteTenant(@Parameter(description = "租户ID") @PathVariable Long id) {
         tenantService.deleteTenant(id);
         return Result.successMessage("租户删除成功");

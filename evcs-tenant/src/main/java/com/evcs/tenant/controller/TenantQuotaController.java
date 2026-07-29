@@ -25,7 +25,7 @@ public class TenantQuotaController {
 
     @Operation(summary = "获取租户配额使用情况", description = "查询指定租户的配额使用详情")
     @GetMapping("/usage/{tenantId}")
-    @PreAuthorize("hasPermission(#tenantId, 'tenant:quota:view')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查看本租户及下级租户的配额")
     public Result<ITenantQuotaService.TenantQuotaUsage> getQuotaUsage(
@@ -35,7 +35,7 @@ public class TenantQuotaController {
 
     @Operation(summary = "更新租户配额", description = "设置租户的资源配额限制（需要上级权限）")
     @PutMapping("/{tenantId}")
-    @PreAuthorize("hasPermission(#tenantId, 'tenant:quota:update')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能更新下级租户的配额")
     public Result<Void> updateQuota(
