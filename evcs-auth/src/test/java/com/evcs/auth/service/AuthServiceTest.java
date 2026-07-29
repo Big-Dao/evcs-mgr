@@ -65,7 +65,7 @@ class AuthServiceTest {
 
         when(userService.getByIdentifier(identifier)).thenReturn(user);
         when(passwordEncoder.matches(password, encodedPassword)).thenReturn(true);
-        when(jwtUtil.generateToken(userId, identifier, tenantId)).thenReturn("mock-token");
+        when(jwtUtil.generateToken(userId, identifier, tenantId, Collections.singletonList("ADMIN"))).thenReturn("mock-token");
         when(jwtUtil.getExpiration("mock-token")).thenReturn(Instant.now().plusSeconds(7200));
         when(userService.listRoleCodes(userId)).thenReturn(Collections.singletonList("ADMIN"));
 
@@ -81,7 +81,7 @@ class AuthServiceTest {
         
         verify(userService).getByIdentifier(identifier);
         verify(passwordEncoder).matches(password, encodedPassword);
-        verify(jwtUtil).generateToken(userId, identifier, tenantId);
+        verify(jwtUtil).generateToken(userId, identifier, tenantId, Collections.singletonList("ADMIN"));
     }
 
     @Test

@@ -27,7 +27,6 @@ spring:
       - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
       - org.springframework.boot.actuate.autoconfigure.observation.ObservationAutoConfiguration
       - org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration
       - org.springframework.amqp.rabbit.annotation.RabbitBootstrapConfiguration
@@ -124,3 +123,7 @@ evcs:
         payment-failure: mock.payment.failure.queue
         refund-success: mock.refund.success.queue
         payment-dlq: mock.payment.dlq
+
+# JWT 测试密钥（>= 32 字符）；生产必须通过环境变量注入
+jwt:
+  secret: test-jwt-secret-key-for-unit-tests-0123456789
