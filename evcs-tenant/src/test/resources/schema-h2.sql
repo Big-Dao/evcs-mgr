@@ -20,6 +20,8 @@ CREATE TABLE IF NOT EXISTS sys_tenant (
     max_users INTEGER DEFAULT 100,
     max_stations INTEGER DEFAULT 50,
     max_chargers INTEGER DEFAULT 1000,
+    max_children INTEGER DEFAULT 10,
+    max_sessions INTEGER DEFAULT 500,
     tenant_id BIGINT DEFAULT 1,  -- 默认值为1，避免测试中 NULL 错误
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -37,60 +39,64 @@ CREATE INDEX IF NOT EXISTS idx_tenant_parent ON sys_tenant(parent_id);
 CREATE INDEX IF NOT EXISTS idx_tenant_status ON sys_tenant(status, deleted);
 
 -- Insert virtual root node (id=0) - serves as parent for all top-level tenants
-INSERT INTO sys_tenant (id, tenant_code, tenant_name, parent_id, ancestors, 
+INSERT INTO sys_tenant (id, tenant_code, tenant_name, parent_id, ancestors,
                         contact_person, contact_phone, contact_email, address,
-                        social_code, license_url, tenant_type, status, 
+                        social_code, license_url, tenant_type, status,
                         expire_time, max_users, max_stations, max_chargers,
-                        tenant_id, create_time, update_time, create_by, update_by, 
+                        max_children, max_sessions,
+                        tenant_id, create_time, update_time, create_by, update_by,
                         deleted, version, remark)
-SELECT 0, 'ROOT', 'Virtual Root Node', NULL, '', 
+SELECT 0, 'ROOT', 'Virtual Root Node', NULL, '',
        'System', '', '', '',
-       NULL, NULL, 1, 1, 
-       NULL, 999999, 999999, 999999,
-       0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 
+       NULL, NULL, 1, 1,
+       NULL, 999999, 999999, 999999, 999999, 999999,
+       0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL,
        0, 1, 'Virtual root node for tree structure'
 WHERE NOT EXISTS (SELECT 1 FROM sys_tenant WHERE id = 0);
 
 -- Insert default test tenants (使用标准 INSERT 语法,避免重复插入)
-INSERT INTO sys_tenant (id, tenant_code, tenant_name, parent_id, ancestors, 
+INSERT INTO sys_tenant (id, tenant_code, tenant_name, parent_id, ancestors,
                         contact_person, contact_phone, contact_email, address,
-                        social_code, license_url, tenant_type, status, 
+                        social_code, license_url, tenant_type, status,
                         expire_time, max_users, max_stations, max_chargers,
-                        tenant_id, create_time, update_time, create_by, update_by, 
+                        max_children, max_sessions,
+                        tenant_id, create_time, update_time, create_by, update_by,
                         deleted, version, remark)
-SELECT 1, 'SYSTEM', '系统租户', 0, '0', 
+SELECT 1, 'SYSTEM', '系统租户', 0, '0',
        '系统管理员', '13800138000', 'admin@evcs.com', '系统地址',
-       NULL, NULL, 1, 1, 
-       NULL, 999999, 999999, 999999,
-       1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 
+       NULL, NULL, 1, 1,
+       NULL, 999999, 999999, 999999, 999999, 999999,
+       1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL,
        0, 1, '系统默认租户'
 WHERE NOT EXISTS (SELECT 1 FROM sys_tenant WHERE id = 1);
 
-INSERT INTO sys_tenant (id, tenant_code, tenant_name, parent_id, ancestors, 
+INSERT INTO sys_tenant (id, tenant_code, tenant_name, parent_id, ancestors,
                         contact_person, contact_phone, contact_email, address,
-                        social_code, license_url, tenant_type, status, 
+                        social_code, license_url, tenant_type, status,
                         expire_time, max_users, max_stations, max_chargers,
-                        tenant_id, create_time, update_time, create_by, update_by, 
+                        max_children, max_sessions,
+                        tenant_id, create_time, update_time, create_by, update_by,
                         deleted, version, remark)
-SELECT 2, 'TENANT_001', '测试租户1', 1, '0,1', 
+SELECT 2, 'TENANT_001', '测试租户1', 1, '0,1',
        '张三', '13800138001', 'tenant1@evcs.com', '测试地址1',
-       NULL, NULL, 2, 1, 
-       NULL, 100, 50, 200,
-       2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 
+       NULL, NULL, 2, 1,
+       NULL, 100, 50, 200, 10, 500,
+       2, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL,
        0, 1, '测试租户1'
 WHERE NOT EXISTS (SELECT 1 FROM sys_tenant WHERE id = 2);
 
-INSERT INTO sys_tenant (id, tenant_code, tenant_name, parent_id, ancestors, 
+INSERT INTO sys_tenant (id, tenant_code, tenant_name, parent_id, ancestors,
                         contact_person, contact_phone, contact_email, address,
-                        social_code, license_url, tenant_type, status, 
+                        social_code, license_url, tenant_type, status,
                         expire_time, max_users, max_stations, max_chargers,
-                        tenant_id, create_time, update_time, create_by, update_by, 
+                        max_children, max_sessions,
+                        tenant_id, create_time, update_time, create_by, update_by,
                         deleted, version, remark)
-SELECT 3, 'TENANT_002', '测试租户2', 1, '0,1', 
+SELECT 3, 'TENANT_002', '测试租户2', 1, '0,1',
        '李四', '13800138002', 'tenant2@evcs.com', '测试地址2',
-       NULL, NULL, 2, 1, 
-       NULL, 100, 50, 200,
-       3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL, 
+       NULL, NULL, 2, 1,
+       NULL, 100, 50, 200, 10, 500,
+       3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, NULL, NULL,
        0, 1, '测试租户2'
 WHERE NOT EXISTS (SELECT 1 FROM sys_tenant WHERE id = 3);
 
