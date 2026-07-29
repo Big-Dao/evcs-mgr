@@ -1,6 +1,6 @@
-package com.evcs.monitoring.config;
+package com.evcs.tenant.config;
 
-import com.evcs.monitoring.security.JwtAuthenticationFilter;
+import com.evcs.tenant.security.TenantJwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,15 +12,17 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 /**
- * Spring Security 配置（monitoring 服务）。
+ * Spring Security 配置（tenant 服务）。
+ *
+ * <p>白名单放行健康检查/文档，其余端点要求认证；细粒度授权由 @PreAuthorize 提供。
  */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
-public class SecurityConfig {
+public class TenantSecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final TenantJwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {

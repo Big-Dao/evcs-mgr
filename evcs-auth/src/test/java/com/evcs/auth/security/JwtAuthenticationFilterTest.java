@@ -39,7 +39,7 @@ class JwtAuthenticationFilterTest {
     private FilterChain filterChain;
 
     @InjectMocks
-    private JwtAuthenticationFilter filter;
+    private AuthJwtAuthenticationFilter filter;
 
     @BeforeEach
     void setUp() {

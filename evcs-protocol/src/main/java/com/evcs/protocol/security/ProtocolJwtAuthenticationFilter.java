@@ -1,8 +1,5 @@
-package com.evcs.auth.security;
+package com.evcs.protocol.security;
 
-import com.evcs.auth.entity.SysUser;
-import com.evcs.auth.service.ISysUserService;
-import com.evcs.common.tenant.CustomTenantLineHandler;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.util.JwtUtil;
 import jakarta.servlet.FilterChain;
@@ -24,26 +21,16 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * JWT 认证过滤器（auth 服务侧）。
- *
- * <p>职责：
- * <ul>
- *   <li>从 {@code Authorization: Bearer <token>} 头提取 JWT。</li>
- *   <li>校验 token 有效性，加载用户并验证状态。</li>
- *   <li>构造含角色权限的 {@link UsernamePasswordAuthenticationToken} 写入 SecurityContext。</li>
- * </ul>
- *
- * <p>注意：网关已做入口鉴权；此过滤器是下游服务的防御纵深，并为本服务的 @PreAuthorize 提供角色信息。
+ * JWT 认证过滤器（protocol 服务侧）。
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class ProtocolJwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
     private final JwtUtil jwtUtil;
-    private final ISysUserService userService;
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
@@ -76,32 +63,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         try {
-            // 加载用户（跨租户查询，因为 JWT 自包含 tenantId）
-            SysUser user;
-            try {
-                CustomTenantLineHandler.disableTenantFilter();
-                user = userService.getUserByIdWithTenant(userId, tenantId);
-            } finally {
-                CustomTenantLineHandler.enableTenantFilter();
-            }
+            List<String> roles = jwtUtil.getRoles(token);
 
-            if (user == null || user.getStatus() != null && user.getStatus() == 0) {
-                log.debug("JWT 对应用户不存在或已禁用: userId={}, tenantId={}", userId, tenantId);
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            List<String> roleCodes = userService.listRoleCodes(userId);
-            List<SimpleGrantedAuthority> authorities = roleCodes.stream()
+            List<SimpleGrantedAuthority> authorities = roles.stream()
+                    .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
                     .map(SimpleGrantedAuthority::new)
                     .toList();
 
             UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(user, null, authorities);
+                    new UsernamePasswordAuthenticationToken(userId, null, authorities);
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // 同步设置租户上下文，供下游数据隔离使用
             TenantContext.setTenantId(tenantId);
             TenantContext.setUserId(userId);
 

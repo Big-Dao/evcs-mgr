@@ -29,6 +29,10 @@ eureka:
     register-with-eureka: false
     fetch-registry: false
 
+# JWT 测试密钥（>= 32 字符）；生产必须通过环境变量注入
+jwt:
+  secret: test-jwt-secret-key-for-unit-tests-0123456789
+
 logging:
   level:
     com.evcs: DEBUG

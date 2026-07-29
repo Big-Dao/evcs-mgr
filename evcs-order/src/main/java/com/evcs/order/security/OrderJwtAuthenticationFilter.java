@@ -1,4 +1,4 @@
-package com.evcs.protocol.security;
+package com.evcs.order.security;
 
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.util.JwtUtil;
@@ -21,12 +21,12 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * JWT 认证过滤器（protocol 服务侧）。
+ * JWT 认证过滤器（order 服务侧）。
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class OrderJwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
 

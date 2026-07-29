@@ -1,4 +1,4 @@
-package com.evcs.tenant.security;
+package com.evcs.payment.security;
 
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.util.JwtUtil;
@@ -21,15 +21,22 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * JWT 认证过滤器（tenant 服务侧）。
+ * JWT 认证过滤器（payment 服务侧）。
  *
- * <p>从 JWT {@code roles} claim 加载角色构造 Authentication，并同步租户上下文。
- * tenant 无本地用户/角色表，角色自 JWT claim 获取（auth 登录时写入）。
+ * <p>职责：
+ * <ul>
+ *   <li>从 {@code Authorization: Bearer <token>} 头提取 JWT。</li>
+ *   <li>校验 token，从 {@code roles} claim 加载角色构造 Authentication。</li>
+ *   <li>同步租户上下文供数据隔离使用。</li>
+ * </ul>
+ *
+ * <p>注意：网关已做入口鉴权；此过滤器是下游服务的防御纵深，并为 @PreAuthorize 提供角色。
+ * payment 无本地用户/角色表，角色自 JWT claim 获取（auth 登录时写入）。
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class JwtAuthenticationFilter extends OncePerRequestFilter {
+public class PaymentJwtAuthenticationFilter extends OncePerRequestFilter {
 
     private static final String BEARER_PREFIX = "Bearer ";
 
