@@ -30,7 +30,8 @@
 - 所有变更考虑多租户上下文传递与隔离；异步需显式传播上下文（参见租户 RFC）。
 - 不引入硬编码敏感信息；配置走 profile / 环境变量。
 - 新功能需伴随单元/必要的集成测试；关键路径考虑性能与缓存。
-- 遇到架构/上下文不确定 → 首查 SSOT 文档，不自行“臆测”。
+- 遇到架构/上下文不确定 → 首查 SSOT 文档，不自行”臆测”。
+- **安全配置必须符合安全基线**：新建/修改服务的安全配置（SecurityConfig、JWT 过滤器、密钥管理、租户上下文来源）前，必须先读 `docs/architecture/SECURITY-BASELINE.md`，不得引入 permitAll 调试残留、硬编码密钥、死 @PreAuthorize 等基线禁止的模式。
 
 ## 多租户与异步（仅保留关键提醒）
 - 使用线程池 / @Async / Reactor 时需维护租户、请求ID、追踪信息。
@@ -41,6 +42,7 @@
 | 目标 | 文档 | 说明 |
 | ---- | ---- | ---- |
 | 架构/编码全规范 | `docs/overview/PROJECT-CODING-STANDARDS.md` | 代码与分层硬性标准 |
+| **安全基线（SSOT）** | **`docs/architecture/SECURITY-BASELINE.md`** | **各服务认证授权/密钥管理/租户上下文的统一基线** |
 | AI 助手总配置 | `docs/development/AI-ASSISTANT-UNIFIED-CONFIG.md` | 各助手行为统一入口 |
 | 租户异步上下文 | `docs/architecture/TENANT-CONTEXT-ASYNC-RFC.md` | 上下文传播策略与库选型 |
 | 共享项目概述 | `.ai-assistant-config/SHARED-PROJECT-CONTEXT.md` | 项目简介与模块导航 |
@@ -54,6 +56,7 @@
 - 重大变更（架构/安全策略）需添加 RFC 或在相关文档增加“变更记录”段落。
 
 ## 更新记录
+- 2026-07-29：增加安全基线（`SECURITY-BASELINE.md`）引用；助手行为基线增加"安全配置必须符合安全基线"强制规则。
 - 2025-12-18：文档刷新，统一为中文表述，创建版本历史记录。
 - 2025-11-10：整合为统一入口，去除重复规范正文，建立单一来源索引。
 
