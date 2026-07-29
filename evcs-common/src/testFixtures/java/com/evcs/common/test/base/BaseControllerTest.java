@@ -15,6 +15,12 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 /**
  * Controller层测试基类
@@ -46,7 +52,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
         "spring.datasource.hikari.maximum-pool-size=5",
         "spring.datasource.hikari.minimum-idle=1"
 })
-@AutoConfigureMockMvc(addFilters = false)
+@AutoConfigureMockMvc
 @Transactional
 public abstract class BaseControllerTest {
 
@@ -60,20 +66,21 @@ public abstract class BaseControllerTest {
      * 默认测试租户ID
      */
     protected static final Long DEFAULT_TENANT_ID = 1L;
-    
+
     /**
      * 默认测试用户ID
      */
     protected static final Long DEFAULT_USER_ID = 1L;
 
     /**
-     * 测试前设置租户上下文
+     * 测试前设置租户上下文与安全认证。
+     * 使用 ADMIN + TENANT_ADMIN + OPERATOR 角色，覆盖绝大多数 controller 的 @PreAuthorize 要求。
      */
     @BeforeEach
     public void setUpTenantContext() {
         TenantContext.setCurrentTenantId(getTestTenantId());
         TenantContext.setCurrentUserId(getTestUserId());
-        var authorities = AuthorityUtils.createAuthorityList("ROLE_TEST");
+        var authorities = AuthorityUtils.createAuthorityList("ROLE_ADMIN", "ROLE_TENANT_ADMIN", "ROLE_OPERATOR");
         var authentication = new UsernamePasswordAuthenticationToken("test-user", "N/A", authorities);
         SecurityContextHolder.getContext().setAuthentication(authentication);
     }
