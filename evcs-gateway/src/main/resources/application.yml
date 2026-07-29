@@ -38,10 +38,23 @@ management:
     gateway:
       enabled: true
 
+# 网关安全配置
+evcs:
+  gateway:
+    security:
+      context-headers:
+        # 启用可信上下文头注入（默认 true）；从 JWT 派生 tenant/user 头注入下游
+        enabled: true
+        # 剥离客户端伪造的 X-Tenant-Id/X-User-Id/X-User-Id 头（默认 true，防伪造）
+        strip-client-context-headers: true
+        # JWT 签名密钥（必填）；生产必须通过 JWT_SECRET 环境变量注入 >= 32 字符随机密钥
+        jwt-secret: ${JWT_SECRET}
+
 # 日志配置
 logging:
   level:
     org.springframework.cloud.gateway: INFO
     org.springframework.cloud.config: DEBUG
+    org.springframework.security: INFO
   pattern:
     console: "%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

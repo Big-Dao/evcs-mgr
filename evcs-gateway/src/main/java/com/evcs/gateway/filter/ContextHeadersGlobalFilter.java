@@ -5,6 +5,7 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import jakarta.annotation.PostConstruct;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -25,6 +26,9 @@ import java.util.Objects;
  *   <li>Optionally strip client-supplied context headers to prevent spoofing.</li>
  *   <li>Does not enforce authentication yet (no 401/403), only context enrichment.</li>
  * </ul>
+ *
+ * <p>安全说明：启用时（enabled=true）要求 {@code jwt-secret} 已配置且 &ge; 32 字符，
+ * 否则启动失败。这避免了"启用过滤器却以空/弱密钥运行"的隐性安全退化。
  */
 public class ContextHeadersGlobalFilter implements GlobalFilter, Ordered {
 
@@ -36,6 +40,30 @@ public class ContextHeadersGlobalFilter implements GlobalFilter, Ordered {
 
     public ContextHeadersGlobalFilter(ContextHeadersProperties properties) {
         this.properties = Objects.requireNonNull(properties);
+    }
+
+    /**
+     * 启用时校验 JWT 密钥强度。缺失或过短都会让网关启动失败，
+     * 避免过滤器启用却以空/弱密钥静默放行。
+     */
+    @PostConstruct
+    void validateSecretStrength() {
+        if (!properties.isEnabled()) {
+            return;
+        }
+        String jwtSecret = properties.getJwtSecret();
+        if (jwtSecret == null || jwtSecret.isBlank()) {
+            throw new IllegalStateException(
+                    "evcs.gateway.security.context-headers.jwt-secret 未配置。"
+                            + "启用 context-headers 时必须注入至少 32 字符的随机密钥。"
+            );
+        }
+        if (jwtSecret.length() < 32) {
+            throw new IllegalStateException(
+                    "evcs.gateway.security.context-headers.jwt-secret 过短（当前 "
+                            + jwtSecret.length() + " 字符）。请使用至少 32 字符的随机密钥。"
+            );
+        }
     }
 
     @Override

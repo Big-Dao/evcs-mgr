@@ -25,8 +25,10 @@ x-java-env: &java-env
   SPRING_RABBITMQ_VIRTUAL_HOST: "/"
   SPRING_FLYWAY_BASELINE_ON_MIGRATE: "true"
   SPRING_FLYWAY_ENABLED: "true"
-  # JWT 配置
-  JWT_SECRET: "evcs-secret-key-change-in-production"
+  # JWT 配置（必填）
+  # 本地开发：通过 .env 文件注入（已 gitignored）；生产：由 CI/CD 或密钥管理服务注入。
+  # 缺失或过短（< 32 字符）将导致服务启动失败。
+  JWT_SECRET: "${JWT_SECRET}"
   # HikariCP 连接池优化（P4 Week 2） - 使用正确的属性名
   SPRING_DATASOURCE_HIKARI_MAXIMUM-POOL-SIZE: "30"
   SPRING_DATASOURCE_HIKARI_MINIMUM-IDLE: "10"

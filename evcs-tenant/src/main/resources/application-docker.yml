@@ -83,5 +83,5 @@ evcs:
 
 # JWT配置
 jwt:
-  secret: ${JWT_SECRET:evcs-secret-key-change-in-production}
+  secret: ${JWT_SECRET}
   expire: 7200

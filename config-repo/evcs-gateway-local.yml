@@ -218,8 +218,8 @@ evcs:
         # 强校验：校验 token 内 userType
         require-user-type: true
         required-user-type: B
-        # 迁移期兼容 legacy HMAC JWT；生产必须通过配置覆盖 secret
-        jwt-secret: ${JWT_SECRET:evcs-secret-key}
+        # 必填：生产必须通过 JWT_SECRET 环境变量注入至少 32 字符的随机密钥
+        jwt-secret: ${JWT_SECRET}
         protected-path-prefixes:
           - /api/
         excluded-path-prefixes:

@@ -40,7 +40,8 @@ stringData:
   SPRING_DATA_REDIS_PASSWORD: ""
   SPRING_RABBITMQ_USERNAME: "guest"
   SPRING_RABBITMQ_PASSWORD: "guest"
-  JWT_SECRET: "evcs-secret-key-change-in-production"
-  # Internal service-to-service token used to protect /internal/api/**.
-  # For production, DO NOT use repo defaults; inject via your secret manager.
-  EVCS_INTERNAL_API_TOKEN: "dev-internal-token-change-me"
+  # 安全说明：以下两个值必须由部署流水线/密钥管理服务注入真实密钥。
+  # 仓库中的占位符仅用于本地测试；应用启动会校验 JWT_SECRET 长度（>= 32 字符）。
+  # 生产注入方式：部署前用 kubectl create secret generic 覆盖，或启用 Sealed Secrets / External Secrets。
+  JWT_SECRET: "CHANGE-ME-IN-DEPLOY-pipeline-must-inject-32plus-char-random"
+  EVCS_INTERNAL_API_TOKEN: "CHANGE-ME-IN-DEPLOY-pipeline-must-inject-random-token"

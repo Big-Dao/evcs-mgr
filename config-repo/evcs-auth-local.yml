@@ -51,7 +51,8 @@ mybatis-plus:
       logic-not-delete-value: 0
 
 jwt:
-  secret: ${JWT_SECRET:evcs-secret-key}
+  # 必填：生产必须通过 JWT_SECRET 环境变量注入至少 32 字符的随机密钥
+  secret: ${JWT_SECRET}
   expire: ${JWT_EXPIRE:7200}
   issuer: ${JWT_ISSUER:evcs-auth-b}
   audience: ${JWT_AUDIENCE:evcs-b-mobile}
@@ -119,11 +120,13 @@ knife4j:
   basic:
     enable: false
     username: admin
-    password: 123456
+    # 本地开发用 basic auth 密码；生产应启用更强的鉴权或关闭 knife4j
+    password: ${KNIFE4J_PASSWORD:dev-knife4j-change-me}
 
 evcs:
   internal:
     api:
       enabled: true
-      token: ${EVCS_INTERNAL_API_TOKEN:dev-internal-token-change-me}
+      # 服务间调用令牌；生产必须通过 EVCS_INTERNAL_API_TOKEN 环境变量注入
+      token: ${EVCS_INTERNAL_API_TOKEN}
       header-name: X-Internal-Token

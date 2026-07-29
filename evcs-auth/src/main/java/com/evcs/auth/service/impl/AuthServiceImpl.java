@@ -58,8 +58,9 @@ public class AuthServiceImpl implements IAuthService {
         TenantContext.setTenantId(user.getTenantId());
         TenantContext.setUserId(user.getId());
 
-        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getTenantId());
+        // 查询用户角色并写入 JWT，便于下游服务（如 payment）本地鉴权
         List<String> roles = userService.listRoleCodes(user.getId());
+        String token = jwtUtil.generateToken(user.getId(), user.getUsername(), user.getTenantId(), roles);
 
         Map<String, Object> userInfo = buildUserInfo(user, roles);
 

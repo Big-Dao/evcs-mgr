@@ -21,6 +21,9 @@ dependencies {
     // 从配置中心拉取路由与配置
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
 
+    // 网关鉴权（JWT 校验 + 安全过滤器链）
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
     // 监控
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
     implementation 'io.micrometer:micrometer-registry-prometheus'
