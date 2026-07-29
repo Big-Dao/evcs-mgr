@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;
+import org.redisson.api.RLock;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 
@@ -47,67 +47,51 @@ class PaymentIdempotencyServiceTest {
     private PaymentMetrics paymentMetrics;
 
     @Mock
+    private ValueOperations<String, Object> valueOperations;
+
+    @Mock
     private RedissonClient redissonClient;
 
     @Mock
-    private RLock rLock;
-
-    @Mock
-    private ValueOperations<String, Object> valueOperations;
+    private RLock lock;
 
     private PaymentIdempotencyServiceImpl idempotencyService;
 
     @BeforeEach
     void setUp() {
         lenient().when(redisTemplate.opsForValue()).thenReturn(valueOperations);
-        lenient().when(redissonClient.getLock(anyString())).thenReturn(rLock);
-        idempotencyService = new PaymentIdempotencyServiceImpl(
-            redisTemplate,
-            redissonClient,
-            paymentOrderMapper,
-            paymentMetrics
-        );
+        idempotencyService = new PaymentIdempotencyServiceImpl(redisTemplate, redissonClient, paymentOrderMapper, paymentMetrics);
     }
 
     @Test
-    void testTryLock_Success() {
+    void testTryLock_Success() throws Exception {
         // Given
         String idempotentKey = "test_key_123";
         String requestId = "request_456";
         long lockTime = 30L;
 
-        try {
-            when(rLock.tryLock(5L, 30L, TimeUnit.SECONDS)).thenReturn(true);
-        } catch (InterruptedException e) {
-            fail("Mock setup failed unexpectedly");
-        }
+        when(redissonClient.getLock("lock:payment:" + idempotentKey)).thenReturn(lock);
+        lenient().doReturn(true).when(lock).tryLock(anyLong(), anyLong(), any(TimeUnit.class));
 
         // When
         boolean result = idempotencyService.tryLock(idempotentKey, requestId, lockTime);
 
         // Then
         assertTrue(result);
-        verify(redissonClient).getLock("lock:payment:test_key_123");
-        try {
-            verify(rLock).tryLock(5L, 30L, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            fail("Verification failed unexpectedly");
-        }
+        verify(redissonClient).getLock("lock:payment:" + idempotentKey);
+        verify(lock).tryLock(5L, lockTime, TimeUnit.SECONDS);
         verify(paymentMetrics).recordCustomMetric(eq("payment.idempotency.lock.success"), eq(1.0), any(Map.class));
     }
 
     @Test
-    void testTryLock_Failure() {
+    void testTryLock_Failure() throws Exception {
         // Given
         String idempotentKey = "test_key_123";
         String requestId = "request_456";
         long lockTime = 30L;
 
-        try {
-            when(rLock.tryLock(5L, 30L, TimeUnit.SECONDS)).thenReturn(false);
-        } catch (InterruptedException e) {
-            fail("Mock setup failed unexpectedly");
-        }
+        when(redissonClient.getLock("lock:payment:" + idempotentKey)).thenReturn(lock);
+        lenient().doReturn(false).when(lock).tryLock(anyLong(), anyLong(), any(TimeUnit.class));
 
         // When
         boolean result = idempotencyService.tryLock(idempotentKey, requestId, lockTime);
