@@ -37,11 +37,15 @@ public class SecurityConfig {
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/actuator/**",
+                                // 只放行非敏感 actuator 端点，禁止前缀匹配避免暴露 env/heapdump
+                                "/actuator/health",
+                                "/actuator/info",
                                 "/doc.html",
                                 "/webjars/**",
                                 "/v3/api-docs/**",
-                                "/swagger-ui/**"
+                                "/swagger-ui/**",
+                                // 测试专用端点（仅测试 classpath 存在，生产无影响）
+                                "/__test/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

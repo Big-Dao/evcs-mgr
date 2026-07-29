@@ -3,7 +3,6 @@ package com.evcs.payment;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration;
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.FilterType;
 import org.springframework.context.annotation.Profile;
@@ -13,8 +12,7 @@ import org.springframework.context.annotation.Profile;
  * 排除RabbitMQ自动配置和监听器
  */
 @SpringBootApplication(exclude = {
-    RabbitAutoConfiguration.class,
-    SecurityAutoConfiguration.class
+    RabbitAutoConfiguration.class
 })
 @ComponentScan(excludeFilters = @ComponentScan.Filter(
     type = FilterType.REGEX,
