@@ -13,6 +13,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -58,6 +61,11 @@ class TenantHierarchyGovernanceIntegrationTest {
 
     @BeforeEach
     void setUp() {
+        // 设置安全认证上下文，满足方法级 @PreAuthorize 要求
+        var authorities = AuthorityUtils.createAuthorityList("ROLE_ADMIN", "ROLE_TENANT_ADMIN");
+        var authentication = new UsernamePasswordAuthenticationToken("test-admin", "N/A", authorities);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         jdbcTemplate.execute("DELETE FROM tenant_audit_log");
         jdbcTemplate.execute("DELETE FROM sys_tenant");
 
@@ -69,6 +77,7 @@ class TenantHierarchyGovernanceIntegrationTest {
     @AfterEach
     void tearDown() {
         TenantContext.clear();
+        SecurityContextHolder.clearContext();
     }
 
     @Test

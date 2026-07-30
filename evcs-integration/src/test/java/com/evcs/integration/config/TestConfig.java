@@ -1,5 +1,6 @@
 package com.evcs.integration.config;
 
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -38,6 +39,13 @@ import org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoCo
 @EnableAutoConfiguration(exclude = {
     Knife4jAutoConfiguration.class,
     RedisRepositoriesAutoConfiguration.class
+})
+@MapperScan({
+    "com.evcs.station.mapper",
+    "com.evcs.order.mapper",
+    "com.evcs.payment.mapper",
+    "com.evcs.tenant.mapper",
+    "com.evcs.protocol.mapper"
 })
 public class TestConfig {
 
