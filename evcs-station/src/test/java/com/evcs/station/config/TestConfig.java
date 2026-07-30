@@ -1,6 +1,7 @@
 package com.evcs.station.config;
 
 import com.evcs.protocol.api.ProtocolEventListener;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -22,6 +23,7 @@ import static org.mockito.Mockito.when;
  * 提供测试所需的Mock Bean
  */
 @TestConfiguration
+@MapperScan("com.evcs.station.mapper")
 public class TestConfig {
 
     /**

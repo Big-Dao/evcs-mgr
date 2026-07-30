@@ -2,12 +2,11 @@ package com.evcs.order.config;
 
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
+import org.mybatis.spring.annotation.MapperScan;
 import org.springframework.boot.test.context.TestConfiguration;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.core.RedisTemplate;
-import com.github.xiaoymin.knife4j.spring.configuration.Knife4jAutoConfiguration;
 import com.evcs.protocol.api.ProtocolEventListener;
 
 import java.time.LocalDateTime;
@@ -16,12 +15,12 @@ import static org.mockito.Mockito.mock;
 
 /**
  * 测试配置类
- * 提供测试环境所需的Bean Mock，排除Knife4j配置
- * 
+ * 提供测试环境所需的Bean Mock
+ *
  * @author EVCS Team
  */
 @TestConfiguration
-@EnableAutoConfiguration(exclude = {Knife4jAutoConfiguration.class})
+@MapperScan("com.evcs.order.mapper")
 public class TestConfig {
 
     /**
