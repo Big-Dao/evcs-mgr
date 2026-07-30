@@ -74,7 +74,7 @@ class JwtAuthenticationFilterTest {
 
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         assertNotNull(auth, "应已认证");
-        assertEquals(user, auth.getPrincipal());
+        assertEquals(1L, auth.getPrincipal(), "principal 应为 userId，避免 Entity 泄露");
         assertTrue(auth.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN")));
         verify(filterChain).doFilter(any(), any());
