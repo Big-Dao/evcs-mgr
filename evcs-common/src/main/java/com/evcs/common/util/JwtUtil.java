@@ -108,9 +108,6 @@ public class JwtUtil {
      * 无需跨服务调用即可构造 Spring Security 认证对象。
      */
     public String generateToken(Long userId, String username, Long tenantId, List<String> roles) {
-        String baseToken = generateToken(userId, username, tenantId);
-        // 重新解码已签名的 token 并追加 roles —— 为避免二次签名破坏原 token，
-        // 改为在基础生成流程上直接构建含 roles 的 token。
         return generateTokenWithRoles(userId, username, tenantId, roles);
     }
 
@@ -146,12 +143,21 @@ public class JwtUtil {
     }
 
     /**
-     * 验证Token
+     * 验证Token（签名 + 过期 + issuer + audience）。
+     *
+     * <p>issuer/audience 仅在配置时校验，未配置则跳过对应项。
      */
     public boolean verifyToken(String token) {
         try {
-            JWTVerifier verifier = JWT.require(Algorithm.HMAC256(secret)).build();
-            verifier.verify(token);
+            var builder = JWT.require(Algorithm.HMAC256(secret));
+            if (issuer != null && !issuer.trim().isEmpty()) {
+                builder.withIssuer(issuer.trim());
+            }
+            List<String> audiences = parseAudienceList(audience);
+            if (!audiences.isEmpty()) {
+                builder.withAudience(audiences.toArray(new String[0]));
+            }
+            builder.build().verify(token);
             return true;
         } catch (JWTVerificationException e) {
             log.warn("Token验证失败: {}", e.getMessage());

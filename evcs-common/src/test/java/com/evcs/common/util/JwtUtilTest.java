@@ -85,6 +85,36 @@ class JwtUtilTest {
     }
 
     @Test
+    @DisplayName("issuer 配置后，签发 token 应带 claim，验证应通过")
+    void verifyToken_shouldPassWhenIssuerMatches() {
+        String strongSecret = "this-is-a-40-char-strong-secret-key!!!";
+        ReflectionTestUtils.setField(jwtUtil, "secret", strongSecret);
+        ReflectionTestUtils.setField(jwtUtil, "expire", 3600L);
+        ReflectionTestUtils.setField(jwtUtil, "issuer", "evcs-auth");
+
+        String token = jwtUtil.generateToken(1L, "user", 100L);
+
+        assertNotNull(token);
+        assertTrue(jwtUtil.verifyToken(token), "相同 issuer 应验证通过");
+    }
+
+    @Test
+    @DisplayName("issuer 不匹配时验证应失败")
+    void verifyToken_shouldFailWhenIssuerMismatch() {
+        String strongSecret = "this-is-a-40-char-strong-secret-key!!!";
+        ReflectionTestUtils.setField(jwtUtil, "secret", strongSecret);
+        ReflectionTestUtils.setField(jwtUtil, "expire", 3600L);
+
+        // 先用 issuer=A 签发
+        ReflectionTestUtils.setField(jwtUtil, "issuer", "issuer-a");
+        String token = jwtUtil.generateToken(1L, "user", 100L);
+
+        // 再用 issuer=B 验证
+        ReflectionTestUtils.setField(jwtUtil, "issuer", "issuer-b");
+        assertFalse(jwtUtil.verifyToken(token), "issuer 不匹配应验证失败");
+    }
+
+    @Test
     @DisplayName("含角色的 generateToken 应在 getRoles 中还原角色列表")
     void generateTokenWithRoles_shouldRestoreRoles() {
         String strongSecret = "this-is-a-40-char-strong-secret-key!!!";
