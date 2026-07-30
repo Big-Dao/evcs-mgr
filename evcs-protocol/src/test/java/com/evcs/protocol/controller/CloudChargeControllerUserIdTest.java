@@ -21,6 +21,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,6 +34,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         }
 )
 @DisplayName("云快充 userId 上报测试")
+@WithMockUser(username = "test-admin", roles = {"ADMIN", "TENANT_ADMIN", "OPERATOR"})
 @SuppressWarnings("null")
 class CloudChargeControllerUserIdTest extends BaseControllerTest {
 

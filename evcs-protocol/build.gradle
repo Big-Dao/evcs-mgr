@@ -46,6 +46,8 @@ dependencies {
     implementation "net.logstash.logback:logstash-logback-encoder:${logstashLogbackVersion}"
 
     // Test dependencies
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
     testImplementation "com.h2database:h2:${h2Version}"  // 统一H2版本（测试环境DataSource驱动）
     testImplementation testFixtures(project(':evcs-common'))
 }
