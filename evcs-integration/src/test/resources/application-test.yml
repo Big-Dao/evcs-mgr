@@ -18,7 +18,6 @@ spring:
       - org.redisson.spring.starter.RedissonAutoConfigurationV2
       - org.springframework.cloud.netflix.eureka.EurekaClientAutoConfiguration
       - org.springframework.cloud.config.client.ConfigClientAutoConfiguration
-      - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
       - org.springframework.boot.autoconfigure.flyway.FlywayAutoConfiguration
 
   cloud:
@@ -74,6 +73,10 @@ evcs:
       - sys_role
       - sys_permission
     default-tenant-id: 1
+
+# JWT 测试密钥（>= 32 字符）；生产必须通过环境变量注入
+jwt:
+  secret: test-jwt-secret-key-for-unit-tests-0123456789
 
 logging:
   level:

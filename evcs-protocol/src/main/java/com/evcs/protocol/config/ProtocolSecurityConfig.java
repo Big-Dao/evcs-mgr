@@ -22,7 +22,7 @@ public class ProtocolSecurityConfig {
 
     private final ProtocolJwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Bean
+    @Bean("protocolFilterChain")
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())

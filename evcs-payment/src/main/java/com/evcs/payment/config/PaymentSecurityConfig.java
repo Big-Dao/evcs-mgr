@@ -29,7 +29,7 @@ public class PaymentSecurityConfig {
 
     private final PaymentJwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Bean
+    @Bean("paymentFilterChain")
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())

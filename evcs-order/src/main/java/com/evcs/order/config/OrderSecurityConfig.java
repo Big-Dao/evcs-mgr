@@ -22,7 +22,7 @@ public class OrderSecurityConfig {
 
     private final OrderJwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Bean
+    @Bean("orderFilterChain")
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())

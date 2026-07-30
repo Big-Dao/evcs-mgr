@@ -22,7 +22,7 @@ public class MonitoringSecurityConfig {
 
     private final MonitoringJwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Bean
+    @Bean("monitoringFilterChain")
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())

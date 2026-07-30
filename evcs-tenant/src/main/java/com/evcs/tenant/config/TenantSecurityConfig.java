@@ -24,7 +24,7 @@ public class TenantSecurityConfig {
 
     private final TenantJwtAuthenticationFilter jwtAuthenticationFilter;
 
-    @Bean
+    @Bean("tenantFilterChain")
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())

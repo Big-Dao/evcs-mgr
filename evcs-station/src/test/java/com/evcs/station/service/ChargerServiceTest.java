@@ -277,10 +277,7 @@ class ChargerServiceTest extends BaseServiceTest {
         Long userId = 10086L;
 
         // Act
-        // Assuming OCPP service is null in test context, it should log error and return
-        // false based on my implementation
-        // Wait, my implementation returns false if service is null!
-        // So I expect RuntimeException("协议启动失败") from startChargingSession method
+        // OCPP service is not available in test context, expect RuntimeException
         Exception exception = assertThrows(RuntimeException.class, () -> {
             chargerService.startChargingSession(charger.getId(), sessionId, userId);
         });

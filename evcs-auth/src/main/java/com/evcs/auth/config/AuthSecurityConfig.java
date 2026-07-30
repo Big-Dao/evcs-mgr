@@ -38,7 +38,7 @@ public class AuthSecurityConfig {
     }
 
     /** 安全过滤链 */
-    @Bean
+    @Bean("authFilterChain")
     public SecurityFilterChain filterChain(final HttpSecurity http) throws Exception {
         http
                 // 禁用CSRF（无状态 JWT）
