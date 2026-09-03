@@ -94,6 +94,46 @@ class ContextHeadersGlobalFilterTest {
     }
 
     @Test
+    @DisplayName("stripClientContextHeaders=true 时 - 网关应剥离客户端伪造的 X-Tenant-Type/X-Tenant-Ancestors")
+    void shouldStripClientTenantTypeAndAncestorsHeaders() {
+        // Arrange
+        ContextHeadersProperties properties = new ContextHeadersProperties();
+        properties.setEnabled(true);
+        properties.setStripClientContextHeaders(true);
+        properties.setJwtSecret("test-secret");
+
+        ContextHeadersGlobalFilter filter = new ContextHeadersGlobalFilter(properties);
+
+        String token = JWT.create()
+            .withClaim("tenantId", 101L)
+            .withClaim("userId", 201L)
+            .sign(Algorithm.HMAC256("test-secret"));
+
+        MockServerWebExchange exchange = MockServerWebExchange.from(
+            MockServerHttpRequest.get("/api/v1/orders")
+                .header("Authorization", "Bearer " + token)
+                .header("X-Tenant-Type", "1")
+                .header("X-Tenant-Ancestors", ",5,")
+                .build()
+        );
+
+        AtomicReference<String> tenantType = new AtomicReference<>();
+        AtomicReference<String> ancestors = new AtomicReference<>();
+
+        // Act
+        filter.filter(exchange, ex -> {
+            tenantType.set(ex.getRequest().getHeaders().getFirst("X-Tenant-Type"));
+            ancestors.set(ex.getRequest().getHeaders().getFirst("X-Tenant-Ancestors"));
+            ex.getResponse().setStatusCode(HttpStatus.OK);
+            return ex.getResponse().setComplete();
+        }).block(Duration.ofSeconds(5));
+
+        // Assert
+        assertNull(tenantType.get(), "X-Tenant-Type 不来自 JWT claim，客户端伪造头必须被剥离");
+        assertNull(ancestors.get(), "X-Tenant-Ancestors 不来自 JWT claim，客户端伪造头必须被剥离");
+    }
+
+    @Test
     @DisplayName("Bearer token 无效时 - 网关不应注入上下文头")
     void shouldNotInjectWhenTokenInvalid() {
         // Arrange

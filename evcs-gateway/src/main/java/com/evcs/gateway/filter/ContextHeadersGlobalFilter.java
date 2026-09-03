@@ -35,6 +35,8 @@ public class ContextHeadersGlobalFilter implements GlobalFilter, Ordered {
     public static final String HEADER_TENANT_ID = "X-Tenant-Id";
     public static final String HEADER_USER_ID = "X-User-Id";
     public static final String HEADER_USER_TYPE = "X-User-Type";
+    public static final String HEADER_TENANT_TYPE = "X-Tenant-Type";
+    public static final String HEADER_TENANT_ANCESTORS = "X-Tenant-Ancestors";
 
     private final ContextHeadersProperties properties;
 
@@ -91,6 +93,9 @@ public class ContextHeadersGlobalFilter implements GlobalFilter, Ordered {
                     headers.remove(HEADER_TENANT_ID);
                     headers.remove(HEADER_USER_ID);
                     headers.remove(HEADER_USER_TYPE);
+                    // 租户类型/祖先链不来自 JWT claim，客户端伪造即租户越权入口，必须剥离
+                    headers.remove(HEADER_TENANT_TYPE);
+                    headers.remove(HEADER_TENANT_ANCESTORS);
                 }
 
                 if (tenantId != null) {
