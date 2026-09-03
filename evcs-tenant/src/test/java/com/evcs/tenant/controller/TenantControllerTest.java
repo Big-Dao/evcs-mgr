@@ -132,7 +132,11 @@ class TenantControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.tenantCode").value("CTRL_TEST004"))
-                .andExpect(jsonPath("$.data.tenantName").value("控制器测试租户4"));
+                .andExpect(jsonPath("$.data.tenantName").value("控制器测试租户4"))
+                // 内部字段不得外泄：祖先链/审计/乐观锁字段属于 Entity 内部结构
+                .andExpect(jsonPath("$.data.ancestors").doesNotExist())
+                .andExpect(jsonPath("$.data.deleted").doesNotExist())
+                .andExpect(jsonPath("$.data.version").doesNotExist());
     }
 
     @Test

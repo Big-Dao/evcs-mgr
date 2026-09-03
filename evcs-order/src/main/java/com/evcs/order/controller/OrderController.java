@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
 import com.evcs.order.dto.OrderDTO;
+import com.evcs.order.dto.OrderResponse;
 import com.evcs.order.entity.ChargingOrder;
 import com.evcs.order.service.IChargingOrderService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,8 +47,8 @@ public class OrderController {
     @GetMapping("/by-session")
     @Operation(summary = "按会话查询订单")
     @DataScope
-    public Result<ChargingOrder> bySession(@Parameter(description = "会话ID") @RequestParam @NotNull String sessionId) {
-        return Result.success(orderService.getBySessionId(sessionId));
+    public Result<OrderResponse> bySession(@Parameter(description = "会话ID") @RequestParam @NotNull String sessionId) {
+        return Result.success(OrderResponse.from(orderService.getBySessionId(sessionId)));
     }
 
     @PostMapping("/start")
@@ -108,8 +109,8 @@ public class OrderController {
     @GetMapping("/{id}")
     @Operation(summary = "根据ID查询订单")
     @DataScope
-    public Result<ChargingOrder> getById(@PathVariable Long id) {
-        return Result.success(orderService.getById(id));
+    public Result<OrderResponse> getById(@PathVariable Long id) {
+        return Result.success(OrderResponse.from(orderService.getById(id)));
     }
 
     @PostMapping("/payment/callback")

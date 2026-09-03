@@ -3,6 +3,7 @@ package com.evcs.tenant.controller;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.page.PageQuery;
 import com.evcs.common.result.Result;
+import com.evcs.tenant.dto.TenantResponse;
 import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.service.ISysTenantService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -33,10 +34,10 @@ public class TenantController {
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能在当前租户下创建子租户")
     @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
-    public Result<SysTenant> createTenant(@Valid @RequestBody SysTenant tenant) {
+    public Result<TenantResponse> createTenant(@Valid @RequestBody SysTenant tenant) {
         boolean created = tenantService.saveTenant(tenant);
         SysTenant payload = created ? tenantService.getTenantById(tenant.getId()) : null;
-        return Result.success("租户创建成功", payload);
+        return Result.success("租户创建成功", TenantResponse.from(payload));
     }
     
     /**
@@ -46,13 +47,13 @@ public class TenantController {
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能更新本租户及下级租户信息")
     @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
-    public Result<SysTenant> updateTenant(
+    public Result<TenantResponse> updateTenant(
             @Parameter(description = "租户ID") @PathVariable Long id,
             @Valid @RequestBody SysTenant tenant) {
         tenant.setId(id);
         boolean ok = tenantService.updateTenant(tenant);
         SysTenant updated = ok ? tenantService.getTenantById(id) : null;
-        return Result.success("租户更新成功", updated);
+        return Result.success("租户更新成功", TenantResponse.from(updated));
     }
     
     /**
@@ -73,9 +74,9 @@ public class TenantController {
     @GetMapping("/{id}")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查询本租户及下级租户信息")
-    public Result<SysTenant> getTenant(@Parameter(description = "租户ID") @PathVariable Long id) {
+    public Result<TenantResponse> getTenant(@Parameter(description = "租户ID") @PathVariable Long id) {
         SysTenant tenant = tenantService.getTenantById(id);
-        return Result.success("查询成功", tenant);
+        return Result.success("查询成功", TenantResponse.from(tenant));
     }
     
     /**
@@ -84,9 +85,10 @@ public class TenantController {
     @GetMapping("/list")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查询本租户及下级租户")
-    public Result<List<SysTenant>> listTenants(SysTenant query) {
+    public Result<List<TenantResponse>> listTenants(SysTenant query) {
         List<SysTenant> list = tenantService.queryTenantList(query);
-        return Result.success("查询成功", list);
+        return Result.success("查询成功",
+                list.stream().map(TenantResponse::from).collect(java.util.stream.Collectors.toList()));
     }
     
     /**
@@ -95,11 +97,11 @@ public class TenantController {
     @GetMapping("/page")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查询本租户及下级租户")
-    public Result<IPage<SysTenant>> pageTenants(@Valid PageQuery pageQuery, SysTenant query) {
+    public Result<IPage<TenantResponse>> pageTenants(@Valid PageQuery pageQuery, SysTenant query) {
         Page<SysTenant> page = new Page<>(pageQuery.getPage(), pageQuery.getSize());
         SysTenant condition = query != null ? query : new SysTenant();
         IPage<SysTenant> result = tenantService.queryTenantPage(page, condition);
-        return Result.success("查询成功", result);
+        return Result.success("查询成功", result.convert(TenantResponse::from));
     }
     
     /**
@@ -108,10 +110,11 @@ public class TenantController {
     @GetMapping("/{parentId}/children")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能查询本租户及下级租户的子租户")
-    public Result<List<SysTenant>> getSubTenants(
+    public Result<List<TenantResponse>> getSubTenants(
             @Parameter(description = "父租户ID") @PathVariable Long parentId) {
         List<SysTenant> subTenants = tenantService.getSubTenants(parentId);
-        return Result.success("查询成功", subTenants);
+        return Result.success("查询成功",
+                subTenants.stream().map(TenantResponse::from).collect(java.util.stream.Collectors.toList()));
     }
     
     /**
@@ -120,12 +123,13 @@ public class TenantController {
     @GetMapping("/tree")
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "从当前租户开始的层级树")
-    public Result<List<SysTenant>> getTenantTree(
+    public Result<List<TenantResponse>> getTenantTree(
             @Parameter(description = "根节点ID，不传则从当前租户开始") 
             @RequestParam(required = false) Long rootId) {
         // 使用 queryTenantList 以应用租户隔离过滤
         List<SysTenant> tree = tenantService.queryTenantList(new SysTenant());
-        return Result.success("查询成功", tree);
+        return Result.success("查询成功",
+                tree.stream().map(TenantResponse::from).collect(java.util.stream.Collectors.toList()));
     }
     
     /**

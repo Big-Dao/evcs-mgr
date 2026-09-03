@@ -1,68 +1,78 @@
 package com.evcs.order.controller;
 
+import com.evcs.common.test.base.BaseControllerTest;
 import com.evcs.order.entity.ChargingOrder;
 import com.evcs.order.service.IChargingOrderService;
-import org.junit.jupiter.api.BeforeEach;
+import jakarta.annotation.Resource;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
 
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("订单控制器测试")
-class OrderControllerTest {
+/**
+ * 订单控制器响应契约测试。
+ *
+ * <p>订单查询接口必须返回 DTO：paymentTradeId（第三方交易号）、version、deleted、审计人字段
+ * 属于 Entity 内部结构，不得出现在 API 响应中。
+ */
+@SpringBootTest(classes = {com.evcs.order.OrderServiceApplication.class,
+        com.evcs.order.config.TestConfig.class})
+@AutoConfigureMockMvc
+@DisplayName("订单控制器响应契约")
+class OrderControllerTest extends BaseControllerTest {
 
-    private MockMvc mockMvc;
-
-    @InjectMocks
-    private OrderController orderController;
-
-    @Mock
+    @Resource
     private IChargingOrderService orderService;
 
-    @BeforeEach
-    void setUp() {
-        this.mockMvc = MockMvcBuilders.standaloneSetup(orderController).build();
-    }
-
     @Test
-    @DisplayName("按会话查询 - 存在订单时应返回成功")
-    void testBySession_shouldReturnOrder_whenSessionExists() throws Exception {
+    @DisplayName("按ID查询订单 - 响应不得包含 Entity 内部字段")
+    void getByIdShouldNotExposeInternalFields() throws Exception {
         ChargingOrder order = new ChargingOrder();
-        order.setId(101L);
-        order.setSessionId("SESSION_001");
-        order.setUserId(9001L);
+        order.setSessionId("DTO-CTRL-S1");
+        order.setStationId(11L);
+        order.setChargerId(21L);
+        order.setStatus(10);
+        order.setAmount(new BigDecimal("12.34"));
+        order.setPaymentTradeId("internal-trade-no-001");
+        assertNotNull(orderService.save(order), "测试订单应保存成功");
 
-        when(orderService.getBySessionId(eq("SESSION_001"))).thenReturn(order);
+        setUpTenantContext();
 
-        mockMvc.perform(get("/order/by-session").param("sessionId", "SESSION_001"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
-            .andExpect(jsonPath("$.data.id").value(101))
-            .andExpect(jsonPath("$.data.sessionId").value("SESSION_001"));
+        mockMvc.perform(get("/order/" + order.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.sessionId").value("DTO-CTRL-S1"))
+                .andExpect(jsonPath("$.data.amount").value(12.34))
+                .andExpect(jsonPath("$.data.paymentTradeId").doesNotExist())
+                .andExpect(jsonPath("$.data.version").doesNotExist())
+                .andExpect(jsonPath("$.data.deleted").doesNotExist())
+                .andExpect(jsonPath("$.data.createBy").doesNotExist())
+                .andExpect(jsonPath("$.data.updateBy").doesNotExist());
     }
 
     @Test
-    @DisplayName("支付回调 - 成功回调应返回 true")
-    void testPaymentCallback_shouldReturnTrue_whenSuccess() throws Exception {
-        when(orderService.paymentCallback(eq("TRADE_1001"), eq(true))).thenReturn(true);
+    @DisplayName("按会话查询订单 - 响应不得包含 Entity 内部字段")
+    void bySessionShouldNotExposeInternalFields() throws Exception {
+        ChargingOrder order = new ChargingOrder();
+        order.setSessionId("DTO-CTRL-S2");
+        order.setStatus(1);
+        order.setPaymentTradeId("internal-trade-no-002");
+        assertNotNull(orderService.save(order), "测试订单应保存成功");
 
-        mockMvc.perform(post("/order/payment/callback")
-                .param("tradeId", "TRADE_1001")
-                .param("success", "true"))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.code").value(200))
-            .andExpect(jsonPath("$.data").value(true));
+        setUpTenantContext();
+
+        mockMvc.perform(get("/order/by-session").param("sessionId", "DTO-CTRL-S2"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.sessionId").value("DTO-CTRL-S2"))
+                .andExpect(jsonPath("$.data.paymentTradeId").doesNotExist())
+                .andExpect(jsonPath("$.data.version").doesNotExist());
     }
 }
