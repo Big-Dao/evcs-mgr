@@ -28,10 +28,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @SpringBootTest(
-        classes = ProtocolServiceApplication.class,
-        properties = {
-                "spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,org.springframework.boot.autoconfigure.security.servlet.SecurityFilterAutoConfiguration,org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration"
-        }
+        classes = ProtocolServiceApplication.class
 )
 @DisplayName("云快充 userId 上报测试")
 @WithMockUser(username = "test-admin", roles = {"ADMIN", "TENANT_ADMIN", "OPERATOR"})
