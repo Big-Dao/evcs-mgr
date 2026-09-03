@@ -11,6 +11,7 @@ import com.evcs.order.mapper.BillingPlanSegmentMapper;
 import com.evcs.order.service.IBillingPlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -21,6 +22,80 @@ import java.util.concurrent.ConcurrentHashMap;
 public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, BillingPlan> implements IBillingPlanService {
     private final Map<Long, List<BillingPlanSegment>> segmentCache = new ConcurrentHashMap<>();
     private final BillingPlanSegmentMapper segmentMapper;
+
+    @Override
+    @Transactional
+    public PlanWriteOutcome createPlan(BillingPlan plan) {
+        // MyBatis Plus自动添加tenant_id过滤
+        if (isStationEnabled(plan) && countEnabledPlans(plan.getStationId(), null) >= 16) {
+            return PlanWriteOutcome.violated(PLAN_LIMIT_MESSAGE);
+        }
+        boolean ok = this.save(plan);
+        if (ok && isDefaultEnabled(plan)) {
+            resetOtherDefaults(plan.getStationId(), plan.getId());
+        }
+        return ok ? PlanWriteOutcome.ok(plan) : PlanWriteOutcome.violated("保存失败");
+    }
+
+    @Override
+    @Transactional
+    public PlanWriteOutcome updatePlan(BillingPlan plan) {
+        // MyBatis Plus自动添加tenant_id过滤
+        if (isStationEnabled(plan) && countEnabledPlans(plan.getStationId(), plan.getId()) >= 16) {
+            return PlanWriteOutcome.violated(PLAN_LIMIT_MESSAGE);
+        }
+        boolean ok = this.updateById(plan);
+        if (ok && isDefaultEnabled(plan)) {
+            resetOtherDefaults(plan.getStationId(), plan.getId());
+        }
+        return ok ? PlanWriteOutcome.ok(plan) : PlanWriteOutcome.violated("保存失败");
+    }
+
+    @Override
+    @Transactional
+    public PlanWriteOutcome setDefaultPlan(Long planId, Long stationId) {
+        BillingPlan plan = this.getById(planId);
+        if (plan == null) {
+            return PlanWriteOutcome.violated("计划不存在");
+        }
+        BillingPlan patch = new BillingPlan();
+        patch.setId(planId);
+        patch.setIsDefault(1);
+        boolean ok = this.updateById(patch);
+        if (ok) {
+            resetOtherDefaults(stationId, planId);
+        }
+        return new PlanWriteOutcome(ok, ok ? null : "更新失败", plan);
+    }
+
+    private static final String PLAN_LIMIT_MESSAGE = "每站点启用的计费计划不能超过16个";
+
+    private boolean isStationEnabled(BillingPlan plan) {
+        return plan.getStatus() != null && plan.getStatus() == 1 && plan.getStationId() != null;
+    }
+
+    private boolean isDefaultEnabled(BillingPlan plan) {
+        return plan.getIsDefault() != null && plan.getIsDefault() == 1 && plan.getStatus() != null && plan.getStatus() == 1;
+    }
+
+    private long countEnabledPlans(Long stationId, Long excludePlanId) {
+        QueryWrapper<BillingPlan> wrapper = new QueryWrapper<BillingPlan>()
+                .eq("station_id", stationId)
+                .eq("status", 1);
+        if (excludePlanId != null) {
+            wrapper.ne("id", excludePlanId);
+        }
+        return this.count(wrapper);
+    }
+
+    private void resetOtherDefaults(Long stationId, Long excludePlanId) {
+        BillingPlan reset = new BillingPlan();
+        reset.setIsDefault(0);
+        this.update(reset, new QueryWrapper<BillingPlan>()
+                .eq("station_id", stationId)
+                .eq("status", 1)
+                .ne("id", excludePlanId));
+    }
 
     @Override
     @DataScope

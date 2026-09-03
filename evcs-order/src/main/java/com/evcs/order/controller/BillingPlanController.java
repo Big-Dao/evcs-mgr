@@ -29,27 +29,8 @@ public class BillingPlanController {
     @Operation(summary = "创建计费计划")
     @DataScope
     public Result<BillingPlan> create(@Valid @RequestBody BillingPlan plan) {
-        // MyBatis Plus自动添加tenant_id过滤
-        if (plan.getStatus() != null && plan.getStatus() == 1 && plan.getStationId() != null) {
-            long cnt = planService.count(new QueryWrapper<BillingPlan>()
-                    .eq("station_id", plan.getStationId())
-                    .eq("status", 1));
-            if (cnt >= 16) {
-                return Result.fail("每站点启用的计费计划不能超过16个");
-            }
-        }
-        boolean ok = planService.save(plan);
-        if (ok && plan.getIsDefault() != null && plan.getIsDefault() == 1 && plan.getStatus() != null && plan.getStatus() == 1) {
-            // 置为默认时，取消同站点其他默认
-            BillingPlan reset = new BillingPlan();
-            reset.setIsDefault(0);
-            planService.update(reset, new QueryWrapper<BillingPlan>()
-                    .eq("station_id", plan.getStationId())
-                    .eq("status", 1)
-                    .ne("id", plan.getId()));
-        }
-        return ok ? Result.success(plan) : Result.fail("保存失败");
-
+        IBillingPlanService.PlanWriteOutcome outcome = planService.createPlan(plan);
+        return outcome.success() ? Result.success(outcome.plan()) : Result.fail(outcome.error());
     }
     @GetMapping
     @Operation(summary = "查询计费计划列表")
@@ -82,56 +63,27 @@ public class BillingPlanController {
     @Operation(summary = "设置为默认计划")
     @DataScope
     public Result<Boolean> setDefault(@PathVariable Long planId, @RequestParam Long stationId) {
-        BillingPlan plan = planService.getById(planId);
-        if (plan == null) return Result.fail("计划不存在");
-        BillingPlan patch = new BillingPlan();
-        patch.setId(planId);
-        patch.setIsDefault(1);
-        boolean ok = planService.updateById(patch);
-        // MyBatis Plus自动添加tenant_id过滤
-        if (ok) {
-            BillingPlan reset = new BillingPlan();
-            reset.setIsDefault(0);
-            planService.update(reset, new QueryWrapper<BillingPlan>()
-                    .eq("station_id", stationId)
-                    .eq("status", 1)
-                    .ne("id", planId));
+        IBillingPlanService.PlanWriteOutcome outcome = planService.setDefaultPlan(planId, stationId);
+        if (outcome.plan() == null) {
+            return Result.fail(outcome.error());
         }
-        return Result.success(ok);
+        return Result.success(outcome.success());
     }
 
     @PutMapping
     @Operation(summary = "更新计费计划")
     @DataScope
     public Result<Boolean> update(@Valid @RequestBody BillingPlan plan) {
-        // MyBatis Plus自动添加tenant_id过滤
-        if (plan.getStatus() != null && plan.getStatus() == 1 && plan.getStationId() != null) {
-            long cnt = planService.count(new QueryWrapper<BillingPlan>()
-                    .eq("station_id", plan.getStationId())
-                    .eq("status", 1)
-                    .ne("id", plan.getId()));
-            if (cnt >= 16) {
-                return Result.fail("每站点启用的计费计划不能超过16个");
-            }
+        IBillingPlanService.PlanWriteOutcome outcome = planService.updatePlan(plan);
+        if (!outcome.success()) {
+            return Result.fail(outcome.error());
         }
-        boolean ok = planService.updateById(plan);
-        if (ok) {
-            // 缓存失效
-            if (plan.getStationId() != null) {
-                cacheService.invalidate(plan.getStationId(), plan.getId());
-                cacheService.invalidateDefault(plan.getStationId());
-            }
-            
-            if (plan.getIsDefault() != null && plan.getIsDefault() == 1 && plan.getStatus() != null && plan.getStatus() == 1) {
-                BillingPlan reset = new BillingPlan();
-                reset.setIsDefault(0);
-                planService.update(reset, new QueryWrapper<BillingPlan>()
-                        .eq("station_id", plan.getStationId())
-                        .eq("status", 1)
-                        .ne("id", plan.getId()));
-            }
+        // 缓存在事务提交后失效
+        if (plan.getStationId() != null) {
+            cacheService.invalidate(plan.getStationId(), plan.getId());
+            cacheService.invalidateDefault(plan.getStationId());
         }
-        return Result.success(ok);
+        return Result.success(true);
     }
 
     @PostMapping("/validate-segments")
