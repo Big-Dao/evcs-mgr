@@ -142,11 +142,11 @@ public class CustomTenantLineHandler implements TenantLineHandler {
             return true;
         }
         
-        // 检查当前是否有租户上下文
+        // 检查当前是否有租户上下文：缺失时 fail-closed，禁止写入无租户归属的数据
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
-            log.warn("INSERT操作缺少租户上下文，可能导致数据插入异常");
-            return true; // 没有租户上下文时，不自动添加租户字段
+            log.error("INSERT操作缺少租户上下文，拒绝执行");
+            throw new TenantContextMissingException("执行数据库写入时租户上下文缺失，请确保已正确设置租户信息");
         }
         
         log.debug("INSERT语句自动添加租户字段: {} = {}", tenantIdColumn, tenantId);

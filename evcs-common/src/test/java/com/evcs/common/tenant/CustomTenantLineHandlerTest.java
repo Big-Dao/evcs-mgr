@@ -3,9 +3,12 @@ package com.evcs.common.tenant;
 import com.evcs.common.exception.TenantContextMissingException;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.schema.Column;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -136,9 +139,33 @@ class CustomTenantLineHandlerTest {
     void testTenantIdZeroIsValid() {
         // Tenant ID 0 should be valid (e.g., for root tenant)
         TenantContext.setTenantId(0L);
-        
+
         Expression expression = handler.getTenantId();
         assertNotNull(expression);
         assertEquals(0L, ((LongValue) expression).getValue());
+    }
+
+    @Test
+    void testIgnoreInsertAutoAddsTenantIdWhenContextPresent() {
+        TenantContext.setTenantId(123L);
+
+        // INSERT 不含租户字段时应自动添加（返回 false 表示由插件补齐）
+        assertFalse(handler.ignoreInsert(List.of(new Column("id")), "tenant_id"));
+        // INSERT 已显式携带租户字段时不重复添加
+        assertTrue(handler.ignoreInsert(List.of(new Column("id"), new Column("TENANT_ID")), "tenant_id"));
+    }
+
+    @Test
+    void testIgnoreInsertThrowsWhenTenantContextMissing() {
+        // 缺少租户上下文的 INSERT 必须 fail-closed，而不是静默写入无租户数据
+        TenantContext.clear();
+
+        TenantContextMissingException exception = assertThrows(
+            TenantContextMissingException.class,
+            () -> handler.ignoreInsert(List.of(new Column("id")), "tenant_id"),
+            "缺少租户上下文时 INSERT 应抛出 TenantContextMissingException"
+        );
+
+        assertTrue(exception.getMessage().contains("租户上下文缺失"));
     }
 }
