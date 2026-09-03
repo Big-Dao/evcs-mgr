@@ -49,6 +49,11 @@ public class CloudChargeController {
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "heartbeat");
 
+            if (protocolRequest.getTenantId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(CloudChargeApiResponse.failure("404", "Unknown device: " + request.getDeviceCode()));
+            }
+
             Integer connectorId = extractConnectorIdFromData(request.getData());
 
             // 发布心跳事件
@@ -94,6 +99,11 @@ public class CloudChargeController {
 
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "status");
+
+            if (protocolRequest.getTenantId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(CloudChargeApiResponse.failure("404", "Unknown device: " + request.getDeviceCode()));
+            }
 
             Integer status = (Integer) request.getData().get("status");
 
@@ -148,6 +158,11 @@ public class CloudChargeController {
 
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "start");
+
+            if (protocolRequest.getTenantId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(CloudChargeApiResponse.failure("404", "Unknown device: " + request.getDeviceCode()));
+            }
 
             Integer connectorId = extractConnectorIdFromData(request.getData());
 
@@ -214,6 +229,11 @@ public class CloudChargeController {
 
             // 构建协议请求
             ProtocolRequest protocolRequest = buildProtocolRequest(request, "stop");
+
+            if (protocolRequest.getTenantId() == null) {
+                return ResponseEntity.badRequest()
+                        .body(CloudChargeApiResponse.failure("404", "Unknown device: " + request.getDeviceCode()));
+            }
 
             // 从请求数据中获取充电信息
             Map<String, Object> data = request.getData();
@@ -309,9 +329,8 @@ public class CloudChargeController {
             protocolRequest.setChargerId(info.getId());
             protocolRequest.setStationId(info.getStationId());
         } else {
+            // 未知设备：不猜测租户/桩ID；各 handler 必须拒绝，禁止兜底造成错误租户归属
             log.warn("Unknown device code: {}", request.getDeviceCode());
-            protocolRequest.setTenantId(0L); // 默认租户
-            protocolRequest.setChargerId(extractChargerId(request.getDeviceCode())); // 尝试从编码提取
         }
 
         Long userIdFromData = extractUserIdFromData(request.getData());
@@ -454,21 +473,6 @@ public class CloudChargeController {
      */
     private ChargerBasicInfo fetchChargerInfo(String deviceCode) {
         return stationServiceClient.getChargerByCode(deviceCode);
-    }
-
-    /**
-     * 从设备编码提取充电桩ID
-     * 这里假设设备编码包含充电桩ID信息，实际实现需要根据具体编码规则
-     */
-    private Long extractChargerId(String deviceCode) {
-        // 简单实现：假设设备编码后缀是数字ID
-        try {
-            String[] parts = deviceCode.split("_");
-            return Long.parseLong(parts[parts.length - 1]);
-        } catch (Exception e) {
-            log.warn("Failed to extract charger ID from device code: {}", deviceCode);
-            return 0L; // 临时返回0，实际应该从数据库查询
-        }
     }
 
     /**

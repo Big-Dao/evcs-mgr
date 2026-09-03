@@ -155,14 +155,90 @@ class CloudChargeControllerUserIdTest extends BaseControllerTest {
     }
 
     @Test
-    @DisplayName("开始充电 - 未携带 data.userId 时应返回 400")
-    void testStartCharging_shouldReturn400_whenUserIdMissing() throws Exception {
+    @DisplayName("心跳 - 未知设备应拒绝且不发布事件（禁止兜底租户0）")
+    void testHeartbeat_shouldRejectWithoutPublishing_whenDeviceUnknown() throws Exception {
         // Arrange
         Mockito.when(signatureValidator.validateSignature(Mockito.any())).thenReturn(true);
         Mockito.when(restTemplate.exchange(
                 Mockito.any(RequestEntity.class),
                 Mockito.<ParameterizedTypeReference<Object>>any()
-        )).thenThrow(new RuntimeException("mock station service unavailable"));
+        )).thenReturn(ResponseEntity.ok(com.evcs.common.result.Result.success(null)));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("requestId", "req-hb-unknown");
+        body.put("apiVersion", "3.0");
+        body.put("timestamp", "2025-12-16T00:00:00");
+        body.put("signature", "sig");
+        body.put("deviceCode", "UNKNOWN_DEVICE");
+        body.put("action", "heartbeat");
+
+        int beforeSize = eventPublisher.getEventHistory().size();
+
+        // Act & Assert
+        mockMvc.perform(
+                        MockMvcRequestBuilders.post("/api/cloudcharge/heartbeat")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(toJson(body))
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+
+        assertEquals(beforeSize, eventPublisher.getEventHistory().size(),
+                "未知设备不得发布任何事件");
+    }
+
+    @Test
+    @DisplayName("停止充电 - 未知设备应拒绝且不发布事件（禁止兜底租户0）")
+    void testStopCharging_shouldRejectWithoutPublishing_whenDeviceUnknown() throws Exception {
+        // Arrange
+        Mockito.when(signatureValidator.validateSignature(Mockito.any())).thenReturn(true);
+        Mockito.when(restTemplate.exchange(
+                Mockito.any(RequestEntity.class),
+                Mockito.<ParameterizedTypeReference<Object>>any()
+        )).thenReturn(ResponseEntity.ok(com.evcs.common.result.Result.success(null)));
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("requestId", "req-stop-unknown");
+        body.put("apiVersion", "3.0");
+        body.put("timestamp", "2025-12-16T00:00:00");
+        body.put("signature", "sig");
+        body.put("deviceCode", "UNKNOWN_DEVICE");
+        body.put("sessionId", "SESSION_005");
+        body.put("action", "stop");
+        body.put("data", Map.of("connectorId", 1));
+
+        int beforeSize = eventPublisher.getEventHistory().size();
+
+        // Act & Assert
+        mockMvc.perform(
+                        MockMvcRequestBuilders.post("/api/cloudcharge/stop")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(toJson(body))
+                )
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.success").value(false));
+
+        assertEquals(beforeSize, eventPublisher.getEventHistory().size(),
+                "未知设备不得发布任何事件");
+    }
+
+    @Test
+    @DisplayName("开始充电 - 未携带 data.userId 时应返回 400")
+    void testStartCharging_shouldReturn400_whenUserIdMissing() throws Exception {
+        // Arrange
+        Mockito.when(signatureValidator.validateSignature(Mockito.any())).thenReturn(true);
+
+        ChargerBasicInfo chargerInfo = new ChargerBasicInfo();
+        chargerInfo.setId(1L);
+        chargerInfo.setTenantId(1L);
+        chargerInfo.setStationId(11L);
+        chargerInfo.setChargerCode("DEVICE_1");
+        chargerInfo.setChargerName("TEST");
+
+        Mockito.when(restTemplate.exchange(
+                Mockito.any(RequestEntity.class),
+                Mockito.<ParameterizedTypeReference<Object>>any()
+        )).thenReturn(ResponseEntity.ok(com.evcs.common.result.Result.success(chargerInfo)));
 
         Map<String, Object> body = new HashMap<>();
         body.put("requestId", "req-002");
