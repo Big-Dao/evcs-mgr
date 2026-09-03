@@ -10,14 +10,19 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.*;
 
 /**
  * 协议调试控制器
  * 提供协议事件模拟和查看功能，方便开发和测试
+ *
+ * <p>仅在 local/test profile 注册：事件模拟能向 MQ 注入任意充电事件，
+ * 不得出现在未声明的部署环境中。
  */
 @RestController("protocolEventDebugController")
 @RequestMapping("/debug/protocol")
+@Profile({"local", "test"})
 public class ProtocolDebugController {
 
     private static final Logger log = LoggerFactory.getLogger(
