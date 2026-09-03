@@ -99,7 +99,8 @@ public class CloudChargeSignatureValidator {
      */
     private String calculateSignature(String signString) {
         String appSecret = protocolProperties.getCloudCharge().getAppSecret();
-        if (appSecret == null) {
+        // 密钥必填：缺失或为空必须快速失败，禁止以空/占位密钥参与签名计算
+        if (appSecret == null || appSecret.isBlank()) {
             throw new IllegalStateException("CloudCharge app secret is not configured");
         }
 

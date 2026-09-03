@@ -28,8 +28,9 @@ evcs:
       enabled: true
       base-url: "https://api.cloudcharge.com"
       api-version: "3.0"
-      app-id: "${CLOUD_CHARGE_APP_ID:your_app_id}"
-      app-secret: "${CLOUD_CHARGE_APP_SECRET:your_app_secret}"
+      # 密钥必填、无默认值：未注入环境变量时相关验签/签名功能将显式失败（安全基线 §2.3）
+      app-id: "${CLOUD_CHARGE_APP_ID:}"
+      app-secret: "${CLOUD_CHARGE_APP_SECRET:}"
       sign-algorithm: "HMAC-SHA256"
       connection-timeout: 10000
       read-timeout: 30000
@@ -37,17 +38,17 @@ evcs:
         telaidian:
           name: "特来电"
           api-url: "https://api.telaidian.com"
-          secret: "${TELAIDIAN_SECRET:your_telaidian_secret}"
+          secret: "${TELAIDIAN_SECRET:}"
           enabled: true
         star:
           name: "星星充电"
           api-url: "https://api.starcharge.com"
-          secret: "${STAR_CHARGE_SECRET:your_star_charge_secret}"
+          secret: "${STAR_CHARGE_SECRET:}"
           enabled: true
         cloud-charge:
           name: "云快充"
           api-url: "https://api.cloudcharge.com"
-          secret: "${CLOUD_CHARGE_SECRET:your_cloud_charge_secret}"
+          secret: "${CLOUD_CHARGE_SECRET:}"
           enabled: true
     connection-pool:
       max-total: 200
