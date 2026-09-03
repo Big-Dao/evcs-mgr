@@ -74,3 +74,7 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE}
+
+jwt:
+  # 必填：生产必须通过 JWT_SECRET 环境变量注入至少 32 字符的随机密钥
+  secret: ${JWT_SECRET}

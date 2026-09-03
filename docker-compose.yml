@@ -29,6 +29,8 @@ x-java-env: &java-env
   # 本地开发：通过 .env 文件注入（已 gitignored）；生产：由 CI/CD 或密钥管理服务注入。
   # 缺失或过短（< 32 字符）将导致服务启动失败。
   JWT_SECRET: "${JWT_SECRET}"
+  # 服务间内部 API 共享令牌（auth/tenant/station/protocol 使用，必填）
+  EVCS_INTERNAL_API_TOKEN: "${EVCS_INTERNAL_API_TOKEN}"
   # HikariCP 连接池优化（P4 Week 2） - 使用正确的属性名
   SPRING_DATASOURCE_HIKARI_MAXIMUM-POOL-SIZE: "30"
   SPRING_DATASOURCE_HIKARI_MINIMUM-IDLE: "10"

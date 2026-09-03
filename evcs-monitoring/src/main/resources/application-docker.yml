@@ -40,9 +40,9 @@ spring:
   # Redis配置
   data:
     redis:
-      host: ${SPRING_REDIS_HOST:redis}
-      port: ${SPRING_REDIS_PORT:6379}
-      password: ${SPRING_REDIS_PASSWORD:}
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      password: ${SPRING_DATA_REDIS_PASSWORD:}
 
   # RabbitMQ配置
   rabbitmq:
@@ -53,7 +53,7 @@ spring:
 
 # 服务端口
 server:
-  port: 9090
+  port: 8087
 
 # MyBatis Plus配置
 mybatis-plus:

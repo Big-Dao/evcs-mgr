@@ -145,3 +145,7 @@ evcs:
       - sys_role
       - sys_permission
     default-tenant-id: 1
+
+jwt:
+  # 必填：生产必须通过 JWT_SECRET 环境变量注入至少 32 字符的随机密钥
+  secret: ${JWT_SECRET}

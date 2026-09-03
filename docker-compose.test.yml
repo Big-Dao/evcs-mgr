@@ -81,15 +81,16 @@ services:
     container_name: evcs-tenant-test
     restart: unless-stopped
     ports:
-      - "8081:8081"
+      - "8086:8086"
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/evcs_mgr_test
       - SPRING_DATASOURCE_USERNAME=evcs_test
       - SPRING_DATASOURCE_PASSWORD=test_password_123
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - SPRING_REDIS_PASSWORD=test_redis_123
+      - JWT_SECRET=${JWT_SECRET}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=test_redis_123
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_PORT=5672
       - SPRING_RABBITMQ_USERNAME=evcs_test
@@ -105,7 +106,7 @@ services:
       rabbitmq:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1"]
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8086/actuator/health || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 10
@@ -128,9 +129,10 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/evcs_mgr_test
       - SPRING_DATASOURCE_USERNAME=evcs_test
       - SPRING_DATASOURCE_PASSWORD=test_password_123
-      - SPRING_REDIS_HOST=redis
-      - SPRING_REDIS_PORT=6379
-      - SPRING_REDIS_PASSWORD=test_redis_123
+      - JWT_SECRET=${JWT_SECRET}
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_DATA_REDIS_PASSWORD=test_redis_123
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_PORT=5672
       - SPRING_RABBITMQ_USERNAME=evcs_test

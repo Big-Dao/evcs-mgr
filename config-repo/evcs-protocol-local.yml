@@ -21,6 +21,12 @@ logging:
     com.evcs.protocol.mq: debug
 
 evcs:
+  internal:
+    api:
+      enabled: true
+      # 调用 station 内部端点时携带的共享令牌；生产必须通过 EVCS_INTERNAL_API_TOKEN 环境变量注入
+      token: ${EVCS_INTERNAL_API_TOKEN}
+      header-name: X-Internal-Token
   protocol:
     resilience:
       station-service-circuit-breaker:
@@ -46,3 +52,7 @@ eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE}
+
+jwt:
+  # 必填：生产必须通过 JWT_SECRET 环境变量注入至少 32 字符的随机密钥
+  secret: ${JWT_SECRET}

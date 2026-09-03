@@ -90,8 +90,18 @@ evcs:
     import:
       batch-size: 100
       max-records: 1000
+  internal:
+    api:
+      enabled: true
+      # 服务间调用令牌；生产必须通过 EVCS_INTERNAL_API_TOKEN 环境变量注入
+      token: ${EVCS_INTERNAL_API_TOKEN}
+      header-name: X-Internal-Token
 
 eureka:
   client:
     service-url:
       defaultZone: ${EUREKA_CLIENT_SERVICE_URL_DEFAULTZONE}
+
+jwt:
+  # 必填：生产必须通过 JWT_SECRET 环境变量注入至少 32 字符的随机密钥
+  secret: ${JWT_SECRET}

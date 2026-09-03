@@ -209,22 +209,8 @@ management:
 evcs:
   gateway:
     security:
-      b-access-guard:
-        enabled: true
-        # 强校验：off|warn|fail（auth-b 已签发 iss/aud 后可切到 fail）
-        iss-aud-validation-mode: fail
-        expected-issuer: evcs-auth-b
-        expected-audience: evcs-b-mobile
-        # 强校验：校验 token 内 userType
-        require-user-type: true
-        required-user-type: B
-        # 必填：生产必须通过 JWT_SECRET 环境变量注入至少 32 字符的随机密钥
-        jwt-secret: ${JWT_SECRET}
-        protected-path-prefixes:
-          - /api/
-        excluded-path-prefixes:
-          - /api/auth/
-          - /api/actuator/
+      # 注：曾存在 b-access-guard 配置块，但代码库中无对应实现（死配置，呈现虚假防护），已移除。
+      # 白名单最小化由 GatewaySecurityConfig 控制；JWT 鉴权密钥见文件末尾 jwt.secret。
 
       internal-api-block:
         enabled: true
@@ -235,3 +221,7 @@ evcs:
         forbidden-path-prefixes:
           - /internal/api/
           - /internal/api
+
+jwt:
+  # 网关鉴权用 jwt.secret（JwtUtil）必须与 context-headers.jwt-secret 同源（安全基线 §2.1：同一 JWT_SECRET）
+  secret: ${JWT_SECRET}
