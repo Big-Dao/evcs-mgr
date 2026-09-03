@@ -16,6 +16,10 @@ import java.io.IOException;
 
 /**
  * 将请求头中的多租户上下文信息注入到线程上下文，配合 MyBatis-Plus 多租户过滤。
+ *
+ * <p>安全说明：只绑定网关剥离并重写过的可信头（X-Tenant-Id / X-User-Id，均由 JWT claim 派生）。
+ * X-Tenant-Type / X-Tenant-Ancestors 不属于可信头（网关不重写、JWT 也不含对应 claim），
+ * 绑定它们等于允许客户端伪造平台管理员身份或租户祖先链，因此一律不得从请求头读取。
  */
 @Slf4j
 @Component
@@ -24,8 +28,6 @@ public class TenantContextFilter extends OncePerRequestFilter {
 
     private static final String TENANT_HEADER = "X-Tenant-Id";
     private static final String USER_HEADER = "X-User-Id";
-    private static final String TENANT_TYPE_HEADER = "X-Tenant-Type";
-    private static final String TENANT_ANCESTORS_HEADER = "X-Tenant-Ancestors";
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -56,20 +58,6 @@ public class TenantContextFilter extends OncePerRequestFilter {
             } catch (NumberFormatException ex) {
                 log.warn("非法的用户ID请求头: {}", userIdHeader);
             }
-        }
-
-        String tenantTypeHeader = request.getHeader(TENANT_TYPE_HEADER);
-        if (StringUtils.hasText(tenantTypeHeader)) {
-            try {
-                TenantContext.setTenantType(Integer.parseInt(tenantTypeHeader));
-            } catch (NumberFormatException ex) {
-                log.warn("非法的租户类型请求头: {}", tenantTypeHeader);
-            }
-        }
-
-        String tenantAncestors = request.getHeader(TENANT_ANCESTORS_HEADER);
-        if (StringUtils.hasText(tenantAncestors)) {
-            TenantContext.setTenantAncestors(tenantAncestors);
         }
     }
 }
