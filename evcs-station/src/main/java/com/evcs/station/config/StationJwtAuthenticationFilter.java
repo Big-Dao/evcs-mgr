@@ -1,5 +1,6 @@
 package com.evcs.station.config;
 
+import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -8,86 +9,92 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.lang.NonNull;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.List;
 
 /**
- * 简单的JWT认证过滤器
- * 将Gateway验证后的用户信息写入Spring Security上下文，便于@PreAuthorize使用
+ * JWT 认证过滤器（station 服务侧）。
+ *
+ * <p>与其他下游服务一致：只信任通过签名校验的 Bearer JWT；
+ * 不再接受仅凭 X-User-Id 请求头伪造认证（该头可被直连流量伪造）。
  */
 @Slf4j
 @Component
 @RequiredArgsConstructor
 public class StationJwtAuthenticationFilter extends OncePerRequestFilter {
 
+    private static final String BEARER_PREFIX = "Bearer ";
+
     private final JwtUtil jwtUtil;
 
     @Override
-    protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        Authentication existingAuth = SecurityContextHolder.getContext().getAuthentication();
-        if (existingAuth != null
-                && existingAuth.isAuthenticated()
-                && !(existingAuth instanceof AnonymousAuthenticationToken)) {
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain)
+            throws ServletException, IOException {
+
+        String token = extractToken(request);
+        if (token == null) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        Long userId = resolveUserId(request);
-        if (userId != null) {
-            UsernamePasswordAuthenticationToken authenticationToken =
-                    new UsernamePasswordAuthenticationToken(
-                            userId,
-                            null,
-                            AuthorityUtils.createAuthorityList("ROLE_USER")
-                    );
-            authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+        if (!jwtUtil.verifyToken(token)) {
+            log.debug("JWT 校验失败，路径: {}", request.getRequestURI());
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        Long userId = jwtUtil.getUserId(token);
+        Long tenantId = jwtUtil.getTenantId(token);
+        if (userId == null || tenantId == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        if (SecurityContextHolder.getContext().getAuthentication() != null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        try {
+            List<String> roles = jwtUtil.getRoles(token);
+
+            List<SimpleGrantedAuthority> authorities = roles.stream()
+                    .map(role -> role.startsWith("ROLE_") ? role : "ROLE_" + role)
+                    .map(SimpleGrantedAuthority::new)
+                    .toList();
+
+            UsernamePasswordAuthenticationToken authentication =
+                    new UsernamePasswordAuthenticationToken(userId, null, authorities);
+            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            TenantContext.setTenantId(tenantId);
+            TenantContext.setUserId(userId);
+
+        } catch (Exception e) {
+            log.warn("JWT 认证处理异常: {}", e.getMessage());
+            SecurityContextHolder.clearContext();
         }
 
         filterChain.doFilter(request, response);
     }
 
-    private Long resolveUserId(HttpServletRequest request) {
-        String userIdHeader = request.getHeader("X-User-Id");
-        if (userIdHeader != null && !userIdHeader.isBlank()) {
-            try {
-                return Long.parseLong(userIdHeader);
-            } catch (NumberFormatException ex) {
-                log.warn("Invalid X-User-Id header: {}", userIdHeader);
-            }
+    private String extractToken(HttpServletRequest request) {
+        String header = request.getHeader("Authorization");
+        if (!StringUtils.hasText(header) || !header.startsWith(BEARER_PREFIX)) {
+            return null;
         }
-
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            if (jwtUtil.verifyToken(token)) {
-                return jwtUtil.getUserId(token);
-            }
-        }
-
-        return null;
-    }
-
-    @Override
-    protected boolean shouldNotFilter(@NonNull HttpServletRequest request) {
-        String path = request.getRequestURI();
-        return path.startsWith("/station/check-code")
-                || path.startsWith("/doc.html")
-                || path.startsWith("/webjars/")
-                || path.startsWith("/v3/api-docs")
-                || path.startsWith("/swagger-ui/")
-                || path.startsWith("/actuator/");
+        String token = header.substring(BEARER_PREFIX.length()).trim();
+        return token.isEmpty() ? null : token;
     }
 }

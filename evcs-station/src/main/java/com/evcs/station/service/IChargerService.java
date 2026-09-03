@@ -3,6 +3,7 @@ package com.evcs.station.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.evcs.station.dto.ChargerBasicInfo;
 import com.evcs.station.entity.Charger;
 
 import java.util.List;
@@ -17,6 +18,16 @@ public interface IChargerService extends IService<Charger> {
      * 根据编码查询充电桩
      */
     Charger getByCode(String code);
+
+    /**
+     * 按全局唯一编码解析充电器基础信息（供内部服务调用，调用线程可无租户上下文）。
+     */
+    ChargerBasicInfo getBasicInfoByCode(String code);
+
+    /**
+     * 按主键解析充电器基础信息（供内部服务调用，调用线程可无租户上下文）。
+     */
+    ChargerBasicInfo getBasicInfoById(Long id);
 
     /**
      * 分页查询充电桩列表

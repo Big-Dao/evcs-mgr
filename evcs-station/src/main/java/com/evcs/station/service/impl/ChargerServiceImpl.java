@@ -7,9 +7,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.exception.TenantContextMissingException;
+import com.evcs.common.tenant.CustomTenantLineHandler;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.protocol.api.ICloudChargeProtocolService;
 import com.evcs.protocol.api.IOCPPProtocolService;
+import com.evcs.station.dto.ChargerBasicInfo;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.entity.Station;
 import com.evcs.station.enums.ChargerStatus;
@@ -70,6 +72,49 @@ public class ChargerServiceImpl
             return null;
         }
         return this.getOne(new QueryWrapper<Charger>().eq("charger_code", code));
+    }
+
+    @Override
+    public ChargerBasicInfo getBasicInfoByCode(String code) {
+        if (StrUtil.isBlank(code)) {
+            return null;
+        }
+        return resolveBasicInfo(() ->
+                this.getOne(new QueryWrapper<Charger>().eq("charger_code", code)));
+    }
+
+    @Override
+    public ChargerBasicInfo getBasicInfoById(Long id) {
+        if (id == null) {
+            return null;
+        }
+        return resolveBasicInfo(() -> this.getById(id));
+    }
+
+    /**
+     * 内部解析：调用方（protocol 服务代表物理设备查询）线程无租户上下文，
+     * 而充电器主键/编码全局唯一，按唯一键在受控禁用租户过滤的前提下查询并还原租户归属。
+     */
+    private ChargerBasicInfo resolveBasicInfo(java.util.function.Supplier<Charger> query) {
+        try {
+            CustomTenantLineHandler.disableTenantFilter();
+            return toBasicInfo(query.get());
+        } finally {
+            CustomTenantLineHandler.enableTenantFilter();
+        }
+    }
+
+    private ChargerBasicInfo toBasicInfo(Charger charger) {
+        if (charger == null) {
+            return null;
+        }
+        ChargerBasicInfo info = new ChargerBasicInfo();
+        info.setId(charger.getId());
+        info.setTenantId(charger.getTenantId());
+        info.setStationId(charger.getStationId());
+        info.setChargerCode(charger.getChargerCode());
+        info.setChargerName(charger.getChargerName());
+        return info;
     }
 
     /**
