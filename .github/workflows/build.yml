@@ -26,22 +26,9 @@ jobs:
     - name: Build with Gradle
       run: ./gradlew build -x test --no-daemon
 
-    - name: Run unit tests
-      run: |
-        ./gradlew \
-          :evcs-common:test \
-          :evcs-gateway:test \
-          :evcs-auth:test \
-          :evcs-tenant:test \
-          :evcs-station:test \
-          :evcs-order:test \
-          :evcs-payment:test \
-          :evcs-protocol:test \
-          --no-daemon
-
-    - name: Run integration tests (optional - failures allowed)
-      continue-on-error: true
-      run: ./gradlew :evcs-integration:test --no-daemon
+    - name: Quality gates and tests (check)
+      # ./gradlew check = 全模块单元/集成测试 + forbidThreadingPrimitives / forbidAsyncContextLoss 门禁
+      run: ./gradlew check --no-daemon
 
     - name: Coverage verification (gradual gate - warning only)
       continue-on-error: true
