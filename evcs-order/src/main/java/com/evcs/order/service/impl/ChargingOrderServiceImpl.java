@@ -11,6 +11,7 @@ import com.evcs.order.entity.ChargingOrder;
 import com.evcs.order.mapper.ChargingOrderMapper;
 import com.evcs.order.service.IChargingOrderService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.order.service.IBillingService;
 import com.evcs.order.metrics.OrderMetrics;
@@ -53,6 +54,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
 
     @Override
     @DataScope
+    @Transactional
     public boolean createOrderOnStart(Long stationId, Long chargerId, String sessionId, Long userId, Long billingPlanId) {
         // 记录订单创建时间
         Timer.Sample sample = Timer.start(meterRegistry);
@@ -105,6 +107,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
 
     @Override
     @DataScope
+    @Transactional
     public boolean completeOrderOnStop(String sessionId, Double energy, Long duration) {
         try {
             // MyBatis Plus自动添加tenant_id过滤
@@ -178,6 +181,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
 
     @Override
     @DataScope
+    @Transactional
     public boolean markToPay(Long orderId) {
         // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
@@ -194,6 +198,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
 
     @Override
     @DataScope
+    @Transactional
     public boolean markPaid(Long orderId) {
         // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
@@ -210,6 +215,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
 
     @Override
     @DataScope
+    @Transactional
     public com.evcs.order.dto.PayParams createPayment(Long orderId) {
         // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
@@ -236,6 +242,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
 
     @Override
     @DataScope
+    @Transactional
     public boolean paymentCallback(String tradeId, boolean success) {
         meterRegistry.counter("evcs.order.paid").increment();
 
@@ -256,6 +263,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
 
     @Override
     @DataScope
+    @Transactional
     public boolean cancelOrder(Long orderId) {
         // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
@@ -273,6 +281,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
 
     @Override
     @DataScope
+    @Transactional
     public boolean markRefunding(Long orderId) {
         // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
@@ -288,6 +297,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
 
     @Override
     @DataScope
+    @Transactional
     public boolean markRefunded(Long orderId) {
         // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
