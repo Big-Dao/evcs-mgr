@@ -1,6 +1,8 @@
 package com.evcs.tenant.service.impl;
 
 import com.evcs.common.audit.TenantAuditService;
+import com.evcs.tenant.client.StationUsageClient;
+import com.evcs.tenant.dto.StationUsageCount;
 import com.evcs.tenant.entity.QuotaCheckResult;
 import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.mapper.SysTenantMapper;
@@ -11,6 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * 租户配额服务实现
@@ -22,6 +25,7 @@ public class TenantQuotaServiceImpl implements ITenantQuotaService {
 
     private final SysTenantMapper tenantMapper;
     private final TenantAuditService tenantAuditService;
+    private final StationUsageClient stationUsageClient;
 
     @Override
     public QuotaCheckResult checkCanCreateChildTenant(Long parentId) {
@@ -50,7 +54,7 @@ public class TenantQuotaServiceImpl implements ITenantQuotaService {
     public QuotaCheckResult checkCanAddStation(Long tenantId) {
         SysTenant tenant = getTenantOrThrow(tenantId);
 
-        int currentCount = tenantMapper.countStationsByTenantId(tenantId);
+        int currentCount = currentStationCount(tenantId);
         Integer maxStations = tenant.getMaxStations();
 
         if (maxStations != null && maxStations > 0 && currentCount >= maxStations) {
@@ -68,7 +72,7 @@ public class TenantQuotaServiceImpl implements ITenantQuotaService {
     public QuotaCheckResult checkCanAddCharger(Long tenantId) {
         SysTenant tenant = getTenantOrThrow(tenantId);
 
-        int currentCount = tenantMapper.countChargersByTenantId(tenantId);
+        int currentCount = currentChargerCount(tenantId);
         Integer maxChargers = tenant.getMaxChargers();
 
         if (maxChargers != null && maxChargers > 0 && currentCount >= maxChargers) {
@@ -111,8 +115,8 @@ public class TenantQuotaServiceImpl implements ITenantQuotaService {
 
         // 统计资源使用
         int currentChildren = tenantMapper.countByParentId(tenantId);
-        int currentStations = tenantMapper.countStationsByTenantIds(allTenantIds);
-        int currentChargers = tenantMapper.countChargersByTenantIds(allTenantIds);
+        int currentStations = aggregateStations(allTenantIds);
+        int currentChargers = aggregateChargers(allTenantIds);
         // 用户统计需要从 auth 服务获取，会话统计需要从 order 服务获取
         // 生产环境需要实现跨服务调用
         int currentUsers = 0;
@@ -161,6 +165,29 @@ public class TenantQuotaServiceImpl implements ITenantQuotaService {
     }
 
     /**
+     * 站点/充电桩用量来自 station 服务内部 API（数据归属方），调用失败向上抛出（fail-closed）。
+     */
+    private int currentStationCount(Long tenantId) {
+        return usageCounts(List.of(tenantId)).getOrDefault(tenantId, new StationUsageCount(tenantId, 0, 0)).stationCount();
+    }
+
+    private int currentChargerCount(Long tenantId) {
+        return usageCounts(List.of(tenantId)).getOrDefault(tenantId, new StationUsageCount(tenantId, 0, 0)).chargerCount();
+    }
+
+    private int aggregateStations(List<Long> tenantIds) {
+        return usageCounts(tenantIds).values().stream().mapToInt(StationUsageCount::stationCount).sum();
+    }
+
+    private int aggregateChargers(List<Long> tenantIds) {
+        return usageCounts(tenantIds).values().stream().mapToInt(StationUsageCount::chargerCount).sum();
+    }
+
+    private Map<Long, StationUsageCount> usageCounts(List<Long> tenantIds) {
+        return stationUsageClient.getUsageCounts(tenantIds);
+    }
+
+    /**
      * 递归获取所有后代租户ID
      */
     private List<Long> getAllDescendantIds(Long tenantId) {
@@ -185,8 +212,8 @@ public class TenantQuotaServiceImpl implements ITenantQuotaService {
             List<Long> descendantIds = getAllDescendantIds(parentId);
             descendantIds.add(parentId);
             int totalCount = switch (resourceType) {
-                case "stations" -> tenantMapper.countStationsByTenantIds(descendantIds);
-                case "chargers" -> tenantMapper.countChargersByTenantIds(descendantIds);
+                case "stations" -> aggregateStations(descendantIds);
+                case "chargers" -> aggregateChargers(descendantIds);
                 default -> currentCount;
             };
 

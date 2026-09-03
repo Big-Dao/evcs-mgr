@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.test.base.BaseServiceTest;
 import com.evcs.tenant.TenantServiceApplication;
+import com.evcs.tenant.client.StationUsageClient;
 import com.evcs.tenant.entity.SysTenant;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
+
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.when;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -25,6 +30,12 @@ class SysTenantServiceImplTest extends BaseServiceTest {
 
     @Autowired
     private ISysTenantService sysTenantService;
+
+    /**
+     * 删除预检通过内部 API 询问 station 服务的资源用量；单测环境以空用量代替远端服务。
+     */
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private StationUsageClient stationUsageClient;
 
     @Test
     @DisplayName("保存租户 - 正常流程")
@@ -68,6 +79,7 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         SysTenant tenant = createTestSysTenant("SYS_TEST003", "系统测试租户3");
         sysTenantService.saveTenant(tenant);
         Long tenantId = tenant.getId();
+        when(stationUsageClient.getUsageCounts(anyList())).thenReturn(Map.of());
 
         // When: 删除租户
         boolean result = sysTenantService.deleteTenant(tenantId);

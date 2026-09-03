@@ -30,41 +30,8 @@ public interface SysTenantMapper extends BaseMapper<SysTenant> {
     @Select("SELECT COUNT(*) FROM sys_tenant WHERE parent_id = #{parentId} AND deleted = 0")
     int countByParentId(@Param("parentId") Long parentId);
 
-    /**
-     * 统计指定租户的站点数量
-     */
-    @Select("SELECT COUNT(*) FROM evcs_station WHERE tenant_id = #{tenantId} AND deleted = 0")
-    int countStationsByTenantId(@Param("tenantId") Long tenantId);
-
-    /**
-     * 统计指定租户的充电桩数量
-     */
-    @Select("SELECT COUNT(*) FROM evcs_charger WHERE tenant_id = #{tenantId} AND deleted = 0")
-    int countChargersByTenantId(@Param("tenantId") Long tenantId);
-
-    /**
-     * 统计多个租户的站点数量
-     */
-    @Select("<script>" +
-            "SELECT COUNT(*) FROM evcs_station WHERE tenant_id IN " +
-            "<foreach item='item' index='index' collection='tenantIds' open='(' separator=',' close=')'>" +
-            "#{item}" +
-            "</foreach> " +
-            "AND deleted = 0" +
-            "</script>")
-    int countStationsByTenantIds(@Param("tenantIds") List<Long> tenantIds);
-
-    /**
-     * 统计多个租户的充电桩数量
-     */
-    @Select("<script>" +
-            "SELECT COUNT(*) FROM evcs_charger WHERE tenant_id IN " +
-            "<foreach item='item' index='index' collection='tenantIds' open='(' separator=',' close=')'>" +
-            "#{item}" +
-            "</foreach> " +
-            "AND deleted = 0" +
-            "</script>")
-    int countChargersByTenantIds(@Param("tenantIds") List<Long> tenantIds);
+    // 注：站点/充电桩用量统计已迁移至 station 服务内部 API（StationUsageClient），
+    // 此处不再跨服务直查 evcs_station / evcs_charger 表。
 
     /**
      * 查询指定租户的所有后代租户ID（递归）

@@ -15,6 +15,8 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.audit.TenantAuditService;
+import com.evcs.tenant.client.StationUsageClient;
+import com.evcs.tenant.dto.StationUsageCount;
 import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.mapper.SysTenantMapper;
 import com.evcs.tenant.service.ISysTenantService;
@@ -40,6 +42,7 @@ import java.util.stream.Collectors;
 public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant> implements ISysTenantService {
 
     private final TenantAuditService tenantAuditService;
+    private final StationUsageClient stationUsageClient;
 
     /**
      * 租户类型：平台租户
@@ -337,8 +340,10 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
 
         // 检查租户下是否有业务数据
         // 注意：这里使用原生SQL直接查询，因为切换租户上下文可能导致问题
-        Long stationCount = baseMapper.countByTenantId("evcs_station", tenantId);
-        if (stationCount != null && stationCount > 0) {
+        int stationCount = stationUsageClient.getUsageCounts(List.of(tenantId))
+                .getOrDefault(tenantId, new StationUsageCount(tenantId, 0, 0))
+                .stationCount();
+        if (stationCount > 0) {
             throw new RuntimeException("租户下存在充电站数据，无法删除");
         }
 

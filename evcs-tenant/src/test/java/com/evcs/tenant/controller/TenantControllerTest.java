@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.evcs.common.result.Result;
 import com.evcs.common.test.base.BaseControllerTest;
 import com.evcs.tenant.TenantServiceApplication;
+import com.evcs.tenant.client.StationUsageClient;
 import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.service.ISysTenantService;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +34,17 @@ class TenantControllerTest extends BaseControllerTest {
 
     @Autowired
     private ISysTenantService sysTenantService;
+
+    /**
+     * 删除预检通过内部 API 询问 station 服务的资源用量；单测环境以空用量代替远端服务。
+     */
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private StationUsageClient stationUsageClient;
+
+    private void stubStationUsageEmpty() {
+        org.mockito.Mockito.when(stationUsageClient.getUsageCounts(org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn(java.util.Map.of());
+    }
 
     @Test
     @DisplayName("创建租户 - 返回成功")
@@ -93,6 +105,7 @@ class TenantControllerTest extends BaseControllerTest {
     @DisplayName("删除租户 - 返回成功")
     void testDeleteTenant() throws Exception {
         // Given: 创建租户
+        stubStationUsageEmpty();
         SysTenant tenant = createAndSaveTenant("CTRL_TEST003", "控制器测试租户3");
 
         // 重新设置租户上下文（MockMvc 请求后会被拦截器清空）
