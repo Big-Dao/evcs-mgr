@@ -4,6 +4,9 @@ import com.evcs.common.http.ResultResponseEntityUtils;
 import com.evcs.common.result.Result;
 import com.evcs.tenant.config.InternalApiTokenProperties;
 import com.evcs.tenant.dto.StationUsageCount;
+import com.evcs.tenant.dto.stats.ChargerCodeRow;
+import com.evcs.tenant.dto.stats.ChargerStatusStatsRow;
+import com.evcs.tenant.dto.stats.StationNameRow;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.RequestEntity;
@@ -69,5 +72,65 @@ public class StationUsageClient {
             throw new IllegalStateException("station 服务用量查询失败或返回失败结果，配额校验 fail-closed");
         }
         return data.stream().collect(Collectors.toMap(StationUsageCount::tenantId, Function.identity()));
+    }
+
+    private static final ParameterizedTypeReference<Result<List<StationNameRow>>> STATION_NAMES =
+            new ParameterizedTypeReference<>() {};
+    private static final ParameterizedTypeReference<Result<List<ChargerCodeRow>>> CHARGER_CODES =
+            new ParameterizedTypeReference<>() {};
+    private static final ParameterizedTypeReference<Result<ChargerStatusStatsRow>> STATUS_STATS =
+            new ParameterizedTypeReference<>() {};
+
+    /**
+     * 查询租户集合内全部站点的名称（仪表盘排名合并用）。
+     */
+    public List<StationNameRow> getStationNames(List<Long> tenantIds) {
+        if (tenantIds == null || tenantIds.isEmpty()) {
+            return List.of();
+        }
+        return exchange(
+                UriComponentsBuilder.fromUriString("http://evcs-station/internal/api/v1/stats/stations/names")
+                        .queryParam("tenantIds", String.join(",", tenantIds.stream().map(String::valueOf).toList())),
+                STATION_NAMES).getData();
+    }
+
+    /**
+     * 查询租户集合内全部充电桩的编码（利用率合并用）。
+     */
+    public List<ChargerCodeRow> getChargerCodes(List<Long> tenantIds) {
+        if (tenantIds == null || tenantIds.isEmpty()) {
+            return List.of();
+        }
+        return exchange(
+                UriComponentsBuilder.fromUriString("http://evcs-station/internal/api/v1/stats/chargers/codes")
+                        .queryParam("tenantIds", String.join(",", tenantIds.stream().map(String::valueOf).toList())),
+                CHARGER_CODES).getData();
+    }
+
+    /**
+     * 查询租户集合内充电桩状态分布（online/offline/charging/idle）。
+     */
+    public ChargerStatusStatsRow getChargerStatusStats(List<Long> tenantIds) {
+        if (tenantIds == null || tenantIds.isEmpty()) {
+            return new ChargerStatusStatsRow(0L, 0L, 0L, 0L);
+        }
+        return exchange(
+                UriComponentsBuilder.fromUriString("http://evcs-station/internal/api/v1/stats/chargers/status-stats")
+                        .queryParam("tenantIds", String.join(",", tenantIds.stream().map(String::valueOf).toList())),
+                STATUS_STATS).getData();
+    }
+
+    private <T> Result<T> exchange(UriComponentsBuilder builder,
+                                   ParameterizedTypeReference<Result<T>> type) {
+        RequestEntity.HeadersBuilder<?> request = RequestEntity.get(builder.build().toUri());
+        if (internalApiTokenProperties.isEnabled() && StringUtils.hasText(internalApiTokenProperties.getToken())) {
+            request.header(internalApiTokenProperties.getHeaderName(), internalApiTokenProperties.getToken());
+        }
+        ResponseEntity<Result<T>> response = restTemplate.exchange(request.build(), type);
+        Result<T> body = ResultResponseEntityUtils.bodyIfSuccess(response);
+        if (body == null) {
+            throw new IllegalStateException("station 服务统计查询失败或返回失败结果");
+        }
+        return body;
     }
 }

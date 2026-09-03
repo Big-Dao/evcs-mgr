@@ -1,109 +1,91 @@
 package com.evcs.tenant.service.impl;
 
 import com.evcs.common.tenant.TenantContext;
-import com.evcs.common.tenant.CustomTenantLineHandler;
-import com.evcs.tenant.dto.ChargerUtilizationDTO;
+import com.evcs.tenant.client.AuthStatsClient;
+import com.evcs.tenant.client.OrderStatsClient;
+import com.evcs.tenant.client.StationUsageClient;
 import com.evcs.tenant.dto.ChargerStatusStatsDTO;
-import com.evcs.tenant.dto.TrendPointDTO;
-import com.evcs.tenant.dto.PeriodDistributionDTO;
+import com.evcs.tenant.dto.ChargerUtilizationDTO;
 import com.evcs.tenant.dto.DashboardStatsDTO;
+import com.evcs.tenant.dto.PeriodDistributionDTO;
 import com.evcs.tenant.dto.RecentOrderDTO;
 import com.evcs.tenant.dto.StationRankingDTO;
-import com.evcs.tenant.mapper.DashboardMapper;
+import com.evcs.tenant.dto.TrendPointDTO;
+import com.evcs.tenant.dto.stats.ChargerStatusStatsRow;
+import com.evcs.tenant.dto.stats.RecentOrderRow;
+import com.evcs.tenant.dto.stats.StationOrderCount;
+import com.evcs.tenant.dto.stats.OrderDailySummary;
+import com.evcs.tenant.dto.stats.OrderHourlyCount;
+import com.evcs.tenant.dto.stats.OrderTrendPoint;
 import com.evcs.tenant.mapper.SysTenantMapper;
-import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.service.IDashboardService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Date;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
- * Dashboard统计服务实现
+ * Dashboard统计服务实现。
+ *
+ * <p>统计数据的归属服务为 order/station/auth，本服务只做租户范围解析
+ * （自身 + 全部后代租户）、跨服务聚合与展示层装配；不再跨服务直查数据库。
+ * 任一外部查询失败时按原行为降级为默认值/空集合，避免前端报错。
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class DashboardServiceImpl implements IDashboardService {
-    
-    private final DashboardMapper dashboardMapper;
+
+    private static final DateTimeFormatter CREATE_TIME_FORMATTER =
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final int RANKING_LIMIT = 5;
+    private static final int UTILIZATION_WINDOW_DAYS = 30;
+
     private final SysTenantMapper sysTenantMapper;
-    
-    /**
-     * 平台类型租户
-     */
-    private static final Integer TENANT_TYPE_PLATFORM = 1;
-    
-    /**
-     * 检查当前租户是否为平台类型
-     */
-    private boolean isPlatformTenant(Long tenantId) {
-        SysTenant tenant = sysTenantMapper.selectById(tenantId);
-        return tenant != null && TENANT_TYPE_PLATFORM.equals(tenant.getTenantType());
-    }
-    
+    private final StationUsageClient stationUsageClient;
+    private final OrderStatsClient orderStatsClient;
+    private final AuthStatsClient authStatsClient;
+
     @Override
     public DashboardStatsDTO getDashboardStats() {
         Long tenantId = TenantContext.getCurrentTenantId();
         log.info("查询租户 {} 的Dashboard统计数据", tenantId);
-        
-        // 获取今日开始和结束时间
-        LocalDateTime todayStart = LocalDateTime.of(LocalDate.now(), LocalTime.MIN);
-        LocalDateTime todayEnd = LocalDateTime.of(LocalDate.now(), LocalTime.MAX);
-        
-        // 判断是否为平台类型租户
-        boolean isPlatform = isPlatformTenant(tenantId);
-        log.info("租户 {} 类型: {}", tenantId, isPlatform ? "平台" : "运营商");
-        
         try {
-            // 只有平台类型租户才禁用租户拦截器，以支持父子租户聚合查询
-            if (isPlatform) {
-                CustomTenantLineHandler.disableTenantFilter();
-                log.info("平台租户 {} - 已禁用租户拦截器，启用父子租户聚合查询", tenantId);
+            List<Long> tenantIds = tenantScope(tenantId);
+
+            Long tenantCount = sysTenantMapper.countTenants(tenantId);
+            long userCount = authStatsClient.countActiveUsers(tenantIds);
+
+            long stationCount = 0;
+            long chargerCount = 0;
+            for (var usage : stationUsageClient.getUsageCounts(tenantIds).values()) {
+                stationCount += usage.stationCount();
+                chargerCount += usage.chargerCount();
             }
-            
-            try {
-                // 查询各项统计数据
-                Long tenantCount = dashboardMapper.countTenants(tenantId);
-                Long userCount = dashboardMapper.countUsers(tenantId);
-                Long stationCount = dashboardMapper.countStations(tenantId);
-                Long chargerCount = dashboardMapper.countChargers(tenantId);
-                Long todayOrderCount = dashboardMapper.countTodayOrders(tenantId, todayStart, todayEnd);
-                BigDecimal todayChargingAmount = dashboardMapper.sumTodayChargingAmount(tenantId, todayStart, todayEnd);
-                BigDecimal todayRevenue = dashboardMapper.sumTodayRevenue(tenantId, todayStart, todayEnd);
-                
-                // 构建返回结果
-                return DashboardStatsDTO.builder()
-                        .tenantCount(tenantCount != null ? tenantCount : 0L)
-                        .userCount(userCount != null ? userCount : 0L)
-                        .stationCount(stationCount != null ? stationCount : 0L)
-                        .chargerCount(chargerCount != null ? chargerCount : 0L)
-                        .todayOrderCount(todayOrderCount != null ? todayOrderCount : 0L)
-                        .todayChargingAmount(todayChargingAmount != null ? todayChargingAmount : BigDecimal.ZERO)
-                        .todayRevenue(todayRevenue != null ? todayRevenue : BigDecimal.ZERO)
-                        .build();
-            } finally {
-                // 无论成功或失败，都要恢复租户拦截器
-                if (isPlatform) {
-                    CustomTenantLineHandler.enableTenantFilter();
-                    log.info("平台租户 {} - 已恢复租户拦截器", tenantId);
-                }
-            }
+
+            OrderDailySummary summary = orderStatsClient.getDailySummary(LocalDate.now(), tenantIds);
+
+            return DashboardStatsDTO.builder()
+                    .tenantCount(tenantCount != null ? tenantCount : 0L)
+                    .userCount(userCount)
+                    .stationCount(stationCount)
+                    .chargerCount(chargerCount)
+                    .todayOrderCount(summary.orderCount() == null ? 0L : summary.orderCount())
+                    .todayChargingAmount(summary.energy() == null ? BigDecimal.ZERO : summary.energy())
+                    .todayRevenue(summary.revenue() == null ? BigDecimal.ZERO : summary.revenue())
+                    .build();
         } catch (Exception e) {
             log.error("查询Dashboard统计数据失败", e);
-            // 返回默认值，避免前端报错
             return DashboardStatsDTO.builder()
                     .tenantCount(0L)
                     .userCount(0L)
@@ -115,136 +97,230 @@ public class DashboardServiceImpl implements IDashboardService {
                     .build();
         }
     }
-    
+
     @Override
     public List<RecentOrderDTO> getRecentOrders(Integer limit) {
         Long tenantId = TenantContext.getCurrentTenantId();
         log.info("查询租户 {} 的最近 {} 条订单", tenantId, limit);
-        
-        // 判断是否为平台类型租户
-        boolean isPlatform = isPlatformTenant(tenantId);
-        
         try {
-            // 只有平台类型租户才禁用租户拦截器，以支持父子租户聚合查询
-            if (isPlatform) {
-                CustomTenantLineHandler.disableTenantFilter();
-                log.info("平台租户 {} - 已禁用租户拦截器，启用父子租户聚合查询", tenantId);
+            List<Long> tenantIds = tenantScope(tenantId);
+            List<RecentOrderRow> rows = orderStatsClient.getRecentOrders(tenantIds, limit);
+
+            List<Long> stationIds = rows.stream().map(RecentOrderRow::stationId).filter(id -> id != null).distinct().toList();
+            List<Long> chargerIds = rows.stream().map(RecentOrderRow::chargerId).filter(id -> id != null).distinct().toList();
+            List<Long> userIds = rows.stream().map(RecentOrderRow::userId).filter(id -> id != null).distinct().toList();
+
+            Map<Long, String> stationNames = new HashMap<>();
+            stationUsageClient.getStationNames(tenantIds)
+                    .forEach(s -> stationNames.put(s.id(), s.stationName()));
+            Map<Long, String> chargerCodes = new HashMap<>();
+            stationUsageClient.getChargerCodes(tenantIds)
+                    .forEach(c -> chargerCodes.put(c.id(), c.chargerCode()));
+            Map<Long, String> userNames = new HashMap<>();
+            authStatsClient.getUsernames(userIds)
+                    .forEach(u -> userNames.put(u.userId(), u.username()));
+
+            List<RecentOrderDTO> result = new ArrayList<>();
+            for (RecentOrderRow row : rows) {
+                result.add(RecentOrderDTO.builder()
+                        .orderId(toStringOrEmpty(row.sessionId()))
+                        .stationName(stationNames.getOrDefault(row.stationId(), ""))
+                        .chargerCode(chargerCodes.getOrDefault(row.chargerId(), ""))
+                        .userName(userNames.getOrDefault(row.userId(), ""))
+                        .amount(toBigDecimal(row.amount()))
+                        .status(convertOrderStatus(String.valueOf(row.status())))
+                        .createTime(formatCreateTime(row.createTime(), CREATE_TIME_FORMATTER))
+                        .build());
             }
-            
-            try {
-                List<Map<String, Object>> orders = dashboardMapper.getRecentOrders(tenantId, limit);
-                List<RecentOrderDTO> result = new ArrayList<>();
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                
-                for (Map<String, Object> order : orders) {
-                    RecentOrderDTO dto = RecentOrderDTO.builder()
-                            .orderId(toStringOrEmpty(order.get("order_no")))
-                            .stationName(toStringOrEmpty(order.get("station_name")))
-                            .chargerCode(toStringOrEmpty(order.get("charger_code")))
-                            .userName(toStringOrEmpty(order.get("user_name")))
-                            .amount(toBigDecimal(order.get("total_amount")))
-                            .status(convertOrderStatus(String.valueOf(order.get("status"))))
-                            .createTime(formatCreateTime(order.get("create_time"), formatter))
-                            .build();
-                    result.add(dto);
-                }
-                
-                return result;
-            } finally {
-                // 无论成功或失败，都要恢复租户拦截器
-                if (isPlatform) {
-                    CustomTenantLineHandler.enableTenantFilter();
-                    log.info("平台租户 {} - 已恢复租户拦截器", tenantId);
-                }
-            }
+            return result;
         } catch (Exception e) {
             log.error("查询最近订单失败", e);
             return new ArrayList<>();
         }
     }
-    
+
     @Override
     public List<StationRankingDTO> getStationRanking() {
         Long tenantId = TenantContext.getCurrentTenantId();
-        log.info("查询租户 {} 的充电站排名（Top 5）", tenantId);
-        
-        boolean isPlatform = isPlatformTenant(tenantId);
-        
+        log.info("查询租户 {} 的充电站排名（Top {}）", tenantId, RANKING_LIMIT);
         try {
-            if (isPlatform) {
-                CustomTenantLineHandler.disableTenantFilter();
+            List<Long> tenantIds = tenantScope(tenantId);
+            Map<Long, Long> orderCounts = new HashMap<>();
+            for (StationOrderCount count : orderStatsClient.getStationOrderCounts(tenantIds)) {
+                orderCounts.put(count.stationId(), count.orderCount() == null ? 0L : count.orderCount());
             }
-            
-            try {
-                List<Map<String, Object>> rankings = dashboardMapper.getStationRanking(tenantId, 5);
-                List<StationRankingDTO> result = new ArrayList<>();
-                
-                // 找到最大订单数用于计算百分比
-                Integer maxOrders = 0;
-                if (!rankings.isEmpty()) {
-                    Object firstCount = rankings.get(0).get("order_count");
-                    maxOrders = firstCount != null ? ((Number) firstCount).intValue() : 0;
-                }
-                
-                for (Map<String, Object> ranking : rankings) {
-                    StationRankingDTO dto = new StationRankingDTO();
-                    dto.setId(((Number) ranking.get("id")).longValue());
-                    dto.setName(String.valueOf(ranking.get("station_name")));
-                    Integer orders = ((Number) ranking.get("order_count")).intValue();
-                    dto.setOrders(orders);
-                    dto.setPercentage(maxOrders > 0 ? (orders * 100 / maxOrders) : 0);
-                    result.add(dto);
-                }
-                
-                return result;
-            } finally {
-                if (isPlatform) {
-                    CustomTenantLineHandler.enableTenantFilter();
-                }
+
+            List<StationRankingDTO> merged = new ArrayList<>();
+            for (var station : stationUsageClient.getStationNames(tenantIds)) {
+                StationRankingDTO dto = new StationRankingDTO();
+                dto.setId(station.id());
+                dto.setName(station.stationName() == null ? "" : station.stationName());
+                long orders = orderCounts.getOrDefault(station.id(), 0L);
+                dto.setOrders((int) orders);
+                merged.add(dto);
             }
+
+            merged.sort(Comparator.comparingInt(StationRankingDTO::getOrders).reversed());
+            List<StationRankingDTO> top = merged.subList(0, Math.min(RANKING_LIMIT, merged.size()));
+
+            int maxOrders = top.isEmpty() ? 0 : top.get(0).getOrders();
+            for (StationRankingDTO dto : top) {
+                dto.setPercentage(maxOrders > 0 ? dto.getOrders() * 100 / maxOrders : 0);
+            }
+            return new ArrayList<>(top);
         } catch (Exception e) {
             log.error("查询充电站排名失败", e);
             return new ArrayList<>();
         }
     }
-    
+
     @Override
     public List<ChargerUtilizationDTO> getChargerUtilization() {
         Long tenantId = TenantContext.getCurrentTenantId();
-        log.info("查询租户 {} 的充电桩利用率（Top 5）", tenantId);
-        
-        boolean isPlatform = isPlatformTenant(tenantId);
-        
+        log.info("查询租户 {} 的充电桩利用率（Top {}）", tenantId, RANKING_LIMIT);
         try {
-            if (isPlatform) {
-                CustomTenantLineHandler.disableTenantFilter();
+            List<Long> tenantIds = tenantScope(tenantId);
+            LocalDate since = LocalDate.now().minusDays(UTILIZATION_WINDOW_DAYS - 1L);
+            Map<Long, Integer> activeDays = new HashMap<>();
+            for (var row : orderStatsClient.getChargerActiveDays(since, tenantIds)) {
+                activeDays.put(row.chargerId(), row.activeDays() == null ? 0 : row.activeDays());
             }
-            
-            try {
-                List<Map<String, Object>> utilizations = dashboardMapper.getChargerUtilization(tenantId, 5);
-                List<ChargerUtilizationDTO> result = new ArrayList<>();
-                
-                for (Map<String, Object> util : utilizations) {
-                    ChargerUtilizationDTO dto = new ChargerUtilizationDTO();
-                    dto.setId(((Number) util.get("id")).longValue());
-                    dto.setCode(String.valueOf(util.get("charger_code")));
-                    Object utilizationObj = util.get("utilization");
-                    dto.setUtilization(utilizationObj != null ? ((Number) utilizationObj).intValue() : 0);
-                    result.add(dto);
-                }
-                
-                return result;
-            } finally {
-                if (isPlatform) {
-                    CustomTenantLineHandler.enableTenantFilter();
-                }
+
+            List<ChargerUtilizationDTO> merged = new ArrayList<>();
+            for (var charger : stationUsageClient.getChargerCodes(tenantIds)) {
+                ChargerUtilizationDTO dto = new ChargerUtilizationDTO();
+                dto.setId(charger.id());
+                dto.setCode(charger.chargerCode() == null ? "" : charger.chargerCode());
+                int days = activeDays.getOrDefault(charger.id(), 0);
+                dto.setUtilization((int) (days * 100L / UTILIZATION_WINDOW_DAYS));
+                merged.add(dto);
             }
+
+            merged.sort(Comparator.comparingInt(ChargerUtilizationDTO::getUtilization).reversed());
+            return new ArrayList<>(merged.subList(0, Math.min(RANKING_LIMIT, merged.size())));
         } catch (Exception e) {
             log.error("查询充电桩利用率失败", e);
             return new ArrayList<>();
         }
     }
-    
+
+    @Override
+    public ChargerStatusStatsDTO getChargerStatusStats() {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        log.info("查询租户 {} 的充电桩状态统计", tenantId);
+        try {
+            List<Long> tenantIds = tenantScope(tenantId);
+            ChargerStatusStatsRow stats = stationUsageClient.getChargerStatusStats(tenantIds);
+            return ChargerStatusStatsDTO.builder()
+                    .online(nvl(stats.online()))
+                    .offline(nvl(stats.offline()))
+                    .charging(nvl(stats.charging()))
+                    .idle(nvl(stats.idle()))
+                    .build();
+        } catch (Exception e) {
+            log.error("查询充电桩状态统计失败", e);
+            return ChargerStatusStatsDTO.builder()
+                    .online(0L)
+                    .offline(0L)
+                    .charging(0L)
+                    .idle(0L)
+                    .build();
+        }
+    }
+
+    @Override
+    public List<TrendPointDTO> getChargingTrend(Integer days) {
+        return getTrend(days, OrderTrendPoint::energy, "充电量");
+    }
+
+    @Override
+    public List<TrendPointDTO> getRevenueTrend(Integer days) {
+        return getTrend(days, OrderTrendPoint::revenue, "收入");
+    }
+
+    /**
+     * 趋势通用装配：order 服务只返回有订单的日期，此处补齐全系列零值，
+     * 与原 generate_series LEFT JOIN 行为一致。
+     */
+    private List<TrendPointDTO> getTrend(Integer days,
+                                         Function<OrderTrendPoint, BigDecimal> metric,
+                                         String label) {
+        int effectiveDays = days == null || days <= 0 ? 7 : days;
+        Long tenantId = TenantContext.getCurrentTenantId();
+        try {
+            List<Long> tenantIds = tenantScope(tenantId);
+            LocalDate today = LocalDate.now();
+            LocalDate startDate = today.minusDays(effectiveDays - 1L);
+
+            Map<LocalDate, BigDecimal> byDate = new HashMap<>();
+            for (OrderTrendPoint point : orderStatsClient.getDailyTrends(startDate, tenantIds)) {
+                byDate.put(point.date(), metric.apply(point) == null ? BigDecimal.ZERO : metric.apply(point));
+            }
+
+            List<TrendPointDTO> list = new ArrayList<>();
+            for (LocalDate d = startDate; !d.isAfter(today); d = d.plusDays(1)) {
+                list.add(TrendPointDTO.builder()
+                        .date(d.toString())
+                        .value(byDate.getOrDefault(d, BigDecimal.ZERO))
+                        .build());
+            }
+            return list;
+        } catch (Exception e) {
+            log.error("获取{}趋势失败", label, e);
+            return new ArrayList<>();
+        }
+    }
+
+    @Override
+    public List<PeriodDistributionDTO> getOrderPeriodDistribution(java.time.LocalDate date, Integer granularity, Long stationId) {
+        Long tenantId = TenantContext.getCurrentTenantId();
+        try {
+            if (date == null) {
+                date = LocalDate.now();
+            }
+            int step = granularity != null && granularity > 0 ? granularity : 3;
+            List<Long> tenantIds = tenantScope(tenantId);
+
+            Map<Integer, Long> byHour = new HashMap<>();
+            for (OrderHourlyCount h : orderStatsClient.getHourlyHistogram(date, tenantIds, stationId)) {
+                if (h.hour() != null) {
+                    byHour.put(h.hour(), h.count() == null ? 0L : h.count());
+                }
+            }
+
+            List<PeriodDistributionDTO> list = new ArrayList<>();
+            for (int h = 0; h < 24; h += step) {
+                int end = Math.min(h + step, 24);
+                long count = 0;
+                for (int i = h; i < end; i++) {
+                    count += byHour.getOrDefault(i, 0L);
+                }
+                list.add(PeriodDistributionDTO.builder()
+                        .slot(h + "-" + end + "时")
+                        .count(count)
+                        .build());
+            }
+            return list;
+        } catch (Exception e) {
+            log.error("获取订单时段分布失败", e);
+            return new ArrayList<>();
+        }
+    }
+
+    /**
+     * 租户可见范围：自身 + 全部后代租户（等价于原 sys_tenant ancestors 子查询集合）。
+     */
+    private List<Long> tenantScope(Long tenantId) {
+        List<Long> tenantIds = new ArrayList<>();
+        tenantIds.add(tenantId);
+        tenantIds.addAll(sysTenantMapper.selectDescendantIds(tenantId));
+        return tenantIds;
+    }
+
+    private long nvl(Long value) {
+        return value == null ? 0L : value;
+    }
+
     /**
      * 转换订单状态为中文
      */
@@ -260,144 +336,6 @@ public class DashboardServiceImpl implements IDashboardService {
         };
     }
 
-    @Override
-    public ChargerStatusStatsDTO getChargerStatusStats() {
-        Long tenantId = TenantContext.getCurrentTenantId();
-        log.info("查询租户 {} 的充电桩状态统计", tenantId);
-
-        boolean isPlatform = isPlatformTenant(tenantId);
-        try {
-            if (isPlatform) {
-                CustomTenantLineHandler.disableTenantFilter();
-            }
-            try {
-                Map<String, Object> map = dashboardMapper.getChargerStatusStats(tenantId);
-                if (map == null) {
-                    return ChargerStatusStatsDTO.builder()
-                            .online(0L)
-                            .offline(0L)
-                            .charging(0L)
-                            .idle(0L)
-                            .build();
-                }
-                return ChargerStatusStatsDTO.builder()
-                        .online(getLong(map, "online"))
-                        .offline(getLong(map, "offline"))
-                        .charging(getLong(map, "charging"))
-                        .idle(getLong(map, "idle"))
-                        .build();
-            } finally {
-                if (isPlatform) {
-                    CustomTenantLineHandler.enableTenantFilter();
-                }
-            }
-        } catch (Exception e) {
-            log.error("查询充电桩状态统计失败", e);
-            return ChargerStatusStatsDTO.builder()
-                    .online(0L)
-                    .offline(0L)
-                    .charging(0L)
-                    .idle(0L)
-                    .build();
-        }
-    }
-
-    private Long getLong(Map<String, Object> map, String key) {
-        Object v = map.get(key);
-        return v == null ? 0L : ((Number) v).longValue();
-    }
-
-    @Override
-    public List<TrendPointDTO> getChargingTrend(Integer days) {
-        if (days == null || days <= 0) days = 7;
-        Long tenantId = TenantContext.getCurrentTenantId();
-        boolean isPlatform = isPlatformTenant(tenantId);
-        try {
-            if (isPlatform) CustomTenantLineHandler.disableTenantFilter();
-            try {
-                List<Map<String, Object>> rows = dashboardMapper.getChargingTrend(tenantId, days);
-                List<TrendPointDTO> list = new ArrayList<>();
-                for (Map<String, Object> r : rows) {
-                    list.add(TrendPointDTO.builder()
-                            .date(String.valueOf(r.get("date")))
-                            .value((java.math.BigDecimal) r.get("value"))
-                            .build());
-                }
-                return list;
-            } finally {
-                if (isPlatform) CustomTenantLineHandler.enableTenantFilter();
-            }
-        } catch (Exception e) {
-            log.error("获取充电量趋势失败", e);
-            return new ArrayList<>();
-        }
-    }
-
-    @Override
-    public List<TrendPointDTO> getRevenueTrend(Integer days) {
-        if (days == null || days <= 0) days = 7;
-        Long tenantId = TenantContext.getCurrentTenantId();
-        boolean isPlatform = isPlatformTenant(tenantId);
-        try {
-            if (isPlatform) CustomTenantLineHandler.disableTenantFilter();
-            try {
-                List<Map<String, Object>> rows = dashboardMapper.getRevenueTrend(tenantId, days);
-                List<TrendPointDTO> list = new ArrayList<>();
-                for (Map<String, Object> r : rows) {
-                    list.add(TrendPointDTO.builder()
-                            .date(String.valueOf(r.get("date")))
-                            .value((java.math.BigDecimal) r.get("value"))
-                            .build());
-                }
-                return list;
-            } finally {
-                if (isPlatform) CustomTenantLineHandler.enableTenantFilter();
-            }
-        } catch (Exception e) {
-            log.error("获取收入趋势失败", e);
-            return new ArrayList<>();
-        }
-    }
-
-    @Override
-    public List<PeriodDistributionDTO> getOrderPeriodDistribution(java.time.LocalDate date, Integer granularity, Long stationId) {
-        Long tenantId = TenantContext.getCurrentTenantId();
-        boolean isPlatform = isPlatformTenant(tenantId);
-        try {
-            if (isPlatform) CustomTenantLineHandler.disableTenantFilter();
-            try {
-                if (date == null) date = java.time.LocalDate.now();
-                if (granularity == null || granularity <= 0) granularity = 3;
-                List<Map<String, Object>> rows = dashboardMapper.getOrderPeriodDistribution(tenantId, date, granularity, stationId);
-                List<PeriodDistributionDTO> list = new ArrayList<>();
-                if (rows != null && !rows.isEmpty()) {
-                    for (Map<String, Object> r : rows) {
-                        list.add(PeriodDistributionDTO.builder()
-                                .slot(String.valueOf(r.get("slot")))
-                                .count(r.get("cnt") == null ? 0L : ((Number) r.get("cnt")).longValue())
-                                .build());
-                    }
-                } else {
-                    // 回退：构造空槽位，避免前端拿到空数组无法绘制坐标
-                    int step = granularity != null && granularity > 0 ? granularity : 3;
-                    for (int h = 0; h < 24; h += step) {
-                        int end = Math.min(h + step, 24);
-                        list.add(PeriodDistributionDTO.builder()
-                                .slot(h + "-" + end + "时")
-                                .count(0L)
-                                .build());
-                    }
-                }
-                return list;
-            } finally {
-                if (isPlatform) CustomTenantLineHandler.enableTenantFilter();
-            }
-        } catch (Exception e) {
-            log.error("获取订单时段分布失败", e);
-            return new ArrayList<>();
-        }
-    }
-
     static String toStringOrEmpty(Object value) {
         return value == null ? "" : String.valueOf(value);
     }
@@ -410,7 +348,6 @@ public class DashboardServiceImpl implements IDashboardService {
             return bd;
         }
         if (value instanceof Number number) {
-            // Avoid BigDecimal(double) constructor; use string for precision when possible
             return new BigDecimal(String.valueOf(number));
         }
         try {
@@ -427,17 +364,16 @@ public class DashboardServiceImpl implements IDashboardService {
         if (createTime instanceof LocalDateTime localDateTime) {
             return localDateTime.format(formatter);
         }
-        if (createTime instanceof Timestamp timestamp) {
+        if (createTime instanceof java.sql.Timestamp timestamp) {
             return timestamp.toLocalDateTime().format(formatter);
         }
-        if (createTime instanceof Date date) {
-            return Instant.ofEpochMilli(date.getTime())
-                    .atZone(ZoneId.systemDefault())
+        if (createTime instanceof java.util.Date date) {
+            return java.time.Instant.ofEpochMilli(date.getTime())
+                    .atZone(java.time.ZoneId.systemDefault())
                     .toLocalDateTime()
                     .format(formatter);
         }
         // Fallback: best-effort string
         return String.valueOf(createTime);
     }
-
 }

@@ -14,6 +14,13 @@ import java.util.List;
 @Mapper
 public interface SysTenantMapper extends BaseMapper<SysTenant> {
 
+
+    /**
+     * 统计租户及其直接子租户数量（仪表盘"租户总数"，仅一级，语义沿用原 DashboardMapper）
+     */
+    @Select("SELECT COUNT(*) FROM sys_tenant WHERE deleted = 0 AND status = 1 AND (id = #{tenantId} OR parent_id = #{tenantId})")
+    Long countTenants(@Param("tenantId") Long tenantId);
+
     /**
      * 统计指定租户的子租户数量
      */
