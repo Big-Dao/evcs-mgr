@@ -60,7 +60,9 @@ public class AuthSecurityConfig {
                                 "/doc.html",
                                 "/webjars/**",
                                 "/v3/api-docs/**",
-                                "/swagger-ui/**"
+                                "/swagger-ui/**",
+                                // 服务间内部端点：网关边缘封锁，服务内由内部令牌过滤器保护
+                                "/internal/api/**"
                         ).permitAll()
                         // 其余端点要求认证（含 /auth/logout、/auth/userinfo 等业务端点）
                         .anyRequest().authenticated()
