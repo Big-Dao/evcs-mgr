@@ -34,7 +34,8 @@ class OCPPWebSocketTest {
         StationServiceClient stationServiceClient = new StationServiceClient(
             CircuitBreaker.ofDefaults("stationService"),
             Retry.ofDefaults("stationService"),
-            new RestTemplate()
+            new RestTemplate(),
+            new com.evcs.protocol.config.InternalApiTokenProperties()
         );
 
         OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager, stationServiceClient) {
@@ -138,7 +139,8 @@ class OCPPWebSocketTest {
         StationServiceClient stationServiceClient = new StationServiceClient(
             CircuitBreaker.ofDefaults("stationService"),
             Retry.ofDefaults("stationService"),
-            new RestTemplate()
+            new RestTemplate(),
+            new com.evcs.protocol.config.InternalApiTokenProperties()
         );
 
         OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager, stationServiceClient) {
@@ -240,7 +242,8 @@ class OCPPWebSocketTest {
         StationServiceClient stationServiceClient = new StationServiceClient(
             CircuitBreaker.ofDefaults("stationService"),
             Retry.ofDefaults("stationService"),
-            new RestTemplate()
+            new RestTemplate(),
+            new com.evcs.protocol.config.InternalApiTokenProperties()
         );
 
         OCPPProtocolServiceImpl ocppService = new OCPPProtocolServiceImpl(properties, eventPublisher, sessionManager, stationServiceClient) {

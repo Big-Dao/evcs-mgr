@@ -2,6 +2,7 @@ package com.evcs.protocol.client;
 
 import com.evcs.common.http.ResultResponseEntityUtils;
 import com.evcs.common.result.Result;
+import com.evcs.protocol.config.InternalApiTokenProperties;
 import com.evcs.protocol.dto.ChargerBasicInfo;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
@@ -30,16 +31,19 @@ public class StationServiceClient {
     private final RestTemplate restTemplate;
     private final CircuitBreaker circuitBreaker;
     private final Retry retry;
+    private final InternalApiTokenProperties internalApiTokenProperties;
 
     @Autowired
     public StationServiceClient(
         @Qualifier("stationServiceCircuitBreaker") CircuitBreaker circuitBreaker,
         @Qualifier("stationServiceRetry") Retry retry,
-        RestTemplate restTemplate
+        RestTemplate restTemplate,
+        InternalApiTokenProperties internalApiTokenProperties
     ) {
         this.circuitBreaker = circuitBreaker;
         this.retry = retry;
         this.restTemplate = restTemplate;
+        this.internalApiTokenProperties = internalApiTokenProperties;
     }
 
     @Nullable
@@ -48,7 +52,7 @@ public class StationServiceClient {
             return null;
         }
 
-        String url = UriComponentsBuilder.fromUriString("http://evcs-station/charger/{chargerId}")
+        String url = UriComponentsBuilder.fromUriString("http://evcs-station/internal/api/v1/chargers/by-id/{chargerId}")
             .buildAndExpand(chargerId)
             .toUriString();
 
@@ -61,7 +65,7 @@ public class StationServiceClient {
             return null;
         }
 
-        String url = UriComponentsBuilder.fromUriString("http://evcs-station/charger/code/{chargerCode}")
+        String url = UriComponentsBuilder.fromUriString("http://evcs-station/internal/api/v1/chargers/by-code/{chargerCode}")
             .buildAndExpand(chargerCode)
             .toUriString();
 
@@ -70,7 +74,14 @@ public class StationServiceClient {
 
     @Nullable
     private ChargerBasicInfo executeChargerInfoRequest(String url, String logKey) {
-        RequestEntity<Void> requestEntity = RequestEntity.get(requiredUri(url)).build();
+        RequestEntity.HeadersBuilder<?> builder = RequestEntity.get(requiredUri(url));
+        // 内部端点由 station 的 InternalApiTokenFilter 保护，启用时必须携带共享令牌
+        if (internalApiTokenProperties.isEnabled()
+                && internalApiTokenProperties.getToken() != null
+                && !internalApiTokenProperties.getToken().isBlank()) {
+            builder.header(internalApiTokenProperties.getHeaderName(), internalApiTokenProperties.getToken());
+        }
+        RequestEntity<Void> requestEntity = builder.build();
 
         Supplier<ResponseEntity<Result<ChargerBasicInfo>>> supplier =
             () -> restTemplate.exchange(requestEntity, CHARGER_BASIC_INFO_RESULT);

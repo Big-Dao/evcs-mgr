@@ -22,7 +22,7 @@ import java.util.List;
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
-@EnableConfigurationProperties(ProtocolProperties.class)
+@EnableConfigurationProperties({ProtocolProperties.class, InternalApiTokenProperties.class})
 public class ProtocolServiceConfiguration {
 
     private final ProtocolProperties protocolProperties;
