@@ -4,6 +4,10 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
+import com.evcs.station.dto.ChargerConnectorCurvePointResponse;
+import com.evcs.station.dto.ChargerConnectorResponse;
+import com.evcs.station.dto.ChargerConnectorSessionResponse;
+import com.evcs.station.dto.ChargerResponse;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.service.IChargerService;
 import com.evcs.station.entity.ChargerConnector;
@@ -52,15 +56,15 @@ public class ChargerController {
     @GetMapping({"/page", "/list"})
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:list')")
     @DataScope
-    public Result<IPage<Charger>> getChargerPage(
+    public Result<IPage<ChargerResponse>> getChargerPage(
             @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
             @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") Long size,
             @Parameter(description = "查询条件") Charger queryParam) {
         
         Page<Charger> page = new Page<>(current, size);
         IPage<Charger> result = chargerService.queryChargerPage(page, queryParam);
-        
-        return Result.success(result);
+
+        return Result.success(result.convert(ChargerResponse::from));
     }
 
     /**
@@ -70,15 +74,15 @@ public class ChargerController {
     @GetMapping("/{chargerId:\\d+}")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope(value = DataScope.DataScopeType.USER)
-    public Result<Charger> getChargerById(
+    public Result<ChargerResponse> getChargerById(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId) {
-        
+
         Charger charger = chargerService.getById(chargerId);
         if (charger == null) {
             return Result.fail("充电桩不存在");
         }
-        
-        return Result.success(charger);
+
+        return Result.success(ChargerResponse.from(charger));
     }
 
     /**
@@ -102,7 +106,7 @@ public class ChargerController {
     @GetMapping("/connector-list")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
-    public Result<IPage<ChargerConnector>> getConnectorPage(
+    public Result<IPage<ChargerConnectorResponse>> getConnectorPage(
             @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
             @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") Long size,
             @Parameter(description = "查询条件") ChargerConnector queryParam) {
@@ -110,7 +114,7 @@ public class ChargerController {
         log.info("Querying connector page: current={}, size={}, param={}", current, size, queryParam);
         Page<ChargerConnector> page = new Page<>(current, size);
         IPage<ChargerConnector> result = chargerConnectorService.queryPage(page, queryParam);
-        return Result.success(result);
+        return Result.success(result.convert(ChargerConnectorResponse::from));
     }
 
     /**
@@ -120,7 +124,7 @@ public class ChargerController {
     @GetMapping("/{chargerId}/connectors/{connectorNo}/sessions")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
-    public Result<IPage<ChargerConnectorSession>> listConnectorSessions(
+    public Result<IPage<ChargerConnectorSessionResponse>> listConnectorSessions(
         @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
         @Parameter(description = "枪口号(从1开始)") @PathVariable("connectorNo") @NotNull Integer connectorNo,
         @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
@@ -130,7 +134,7 @@ public class ChargerController {
         long sizeValue = size == null ? 10L : size;
         Page<ChargerConnectorSession> page = new Page<>(currentValue, sizeValue);
         IPage<ChargerConnectorSession> result = chargerConnectorSessionCurveService.pageSessions(chargerId, connectorNo, page);
-        return Result.success(result);
+        return Result.success(result.convert(ChargerConnectorSessionResponse::from));
     }
 
     /**
@@ -140,7 +144,7 @@ public class ChargerController {
     @GetMapping("/{chargerId}/connectors/{connectorNo}/sessions/{sessionId}/curve")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
-    public Result<IPage<ChargerConnectorCurvePoint>> getSessionCurve(
+    public Result<IPage<ChargerConnectorCurvePointResponse>> getSessionCurve(
         @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
         @Parameter(description = "枪口号(从1开始)") @PathVariable("connectorNo") @NotNull Integer connectorNo,
         @Parameter(description = "会话ID") @PathVariable("sessionId") @NotNull String sessionId,
@@ -169,7 +173,7 @@ public class ChargerController {
             to,
             page
         );
-        return Result.success(result);
+        return Result.success(result.convert(ChargerConnectorCurvePointResponse::from));
     }
 
     /**
@@ -178,15 +182,15 @@ public class ChargerController {
     @Operation(summary = "根据编码查询充电桩", description = "根据充电桩编码查询详细信息")
     @GetMapping("/code/{code}")
     @DataScope(value = DataScope.DataScopeType.USER)
-    public Result<Charger> getChargerByCode(
+    public Result<ChargerResponse> getChargerByCode(
             @Parameter(description = "充电桩编码") @PathVariable @NotNull String code) {
-        
+
         Charger charger = chargerService.getByCode(code);
         if (charger == null) {
             return Result.fail("充电桩不存在");
         }
-        
-        return Result.success(charger);
+
+        return Result.success(ChargerResponse.from(charger));
     }
 
     /**
@@ -196,11 +200,11 @@ public class ChargerController {
     @GetMapping("/station/{stationId}")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
-    public Result<List<Charger>> getChargersByStationId(
+    public Result<List<ChargerResponse>> getChargersByStationId(
             @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId) {
-        
+
         List<Charger> chargers = chargerService.getChargersByStationId(stationId);
-        return Result.success(chargers);
+        return Result.success(chargers.stream().map(ChargerResponse::from).toList());
     }
 
     /**
@@ -392,11 +396,11 @@ public class ChargerController {
     @GetMapping("/offline")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
-    public Result<List<Charger>> getOfflineChargers(
+    public Result<List<ChargerResponse>> getOfflineChargers(
             @Parameter(description = "离线时间阈值(分钟)", example = "5") @RequestParam(defaultValue = "5") Integer minutes) {
-        
+
         List<Charger> chargers = chargerService.getOfflineChargers(minutes);
-        return Result.success(chargers);
+        return Result.success(chargers.stream().map(ChargerResponse::from).toList());
     }
 
     /**
@@ -406,9 +410,9 @@ public class ChargerController {
     @GetMapping("/fault")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
-    public Result<List<Charger>> getFaultChargers() {
+    public Result<List<ChargerResponse>> getFaultChargers() {
         List<Charger> chargers = chargerService.getFaultChargers();
-        return Result.success(chargers);
+        return Result.success(chargers.stream().map(ChargerResponse::from).toList());
     }
 
     /**
@@ -430,11 +434,11 @@ public class ChargerController {
     @GetMapping("/protocol/{protocol}")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:query')")
     @DataScope
-    public Result<List<Charger>> getChargersByProtocol(
+    public Result<List<ChargerResponse>> getChargersByProtocol(
             @Parameter(description = "协议类型", example = "ocpp") @PathVariable String protocol) {
-        
+
         List<Charger> chargers = chargerService.getChargersByProtocol(protocol);
-        return Result.success(chargers);
+        return Result.success(chargers.stream().map(ChargerResponse::from).toList());
     }
 
     /**

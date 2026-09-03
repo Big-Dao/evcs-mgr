@@ -2,6 +2,7 @@ package com.evcs.order.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.result.Result;
+import com.evcs.order.dto.CouponResponse;
 import com.evcs.order.entity.Coupon;
 import com.evcs.order.service.CouponService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -34,11 +35,13 @@ public class CouponController {
 
     @Operation(summary = "查询我的优惠券", description = "查询当前用户的优惠券")
     @GetMapping("/my")
-    public Result<List<Coupon>> myCoupons(@RequestParam Long userId, @RequestParam(required = false) BigDecimal orderAmount) {
+    public Result<List<CouponResponse>> myCoupons(@RequestParam Long userId, @RequestParam(required = false) BigDecimal orderAmount) {
         if (orderAmount != null) {
-            return Result.success(couponService.listAvailableCoupons(userId, orderAmount));
+            return Result.success(couponService.listAvailableCoupons(userId, orderAmount).stream()
+                    .map(CouponResponse::from).toList());
         }
         // Simple list all for now if no amount
-        return Result.success(couponService.lambdaQuery().eq(Coupon::getUserId, userId).list());
+        return Result.success(couponService.lambdaQuery().eq(Coupon::getUserId, userId).list().stream()
+                .map(CouponResponse::from).toList());
     }
 }

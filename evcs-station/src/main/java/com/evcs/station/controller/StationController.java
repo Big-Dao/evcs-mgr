@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
+import com.evcs.station.dto.StationResponse;
 import com.evcs.station.entity.Station;
 import com.evcs.station.service.IStationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -39,15 +40,15 @@ public class StationController {
     @GetMapping({"", "/", "/page", "/list"})
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:list')")
     @DataScope
-    public Result<IPage<Station>> getStationPage(
+    public Result<IPage<StationResponse>> getStationPage(
             @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
             @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") Long size,
             @Parameter(description = "查询条件") Station queryParam) {
         
         Page<Station> page = new Page<>(current, size);
         IPage<Station> result = stationService.queryStationPage(page, queryParam);
-        
-        return Result.success(result);
+
+        return Result.success(result.convert(StationResponse::from));
     }
 
     /**
@@ -57,15 +58,15 @@ public class StationController {
     @GetMapping("/{stationId}")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:query')")
     @DataScope(value = DataScope.DataScopeType.USER)
-    public Result<Station> getStationById(
+    public Result<StationResponse> getStationById(
             @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId) {
-        
+
         Station station = stationService.getStationDetail(stationId);
         if (station == null) {
             return Result.fail("充电站不存在");
         }
-        
-        return Result.success(station);
+
+        return Result.success(StationResponse.from(station));
     }
 
     /**
@@ -144,14 +145,14 @@ public class StationController {
     @GetMapping("/nearby")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:query')")
     @DataScope
-    public Result<List<Station>> getNearbyStations(
+    public Result<List<StationResponse>> getNearbyStations(
             @Parameter(description = "纬度") @RequestParam Double latitude,
             @Parameter(description = "经度") @RequestParam Double longitude,
             @Parameter(description = "查询半径(公里)", example = "10") @RequestParam(defaultValue = "10") Double radius,
             @Parameter(description = "返回数量限制", example = "20") @RequestParam(defaultValue = "20") Integer limit) {
         
         List<Station> stations = stationService.getNearbyStations(latitude, longitude, radius, limit);
-        return Result.success(stations);
+        return Result.success(stations.stream().map(StationResponse::from).toList());
     }
 
     /**
@@ -234,8 +235,8 @@ public class StationController {
     @GetMapping("/export")
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:export')")
     @DataScope
-    public Result<List<Station>> exportStations(@Parameter(description = "查询条件") Station queryParam) {
+    public Result<List<StationResponse>> exportStations(@Parameter(description = "查询条件") Station queryParam) {
         List<Station> stations = stationService.exportStations(queryParam);
-        return Result.success(stations);
+        return Result.success(stations.stream().map(StationResponse::from).toList());
     }
 }

@@ -2,6 +2,8 @@ package com.evcs.order.controller;
 
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
+import com.evcs.order.dto.BillingPlanResponse;
+import com.evcs.order.dto.BillingPlanSegmentResponse;
 import com.evcs.order.entity.BillingPlan;
 import com.evcs.order.entity.BillingPlanSegment;
 import com.evcs.order.service.IBillingPlanService;
@@ -28,9 +30,9 @@ public class BillingPlanController {
     @PostMapping
     @Operation(summary = "创建计费计划")
     @DataScope
-    public Result<BillingPlan> create(@Valid @RequestBody BillingPlan plan) {
+    public Result<BillingPlanResponse> create(@Valid @RequestBody BillingPlan plan) {
         IBillingPlanService.PlanWriteOutcome outcome = planService.createPlan(plan);
-        return outcome.success() ? Result.success(outcome.plan()) : Result.fail(outcome.error());
+        return outcome.success() ? Result.success(BillingPlanResponse.from(outcome.plan())) : Result.fail(outcome.error());
     }
     @GetMapping
     @Operation(summary = "查询计费计划列表")
@@ -48,7 +50,7 @@ public class BillingPlanController {
     @GetMapping("/page")
     @Operation(summary = "分页查询计费计划列表")
     @DataScope
-    public Result<IPage<BillingPlan>> page(@RequestParam(defaultValue = "1") Long current,
+    public Result<IPage<BillingPlanResponse>> page(@RequestParam(defaultValue = "1") Long current,
                                            @RequestParam(defaultValue = "10") Long size,
                                            @RequestParam(required = false) Long stationId) {
         Page<BillingPlan> page = new Page<>(current, size);
@@ -56,7 +58,7 @@ public class BillingPlanController {
         if (stationId != null) qw.eq("station_id", stationId);
         IPage<BillingPlan> result = planService.page(page, qw);
         planService.fillPlanStats(result.getRecords());
-        return Result.success(result);
+        return Result.success(result.convert(BillingPlanResponse::from));
     }
 
     @PostMapping("/{planId}/default")
@@ -115,15 +117,17 @@ public class BillingPlanController {
     @GetMapping("/{planId}/segments")
     @Operation(summary = "查询计划分段")
     @DataScope
-    public Result<List<BillingPlanSegment>> segments(@PathVariable Long planId) {
-        return Result.success(planService.listSegments(planId));
+    public Result<List<BillingPlanSegmentResponse>> segments(@PathVariable Long planId) {
+        return Result.success(planService.listSegments(planId).stream()
+                .map(BillingPlanSegmentResponse::from).toList());
     }
 
     @GetMapping("/{planId}/export")
     @Operation(summary = "导出计划分段为JSON")
     @DataScope
-    public Result<List<BillingPlanSegment>> exportSegments(@PathVariable Long planId) {
-        return Result.success(planService.listSegments(planId));
+    public Result<List<BillingPlanSegmentResponse>> exportSegments(@PathVariable Long planId) {
+        return Result.success(planService.listSegments(planId).stream()
+                .map(BillingPlanSegmentResponse::from).toList());
     }
 
     @PostMapping("/{planId}/import")
@@ -148,8 +152,8 @@ public class BillingPlanController {
     @PostMapping("/{planId}/clone")
     @Operation(summary = "克隆计费计划")
     @DataScope
-    public Result<BillingPlan> clonePlan(@PathVariable Long planId, @RequestBody BillingPlan payload) {
+    public Result<BillingPlanResponse> clonePlan(@PathVariable Long planId, @RequestBody BillingPlan payload) {
         BillingPlan np = planService.clonePlan(planId, payload);
-        return np != null ? Result.success(np) : Result.fail("克隆失败");
+        return np != null ? Result.success(BillingPlanResponse.from(np)) : Result.fail("克隆失败");
     }
 }

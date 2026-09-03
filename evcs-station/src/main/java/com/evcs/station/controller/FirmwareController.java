@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.result.Result;
 import com.evcs.station.entity.Firmware;
+import com.evcs.station.dto.FirmwareTaskResponse;
 import com.evcs.station.entity.FirmwareUpgradeTask;
 import com.evcs.station.service.FirmwareService;
 import com.evcs.station.service.FirmwareUpgradeTaskService;
@@ -62,12 +63,13 @@ public class FirmwareController {
 
     @Operation(summary = "查询升级任务", description = "查询升级任务列表")
     @GetMapping("/tasks")
-    public Result<List<FirmwareUpgradeTask>> listTasks(@RequestParam(required = false) Long chargerId) {
+    public Result<List<FirmwareTaskResponse>> listTasks(@RequestParam(required = false) Long chargerId) {
         LambdaQueryWrapper<FirmwareUpgradeTask> wrapper = new LambdaQueryWrapper<>();
         if (chargerId != null) {
             wrapper.eq(FirmwareUpgradeTask::getChargerId, chargerId);
         }
         wrapper.orderByDesc(FirmwareUpgradeTask::getCreateTime);
-        return Result.success(firmwareUpgradeTaskService.list(wrapper));
+        return Result.success(firmwareUpgradeTaskService.list(wrapper).stream()
+                .map(FirmwareTaskResponse::from).toList());
     }
 }
