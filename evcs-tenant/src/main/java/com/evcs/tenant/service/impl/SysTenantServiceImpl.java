@@ -15,7 +15,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.tenant.TenantContext;
 import com.evcs.common.audit.TenantAuditService;
+import com.evcs.tenant.client.OrderUsageClient;
 import com.evcs.tenant.client.StationUsageClient;
+import com.evcs.tenant.dto.OrderUsageCount;
 import com.evcs.tenant.dto.StationUsageCount;
 import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.mapper.SysTenantMapper;
@@ -43,6 +45,7 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
 
     private final TenantAuditService tenantAuditService;
     private final StationUsageClient stationUsageClient;
+    private final OrderUsageClient orderUsageClient;
 
     /**
      * 租户类型：平台租户
@@ -347,8 +350,10 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
             throw new RuntimeException("租户下存在充电站数据，无法删除");
         }
 
-        Long orderCount = baseMapper.countByTenantId("evcs_charging_order", tenantId);
-        if (orderCount != null && orderCount > 0) {
+        int orderCount = orderUsageClient.getUsageCounts(List.of(tenantId))
+                .getOrDefault(tenantId, new OrderUsageCount(tenantId, 0))
+                .orderCount();
+        if (orderCount > 0) {
             throw new RuntimeException("租户下存在订单数据，无法删除");
         }
 

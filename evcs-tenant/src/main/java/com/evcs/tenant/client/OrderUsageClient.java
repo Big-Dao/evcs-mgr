@@ -3,7 +3,7 @@ package com.evcs.tenant.client;
 import com.evcs.common.http.ResultResponseEntityUtils;
 import com.evcs.common.result.Result;
 import com.evcs.tenant.config.InternalApiTokenProperties;
-import com.evcs.tenant.dto.StationUsageCount;
+import com.evcs.tenant.dto.OrderUsageCount;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.RequestEntity;
@@ -20,39 +20,38 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * station 服务资源用量客户端。
+ * order 服务资源用量客户端。
  *
- * <p>租户配额校验所需的站点/充电桩计数归属于 station 服务，
- * 通过其内部端点（网关边缘封锁 + 共享内部令牌）获取，
- * 取代跨服务直查数据库。任何调用失败都向上抛出（fail-closed）：
- * 配额数据不可用时宁可阻断资源创建，也不放行。
+ * <p>租户删除预检所需的订单计数归属 order 服务，通过其内部端点
+ * （网关边缘封锁 + 共享内部令牌）获取。任何调用失败都向上抛出
+ * （fail-closed）：用量不可用时阻断删除，避免误删有业务数据的租户。
  */
 @Slf4j
 @Component
-public class StationUsageClient {
+public class OrderUsageClient {
 
-    private static final ParameterizedTypeReference<Result<List<StationUsageCount>>> USAGE_RESULT =
+    private static final ParameterizedTypeReference<Result<List<OrderUsageCount>>> USAGE_RESULT =
             new ParameterizedTypeReference<>() {};
 
     private final RestTemplate restTemplate;
     private final InternalApiTokenProperties internalApiTokenProperties;
 
-    public StationUsageClient(RestTemplate restTemplate,
-                              InternalApiTokenProperties internalApiTokenProperties) {
+    public OrderUsageClient(RestTemplate restTemplate,
+                            InternalApiTokenProperties internalApiTokenProperties) {
         this.restTemplate = restTemplate;
         this.internalApiTokenProperties = internalApiTokenProperties;
     }
 
     /**
-     * 查询租户集合的站点/充电桩用量，返回按租户ID索引的结果。
+     * 查询租户集合的订单用量，返回按租户ID索引的结果。
      */
-    public Map<Long, StationUsageCount> getUsageCounts(List<Long> tenantIds) {
+    public Map<Long, OrderUsageCount> getUsageCounts(List<Long> tenantIds) {
         if (tenantIds == null || tenantIds.isEmpty()) {
             return Collections.emptyMap();
         }
 
         String url = UriComponentsBuilder
-                .fromUriString("http://evcs-station/internal/api/v1/usage-counts")
+                .fromUriString("http://evcs-order/internal/api/v1/order-usage-counts")
                 .queryParam("tenantIds", String.join(",", tenantIds.stream().map(String::valueOf).toList()))
                 .toUriString();
 
@@ -61,13 +60,13 @@ public class StationUsageClient {
             builder.header(internalApiTokenProperties.getHeaderName(), internalApiTokenProperties.getToken());
         }
 
-        ResponseEntity<Result<List<StationUsageCount>>> response =
+        ResponseEntity<Result<List<OrderUsageCount>>> response =
                 restTemplate.exchange(builder.build(), USAGE_RESULT);
 
-        List<StationUsageCount> data = ResultResponseEntityUtils.dataIfSuccess(response);
+        List<OrderUsageCount> data = ResultResponseEntityUtils.dataIfSuccess(response);
         if (data == null) {
-            throw new IllegalStateException("station 服务用量查询失败或返回失败结果，配额校验 fail-closed");
+            throw new IllegalStateException("order 服务用量查询失败或返回失败结果，删除预检 fail-closed");
         }
-        return data.stream().collect(Collectors.toMap(StationUsageCount::tenantId, Function.identity()));
+        return data.stream().collect(Collectors.toMap(OrderUsageCount::tenantId, Function.identity()));
     }
 }

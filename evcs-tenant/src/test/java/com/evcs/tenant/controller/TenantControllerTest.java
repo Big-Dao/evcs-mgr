@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.evcs.common.result.Result;
 import com.evcs.common.test.base.BaseControllerTest;
 import com.evcs.tenant.TenantServiceApplication;
+import com.evcs.tenant.client.OrderUsageClient;
 import com.evcs.tenant.client.StationUsageClient;
 import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.service.ISysTenantService;
@@ -41,8 +42,13 @@ class TenantControllerTest extends BaseControllerTest {
     @org.springframework.boot.test.mock.mockito.MockBean
     private StationUsageClient stationUsageClient;
 
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private OrderUsageClient orderUsageClient;
+
     private void stubStationUsageEmpty() {
         org.mockito.Mockito.when(stationUsageClient.getUsageCounts(org.mockito.ArgumentMatchers.anyList()))
+                .thenReturn(java.util.Map.of());
+        org.mockito.Mockito.when(orderUsageClient.getUsageCounts(org.mockito.ArgumentMatchers.anyList()))
                 .thenReturn(java.util.Map.of());
     }
 

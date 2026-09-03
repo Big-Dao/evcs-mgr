@@ -35,7 +35,8 @@ public class OrderSecurityConfig {
                                 "/doc.html",
                                 "/webjars/**",
                                 "/v3/api-docs/**",
-                                "/swagger-ui/**"
+                                "/swagger-ui/**",
+                                "/internal/api/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )

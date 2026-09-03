@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.test.base.BaseServiceTest;
 import com.evcs.tenant.TenantServiceApplication;
+import com.evcs.tenant.client.OrderUsageClient;
 import com.evcs.tenant.client.StationUsageClient;
+import com.evcs.tenant.dto.OrderUsageCount;
 import com.evcs.tenant.entity.SysTenant;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +22,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.when;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 系统租户服务测试
@@ -36,6 +39,9 @@ class SysTenantServiceImplTest extends BaseServiceTest {
      */
     @org.springframework.boot.test.mock.mockito.MockBean
     private StationUsageClient stationUsageClient;
+
+    @org.springframework.boot.test.mock.mockito.MockBean
+    private OrderUsageClient orderUsageClient;
 
     @Test
     @DisplayName("保存租户 - 正常流程")
@@ -80,6 +86,7 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         sysTenantService.saveTenant(tenant);
         Long tenantId = tenant.getId();
         when(stationUsageClient.getUsageCounts(anyList())).thenReturn(Map.of());
+        when(orderUsageClient.getUsageCounts(anyList())).thenReturn(Map.of());
 
         // When: 删除租户
         boolean result = sysTenantService.deleteTenant(tenantId);
@@ -88,6 +95,22 @@ class SysTenantServiceImplTest extends BaseServiceTest {
         assertThat(result).isTrue();
         SysTenant deleted = sysTenantService.getTenantById(tenantId);
         assertThat(deleted).isNull();
+    }
+
+    @Test
+    @DisplayName("删除租户 - 存在订单数据时应拒绝")
+    void testDeleteTenantRejectedWhenOrdersExist() {
+        // Given: 创建租户，order 服务报告该租户仍有订单
+        SysTenant tenant = createTestSysTenant("SYS_TEST_ORD", "有订单的租户");
+        sysTenantService.saveTenant(tenant);
+        when(stationUsageClient.getUsageCounts(anyList())).thenReturn(Map.of());
+        when(orderUsageClient.getUsageCounts(anyList()))
+                .thenReturn(Map.of(tenant.getId(), new OrderUsageCount(tenant.getId(), 3)));
+
+        // When & Then: 删除必须被拒绝且原因指向订单数据
+        assertThatThrownBy(() -> sysTenantService.deleteTenant(tenant.getId()))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("订单数据");
     }
 
     @Test

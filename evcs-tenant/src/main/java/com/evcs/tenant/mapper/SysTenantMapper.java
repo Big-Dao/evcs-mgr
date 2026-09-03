@@ -15,16 +15,6 @@ import java.util.List;
 public interface SysTenantMapper extends BaseMapper<SysTenant> {
 
     /**
-     * 统计指定表中某租户的记录数
-     *
-     * @param tableName 表名
-     * @param tenantId 租户ID
-     * @return 记录数
-     */
-    @Select("SELECT COUNT(*) FROM ${tableName} WHERE tenant_id = #{tenantId} AND deleted = 0")
-    Long countByTenantId(@Param("tableName") String tableName, @Param("tenantId") Long tenantId);
-
-    /**
      * 统计指定租户的子租户数量
      */
     @Select("SELECT COUNT(*) FROM sys_tenant WHERE parent_id = #{parentId} AND deleted = 0")
