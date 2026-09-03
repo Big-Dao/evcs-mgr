@@ -11,17 +11,13 @@ import com.evcs.station.service.IChargerConnectorService;
 import com.evcs.station.service.IChargerConnectorSessionCurveService;
 import com.evcs.station.entity.ChargerConnectorCurvePoint;
 import com.evcs.station.entity.ChargerConnectorSession;
-import com.evcs.station.client.ProtocolClient;
-import com.evcs.station.client.OrderClient;
-import com.evcs.protocol.dto.ProtocolRequest;
-import com.evcs.protocol.dto.ProtocolResponse;
+import com.evcs.station.service.ChargingSessionService;
+import com.evcs.station.dto.ChargingDispatchOutcome;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
@@ -30,11 +26,8 @@ import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import java.time.LocalDateTime;
-import java.util.concurrent.TimeUnit;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.UUID;
 
 /**
  * 充电桩管理控制器
@@ -50,9 +43,7 @@ public class ChargerController {
     private final IChargerService chargerService;
     private final IChargerConnectorService chargerConnectorService;
     private final IChargerConnectorSessionCurveService chargerConnectorSessionCurveService;
-    private final ProtocolClient protocolClient;
-    private final OrderClient orderClient;
-    private final RedissonClient redissonClient;
+    private final ChargingSessionService chargingSessionService;
 
     /**
      * 分页查询充电桩列表
@@ -329,84 +320,9 @@ public class ChargerController {
             @Parameter(description = "会话ID（可选，若无则生成）") @RequestParam(required = false) String sessionId,
             @Parameter(description = "用户ID") @RequestParam Long userId,
             @Parameter(description = "起始电量(kWh)") @RequestParam(required = false) Double initialEnergy) {
-
-        Charger charger = chargerService.getById(chargerId);
-        if (charger == null) {
-            return Result.fail("充电桩不存在");
-        }
-
-        String lockKey = "lock:charger:connector:" + chargerId + ":" + connectorNo;
-        RLock lock = redissonClient.getLock(lockKey);
-        boolean acquired = false;
-
-        try {
-            acquired = lock.tryLock(5, 30, TimeUnit.SECONDS);
-            if (!acquired) {
-                return Result.fail("充电桩正在处理中，请稍后重试");
-            }
-
-            String actualSessionId = sessionId != null ? sessionId : UUID.randomUUID().toString();
-
-            // 1. Create Order (Pre-check)
-            try {
-                Result<Boolean> orderResult = orderClient.startOrder(
-                    charger.getStationId(),
-                    chargerId,
-                    actualSessionId,
-                    userId,
-                    null // billingPlanId optional
-                );
-                if (!orderResult.isSuccess()) {
-                    log.warn("Order creation failed: {}", orderResult.getMessage());
-                    return Result.fail("创建订单失败: " + orderResult.getMessage());
-                }
-            } catch (Exception e) {
-                log.error("Order creation exception", e);
-                return Result.fail("创建订单异常: " + e.getMessage());
-            }
-
-            // 2. Call Protocol Service
-            try {
-                ProtocolRequest req = new ProtocolRequest();
-                req.setDeviceCode(charger.getChargerCode());
-                req.setSessionId(actualSessionId);
-                req.setUserId(userId);
-                req.setChargerId(chargerId);
-                req.setTenantId(charger.getTenantId());
-
-                Map<String, Object> data = new HashMap<>();
-                data.put("connectorId", connectorNo);
-                req.setData(data);
-
-                Result<ProtocolResponse> protoResult = protocolClient.startCharging(req);
-                if (!protoResult.isSuccess()) {
-                    log.warn("Remote start failed: {}", protoResult.getMessage());
-                    // 注意：协议启动失败时，订单处于待启动状态，需要人工处理或自动取消
-                    // 建议订单服务实现超时自动取消机制
-                    return Result.fail("远程启动失败: " + protoResult.getMessage());
-                }
-            } catch (Exception e) {
-                log.error("Remote start exception", e);
-                return Result.fail("远程启动异常: " + e.getMessage());
-            }
-
-            boolean ok = chargerConnectorService.updateSessionStart(
-                    chargerId,
-                    connectorNo,
-                    actualSessionId,
-                    userId,
-                    LocalDateTime.now(),
-                    initialEnergy
-            );
-            return ok ? Result.successMessage("开始充电指令已下发") : Result.fail("开始充电失败");
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return Result.fail("获取锁被中断");
-        } finally {
-            if (acquired && lock.isHeldByCurrentThread()) {
-                lock.unlock();
-            }
-        }
+        ChargingDispatchOutcome outcome = chargingSessionService.startCharging(
+                chargerId, connectorNo, sessionId, userId, initialEnergy);
+        return outcome.success() ? Result.successMessage(outcome.message()) : Result.fail(outcome.message());
     }
 
     /**
@@ -422,79 +338,9 @@ public class ChargerController {
             @Parameter(description = "会话ID（可选，存在时用于校验）") @RequestParam(required = false) String sessionId,
             @Parameter(description = "充电量(kWh)") @RequestParam(required = false) Double energy,
             @Parameter(description = "充电时长(分钟)") @RequestParam(required = false) Long duration) {
-
-        Charger charger = chargerService.getById(chargerId);
-        if (charger == null) {
-            return Result.fail("充电桩不存在");
-        }
-
-        String lockKey = "lock:charger:connector:" + chargerId + ":" + connectorNo;
-        RLock lock = redissonClient.getLock(lockKey);
-        boolean acquired = false;
-
-        try {
-            acquired = lock.tryLock(5, 30, TimeUnit.SECONDS);
-            if (!acquired) {
-                return Result.fail("充电桩正在处理中，请稍后重试");
-            }
-
-            // 1. Call Protocol Service
-            try {
-                ProtocolRequest req = new ProtocolRequest();
-                req.setDeviceCode(charger.getChargerCode());
-                req.setSessionId(sessionId);
-                req.setChargerId(chargerId);
-                req.setTenantId(charger.getTenantId());
-
-                Map<String, Object> data = new HashMap<>();
-                data.put("connectorId", connectorNo);
-                req.setData(data);
-
-                Result<ProtocolResponse> protoResult = protocolClient.stopCharging(req);
-                if (!protoResult.isSuccess()) {
-                     log.warn("Remote stop failed: {}", protoResult.getMessage());
-                     return Result.fail("远程停止失败: " + protoResult.getMessage());
-                }
-            } catch (Exception e) {
-                log.error("Remote stop exception", e);
-                return Result.fail("远程停止异常: " + e.getMessage());
-            }
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return Result.fail("获取锁被中断");
-        } finally {
-            if (acquired && lock.isHeldByCurrentThread()) {
-                lock.unlock();
-            }
-        }
-
-        Double energyValue = energy != null ? energy : 0.0;
-        Long durationValue = duration != null ? duration : 0L;
-
-        // 2. Settle Order
-        try {
-            Result<Boolean> orderResult = orderClient.stopOrder(
-                sessionId,
-                energyValue,
-                durationValue
-            );
-            if (!orderResult.isSuccess()) {
-                log.warn("Order settlement failed: {}", orderResult.getMessage());
-                // Continue to update local session even if order fails?
-                // return Result.fail("结算订单失败: " + orderResult.getMessage());
-            }
-        } catch (Exception e) {
-            log.error("Order settlement exception", e);
-        }
-
-        boolean ok = chargerConnectorService.updateSessionStop(
-                chargerId,
-                connectorNo,
-                sessionId,
-                energyValue,
-                durationValue
-        );
-        return ok ? Result.successMessage("结束充电指令已下发") : Result.fail("结束充电失败");
+        ChargingDispatchOutcome outcome = chargingSessionService.stopCharging(
+                chargerId, connectorNo, sessionId, energy, duration);
+        return outcome.success() ? Result.successMessage(outcome.message()) : Result.fail(outcome.message());
     }
 
     /**
