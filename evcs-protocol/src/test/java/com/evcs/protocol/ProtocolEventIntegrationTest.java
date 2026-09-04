@@ -129,7 +129,7 @@ class ProtocolEventIntegrationTest {
         assertEquals(1L, event.getChargerId());
         assertEquals("OCPP", event.getProtocolType());
         assertEquals(ProtocolEvent.EventType.HEARTBEAT, event.getEventType());
-        
+
         // 验证toString不会抛出异常
         String eventString = event.toString();
         assertNotNull(eventString);

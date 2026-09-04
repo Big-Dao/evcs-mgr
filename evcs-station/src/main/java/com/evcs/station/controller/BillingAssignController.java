@@ -7,7 +7,12 @@ import com.evcs.station.service.IChargerService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "计费计划分配", description = "为充电桩分配计费计划")
 @RestController
@@ -31,14 +36,18 @@ public class BillingAssignController {
     @DataScope
     public Result<Boolean> assignPlanForStation(@PathVariable Long stationId, @RequestParam Long planId) {
         java.util.List<Charger> chargers = chargerService.getChargersByStationId(stationId);
-        if (chargers == null || chargers.isEmpty()) return Result.success(true);
+                if (chargers == null || chargers.isEmpty()) {
+            return Result.success(true);
+        }
         boolean allOk = true;
         for (Charger c : chargers) {
             Charger patch = new Charger();
             patch.setId(c.getId());
             patch.setBillingPlanId(planId);
             boolean ok = chargerService.updateById(patch);
-            if (!ok) allOk = false;
+                        if (!ok) {
+                allOk = false;
+            }
         }
         return Result.success(allOk);
     }
@@ -48,14 +57,18 @@ public class BillingAssignController {
     @Operation(summary = "批量为充电桩设置计费计划")
     @DataScope
     public Result<Boolean> assignPlanBatch(@RequestParam Long planId, @RequestBody java.util.List<Long> chargerIds) {
-        if (chargerIds == null || chargerIds.isEmpty()) return Result.success(true);
+                if (chargerIds == null || chargerIds.isEmpty()) {
+            return Result.success(true);
+        }
         boolean allOk = true;
         for (Long id : chargerIds) {
             Charger patch = new Charger();
             patch.setId(id);
             patch.setBillingPlanId(planId);
             boolean ok = chargerService.updateById(patch);
-            if (!ok) allOk = false;
+                        if (!ok) {
+                allOk = false;
+            }
         }
         return Result.success(allOk);
     }

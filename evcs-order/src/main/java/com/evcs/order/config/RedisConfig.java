@@ -20,7 +20,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 /**
  * Redis配置类
  * 配置Redis消息监听器和RedisTemplate
- * 
+ *
  * @author EVCS Team
  * @since M4 - Week 4 Performance Optimization
  */
@@ -28,9 +28,9 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 @Configuration
 @Profile("!test")  // 测试环境排除此配置
 public class RedisConfig {
-    
+
     private static final String INVALIDATE_TOPIC = "billing:plan:update";
-    
+
     /**
      * 配置RedisTemplate
      */
@@ -38,12 +38,12 @@ public class RedisConfig {
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
-        
+
         // 使用String序列化器作为key的序列化器
         StringRedisSerializer stringSerializer = new StringRedisSerializer();
         template.setKeySerializer(stringSerializer);
         template.setHashKeySerializer(stringSerializer);
-        
+
         // 配置ObjectMapper以支持Java 8日期时间类型
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -53,17 +53,17 @@ public class RedisConfig {
                 objectMapper.getPolymorphicTypeValidator(),
                 ObjectMapper.DefaultTyping.NON_FINAL,
                 JsonTypeInfo.As.PROPERTY);
-        
+
         // 使用Jackson序列化器作为value的序列化器
         GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
         template.setValueSerializer(jsonSerializer);
         template.setHashValueSerializer(jsonSerializer);
-        
+
         template.afterPropertiesSet();
         log.info("RedisTemplate configured successfully");
         return template;
     }
-    
+
     /**
      * 配置Redis消息监听器容器
      */
@@ -74,24 +74,24 @@ public class RedisConfig {
         RedisMessageListenerContainer container = new RedisMessageListenerContainer();
         container.setConnectionFactory(java.util.Objects.requireNonNull(connectionFactory, "connectionFactory must not be null"));
         container.addMessageListener(
-            java.util.Objects.requireNonNull(listenerAdapter, "listenerAdapter must not be null"), 
+            java.util.Objects.requireNonNull(listenerAdapter, "listenerAdapter must not be null"),
             new ChannelTopic(INVALIDATE_TOPIC)
         );
         log.info("Redis message listener container configured for topic: {}", INVALIDATE_TOPIC);
         return container;
     }
-    
+
     /**
      * 配置消息监听适配器
      */
     @Bean
     public MessageListenerAdapter listenerAdapter(BillingPlanCacheInvalidationListener listener) {
         return new MessageListenerAdapter(
-            java.util.Objects.requireNonNull(listener, "listener must not be null"), 
+            java.util.Objects.requireNonNull(listener, "listener must not be null"),
             "onMessage"
         );
     }
-    
+
     /**
      * 配置Topic
      */

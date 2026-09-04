@@ -14,7 +14,15 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -44,7 +52,7 @@ public class StationController {
             @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
             @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") Long size,
             @Parameter(description = "查询条件") Station queryParam) {
-        
+
         Page<Station> page = new Page<>(current, size);
         IPage<Station> result = stationService.queryStationPage(page, queryParam);
 
@@ -103,7 +111,7 @@ public class StationController {
         } else if (!stationId.equals(station.getStationId())) {
             return Result.fail("路径ID与请求体中的充电站ID不一致");
         }
-        
+
         try {
             boolean success = stationService.updateStation(station);
             if (success) {
@@ -125,7 +133,7 @@ public class StationController {
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> deleteStation(
             @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId) {
-        
+
         try {
             boolean success = stationService.deleteStation(stationId);
             if (success) {
@@ -150,7 +158,7 @@ public class StationController {
             @Parameter(description = "经度") @RequestParam Double longitude,
             @Parameter(description = "查询半径(公里)", example = "10") @RequestParam(defaultValue = "10") Double radius,
             @Parameter(description = "返回数量限制", example = "20") @RequestParam(defaultValue = "20") Integer limit) {
-        
+
         List<Station> stations = stationService.getNearbyStations(latitude, longitude, radius, limit);
         return Result.success(stations.stream().map(StationResponse::from).toList());
     }
@@ -165,11 +173,11 @@ public class StationController {
     public Result<Void> changeStationStatus(
             @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId,
             @Parameter(description = "状态：1启用，0停用") @RequestParam Integer status) {
-        
+
         if (status == null || (status != 0 && status != 1)) {
             return Result.fail("状态值无效");
         }
-        
+
         boolean success = stationService.changeStatus(stationId, status);
         if (success) {
             String action = status == 1 ? "启用" : "停用";
@@ -187,7 +195,7 @@ public class StationController {
     public Result<Boolean> checkStationCode(
             @Parameter(description = "充电站编码") @RequestParam String stationCode,
             @Parameter(description = "排除的充电站ID") @RequestParam(required = false) Long excludeId) {
-        
+
         boolean exists = stationService.checkStationCodeExists(stationCode, excludeId);
         return Result.success(exists);
     }
@@ -214,7 +222,7 @@ public class StationController {
         if (stations == null || stations.isEmpty()) {
             return Result.fail("导入数据不能为空");
         }
-        
+
         try {
             boolean success = stationService.importStations(stations);
             if (success) {

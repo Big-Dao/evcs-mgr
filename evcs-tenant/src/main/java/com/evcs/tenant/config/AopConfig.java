@@ -10,7 +10,7 @@ import org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreato
  */
 @Configuration
 public class AopConfig {
-    
+
     @Bean
     @ConditionalOnMissingBean
     public DefaultAdvisorAutoProxyCreator defaultAdvisorAutoProxyCreator() {

@@ -124,7 +124,7 @@ class SysUserServiceTest {
         // Arrange
         Long userId = 1L;
         Long tenantId = 1001L;
-        
+
         SysUser user = new SysUser();
         user.setId(userId);
         user.setTenantId(tenantId);
@@ -139,7 +139,7 @@ class SysUserServiceTest {
         SysUser updateInfo = new SysUser();
         updateInfo.setId(userId);
         updateInfo.setStatus(0); // 禁用状态
-        
+
         sysUserService.updateUser(updateInfo, tenantId);
 
         // Assert
@@ -156,7 +156,7 @@ class SysUserServiceTest {
         // Arrange
         Long userId = 1L;
         Long tenantId = 1001L;
-        
+
         SysUser user = new SysUser();
         user.setId(userId);
         user.setTenantId(tenantId);
@@ -170,7 +170,7 @@ class SysUserServiceTest {
         SysUser updateInfo = new SysUser();
         updateInfo.setId(userId);
         updateInfo.setStatus(1); // 启用状态
-        
+
         sysUserService.updateUser(updateInfo, tenantId);
 
         // Assert

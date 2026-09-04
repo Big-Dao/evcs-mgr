@@ -20,12 +20,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 /**
  * Controller层测试基类
  * 提供MockMvc、ObjectMapper和多租户上下文支持
- * 
+ *
  * 使用方法：
  * <pre>
  * @SpringBootTest
  * class YourControllerTest extends BaseControllerTest {
- *     
+ *
  *     @Test
  *     void testGetApi() throws Exception {
  *         mockMvc.perform(get("/api/resource")
@@ -91,7 +91,7 @@ public abstract class BaseControllerTest {
 
     /**
      * 获取测试租户ID
-     * 
+     *
      * @return 测试租户ID
      */
     protected Long getTestTenantId() {
@@ -100,7 +100,7 @@ public abstract class BaseControllerTest {
 
     /**
      * 获取测试用户ID
-     * 
+     *
      * @return 测试用户ID
      */
     protected Long getTestUserId() {
@@ -109,7 +109,7 @@ public abstract class BaseControllerTest {
 
     /**
      * 将对象转换为JSON字符串
-     * 
+     *
      * @param object 要转换的对象
      * @return JSON字符串
      */
@@ -119,7 +119,7 @@ public abstract class BaseControllerTest {
 
     /**
      * 从JSON字符串解析对象
-     * 
+     *
      * @param json JSON字符串
      * @param clazz 目标类型
      * @return 解析后的对象
@@ -130,7 +130,7 @@ public abstract class BaseControllerTest {
 
     /**
      * 从MvcResult中提取响应体并解析为对象
-     * 
+     *
      * @param result MvcResult
      * @param clazz 目标类型
      * @return 解析后的对象
@@ -142,7 +142,7 @@ public abstract class BaseControllerTest {
 
     /**
      * 获取测试JWT Token（子类可以覆盖）
-     * 
+     *
      * @return JWT Token
      */
     protected String getTestToken() {
@@ -152,7 +152,7 @@ public abstract class BaseControllerTest {
 
     /**
      * 打印响应内容（用于调试）
-     * 
+     *
      * @param result MvcResult
      */
     protected void printResponse(MvcResult result) throws Exception {

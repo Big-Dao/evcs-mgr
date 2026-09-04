@@ -8,15 +8,15 @@ import org.springframework.context.ApplicationEvent;
  */
 @Getter
 public class ChargingStartEvent extends ApplicationEvent {
-    
+
     private final Long stationId;
     private final Long chargerId;
     private final String sessionId;
     private final Long userId;
     private final Long billingPlanId;
     private final Long tenantId;
-    
-    public ChargingStartEvent(Object source, Long stationId, Long chargerId, 
+
+    public ChargingStartEvent(Object source, Long stationId, Long chargerId,
                               String sessionId, Long userId, Long billingPlanId, Long tenantId) {
         super(source);
         this.stationId = stationId;

@@ -341,11 +341,11 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
             // 计算统计信息
             long totalCount = transactions.size();
             long successCount = transactions.stream()
-                .filter(t -> "TRADE_SUCCESS".equals(t.getTradeStatus()) 
+                .filter(t -> "TRADE_SUCCESS".equals(t.getTradeStatus())
                     || "TRADE_FINISHED".equals(t.getTradeStatus()))
                 .count();
             long refundCount = transactions.stream()
-                .filter(t -> t.getRefundAmount() != null 
+                .filter(t -> t.getRefundAmount() != null
                     && t.getRefundAmount().compareTo(java.math.BigDecimal.ZERO) > 0)
                 .count();
 
@@ -439,7 +439,7 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
         }
 
         try {
-            AlipayReconciliationService.AlipayBillRecord record = 
+            AlipayReconciliationService.AlipayBillRecord record =
                 new AlipayReconciliationService.AlipayBillRecord();
             record.setOutTradeNo(fields[0].trim());           // 商户订单号
             record.setTradeNo(fields[1].trim());              // 支付宝交易号
@@ -453,7 +453,7 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
             record.setTerminalId(fields[9].trim());           // 终端号
             record.setOtherAccount(fields[10].trim());        // 对方账号
             record.setTotalAmount(parseAmount(fields[11]));   // 订单金额
-            
+
             if (fields.length > 12) {
                 record.setMerchantRedAmount(parseAmount(fields[12])); // 商家红包
             }
@@ -488,17 +488,17 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
                 statementDate = LocalDate.now().minusDays(1);
             }
 
-            List<ReconciliationStatement.StatementTransaction> transactions = 
+            List<ReconciliationStatement.StatementTransaction> transactions =
                 parseWechatBillContent(statementData);
 
             // 计算统计信息
             long totalCount = transactions.size();
             long successCount = transactions.stream()
-                .filter(t -> "SUCCESS".equals(t.getTradeStatus()) 
+                .filter(t -> "SUCCESS".equals(t.getTradeStatus())
                     || "支付成功".equals(t.getTradeStatus()))
                 .count();
             long refundCount = transactions.stream()
-                .filter(t -> t.getRefundAmount() != null 
+                .filter(t -> t.getRefundAmount() != null
                     && t.getRefundAmount().compareTo(java.math.BigDecimal.ZERO) > 0)
                 .count();
 
@@ -537,7 +537,9 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
 
     /**
      * 解析微信支付对账单内容
-     * 微信支付对账单格式参考：交易时间,公众账号ID,商户号,子商户号,设备号,微信订单号,商户订单号,用户标识,交易类型,交易状态,付款银行,货币种类,应结订单金额,代金券金额,微信退款单号,商户退款单号,退款金额,充值券退款金额,退款类型,退款状态,商品名称,商户数据包,手续费,费率,订单金额,申请退款金额,费率备注
+     * 微信支付对账单格式参考：交易时间,公众账号ID,商户号,子商户号,设备号,微信订单号,商户订单号,用户标识,交易类型,交易状态,
+     * 付款银行,货币种类,应结订单金额,代金券金额,微信退款单号,商户退款单号,退款金额,充值券退款金额,退款类型,退款状态,
+     * 商品名称,商户数据包,手续费,费率,订单金额,申请退款金额,费率备注
      */
     private List<ReconciliationStatement.StatementTransaction> parseWechatBillContent(String billContent) {
         List<ReconciliationStatement.StatementTransaction> transactions = new ArrayList<>();
@@ -608,7 +610,7 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
             }
 
             java.math.BigDecimal refundAmount = java.math.BigDecimal.ZERO;
-            if (!refundFee.isEmpty() && !refundFee.equals("0")) {
+            if (!refundFee.isEmpty() && !"0".equals(refundFee)) {
                 try {
                     refundAmount = new java.math.BigDecimal(refundFee).divide(
                         new java.math.BigDecimal("100"), 2, java.math.RoundingMode.HALF_UP);
@@ -684,7 +686,7 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
         String data = statementData.trim();
 
         // 检查是否包含必要的字段标识
-        boolean hasHeader = data.contains("交易时间") || data.contains("微信订单号") 
+        boolean hasHeader = data.contains("交易时间") || data.contains("微信订单号")
             || data.contains("商户订单号") || data.contains("out_trade_no");
         boolean hasData = data.contains(",") && data.split("\n").length > 1;
 
@@ -714,7 +716,7 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
                     try {
                         String dateStr = parts[1].trim();
                         // 尝试多种日期格式
-                        LocalDate date = LocalDate.parse(dateStr, 
+                        LocalDate date = LocalDate.parse(dateStr,
                             DateTimeFormatter.ofPattern("yyyy-MM-dd"));
                         return date;
                     } catch (Exception e) {

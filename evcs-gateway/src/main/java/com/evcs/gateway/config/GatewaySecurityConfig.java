@@ -52,7 +52,7 @@ public class GatewaySecurityConfig {
             "/webjars/**",
             "/v3/api-docs/**",
             "/swagger-ui/**",
-            "/favicon.ico"
+            "/favicon.ico",
     };
 
     @Bean

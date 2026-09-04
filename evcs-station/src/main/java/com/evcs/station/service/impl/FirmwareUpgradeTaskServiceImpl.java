@@ -80,7 +80,7 @@ public class FirmwareUpgradeTaskServiceImpl extends ServiceImpl<FirmwareUpgradeT
             ProtocolRequest request = new ProtocolRequest();
             request.setDeviceCode(charger.getChargerCode());
             request.setAction("updateFirmware");
-            
+
             Map<String, Object> data = new HashMap<>();
             data.put("location", firmware.getUrl());
             data.put("retrieveDate", LocalDateTime.now().toString()); // Should be formatted properly

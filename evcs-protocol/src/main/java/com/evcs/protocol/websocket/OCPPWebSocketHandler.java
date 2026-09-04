@@ -6,7 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.web.socket.*;
+import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
+import org.springframework.web.socket.WebSocketHandler;
+import org.springframework.web.socket.WebSocketMessage;
+import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -195,6 +200,10 @@ public class OCPPWebSocketHandler implements WebSocketHandler {
                                 return createCallErrorMessage(messageId, errorCode, errorDescription, errorDetails);
                             }
                             break;
+
+                        default:
+                            log.warn("Unknown OCPP message type: {}", messageTypeId);
+                            break;
                     }
                 }
             }
@@ -321,7 +330,8 @@ public class OCPPWebSocketHandler implements WebSocketHandler {
      * 构建错误消息
      */
     private String buildErrorMessage(String messageId, String errorCode, String errorDescription, Map<String, Object> errorDetails) throws Exception {
-        Object[] messageArray = {OCPPMessageType.CALL_ERROR.getTypeId(), messageId, errorCode, errorDescription, errorDetails != null ? errorDetails : Map.of()};
+        Object[] messageArray = {OCPPMessageType.CALL_ERROR.getTypeId(), messageId, errorCode,
+                errorDescription, errorDetails != null ? errorDetails : Map.of()};
         return objectMapper.writeValueAsString(messageArray);
     }
 }

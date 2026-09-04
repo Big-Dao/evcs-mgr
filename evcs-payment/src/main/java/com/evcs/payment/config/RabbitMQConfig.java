@@ -1,13 +1,22 @@
 package com.evcs.payment.config;
 
 import lombok.Data;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.ExchangeBuilder;
+import org.springframework.amqp.core.FanoutExchange;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -19,6 +28,7 @@ import org.springframework.context.annotation.Profile;
 @ConfigurationProperties(prefix = "evcs.payment.rabbitmq")
 @Data
 @Profile("!test")  // 在test profile下不加载此配置
+@Slf4j
 public class RabbitMQConfig {
 
     /**
@@ -99,14 +109,14 @@ public class RabbitMQConfig {
                 // 消息发送成功
             } else {
                 // 消息发送失败，记录日志
-                System.err.println("消息发送失败: " + cause);
+                log.error("消息发送失败: {}", cause);
             }
         });
 
         // 开启返回确认
         template.setReturnsCallback(returned -> {
             // 消息无法路由时回调
-            System.err.println("消息无法路由: " + returned.getReplyText());
+            log.warn("消息无法路由: {}", returned.getReplyText());
         });
 
         return template;

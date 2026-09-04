@@ -188,7 +188,7 @@ class TenantContextPropagatingExecutorServiceTest {
                                 if (!taskFuture.get(5, TimeUnit.SECONDS)) {
                                     return false;
                                 }
-                            } catch (TimeoutException | ExecutionException ie) {
+                            } catch (TimeoutException | ExecutionException ignoredEx) {
                                 return false;
                             }
                         }
@@ -325,7 +325,7 @@ class TenantContextPropagatingExecutorServiceTest {
                         while (!Thread.currentThread().isInterrupted()) {
                             Thread.sleep(50);
                         }
-                    } catch (InterruptedException ie) {
+                    } catch (InterruptedException ignoredEx) {
                         Thread.currentThread().interrupt();
                     } finally {
                         finished.countDown();

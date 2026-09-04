@@ -166,10 +166,10 @@ class PaymentServiceTest extends BaseServiceTest {
         request.setUserId(1L);
         request.setDescription("测试支付订单");
         request.setIdempotentKey("test-idempotent-key-1");
-        
+
         // Act
         PaymentResponse response = paymentService.createPayment(request);
-        
+
         // Assert
         assertNotNull(response);
         assertNotNull(response.getPaymentId());
@@ -192,10 +192,10 @@ class PaymentServiceTest extends BaseServiceTest {
         request.setDescription("微信支付测试");
         request.setIdempotentKey("test-idempotent-key-2");
         request.setWechatOptions(buildWechatOptions());
-        
+
         // Act
         PaymentResponse response = paymentService.createPayment(request);
-        
+
         // Assert
         assertNotNull(response);
         assertNotNull(response.getPaymentId());
@@ -216,13 +216,13 @@ class PaymentServiceTest extends BaseServiceTest {
         request.setUserId(1L);
         request.setIdempotentKey("test-idempotent-key-3");
         PaymentResponse createResponse = paymentService.createPayment(request);
-        
+
         // 2. 模拟支付成功
         paymentService.handlePaymentCallback(createResponse.getTradeNo(), true);
-        
+
         // 3. 查询支付状态
         PaymentResponse queryResponse = paymentService.queryPayment(createResponse.getTradeNo());
-        
+
         // 4. 验证状态为已支付
         assertNotNull(queryResponse);
         assertEquals(PaymentStatus.SUCCESS, queryResponse.getStatus());
@@ -241,10 +241,10 @@ class PaymentServiceTest extends BaseServiceTest {
         request.setIdempotentKey("test-idempotent-key-4");
         request.setWechatOptions(buildWechatOptions());
         PaymentResponse response = paymentService.createPayment(request);
-        
+
         // 2. 模拟支付平台回调
         boolean success = paymentService.handlePaymentCallback(response.getTradeNo(), true);
-        
+
         // 3. 验证订单状态更新
         assertTrue(success);
         PaymentOrder order = paymentService.getByOrderId(4L);
@@ -292,19 +292,19 @@ class PaymentServiceTest extends BaseServiceTest {
         request.setIdempotentKey("test-idempotent-key-6");
         PaymentResponse response = paymentService.createPayment(request);
         paymentService.handlePaymentCallback(response.getTradeNo(), true);
-        
+
         // 2. 申请全额退款
         RefundRequest refundRequest = new RefundRequest();
         refundRequest.setPaymentId(response.getPaymentId());
         refundRequest.setRefundAmount(new BigDecimal("100.00"));
         refundRequest.setRefundReason("测试全额退款");
-        
+
         // 3. 验证退款成功
         RefundResponse refundResponse = paymentService.refund(refundRequest);
         assertNotNull(refundResponse);
         assertNotNull(refundResponse.getRefundNo());
         assertEquals(new BigDecimal("100.00"), refundResponse.getRefundAmount());
-        
+
         // 4. 验证订单状态更新
         PaymentOrder order = paymentService.getById(response.getPaymentId());
         assertEquals(PaymentStatus.REFUNDED, order.getStatusEnum());
@@ -326,18 +326,18 @@ class PaymentServiceTest extends BaseServiceTest {
         request.setWechatOptions(buildWechatOptions());
         PaymentResponse response = paymentService.createPayment(request);
         paymentService.handlePaymentCallback(response.getTradeNo(), true);
-        
+
         // 2. 申请部分退款
         RefundRequest refundRequest = new RefundRequest();
         refundRequest.setPaymentId(response.getPaymentId());
         refundRequest.setRefundAmount(new BigDecimal("50.00"));
         refundRequest.setRefundReason("测试部分退款");
-        
+
         // 3. 验证退款金额正确
         RefundResponse refundResponse = paymentService.refund(refundRequest);
         assertNotNull(refundResponse);
         assertEquals(new BigDecimal("50.00"), refundResponse.getRefundAmount());
-        
+
         // 4. 验证订单状态
         PaymentOrder order = paymentService.getById(response.getPaymentId());
         assertEquals(PaymentStatus.PARTIALLY_REFUNDED, order.getStatusEnum());
@@ -445,7 +445,7 @@ class PaymentServiceTest extends BaseServiceTest {
         // 2. 下载支付宝/微信对账单
         // 3. 比对系统订单与对账单
         // 4. 生成对账报表
-        
+
         // 现阶段：验证可以查询支付订单
         configureMocks();
         PaymentRequest request = new PaymentRequest();
@@ -456,13 +456,13 @@ class PaymentServiceTest extends BaseServiceTest {
         request.setIdempotentKey("test-idempotent-key-8");
         PaymentResponse response = paymentService.createPayment(request);
         paymentService.handlePaymentCallback(response.getTradeNo(), true);
-        
+
         // 2. 验证订单状态为成功，可以被对账任务扫描到
         PaymentOrder order = paymentService.getByOrderId(8L);
         assertNotNull(order);
         assertEquals(PaymentStatus.SUCCESS, order.getStatusEnum());
         assertNotNull(order.getPaidTime(), "支付时间不应为空，用于对账时间范围匹配");
-        
+
         // 3. 模拟对账逻辑：验证金额一致性
         // 在实际对账中，会从渠道获取对账单，这里模拟渠道数据
         BigDecimal channelAmount = new BigDecimal("88.00");
@@ -473,11 +473,11 @@ class PaymentServiceTest extends BaseServiceTest {
     @DisplayName("多租户隔离 - 不同租户的支付数据应该隔离")
     void testTenantIsolation() {
         configureMocks();
-        
+
         // 1. 使用租户1的上下文创建支付订单
         Long tenant1 = 1001L;
         TenantContext.setTenantId(tenant1);
-        
+
         PaymentRequest request = new PaymentRequest();
         request.setOrderId(9L);
         request.setAmount(new BigDecimal("66.00"));
@@ -485,22 +485,22 @@ class PaymentServiceTest extends BaseServiceTest {
         request.setUserId(1L);
         request.setIdempotentKey("test-idempotent-key-9");
         PaymentResponse response = paymentService.createPayment(request);
-        
+
         // 验证租户1能查到
         PaymentOrder order1 = paymentService.getById(response.getPaymentId());
         assertNotNull(order1);
         assertEquals(tenant1, order1.getTenantId());
-        
+
         // 2. 切换到租户2的上下文
         Long tenant2 = 1002L;
         TenantContext.setTenantId(tenant2);
-        
+
         // 3. 尝试查询租户1的订单
         PaymentOrder order2 = paymentService.getById(response.getPaymentId());
-        
+
         // 4. 验证查询不到（MyBatis Plus自动添加tenant_id过滤）
         assertNull(order2, "租户2不应该能查询到租户1的订单");
-        
+
         // 清理上下文
         TenantContext.clear();
     }
@@ -518,9 +518,9 @@ class PaymentServiceTest extends BaseServiceTest {
         request1.setUserId(1L);
         request1.setIdempotentKey(idempotentKey);
         request1.setWechatOptions(buildWechatOptions());
-        
+
         PaymentResponse response1 = paymentService.createPayment(request1);
-        
+
         // 2. 再次使用相同的幂等键创建支付订单
         PaymentRequest request2 = new PaymentRequest();
         request2.setOrderId(10L);
@@ -529,9 +529,9 @@ class PaymentServiceTest extends BaseServiceTest {
         request2.setUserId(1L);
         request2.setIdempotentKey(idempotentKey);
         request2.setWechatOptions(buildWechatOptions());
-        
+
         PaymentResponse response2 = paymentService.createPayment(request2);
-        
+
         // 3. 验证返回的是同一个订单
         assertEquals(response1.getPaymentId(), response2.getPaymentId());
         assertEquals(response1.getTradeNo(), response2.getTradeNo());

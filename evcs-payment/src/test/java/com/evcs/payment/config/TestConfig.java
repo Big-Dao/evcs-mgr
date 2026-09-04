@@ -60,7 +60,7 @@ public class TestConfig {
                 redisServer = new RedisServer(6370);
                 redisServer.start();
                 redisStarted = true;
-                
+
                 // 注册JVM关闭钩子，确保Redis在所有测试完成后关闭
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                     if (redisServer != null && redisServer.isActive()) {
@@ -98,13 +98,13 @@ public class TestConfig {
         com.evcs.payment.config.RabbitMQConfig.ExchangeConfig exchange = new com.evcs.payment.config.RabbitMQConfig.ExchangeConfig();
         exchange.setPaymentDirect("test.payment.direct.exchange");
         config.setExchange(exchange);
-        
+
         com.evcs.payment.config.RabbitMQConfig.RoutingKeyConfig routingKey = new com.evcs.payment.config.RabbitMQConfig.RoutingKeyConfig();
         routingKey.setPaymentSuccess("test.payment.success");
         routingKey.setPaymentFailure("test.payment.failure");
         routingKey.setRefundSuccess("test.refund.success");
         config.setRoutingKey(routingKey);
-        
+
         return config;
     }
 
@@ -115,7 +115,7 @@ public class TestConfig {
     @Primary
     public AlipayClient alipayClient() throws Exception {
         AlipayClient mockClient = mock(AlipayClient.class);
-        
+
         // Mock APP支付响应
         AlipayTradeAppPayResponse appPayResponse = new AlipayTradeAppPayResponse();
         appPayResponse.setCode("10000");
@@ -123,7 +123,7 @@ public class TestConfig {
         appPayResponse.setBody("app_id=test&method=alipay.trade.app.pay");
         org.mockito.Mockito.when(mockClient.sdkExecute(any(com.alipay.api.request.AlipayTradeAppPayRequest.class)))
             .thenReturn(appPayResponse);
-        
+
         // Mock 扫码支付响应
         AlipayTradePrecreateResponse precreateResponse = new AlipayTradePrecreateResponse();
         precreateResponse.setCode("10000");
@@ -132,7 +132,7 @@ public class TestConfig {
         precreateResponse.setOutTradeNo("ALI1234567890");
         org.mockito.Mockito.when(mockClient.execute(any(com.alipay.api.request.AlipayTradePrecreateRequest.class)))
             .thenReturn(precreateResponse);
-        
+
         // Mock 查询支付响应
         AlipayTradeQueryResponse queryResponse = new AlipayTradeQueryResponse();
         queryResponse.setCode("10000");
@@ -142,7 +142,7 @@ public class TestConfig {
         queryResponse.setOutTradeNo("ALI1234567890");
         org.mockito.Mockito.when(mockClient.execute(any(com.alipay.api.request.AlipayTradeQueryRequest.class)))
             .thenReturn(queryResponse);
-        
+
         // Mock 退款响应
         AlipayTradeRefundResponse refundResponse = new AlipayTradeRefundResponse();
         refundResponse.setCode("10000");
@@ -150,22 +150,22 @@ public class TestConfig {
         refundResponse.setFundChange("Y");
         org.mockito.Mockito.when(mockClient.execute(any(com.alipay.api.request.AlipayTradeRefundRequest.class)))
             .thenReturn(refundResponse);
-        
+
         return mockClient;
     }
-    
+
     /**
      * AlipayClientFactory Mock - 返回mock的AlipayClient
      */
     @Bean
     @Primary
     public com.evcs.payment.service.channel.AlipayClientFactory alipayClientFactory(AlipayClient alipayClient) {
-        com.evcs.payment.service.channel.AlipayClientFactory factory = 
+        com.evcs.payment.service.channel.AlipayClientFactory factory =
             mock(com.evcs.payment.service.channel.AlipayClientFactory.class);
         org.mockito.Mockito.when(factory.getAlipayClient()).thenReturn(alipayClient);
         return factory;
     }
-    
+
     /**
      * PaymentChannelMap Mock - 用于RefundCallbackService等需要channel map的服务
      */
@@ -173,21 +173,21 @@ public class TestConfig {
     @Primary
     public java.util.Map<String, com.evcs.payment.service.channel.IPaymentChannel> paymentChannelMap() {
         java.util.Map<String, com.evcs.payment.service.channel.IPaymentChannel> channelMap = new java.util.HashMap<>();
-        
+
         // Mock Alipay Channel
-        com.evcs.payment.service.channel.IPaymentChannel alipayChannel = 
+        com.evcs.payment.service.channel.IPaymentChannel alipayChannel =
             mock(com.evcs.payment.service.channel.IPaymentChannel.class);
         org.mockito.Mockito.when(alipayChannel.getChannelName()).thenReturn("alipay");
         org.mockito.Mockito.when(alipayChannel.verifySignature(any(), any())).thenReturn(true);
         channelMap.put("alipay", alipayChannel);
-        
+
         // Mock Wechat Channel
-        com.evcs.payment.service.channel.IPaymentChannel wechatChannel = 
+        com.evcs.payment.service.channel.IPaymentChannel wechatChannel =
             mock(com.evcs.payment.service.channel.IPaymentChannel.class);
         org.mockito.Mockito.when(wechatChannel.getChannelName()).thenReturn("wechat");
         org.mockito.Mockito.when(wechatChannel.verifySignature(any(), any())).thenReturn(true);
         channelMap.put("wechat", wechatChannel);
-        
+
         return channelMap;
     }
 

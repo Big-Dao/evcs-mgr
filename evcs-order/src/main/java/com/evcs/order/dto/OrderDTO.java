@@ -12,7 +12,7 @@ public class OrderDTO extends ChargingOrder {
     private String stationName;
     private String chargerCode;
     private String orderNo; // Maps to sessionId or generated order no
-    
+
     // Frontend compatibility fields
     private Double chargingAmount; // Maps to energy
     private BigDecimal totalAmount; // Maps to amount

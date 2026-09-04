@@ -13,7 +13,7 @@ public class TestDataFactory {
 
     /**
      * 生成唯一的测试ID
-     * 
+     *
      * @return 唯一ID
      */
     public static Long generateId() {
@@ -22,7 +22,7 @@ public class TestDataFactory {
 
     /**
      * 生成测试编码
-     * 
+     *
      * @param prefix 前缀
      * @return 测试编码
      */
@@ -32,7 +32,7 @@ public class TestDataFactory {
 
     /**
      * 生成测试名称
-     * 
+     *
      * @param prefix 前缀
      * @return 测试名称
      */
@@ -42,7 +42,7 @@ public class TestDataFactory {
 
     /**
      * 生成测试邮箱
-     * 
+     *
      * @param username 用户名
      * @return 测试邮箱
      */
@@ -52,7 +52,7 @@ public class TestDataFactory {
 
     /**
      * 生成测试手机号
-     * 
+     *
      * @return 测试手机号
      */
     public static String generatePhone() {
@@ -61,7 +61,7 @@ public class TestDataFactory {
 
     /**
      * 获取当前时间
-     * 
+     *
      * @return 当前时间
      */
     public static LocalDateTime now() {
@@ -70,7 +70,7 @@ public class TestDataFactory {
 
     /**
      * 生成测试地址
-     * 
+     *
      * @param city 城市
      * @return 测试地址
      */
@@ -80,7 +80,7 @@ public class TestDataFactory {
 
     /**
      * 生成随机布尔值
-     * 
+     *
      * @return 随机布尔值
      */
     public static boolean randomBoolean() {
@@ -89,7 +89,7 @@ public class TestDataFactory {
 
     /**
      * 生成指定范围内的随机整数
-     * 
+     *
      * @param min 最小值（包含）
      * @param max 最大值（不包含）
      * @return 随机整数
@@ -100,7 +100,7 @@ public class TestDataFactory {
 
     /**
      * 生成指定范围内的随机双精度浮点数
-     * 
+     *
      * @param min 最小值（包含）
      * @param max 最大值（不包含）
      * @return 随机双精度浮点数

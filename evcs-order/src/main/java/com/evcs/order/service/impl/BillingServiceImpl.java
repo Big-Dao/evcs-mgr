@@ -77,7 +77,9 @@ public class BillingServiceImpl implements IBillingService {
         while (!cursor.isAfter(endTime)) {
             LocalTime t = cursor.toLocalTime();
             boolean isPeak = !t.isBefore(peakStartTime) && t.isBefore(peakEndTime);
-            if (isPeak) peakMinutes++;
+                        if (isPeak) {
+                peakMinutes++;
+            }
             cursor = cursor.plusMinutes(1);
         }
         long offMinutes = Math.max(0, minutes - peakMinutes);
@@ -93,7 +95,9 @@ public class BillingServiceImpl implements IBillingService {
     private BigDecimal calculateBySegments(LocalDateTime start, LocalDateTime end, Double energyKwh, List<BillingPlanSegment> segments) {
         double energy = energyKwh == null ? 0.0 : Math.max(0.0, energyKwh);
         long totalMinutes = java.time.Duration.between(start, end).toMinutes();
-        if (totalMinutes <= 0) return BigDecimal.ZERO.setScale(2);
+                if (totalMinutes <= 0) {
+            return BigDecimal.ZERO.setScale(2);
+        }
         double epm = energy / totalMinutes; // energy per minute
         BigDecimal amount = BigDecimal.ZERO;
         LocalDateTime cursor = start;
@@ -102,14 +106,20 @@ public class BillingServiceImpl implements IBillingService {
             BigDecimal price = (seg != null && seg.getEnergyPrice() != null) ? seg.getEnergyPrice() : BigDecimal.ZERO;
             BigDecimal fee = (seg != null && seg.getServiceFee() != null) ? seg.getServiceFee() : BigDecimal.ZERO;
             LocalDateTime boundary = nextBoundary(cursor, seg);
-            if (boundary.isAfter(end)) boundary = end;
+                        if (boundary.isAfter(end)) {
+                boundary = end;
+            }
             long minutes = Math.max(0, (int) java.time.Duration.between(cursor, boundary).toMinutes());
             if (minutes == 0) {
                 // 防止死循环，至少推进1分钟
                 boundary = cursor.plusMinutes(1);
-                if (boundary.isAfter(end)) boundary = end;
+                                if (boundary.isAfter(end)) {
+                    boundary = end;
+                }
                 minutes = Math.max(0, (int) java.time.Duration.between(cursor, boundary).toMinutes());
-                if (minutes == 0) break;
+                                if (minutes == 0) {
+                    break;
+                }
             }
             BigDecimal minuteAmt = BigDecimal.valueOf(epm * minutes).multiply(price.add(fee));
             amount = amount.add(minuteAmt);
@@ -135,7 +145,8 @@ public class BillingServiceImpl implements IBillingService {
             return todayEt;
         } else {
             // 跨午夜：段1 [st, 24:00)，段2 [00:00, et)
-            LocalDateTime midnight = LocalDateTime.of(cursor.toLocalDate(), LocalTime.MIDNIGHT).plusDays(cursor.toLocalTime().isAfter(st) || cursor.toLocalTime().equals(st) ? 1 : 0);
+            LocalDateTime midnight = LocalDateTime.of(cursor.toLocalDate(), LocalTime.MIDNIGHT)
+                    .plusDays(cursor.toLocalTime().isAfter(st) || cursor.toLocalTime().equals(st) ? 1 : 0);
             if (!cursor.toLocalTime().isBefore(et)) {
                 // 在[st,24:00)内，则边界是午夜
                 if (!cursor.toLocalTime().isBefore(st)) {
@@ -163,7 +174,9 @@ public class BillingServiceImpl implements IBillingService {
                 // 跨午夜
                 in = !time.isBefore(st) || time.isBefore(et);
             }
-            if (in) return s;
+                        if (in) {
+                return s;
+            }
         }
         return null;
     }

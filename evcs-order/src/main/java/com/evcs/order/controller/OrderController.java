@@ -14,7 +14,12 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "订单管理", description = "充电订单查询接口")
 @RestController
@@ -128,14 +133,14 @@ public class OrderController {
             @Parameter(description = "结束时间") @RequestParam(required = false) String endTime) {
         java.time.LocalDateTime start = null;
         java.time.LocalDateTime end = null;
-        
+
         if (startTime != null && !startTime.isEmpty()) {
             start = java.time.LocalDateTime.parse(startTime);
         }
         if (endTime != null && !endTime.isEmpty()) {
             end = java.time.LocalDateTime.parse(endTime);
         }
-        
+
         return Result.success(orderService.getCityOrderStatistics(start, end));
     }
 

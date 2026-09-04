@@ -25,7 +25,7 @@ import static org.mockito.Mockito.when;
 
 /**
  * 充电订单服务测试
- * 
+ *
  * 测试策略：
  * 1. 核心 CRUD 操作
  * 2. 订单状态流转
@@ -55,10 +55,10 @@ class ChargingOrderServiceTest extends BaseServiceTest {
         mockPlan.setName("默认计费计划");
         mockPlan.setCode("DEFAULT");
         mockPlan.setStatus(1);
-        
+
         when(billingPlanService.getById(anyLong())).thenReturn(mockPlan);
         when(billingPlanService.getChargerPlan(anyLong(), anyLong())).thenReturn(mockPlan);
-        
+
         // Mock计费服务，返回固定金额用于测试
         when(billingService.calculateAmount(any(), any(), any(), anyLong(), anyLong(), anyLong()))
             .thenReturn(new BigDecimal("50.00"));
@@ -80,7 +80,7 @@ class ChargingOrderServiceTest extends BaseServiceTest {
 
         // Then: 验证创建成功
         assertThat(result).isTrue();
-        
+
         // 查询验证
         ChargingOrder created = chargingOrderService.getBySessionId(sessionId);
         assertThat(created).isNotNull();

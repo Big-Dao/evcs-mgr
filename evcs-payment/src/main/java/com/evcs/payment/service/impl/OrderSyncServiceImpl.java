@@ -98,7 +98,7 @@ public class OrderSyncServiceImpl implements OrderSyncService {
             Long count = paymentSyncRecordMapper.selectCount(new LambdaQueryWrapper<PaymentSyncRecord>()
                     .eq(PaymentSyncRecord::getPaymentOrderId, paymentOrderId)
                     .eq(PaymentSyncRecord::getSyncStatus, "SUCCESS"));
-            
+
             if (count > 0) {
                 return true;
             }
@@ -188,7 +188,7 @@ public class OrderSyncServiceImpl implements OrderSyncService {
             record.setSyncTime(LocalDateTime.now());
             record.setLastError(error);
             record.setRetryCount(0);
-            
+
             paymentSyncRecordMapper.insert(record);
         } catch (Exception e) {
             log.error("保存同步记录失败: paymentOrderId={}", paymentOrderId, e);

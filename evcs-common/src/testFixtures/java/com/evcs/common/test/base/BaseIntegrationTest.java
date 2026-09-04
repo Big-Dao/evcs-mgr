@@ -8,21 +8,21 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * 集成测试基类
  * 用于需要完整Spring上下文的集成测试
- * 
+ *
  * 集成测试特点：
  * - 启动完整的Spring Boot应用上下文
  * - 可以测试多个组件之间的集成
  * - 运行时间较长，适合验证端到端流程
- * 
+ *
  * 使用方法：
  * <pre>
- * @SpringBootTest(classes = YourApplication.class, 
+ * @SpringBootTest(classes = YourApplication.class,
  *                 webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
  * class YourIntegrationTest extends BaseIntegrationTest {
- *     
+ *
  *     @Autowired
  *     private TestRestTemplate restTemplate;
- *     
+ *
  *     @Test
  *     void testEndToEndFlow() {
  *         // 测试完整的业务流程
@@ -38,7 +38,7 @@ public abstract class BaseIntegrationTest extends BaseServiceTest {
 
     /**
      * 等待异步操作完成
-     * 
+     *
      * @param millis 等待毫秒数
      */
     protected void waitFor(long millis) {
@@ -52,7 +52,7 @@ public abstract class BaseIntegrationTest extends BaseServiceTest {
 
     /**
      * 重试操作直到成功或超时
-     * 
+     *
      * @param action 要执行的操作
      * @param maxAttempts 最大重试次数
      * @param delayMillis 重试间隔（毫秒）

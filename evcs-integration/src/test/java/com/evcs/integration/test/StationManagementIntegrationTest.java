@@ -41,7 +41,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         station.setLatitude(39.9087);
         station.setLongitude(116.4089);
         station.setStatus(1);
-        
+
         boolean stationSaved = stationService.saveStation(station);
         assertTrue(stationSaved, "充电站应该保存成功");
         assertNotNull(station.getStationId(), "充电站ID应该被生成");
@@ -55,7 +55,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         charger1.setChargerType(1); // 直流快充
         charger1.setStatus(1); // 空闲
         charger1.setRatedPower(new BigDecimal("60.0"));
-        
+
         boolean charger1Saved = chargerService.saveCharger(charger1);
         assertTrue(charger1Saved, "充电桩1应该保存成功");
         assertNotNull(charger1.getId(), "充电桩1 ID应该被生成");
@@ -69,7 +69,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         charger2.setChargerType(2); // 交流慢充
         charger2.setStatus(1);
         charger2.setRatedPower(new BigDecimal("7.0"));
-        
+
         boolean charger2Saved = chargerService.saveCharger(charger2);
         assertTrue(charger2Saved, "充电桩2应该保存成功");
 
@@ -99,7 +99,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         station.setLatitude(31.2304);
         station.setLongitude(121.4737);
         station.setStatus(1); // 初始状态：运营中
-        
+
         stationService.saveStation(station);
         assertNotNull(station.getStationId());
 
@@ -134,7 +134,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         station.setLatitude(23.1291);
         station.setLongitude(113.2644);
         station.setStatus(1);
-        
+
         stationService.saveStation(station);
 
         // 2. 创建充电桩（初始状态：空闲）
@@ -145,7 +145,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         charger.setChargerType(1);
         charger.setStatus(1); // 空闲
         charger.setRatedPower(new BigDecimal("120.0"));
-        
+
         chargerService.saveCharger(charger);
         assertNotNull(charger.getId());
 
@@ -180,7 +180,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         station.setLatitude(22.5333);
         station.setLongitude(114.1333);
         station.setStatus(0); // 停止运营
-        
+
         stationService.saveStation(station);
         Long stationId = station.getStationId();
 
@@ -192,7 +192,7 @@ class StationManagementIntegrationTest extends BaseIntegrationTest {
         charger.setChargerType(1);
         charger.setStatus(0); // 离线
         charger.setRatedPower(new BigDecimal("60.0"));
-        
+
         chargerService.saveCharger(charger);
         Long chargerId = charger.getId();
 

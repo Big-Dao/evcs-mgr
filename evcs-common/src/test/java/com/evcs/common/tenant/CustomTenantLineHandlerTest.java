@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * CustomTenantLineHandler Security Tests
  * Tests for Week 1 - Day 2-3: Security Vulnerability Fixes (SEC-02)
- * 
+ *
  * Validates that the tenant line handler properly throws exceptions
  * when tenant context is missing, preventing potential data leaks.
  */

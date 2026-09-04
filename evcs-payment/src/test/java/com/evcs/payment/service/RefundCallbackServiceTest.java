@@ -109,7 +109,7 @@ class RefundCallbackServiceTest {
 
         // Assert
         // 签名验证通过，但退款失败状态不更新订单
-        assertTrue(result); 
+        assertTrue(result);
     }
 
     @Test

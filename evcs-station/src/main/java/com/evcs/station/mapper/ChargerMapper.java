@@ -20,7 +20,7 @@ public interface ChargerMapper extends BaseMapper<Charger> {
      * 根据充电站ID查询充电桩列表
      */
     @Select("""
-        SELECT * FROM charger 
+        SELECT * FROM charger
         WHERE station_id = #{stationId} AND deleted = 0
         ORDER BY charger_code
         """)
@@ -30,13 +30,13 @@ public interface ChargerMapper extends BaseMapper<Charger> {
      * 更新充电桩状态
      */
     @Update("""
-        UPDATE charger 
-        SET status = #{status}, 
+        UPDATE charger
+        SET status = #{status},
             last_heartbeat = #{heartbeat},
             update_time = CURRENT_TIMESTAMP
         WHERE charger_id = #{chargerId}
         """)
-    int updateStatus(@Param("chargerId") Long chargerId, 
+    int updateStatus(@Param("chargerId") Long chargerId,
                     @Param("status") Integer status,
                     @Param("heartbeat") LocalDateTime heartbeat);
 
@@ -44,9 +44,9 @@ public interface ChargerMapper extends BaseMapper<Charger> {
      * 更新充电桩实时数据
      */
     @Update("""
-        UPDATE charger 
+        UPDATE charger
         SET current_power = #{power},
-            current_voltage = #{voltage}, 
+            current_voltage = #{voltage},
             current_current = #{current},
             temperature = #{temperature},
             last_heartbeat = #{heartbeat},
@@ -55,7 +55,7 @@ public interface ChargerMapper extends BaseMapper<Charger> {
         """)
     int updateRealTimeData(@Param("chargerId") Long chargerId,
                           @Param("power") Double power,
-                          @Param("voltage") Double voltage, 
+                          @Param("voltage") Double voltage,
                           @Param("current") Double current,
                           @Param("temperature") Double temperature,
                           @Param("heartbeat") LocalDateTime heartbeat);
@@ -75,7 +75,7 @@ public interface ChargerMapper extends BaseMapper<Charger> {
      * 开始充电会话
      */
     @Update("""
-        UPDATE charger 
+        UPDATE charger
         SET status = 2,
             current_session_id = #{sessionId},
             current_user_id = #{userId},
@@ -94,7 +94,7 @@ public interface ChargerMapper extends BaseMapper<Charger> {
      * 结束充电会话
      */
     @Update("""
-        UPDATE charger 
+        UPDATE charger
         SET status = 1,
             current_session_id = NULL,
             current_user_id = NULL,
@@ -113,7 +113,7 @@ public interface ChargerMapper extends BaseMapper<Charger> {
      * 更新充电进度
      */
     @Update("""
-        UPDATE charger 
+        UPDATE charger
         SET charged_energy = #{energy},
             charged_duration = #{duration},
             last_heartbeat = #{heartbeat},
@@ -129,8 +129,8 @@ public interface ChargerMapper extends BaseMapper<Charger> {
      * 查询离线充电桩
      */
     @Select("""
-        SELECT * FROM charger 
-        WHERE status != 0 
+        SELECT * FROM charger
+        WHERE status != 0
         AND last_heartbeat < #{threshold}
         AND deleted = 0
         """)
@@ -140,8 +140,8 @@ public interface ChargerMapper extends BaseMapper<Charger> {
      * 查询故障充电桩
      */
     @Select("""
-        SELECT * FROM charger 
-        WHERE status = 3 
+        SELECT * FROM charger
+        WHERE status = 3
         AND deleted = 0
         ORDER BY update_time DESC
         """)
@@ -152,7 +152,7 @@ public interface ChargerMapper extends BaseMapper<Charger> {
      */
     @Select("""
         SELECT status, COUNT(*) as count
-        FROM charger 
+        FROM charger
         WHERE tenant_id = #{tenantId} AND deleted = 0
         GROUP BY status
         """)
@@ -162,7 +162,7 @@ public interface ChargerMapper extends BaseMapper<Charger> {
      * 根据协议类型查询充电桩
      */
     @Select("""
-        SELECT * FROM charger 
+        SELECT * FROM charger
         WHERE supported_protocols::text LIKE CONCAT('%"', #{protocol}, '"%')
         AND deleted = 0
         """)

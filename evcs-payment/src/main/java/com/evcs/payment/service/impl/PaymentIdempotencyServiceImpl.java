@@ -163,7 +163,7 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
         try {
             java.util.Objects.requireNonNull(cacheKey, "cacheKey不能为null");
             java.util.Objects.requireNonNull(timeUnit, "timeUnit不能为null");
-            
+
             redisTemplate.opsForValue().set(cacheKey, paymentOrder, expireTime, timeUnit);
             log.debug("缓存支付结果成功: idempotentKey={}, tradeNo={}, expireTime={}",
                 idempotentKey, paymentOrder.getTradeNo(), expireTime);
@@ -186,7 +186,7 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
         String cacheKey = buildCacheKey(idempotentKey);
         try {
             java.util.Objects.requireNonNull(cacheKey, "cacheKey不能为null");
-            
+
             Object cached = redisTemplate.opsForValue().get(cacheKey);
             if (cached instanceof PaymentOrder) {
                 return (PaymentOrder) cached;
@@ -288,7 +288,7 @@ public class PaymentIdempotencyServiceImpl implements PaymentIdempotencyService 
             // 检查是否已有相同幂等键的请求在处理
             String lockKey = buildLockKey(idempotentKey);
             java.util.Objects.requireNonNull(lockKey, "lockKey不能为null");
-            
+
             Object existingRequestId = redisTemplate.opsForValue().get(lockKey);
 
             boolean isDuplicate = requestId.equals(existingRequestId);

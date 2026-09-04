@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.evcs.common.tenant.CustomTenantLineHandler;
 import com.evcs.station.dto.stats.ChargerCodeRow;
 import com.evcs.station.dto.stats.ChargerStatusStats;
+import com.evcs.station.dto.stats.StationBriefRow;
 import com.evcs.station.dto.stats.StationNameRow;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.entity.Station;
@@ -27,6 +28,23 @@ public class StationStatsService {
 
     private final StationMapper stationMapper;
     private final ChargerMapper chargerMapper;
+
+    /**
+     * 按主键查询站点简要信息（跨服务写单反范式化用，唯一键查询免租户上下文）。
+     */
+    public StationBriefRow getStationBrief(Long stationId) {
+        try {
+            CustomTenantLineHandler.disableTenantFilter();
+            Station station = stationMapper.selectById(stationId);
+            if (station == null) {
+                return null;
+            }
+            return new StationBriefRow(station.getStationId(), station.getStationName(),
+                    station.getProvince(), station.getCity());
+        } finally {
+            CustomTenantLineHandler.enableTenantFilter();
+        }
+    }
 
     public List<StationNameRow> getStationNames(List<Long> tenantIds) {
         try {

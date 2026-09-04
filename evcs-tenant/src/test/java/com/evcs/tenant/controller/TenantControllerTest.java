@@ -86,7 +86,7 @@ class TenantControllerTest extends BaseControllerTest {
 
         // 重新设置租户上下文（MockMvc 请求后会被拦截器清空）
         setUpTenantContext();
-        
+
         // When & Then: 更新租户
         String updateBody = """
             {
@@ -116,7 +116,7 @@ class TenantControllerTest extends BaseControllerTest {
 
         // 重新设置租户上下文（MockMvc 请求后会被拦截器清空）
         setUpTenantContext();
-        
+
         // When & Then: 删除租户
         mockMvc.perform(delete("/tenant/" + tenant.getId()))
                 .andExpect(status().isOk())
@@ -132,7 +132,7 @@ class TenantControllerTest extends BaseControllerTest {
 
         // 重新设置租户上下文（MockMvc 请求后会被拦截器清空）
         setUpTenantContext();
-        
+
         // When & Then: 查询租户
         mockMvc.perform(get("/tenant/" + tenant.getId()))
                 .andExpect(status().isOk())
@@ -155,7 +155,7 @@ class TenantControllerTest extends BaseControllerTest {
 
         // 重新设置租户上下文（MockMvc 请求后会被拦截器清空）
         setUpTenantContext();
-        
+
         // When & Then: 分页查询
         mockMvc.perform(get("/tenant/page")
                 .param("page", "1")
@@ -183,7 +183,7 @@ class TenantControllerTest extends BaseControllerTest {
 
         // 重新设置租户上下文（MockMvc 请求后会被拦截器清空）
         setUpTenantContext();
-        
+
         // When & Then: 查询子租户
         mockMvc.perform(get("/tenant/" + parent.getId() + "/children"))
                 .andExpect(status().isOk())
@@ -199,7 +199,7 @@ class TenantControllerTest extends BaseControllerTest {
 
         // 重新设置租户上下文（MockMvc 请求后会被拦截器清空）
         setUpTenantContext();
-        
+
         // When & Then: 查询租户树
         mockMvc.perform(get("/tenant/tree")
                 .param("rootId", root.getId().toString()))
@@ -226,7 +226,7 @@ class TenantControllerTest extends BaseControllerTest {
 
         // 重新设置租户上下文（MockMvc 请求后会被拦截器清空）
         setUpTenantContext();
-        
+
         // When & Then: 启用租户
         mockMvc.perform(put("/tenant/" + tenant.getId() + "/status")
                 .param("status", "1"))

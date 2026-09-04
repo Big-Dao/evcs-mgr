@@ -35,7 +35,7 @@ public interface StationMapper extends BaseMapper<Station> {
                    COUNT(CASE WHEN status = 1 THEN 1 END) as available_chargers,
                    COUNT(CASE WHEN status = 2 THEN 1 END) as charging_chargers,
                    COUNT(CASE WHEN status = 3 THEN 1 END) as fault_chargers
-            FROM charger 
+            FROM charger
             WHERE deleted = 0
             GROUP BY station_id
         ) c ON s.station_id = c.station_id
@@ -54,8 +54,8 @@ public interface StationMapper extends BaseMapper<Station> {
                COALESCE(stats.charging_chargers, 0) as charging_chargers,
                COALESCE(stats.fault_chargers, 0) as fault_chargers,
                s.create_time, s.update_time, s.create_by, s.update_by, s.deleted,
-               (6371 * acos(cos(radians(#{latitude})) * cos(radians(s.latitude)) * 
-                cos(radians(s.longitude) - radians(#{longitude})) + 
+               (6371 * acos(cos(radians(#{latitude})) * cos(radians(s.latitude)) *
+                cos(radians(s.longitude) - radians(#{longitude})) +
                 sin(radians(#{latitude})) * sin(radians(s.latitude)))) AS distance
         FROM charging_station s
         LEFT JOIN (
@@ -69,13 +69,13 @@ public interface StationMapper extends BaseMapper<Station> {
             GROUP BY station_id
         ) stats ON s.station_id = stats.station_id
         WHERE s.deleted = 0 AND s.status = 1
-          AND (6371 * acos(cos(radians(#{latitude})) * cos(radians(s.latitude)) * 
-                cos(radians(s.longitude) - radians(#{longitude})) + 
+          AND (6371 * acos(cos(radians(#{latitude})) * cos(radians(s.latitude)) *
+                cos(radians(s.longitude) - radians(#{longitude})) +
                 sin(radians(#{latitude})) * sin(radians(s.latitude)))) <= #{radius}
         ORDER BY distance
         LIMIT #{limit}
         """)
-    List<Station> selectNearbyStations(@Param("latitude") Double latitude, 
+    List<Station> selectNearbyStations(@Param("latitude") Double latitude,
                                      @Param("longitude") Double longitude,
                                      @Param("radius") Double radius,
                                      @Param("limit") Integer limit);

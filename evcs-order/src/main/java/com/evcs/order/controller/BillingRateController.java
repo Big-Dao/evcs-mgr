@@ -11,7 +11,13 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 @Tag(name = "计费策略", description = "按租户/站配置计费策略")
 @RestController
@@ -43,7 +49,9 @@ public class BillingRateController {
                                            @RequestParam(required = false) Long stationId) {
         Page<BillingRate> p = new Page<>(page, size);
         var qw = new com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<BillingRate>();
-        if (stationId != null) qw.eq("station_id", stationId);
+                if (stationId != null) {
+            qw.eq("station_id", stationId);
+        }
         return Result.success(rateService.page(p, qw).convert(BillingRateResponse::from));
     }
 }

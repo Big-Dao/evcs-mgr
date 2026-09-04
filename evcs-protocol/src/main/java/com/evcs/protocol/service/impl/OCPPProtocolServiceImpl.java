@@ -366,7 +366,9 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
     @Override
     protected boolean doReserveNow(ProtocolRequest request) {
         String deviceCode = request.getDeviceCode();
-        if (deviceCode == null) return false;
+                if (deviceCode == null) {
+            return false;
+        }
 
         try {
             OCPPWebSocketSession session = sessionManager.getSession(deviceCode);
@@ -389,7 +391,9 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
     @Override
     protected boolean doCancelReservation(ProtocolRequest request) {
         String deviceCode = request.getDeviceCode();
-        if (deviceCode == null) return false;
+                if (deviceCode == null) {
+            return false;
+        }
 
         try {
             OCPPWebSocketSession session = sessionManager.getSession(deviceCode);
@@ -408,7 +412,9 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
     @Override
     protected boolean doUpdateFirmware(ProtocolRequest request) {
         String deviceCode = request.getDeviceCode();
-        if (deviceCode == null) return false;
+                if (deviceCode == null) {
+            return false;
+        }
 
         try {
             OCPPWebSocketSession session = sessionManager.getSession(deviceCode);
@@ -431,7 +437,9 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
     @Override
     protected boolean doSetChargingProfile(ProtocolRequest request) {
         String deviceCode = request.getDeviceCode();
-        if (deviceCode == null) return false;
+                if (deviceCode == null) {
+            return false;
+        }
 
         try {
             OCPPWebSocketSession session = sessionManager.getSession(deviceCode);
@@ -499,8 +507,12 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
             Map<String, Object> payload = new HashMap<>();
             payload.put("location", location);
             payload.put("retrieveDate", retrieveDate);
-            if (retries != null) payload.put("retries", retries);
-            if (retryInterval != null) payload.put("retryInterval", retryInterval);
+                        if (retries != null) {
+                payload.put("retries", retries);
+            }
+                        if (retryInterval != null) {
+                payload.put("retryInterval", retryInterval);
+            }
 
             String message = buildOCPPMessage("Call", UUID.randomUUID().toString(), "UpdateFirmware", payload);
             String messageToSend = message != null ? message : "";

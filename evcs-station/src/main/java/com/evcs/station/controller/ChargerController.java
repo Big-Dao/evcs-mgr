@@ -25,7 +25,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -60,7 +68,7 @@ public class ChargerController {
             @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
             @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") Long size,
             @Parameter(description = "查询条件") Charger queryParam) {
-        
+
         Page<Charger> page = new Page<>(current, size);
         IPage<Charger> result = chargerService.queryChargerPage(page, queryParam);
 
@@ -110,7 +118,7 @@ public class ChargerController {
             @Parameter(description = "页码", example = "1") @RequestParam(defaultValue = "1") Long current,
             @Parameter(description = "每页大小", example = "10") @RequestParam(defaultValue = "10") Long size,
             @Parameter(description = "查询条件") ChargerConnector queryParam) {
-        
+
         log.info("Querying connector page: current={}, size={}, param={}", current, size, queryParam);
         Page<ChargerConnector> page = new Page<>(current, size);
         IPage<ChargerConnector> result = chargerConnectorService.queryPage(page, queryParam);
@@ -237,7 +245,7 @@ public class ChargerController {
         if (charger.getId() == null) {
             return Result.fail("充电桩ID不能为空");
         }
-        
+
         try {
             boolean success = chargerService.updateCharger(charger);
             if (success) {
@@ -259,7 +267,7 @@ public class ChargerController {
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> deleteCharger(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId) {
-        
+
         try {
             boolean success = chargerService.deleteCharger(chargerId);
             if (success) {
@@ -281,7 +289,7 @@ public class ChargerController {
     public Result<Void> updateChargerStatus(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
             @Parameter(description = "状态：0离线，1空闲，2充电中，3故障，4维护，5预约中") @RequestParam Integer status) {
-        
+
         boolean success = chargerService.updateStatus(chargerId, status);
         if (success) {
             return Result.successMessage("更新状态成功");
@@ -302,7 +310,7 @@ public class ChargerController {
             @Parameter(description = "实时电压(V)") @RequestParam(required = false) Double voltage,
             @Parameter(description = "实时电流(A)") @RequestParam(required = false) Double current,
             @Parameter(description = "温度(℃)") @RequestParam(required = false) Double temperature) {
-        
+
         boolean success = chargerService.updateRealTimeData(chargerId, power, voltage, current, temperature);
         if (success) {
             return Result.successMessage("更新实时数据成功");
@@ -356,7 +364,7 @@ public class ChargerController {
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> resetCharger(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId) {
-        
+
         boolean success = chargerService.resetCharger(chargerId);
         if (success) {
             return Result.successMessage("重置充电桩成功");
@@ -375,11 +383,11 @@ public class ChargerController {
     public Result<Void> changeChargerStatus(
             @Parameter(description = "充电桩ID") @PathVariable @NotNull Long chargerId,
             @Parameter(description = "状态：1启用，0停用") @RequestParam Integer enabled) {
-        
+
         if (enabled == null || (enabled != 0 && enabled != 1)) {
             return Result.fail("状态值无效");
         }
-        
+
         boolean success = chargerService.changeStatus(chargerId, enabled);
         if (success) {
             String action = enabled == 1 ? "启用" : "停用";
@@ -449,7 +457,7 @@ public class ChargerController {
     public Result<Boolean> checkChargerCode(
             @Parameter(description = "充电桩编码") @RequestParam String chargerCode,
             @Parameter(description = "排除的充电桩ID") @RequestParam(required = false) Long excludeId) {
-        
+
         boolean exists = chargerService.checkChargerCodeExists(chargerCode, excludeId);
         return Result.success(exists);
     }
@@ -464,11 +472,11 @@ public class ChargerController {
     public Result<Void> batchUpdateStatus(
             @Parameter(description = "充电桩ID列表") @RequestBody List<Long> chargerIds,
             @Parameter(description = "目标状态") @RequestParam Integer status) {
-        
+
         if (chargerIds == null || chargerIds.isEmpty()) {
             return Result.fail("充电桩ID列表不能为空");
         }
-        
+
         boolean success = chargerService.batchUpdateStatus(chargerIds, status);
         if (success) {
             return Result.successMessage("批量更新状态成功");

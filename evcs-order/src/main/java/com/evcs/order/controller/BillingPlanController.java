@@ -12,7 +12,14 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
@@ -55,7 +62,9 @@ public class BillingPlanController {
                                            @RequestParam(required = false) Long stationId) {
         Page<BillingPlan> page = new Page<>(current, size);
         QueryWrapper<BillingPlan> qw = new QueryWrapper<>();
-        if (stationId != null) qw.eq("station_id", stationId);
+                if (stationId != null) {
+            qw.eq("station_id", stationId);
+        }
         IPage<BillingPlan> result = planService.page(page, qw);
         planService.fillPlanStats(result.getRecords());
         return Result.success(result.convert(BillingPlanResponse::from));
@@ -102,7 +111,9 @@ public class BillingPlanController {
     @PostMapping("/{planId}/segments")
     @Operation(summary = "保存计划分段(覆盖式)")
     @DataScope
-    public Result<Boolean> saveSegments(@PathVariable Long planId, @RequestParam(defaultValue = "false") boolean requireFullDay, @RequestBody List<BillingPlanSegment> segments) {
+    public Result<Boolean> saveSegments(@PathVariable Long planId,
+                                        @RequestParam(defaultValue = "false") boolean requireFullDay,
+                                        @RequestBody List<BillingPlanSegment> segments) {
         if (segments != null && segments.size() > 96) {
             return Result.fail("分段数量不能超过96");
         }
@@ -136,7 +147,9 @@ public class BillingPlanController {
     public Result<Boolean> importSegments(@PathVariable Long planId,
                                           @RequestParam(defaultValue = "false") boolean requireFullDay,
                                           @RequestBody List<BillingPlanSegment> segments) {
-        if (segments != null && segments.size() > 96) return Result.fail("分段数量不能超过96");
+                if (segments != null && segments.size() > 96) {
+            return Result.fail("分段数量不能超过96");
+        }
         return Result.success(planService.saveSegments(planId, segments, requireFullDay));
     }
 

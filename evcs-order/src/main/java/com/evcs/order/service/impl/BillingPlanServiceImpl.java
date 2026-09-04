@@ -109,7 +109,9 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
                 .and(q -> q.isNull("effective_start_date").or().le("effective_start_date", today))
                 .and(q -> q.isNull("effective_end_date").or().ge("effective_end_date", today))
                 .orderByDesc("priority").orderByDesc("is_default").orderByDesc("id").last("limit 1"));
-        if (stationDefault != null) return stationDefault;
+                if (stationDefault != null) {
+            return stationDefault;
+        }
         return this.getOne(new QueryWrapper<BillingPlan>()
                 .isNull("station_id")
                 .eq("status", 1)
@@ -152,7 +154,9 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
         int i = 1;
         for (BillingPlanSegment s : segments) {
             s.setPlanId(planId);
-            if (s.getSegmentIndex() == null) s.setSegmentIndex(i++);
+                        if (s.getSegmentIndex() == null) {
+                s.setSegmentIndex(i++);
+            }
             segmentMapper.insert(s);
         }
         return true;
@@ -162,7 +166,9 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
     @DataScope
     public BillingPlan clonePlan(Long sourcePlanId, BillingPlan newPlan) {
         BillingPlan src = this.getById(sourcePlanId);
-        if (src == null) return null;
+                if (src == null) {
+            return null;
+        }
 
         // 限制同站点启用计划数量（如新计划启用）
         // MyBatis Plus自动添加tenant_id过滤
@@ -195,7 +201,9 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
     }
 
     public boolean validateNoOverlap(List<BillingPlanSegment> segments, boolean requireFullDay) {
-        if (segments == null) return !requireFullDay; // 允许空并非全天
+        if (segments == null) {
+            return !requireFullDay; // 允许空并非全天
+        }
         boolean[] used = new boolean[1440];
         for (BillingPlanSegment s : segments) {
             java.time.LocalTime st;
@@ -213,16 +221,22 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
             }
             if (ei > si) {
                 for (int m = si; m < ei; m++) {
-                    if (used[m]) return false;
+                                        if (used[m]) {
+                        return false;
+                    }
                     used[m] = true;
                 }
             } else { // 跨午夜，拆两段
                 for (int m = si; m < 1440; m++) {
-                    if (used[m]) return false;
+                                        if (used[m]) {
+                        return false;
+                    }
                     used[m] = true;
                 }
                 for (int m = 0; m < ei; m++) {
-                    if (used[m]) return false;
+                                        if (used[m]) {
+                        return false;
+                    }
                     used[m] = true;
                 }
             }
@@ -246,12 +260,14 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
 
     @Override
     public void fillPlanStats(List<BillingPlan> plans) {
-        if (plans == null || plans.isEmpty()) return;
-        
+                if (plans == null || plans.isEmpty()) {
+            return;
+        }
+
         for (BillingPlan plan : plans) {
             // 填充站点数
             plan.setStationCount(plan.getStationId() != null ? 1 : 0);
-            
+
             // 填充时段数
             Long count = segmentMapper.selectCount(new QueryWrapper<BillingPlanSegment>()
                     .eq("plan_id", plan.getId()));

@@ -78,7 +78,7 @@ class AuthServiceTest {
         assertEquals("Bearer", response.getTokenType());
         assertNotNull(response.getUser());
         assertEquals(identifier, response.getUser().get("username"));
-        
+
         verify(userService).getByIdentifier(identifier);
         verify(passwordEncoder).matches(password, encodedPassword);
         verify(jwtUtil).generateToken(userId, identifier, tenantId, Collections.singletonList("ADMIN"));
@@ -161,7 +161,7 @@ class AuthServiceTest {
 
         when(userService.getByIdentifier(request.getLoginIdentifier())).thenReturn(null);
         when(passwordEncoder.encode(request.getPassword())).thenReturn("encodedPassword");
-        
+
         // Act
         authService.register(request);
 

@@ -116,8 +116,8 @@ public class ReconciliationServiceImpl implements IReconciliationService {
         }
 
         // 计算对账成功率
-        double successRate = totalCount > 0 
-            ? (double) matchedCount / totalCount * 100 
+        double successRate = totalCount > 0
+            ? (double) matchedCount / totalCount * 100
             : 100.0;
 
         // 计算金额差异
@@ -146,7 +146,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
             .status(status)
             .build();
 
-        log.info("对账完成: date={}, channel={}, totalCount={}, matchedCount={}, successRate={}%", 
+        log.info("对账完成: date={}, channel={}, totalCount={}, matchedCount={}, successRate={}%",
             date, request.getChannel(), totalCount, matchedCount, result.getSuccessRate());
 
         return result;
@@ -182,7 +182,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
         // 时间容差：允许5分钟的时间差（考虑到网络延迟、系统时间差异等）
         final long TIME_TOLERANCE_MINUTES = 5;
         final java.time.Duration TIME_TOLERANCE = java.time.Duration.ofMinutes(TIME_TOLERANCE_MINUTES);
-        
+
         // 用于标记已经匹配的对账单交易，避免重复匹配
         java.util.Set<Integer> matchedTransactionIndices = new java.util.HashSet<>();
 
@@ -190,28 +190,28 @@ public class ReconciliationServiceImpl implements IReconciliationService {
         for (PaymentOrder order : systemOrders) {
             boolean found = false;
             String matchReason = "";
-            
+
             for (int i = 0; i < statementTransactions.size(); i++) {
                 if (matchedTransactionIndices.contains(i)) {
                     continue; // 跳过已匹配的交易
                 }
-                
+
                 var transaction = statementTransactions.get(i);
-                
+
                 // 匹配策略1：商户订单号（outTradeNo）匹配（最准确）
-                if (order.getTradeNo() != null && transaction.getOutTradeNo() != null 
+                if (order.getTradeNo() != null && transaction.getOutTradeNo() != null
                     && order.getTradeNo().equals(transaction.getOutTradeNo())) {
-                    
+
                     // 验证金额是否一致（允许0.01元的容差，处理四舍五入问题）
                     BigDecimal amountDiff = order.getAmount().subtract(transaction.getAmount()).abs();
                     if (amountDiff.compareTo(new BigDecimal("0.01")) <= 0) {
-                        
+
                         // 验证时间是否在容差范围内
                         if (isTimeWithinTolerance(order.getPaidTime(), transaction.getTradeTime(), TIME_TOLERANCE)) {
                             matched++;
                             found = true;
                             matchedTransactionIndices.add(i);
-                            matchReason = String.format("交易号匹配: %s, 金额: %s, 时间: %s", 
+                            matchReason = String.format("交易号匹配: %s, 金额: %s, 时间: %s",
                                 order.getTradeNo(), order.getAmount(), order.getPaidTime());
 
                             if (!isStatusAligned(order, transaction.getTradeStatus())) {
@@ -245,23 +245,23 @@ public class ReconciliationServiceImpl implements IReconciliationService {
                     }
                 }
             }
-            
+
             // 如果第一轮没匹配到，进行第二轮：模糊匹配（金额 + 时间）
             if (!found) {
                 for (int i = 0; i < statementTransactions.size(); i++) {
                     if (matchedTransactionIndices.contains(i)) {
                         continue;
                     }
-                    
+
                     var transaction = statementTransactions.get(i);
-                    
+
                     // 匹配策略2：金额匹配 + 时间匹配 + 状态匹配（用于处理交易号不一致的情况）
                     BigDecimal amountDiff = order.getAmount().subtract(transaction.getAmount()).abs();
                     boolean amountMatch = amountDiff.compareTo(new BigDecimal("0.01")) <= 0;
-                    boolean statusMatch = "TRADE_SUCCESS".equals(transaction.getTradeStatus()) 
+                    boolean statusMatch = "TRADE_SUCCESS".equals(transaction.getTradeStatus())
                         || "TRADE_FINISHED".equals(transaction.getTradeStatus());
                     boolean timeMatch = isTimeWithinTolerance(order.getPaidTime(), transaction.getTradeTime(), TIME_TOLERANCE);
-                    
+
                     if (amountMatch && statusMatch && timeMatch) {
                         matched++;
                         found = true;
@@ -274,7 +274,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
                     }
                 }
             }
-            
+
             // 如果仍然没匹配到，记录为未匹配
             if (!found) {
                 mismatched++;
@@ -320,7 +320,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
 
     /**
      * 检查两个时间是否在容差范围内
-     * 
+     *
      * @param time1 时间1
      * @param time2 时间2
      * @param tolerance 时间容差
@@ -332,18 +332,18 @@ public class ReconciliationServiceImpl implements IReconciliationService {
             log.debug("时间为空，允许匹配: time1={}, time2={}", time1, time2);
             return true;
         }
-        
+
         java.time.Duration diff = java.time.Duration.between(
             time1.isBefore(time2) ? time1 : time2,
             time1.isAfter(time2) ? time1 : time2
         );
-        
+
         boolean withinTolerance = diff.compareTo(tolerance) <= 0;
         if (!withinTolerance && log.isDebugEnabled()) {
             log.debug("时间超出容差: time1={}, time2={}, diff={}, tolerance={}",
                 time1, time2, diff, tolerance);
         }
-        
+
         return withinTolerance;
     }
 
@@ -497,12 +497,12 @@ public class ReconciliationServiceImpl implements IReconciliationService {
         LambdaQueryWrapper<ReconciliationTask> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ReconciliationTask::getTaskNo, taskNo);
         ReconciliationTask task = reconciliationTaskMapper.selectOne(wrapper);
-        
+
         Map<String, Object> report = new HashMap<>();
         report.put("taskNo", taskNo);
         report.put("channel", task != null ? task.getChannel() : "UNKNOWN");
         report.put("reconciliationDate", task != null ? task.getReconciliationDate() : LocalDate.now());
-        
+
         Map<String, Object> summary = new HashMap<>();
         if (task != null) {
             summary.put("totalCount", task.getTotalCount());
@@ -516,7 +516,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
         report.put("matchedRecords", new ArrayList<>());
         report.put("unmatchedRecords", new ArrayList<>());
         report.put("exceptions", new ArrayList<>());
-        
+
         return report;
     }
 }

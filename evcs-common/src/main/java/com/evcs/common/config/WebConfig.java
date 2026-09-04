@@ -16,9 +16,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Configuration
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
-    
+
     private final TenantInterceptor tenantInterceptor;
-    
+
     /**
      * 注册拦截器
      */
@@ -32,26 +32,26 @@ public class WebConfig implements WebMvcConfigurer {
                         "/public/**",
                         "/assets/**",
                         "/favicon.ico",
-                        
+
                         // API文档
                         "/doc.html",
                         "/webjars/**",
                         "/v3/api-docs/**",
                         "/swagger-ui/**",
-                        
+
                         // 健康检查
                         "/actuator/**",
-                        
+
                         // 登录相关（无需租户上下文）
                         "/auth/login",
                         "/auth/refresh",
-                        
+
                         // 其他不需要租户上下文的接口
                         "/tenant/check-code"
                 )
                 .order(1); // 设置拦截器执行顺序
     }
-    
+
     /**
      * 注册RequestId过滤器
      * 为非网关服务生成X-Request-Id，以便与网关一致

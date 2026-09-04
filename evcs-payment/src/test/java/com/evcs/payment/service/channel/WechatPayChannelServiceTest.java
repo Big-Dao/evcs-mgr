@@ -44,7 +44,7 @@ class WechatPayChannelServiceTest {
         request.setUserId(1L);
         request.setDescription("测试微信Native支付");
         request.setIdempotentKey("test-wx-native");
-        
+
         WechatPaymentOptions options = new WechatPaymentOptions();
         options.setAppId("wx8888888888888888");
         request.setWechatOptions(options);
@@ -71,7 +71,7 @@ class WechatPayChannelServiceTest {
         request.setPaymentMethod(PaymentMethod.WECHAT_JSAPI);
         request.setUserId(1L);
         request.setDescription("测试微信JSAPI支付");
-        
+
         WechatPaymentOptions options = new WechatPaymentOptions();
         options.setAppId("wx8888888888888888");
         options.setOpenId("oUpF8uMuAJO_M2pxb1Q9zNjWeS6o");

@@ -138,7 +138,7 @@ public class TestConfig {
         )).thenReturn(true);
         return mock;
     }
-    
+
     /**
      * 提供ProtocolEventListener mock实现用于测试环境
      * 使用@Primary确保优先注入此mock实例

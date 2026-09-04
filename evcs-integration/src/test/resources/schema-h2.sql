@@ -102,6 +102,12 @@ CREATE TABLE IF NOT EXISTS charging_order (
     payment_trade_id VARCHAR(100),
     paid_time TIMESTAMP,
 
+    -- 反范式化展示字段（写入时经 station 内部 API 解析，见 order V5 迁移）
+    station_name VARCHAR(100),
+    charger_code VARCHAR(50),
+    province VARCHAR(50),
+    city VARCHAR(50),
+
     status INTEGER DEFAULT 0,   -- 0-created, 1-completed, 2-cancelled, 10-to_pay, 11-paid, 12-refunding, 13-refunded
 
     create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

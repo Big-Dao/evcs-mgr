@@ -44,4 +44,12 @@ public class ChargingOrder extends BaseEntity {
     private LocalDateTime paidTime; // 支付完成时间
 
     private Integer status;     // 0-created, 1-completed, 2-cancelled, 10-to_pay, 11-paid
+
+    /**
+     * 站点名称（写入时经 station 服务解析后冗余，展示用，消除查询期跨服务 JOIN）
+     */
+    private String stationName;
+    private String chargerCode;
+    private String province;
+    private String city;
 }

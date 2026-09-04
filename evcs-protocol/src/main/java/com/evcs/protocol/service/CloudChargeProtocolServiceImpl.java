@@ -82,12 +82,16 @@ public class CloudChargeProtocolServiceImpl implements ICloudChargeProtocolServi
         ChargerBasicInfo info = fetchChargerInfoById(chargerId);
         if (info == null || info.getTenantId() == null) {
             log.warn("[CloudCharge] stopCharging rejected: charger info unresolvable, chargerId={}", chargerId);
-            if (listener != null) listener.onStopAck(chargerId, false, "Charger info unresolvable");
+                        if (listener != null) {
+                listener.onStopAck(chargerId, false, "Charger info unresolvable");
+            }
             return false;
         }
 
         // 触发本地监听器
-        if (listener != null) listener.onStopAck(chargerId, true, "OK");
+                if (listener != null) {
+            listener.onStopAck(chargerId, true, "OK");
+        }
 
         // 发布到RabbitMQ
         try {
@@ -113,7 +117,9 @@ public class CloudChargeProtocolServiceImpl implements ICloudChargeProtocolServi
         LocalDateTime now = LocalDateTime.now();
 
         // 触发本地监听器
-        if (listener != null) listener.onHeartbeat(chargerId, now);
+                if (listener != null) {
+            listener.onHeartbeat(chargerId, now);
+        }
 
         // 发布到RabbitMQ
         try {
@@ -137,7 +143,9 @@ public class CloudChargeProtocolServiceImpl implements ICloudChargeProtocolServi
         }
 
         // 触发本地监听器
-        if (listener != null) listener.onStatusChange(chargerId, status);
+                if (listener != null) {
+            listener.onStatusChange(chargerId, status);
+        }
 
         // 发布到RabbitMQ
         try {

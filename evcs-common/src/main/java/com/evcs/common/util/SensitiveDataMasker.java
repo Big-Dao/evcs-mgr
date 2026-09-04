@@ -15,7 +15,7 @@ public class SensitiveDataMasker {
 
     /**
      * 手机号脱敏：138****1234
-     * 
+     *
      * @param phone 手机号
      * @return 脱敏后的手机号
      */
@@ -28,7 +28,7 @@ public class SensitiveDataMasker {
 
     /**
      * 身份证号脱敏：前6后4
-     * 
+     *
      * @param idCard 身份证号
      * @return 脱敏后的身份证号
      */
@@ -41,7 +41,7 @@ public class SensitiveDataMasker {
 
     /**
      * 银行卡号脱敏：前4后4
-     * 
+     *
      * @param bankCard 银行卡号
      * @return 脱敏后的银行卡号
      */
@@ -54,7 +54,7 @@ public class SensitiveDataMasker {
 
     /**
      * 邮箱脱敏：保留前3位和@后的内容
-     * 
+     *
      * @param email 邮箱
      * @return 脱敏后的邮箱
      */
@@ -67,7 +67,7 @@ public class SensitiveDataMasker {
 
     /**
      * 密码脱敏：完全隐藏
-     * 
+     *
      * @param password 密码
      * @return 脱敏后的密码
      */
@@ -80,7 +80,7 @@ public class SensitiveDataMasker {
 
     /**
      * 通用脱敏方法：保留前后各显示的字符数
-     * 
+     *
      * @param str 原始字符串
      * @param showStart 开始显示的字符数
      * @param showEnd 结尾显示的字符数
@@ -90,17 +90,17 @@ public class SensitiveDataMasker {
         if (str == null || str.length() <= showStart + showEnd) {
             return str;
         }
-        
+
         String start = str.substring(0, showStart);
         String end = str.substring(str.length() - showEnd);
         int maskLength = str.length() - showStart - showEnd;
-        
+
         StringBuilder masked = new StringBuilder(start);
         for (int i = 0; i < maskLength; i++) {
             masked.append('*');
         }
         masked.append(end);
-        
+
         return masked.toString();
     }
 }

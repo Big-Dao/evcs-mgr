@@ -27,14 +27,14 @@ public interface IAuthService {
      * @param newPassword 新密码
      */
     void changePassword(Long userId, String oldPassword, String newPassword);
-    
+
     /**
      * 刷新Token
      * @param token 旧Token
      * @return 新Token信息
      */
     LoginResponse refreshToken(String token);
-    
+
     /**
      * 验证Token
      * @param token Token

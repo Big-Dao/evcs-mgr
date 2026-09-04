@@ -29,7 +29,7 @@ public abstract class BusinessMetrics {
 
     /**
      * 创建计数器
-     * 
+     *
      * @param name 指标名称
      * @param description 指标描述
      * @param tags 标签键值对
@@ -67,7 +67,7 @@ public abstract class BusinessMetrics {
 
     /**
      * 创建Gauge指标
-     * 
+     *
      * @param name 指标名称
      * @param description 指标描述
      * @param number 数值对象
@@ -92,7 +92,7 @@ public abstract class BusinessMetrics {
 
     /**
      * 创建Timer指标
-     * 
+     *
      * @param name 指标名称
      * @param description 指标描述
      * @param tags 标签键值对
@@ -118,7 +118,7 @@ public abstract class BusinessMetrics {
 
     /**
      * 记录Counter增加
-     * 
+     *
      * @param counter 计数器
      */
     protected void incrementCounter(Counter counter) {
@@ -129,7 +129,7 @@ public abstract class BusinessMetrics {
 
     /**
      * 记录Counter增加指定值
-     * 
+     *
      * @param counter 计数器
      * @param amount 增加量
      */

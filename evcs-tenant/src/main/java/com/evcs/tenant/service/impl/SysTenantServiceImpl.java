@@ -310,19 +310,22 @@ public class SysTenantServiceImpl extends ServiceImpl<SysTenantMapper, SysTenant
 
     private boolean isValueChanged(Object newVal, Object oldVal) {
         // 如果新值为null，说明本次不更新该字段，视为无变更
-        if (newVal == null)
+        if (newVal == null) {
             return false;
+        }
         return !newVal.equals(oldVal);
     }
 
     private boolean isAncestor(Long currentId, String ancestors) {
-        if (currentId == null || ancestors == null)
+        if (currentId == null || ancestors == null) {
             return false;
+        }
         String[] ids = ancestors.split(",");
         String currentStr = String.valueOf(currentId);
         for (String id : ids) {
-            if (id.trim().equals(currentStr))
+            if (id.trim().equals(currentStr)) {
                 return true;
+            }
         }
         return false;
     }

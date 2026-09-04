@@ -91,7 +91,7 @@ public class InternalApiRouteGuardRunner implements ApplicationRunner {
     }
 
     private static boolean isPathPredicate(String predicateName) {
-        return predicateName != null && predicateName.equalsIgnoreCase("Path");
+        return predicateName != null && "Path".equalsIgnoreCase(predicateName);
     }
 
     private static List<String> extractPathPatterns(Map<String, String> args) {

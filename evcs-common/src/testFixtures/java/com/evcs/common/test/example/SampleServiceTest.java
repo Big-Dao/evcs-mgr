@@ -8,9 +8,9 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Service层测试示例
- * 
+ *
  * 此类展示如何使用测试框架编写Service层测试
- * 
+ *
  * 注意：这是一个示例类，实际使用时需要：
  * 1. 添加@SpringBootTest注解并指定Application类
  * 2. 注入实际的Service
@@ -30,19 +30,19 @@ class SampleServiceTest extends BaseServiceTest {
         // 使用TestDataFactory生成唯一的测试数据
         String code = TestDataFactory.generateCode("ENTITY");
         String name = TestDataFactory.generateName("测试实体");
-        
+
         // YourEntity entity = new YourEntity();
         // entity.setCode(code);
         // entity.setName(name);
-        
+
         // Act - 执行测试
         // boolean result = yourService.save(entity);
-        
+
         // Assert - 验证结果
         // assertTrue(result, "保存应该成功");
         // assertNotNull(entity.getId(), "ID应该被自动生成");
         // assertEquals(DEFAULT_TENANT_ID, entity.getTenantId(), "应该属于默认租户");
-        
+
         // 使用AssertionHelper进行自定义断言
         // AssertionHelper.assertValidTenantId(entity.getTenantId());
         // AssertionHelper.assertStringNotBlank(entity.getCode());
@@ -58,12 +58,12 @@ class SampleServiceTest extends BaseServiceTest {
         //     entity.setName("测试实体" + i);
         //     yourService.save(entity);
         // }
-        
+
         // Page<YourEntity> page = new Page<>(1, 10);
-        
+
         // Act - 执行查询
         // IPage<YourEntity> result = yourService.page(page);
-        
+
         // Assert - 验证结果
         // assertNotNull(result);
         // AssertionHelper.assertCollectionSize(result.getRecords(), 5);
@@ -82,11 +82,11 @@ class SampleServiceTest extends BaseServiceTest {
         // entity.setName("原始名称");
         // yourService.save(entity);
         // Long entityId = entity.getId();
-        
+
         // Act - 更新实体
         // entity.setName("更新后的名称");
         // boolean result = yourService.updateById(entity);
-        
+
         // Assert - 验证更新成功
         // assertTrue(result);
         // YourEntity updated = yourService.getById(entityId);
@@ -101,10 +101,10 @@ class SampleServiceTest extends BaseServiceTest {
         // entity.setCode(TestDataFactory.generateCode("ENTITY"));
         // yourService.save(entity);
         // Long entityId = entity.getId();
-        
+
         // Act - 删除实体
         // boolean result = yourService.removeById(entityId);
-        
+
         // Assert - 验证逻辑删除
         // assertTrue(result);
         // YourEntity deleted = yourService.getById(entityId);

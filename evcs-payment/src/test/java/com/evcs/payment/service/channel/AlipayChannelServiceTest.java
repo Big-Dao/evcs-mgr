@@ -158,7 +158,7 @@ class AlipayChannelServiceTest {
 
         // Assert
         // 由于使用了真实的AlipaySignature.rsaCheckContent，无效的签名应该返回false
-        assertFalse(result); 
+        assertFalse(result);
     }
 
     @Test

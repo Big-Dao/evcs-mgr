@@ -295,7 +295,7 @@ class TenantServiceTest extends BaseServiceTest {
 
         // When: 检查是否为上级
         boolean isParent = tenantService.isParentTenant(
-            createdParent.getId(), 
+            createdParent.getId(),
             createdChild.getId()
         );
 

@@ -8,7 +8,10 @@ import com.evcs.protocol.mq.ProtocolEventPublisher;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
@@ -338,7 +341,8 @@ public class CloudChargeController {
 
         // 允许顶层同时携带，但要求与 data.userId 一致；避免未签名字段被篡改
         if (userIdFromTopLevel != null && userIdFromData == null) {
-            log.warn("CloudCharge request includes top-level userId but data.userId is missing; rejecting unsigned userId. requestId={}", request.getRequestId());
+            log.warn("CloudCharge request includes top-level userId but data.userId is missing; "
+                    + "rejecting unsigned userId. requestId={}", request.getRequestId());
         }
         if (userIdFromTopLevel != null && userIdFromData != null && !userIdFromTopLevel.equals(userIdFromData)) {
             log.warn(

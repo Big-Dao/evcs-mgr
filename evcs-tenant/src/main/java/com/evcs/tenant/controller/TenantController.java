@@ -11,7 +11,15 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import jakarta.validation.Valid;
 import java.util.List;
@@ -24,9 +32,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
 public class TenantController {
-    
+
     private final ISysTenantService tenantService;
-    
+
     /**
      * 创建租户
      */
@@ -39,7 +47,7 @@ public class TenantController {
         SysTenant payload = created ? tenantService.getTenantById(tenant.getId()) : null;
         return Result.success("租户创建成功", TenantResponse.from(payload));
     }
-    
+
     /**
      * 更新租户
      */
@@ -55,7 +63,7 @@ public class TenantController {
         SysTenant updated = ok ? tenantService.getTenantById(id) : null;
         return Result.success("租户更新成功", TenantResponse.from(updated));
     }
-    
+
     /**
      * 删除租户
      */
@@ -67,7 +75,7 @@ public class TenantController {
         tenantService.deleteTenant(id);
         return Result.successMessage("租户删除成功");
     }
-    
+
     /**
      * 查询租户详情
      */
@@ -78,7 +86,7 @@ public class TenantController {
         SysTenant tenant = tenantService.getTenantById(id);
         return Result.success("查询成功", TenantResponse.from(tenant));
     }
-    
+
     /**
      * 查询租户列表（不分页）
      */
@@ -90,7 +98,7 @@ public class TenantController {
         return Result.success("查询成功",
                 list.stream().map(TenantResponse::from).collect(java.util.stream.Collectors.toList()));
     }
-    
+
     /**
      * 分页查询租户
      */
@@ -103,7 +111,7 @@ public class TenantController {
         IPage<SysTenant> result = tenantService.queryTenantPage(page, condition);
         return Result.success("查询成功", result.convert(TenantResponse::from));
     }
-    
+
     /**
      * 查询子租户列表
      */
@@ -116,7 +124,7 @@ public class TenantController {
         return Result.success("查询成功",
                 subTenants.stream().map(TenantResponse::from).collect(java.util.stream.Collectors.toList()));
     }
-    
+
     /**
      * 查询租户树
      */
@@ -124,14 +132,14 @@ public class TenantController {
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "从当前租户开始的层级树")
     public Result<List<TenantResponse>> getTenantTree(
-            @Parameter(description = "根节点ID，不传则从当前租户开始") 
+            @Parameter(description = "根节点ID，不传则从当前租户开始")
             @RequestParam(required = false) Long rootId) {
         // 使用 queryTenantList 以应用租户隔离过滤
         List<SysTenant> tree = tenantService.queryTenantList(new SysTenant());
         return Result.success("查询成功",
                 tree.stream().map(TenantResponse::from).collect(java.util.stream.Collectors.toList()));
     }
-    
+
     /**
      * 启用/禁用租户
      */
@@ -144,7 +152,7 @@ public class TenantController {
         tenantService.changeStatus(id, status);
         return Result.successMessage("状态修改成功");
     }
-    
+
     /**
      * 检查租户编码是否存在
      */

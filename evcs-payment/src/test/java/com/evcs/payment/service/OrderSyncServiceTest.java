@@ -120,7 +120,7 @@ class OrderSyncServiceTest {
 
         // 模拟本地记录查询返回0
         when(paymentSyncRecordMapper.selectCount(any())).thenReturn(0L);
-        
+
         // 模拟API检查未启用或未查到
         when(orderSyncConfig.isDirectApiEnabled()).thenReturn(false);
 

@@ -25,21 +25,17 @@ public interface ChargingOrderMapper extends BaseMapper<ChargingOrder> {
      * @return 订单DTO分页对象
      */
     @Select("SELECT co.*, " +
-            "cs.station_name as station_name, " +
-            "c.charger_code as charger_code, " +
             "co.session_id as order_no, " +
             "co.energy as charging_amount, " +
             "co.amount as total_amount " +
             "FROM charging_order co " +
-            "LEFT JOIN charging_station cs ON co.station_id = cs.station_id " +
-            "LEFT JOIN charger c ON co.charger_id = c.charger_id " +
             "${ew.customSqlSegment}")
     IPage<OrderDTO> selectOrderListCustom(IPage<OrderDTO> page, @Param(Constants.WRAPPER) Wrapper<ChargingOrder> wrapper);
-    
+
     /**
      * 按城市统计订单数据
      * 用于地图可视化分析
-     * 
+     *
      * @param tenantId 租户ID（多租户隔离）
      * @param startTime 开始时间（可选）
      * @param endTime 结束时间（可选）
@@ -48,17 +44,17 @@ public interface ChargingOrderMapper extends BaseMapper<ChargingOrder> {
     @Select({
         "<script>",
         "SELECT ",
-        "  s.province,",
-        "  s.city,",
+        "  o.province,",
+        "  o.city,",
         "  COUNT(o.id) as orderCount,",
         "  COUNT(DISTINCT o.station_id) as stationCount,",
         "  COALESCE(SUM(o.energy), 0) as totalEnergy,",
         "  COALESCE(SUM(o.amount), 0) as totalAmount",
         " FROM charging_order o",
-        " INNER JOIN charging_station s ON o.station_id = s.station_id",
         " WHERE o.tenant_id = #{tenantId}",
         " AND o.deleted = 0",
-        " AND s.deleted = 0",
+        " AND o.province IS NOT NULL",
+        " AND o.city IS NOT NULL",
         " <if test='startTime != null'>",
         "   AND o.start_time &gt;= #{startTime}",
         " </if>",

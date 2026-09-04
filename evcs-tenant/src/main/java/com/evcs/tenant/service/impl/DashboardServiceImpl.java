@@ -325,7 +325,9 @@ public class DashboardServiceImpl implements IDashboardService {
      * 转换订单状态为中文
      */
     private String convertOrderStatus(String status) {
-        if (status == null) return "未知";
+                if (status == null) {
+            return "未知";
+        }
         return switch (status) {
             case "CREATED" -> "已创建";
             case "CHARGING" -> "充电中";

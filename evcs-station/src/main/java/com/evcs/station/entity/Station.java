@@ -25,7 +25,7 @@ public class Station {
     private String province;
     private String city;
     private String district;
-    
+
     // 统计字段 - 通过 JOIN 查询计算，不存储在表中
     @TableField(exist = false)
     private Integer totalChargers;
@@ -35,7 +35,7 @@ public class Station {
     private Integer chargingChargers;
     @TableField(exist = false)
     private Integer faultChargers;
-    
+
     private Long createBy;
     private Long updateBy;
     private LocalDateTime createTime;

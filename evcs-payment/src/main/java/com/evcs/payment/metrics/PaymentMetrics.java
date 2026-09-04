@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 支付服务业务监控指标
- * 
+ *
  * 监控指标包括：
  * - 支付请求成功/失败计数
  * - 支付回调成功/失败计数
@@ -28,28 +28,28 @@ public class PaymentMetrics extends BusinessMetrics {
     private Counter paymentRequestCounter;
     private Counter paymentSuccessCounter;
     private Counter paymentFailureCounter;
-    
+
     // 支付回调计数器
     private Counter callbackReceivedCounter;
     private Counter callbackSuccessCounter;
     private Counter callbackFailureCounter;
-    
+
     // 退款计数器
     private Counter refundRequestCounter;
     private Counter refundSuccessCounter;
     private Counter refundFailureCounter;
-    
+
     // 对账计数器
     private Counter reconciliationSuccessCounter;
     private Counter reconciliationFailureCounter;
-    
+
     // 支付响应时间
     private Timer paymentProcessTimer;
-    
+
     // 支付金额统计（单位：分）
     private final AtomicLong totalPaymentAmount = new AtomicLong(0);
     private final AtomicLong totalRefundAmount = new AtomicLong(0);
-    
+
     // 各渠道支付计数器
     private final ConcurrentHashMap<String, Counter> channelSuccessCounters = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Counter> channelFailureCounters = new ConcurrentHashMap<>();
@@ -65,79 +65,79 @@ public class PaymentMetrics extends BusinessMetrics {
             "evcs.payment.request.total",
             "Total number of payment requests"
         );
-        
+
         paymentSuccessCounter = createCounter(
             "evcs.payment.success.total",
             "Total number of successful payments"
         );
-        
+
         paymentFailureCounter = createCounter(
             "evcs.payment.failure.total",
             "Total number of failed payments"
         );
-        
+
         // 支付回调指标
         callbackReceivedCounter = createCounter(
             "evcs.payment.callback.received.total",
             "Total number of payment callbacks received"
         );
-        
+
         callbackSuccessCounter = createCounter(
             "evcs.payment.callback.success.total",
             "Total number of successful payment callbacks"
         );
-        
+
         callbackFailureCounter = createCounter(
             "evcs.payment.callback.failure.total",
             "Total number of failed payment callbacks"
         );
-        
+
         // 退款指标
         refundRequestCounter = createCounter(
             "evcs.payment.refund.request.total",
             "Total number of refund requests"
         );
-        
+
         refundSuccessCounter = createCounter(
             "evcs.payment.refund.success.total",
             "Total number of successful refunds"
         );
-        
+
         refundFailureCounter = createCounter(
             "evcs.payment.refund.failure.total",
             "Total number of failed refunds"
         );
-        
+
         // 对账指标
         reconciliationSuccessCounter = createCounter(
             "evcs.payment.reconciliation.success.total",
             "Total number of successful reconciliations"
         );
-        
+
         reconciliationFailureCounter = createCounter(
             "evcs.payment.reconciliation.failure.total",
             "Total number of failed reconciliations"
         );
-        
+
         // 支付处理时间
         paymentProcessTimer = createTimer(
             "evcs.payment.process.duration",
             "Payment processing duration in seconds"
         );
-        
+
         // 支付金额统计
         createGauge(
             "evcs.payment.amount.total",
             "Total payment amount in cents",
             totalPaymentAmount
         );
-        
+
         createGauge(
             "evcs.payment.refund.amount.total",
             "Total refund amount in cents",
             totalRefundAmount
         );
-        
+
         log.info("Payment business metrics registered successfully");
     }
 
@@ -150,7 +150,7 @@ public class PaymentMetrics extends BusinessMetrics {
 
     /**
      * 记录支付成功
-     * 
+     *
      * @param channel 支付渠道 (alipay, wechat)
      * @param amount 支付金额（分）
      */
@@ -164,7 +164,7 @@ public class PaymentMetrics extends BusinessMetrics {
 
     /**
      * 记录支付失败
-     * 
+     *
      * @param channel 支付渠道 (alipay, wechat)
      */
     public void recordPaymentFailure(String channel) {
@@ -202,7 +202,7 @@ public class PaymentMetrics extends BusinessMetrics {
 
     /**
      * 记录退款成功
-     * 
+     *
      * @param amount 退款金额（分）
      */
     public void recordRefundSuccess(Long amount) {
@@ -235,7 +235,7 @@ public class PaymentMetrics extends BusinessMetrics {
 
     /**
      * 获取支付处理Timer用于记录执行时间
-     * 
+     *
      * @return Timer
      */
     public Timer getPaymentProcessTimer() {
@@ -244,14 +244,14 @@ public class PaymentMetrics extends BusinessMetrics {
 
     /**
      * 增加渠道成功计数
-     * 
+     *
      * @param channel 支付渠道
      */
     private void incrementChannelSuccess(String channel) {
         if (channel == null) {
             channel = "unknown";
         }
-        Counter counter = channelSuccessCounters.computeIfAbsent(channel, 
+        Counter counter = channelSuccessCounters.computeIfAbsent(channel,
             ch -> createCounter(
                 "evcs.payment.channel.success.total",
                 "Successful payments by channel",
@@ -263,7 +263,7 @@ public class PaymentMetrics extends BusinessMetrics {
 
     /**
      * 增加渠道失败计数
-     * 
+     *
      * @param channel 支付渠道
      */
     private void incrementChannelFailure(String channel) {
@@ -282,7 +282,7 @@ public class PaymentMetrics extends BusinessMetrics {
 
     /**
      * 计算支付成功率
-     * 
+     *
      * @return 成功率百分比 (0-100)
      */
     public double getPaymentSuccessRate() {
@@ -295,18 +295,18 @@ public class PaymentMetrics extends BusinessMetrics {
 
     /**
      * 计算指定渠道的支付成功率
-     * 
+     *
      * @param channel 支付渠道
      * @return 成功率百分比 (0-100)
      */
     public double getChannelSuccessRate(String channel) {
         Counter successCounter = channelSuccessCounters.get(channel);
         Counter failureCounter = channelFailureCounters.get(channel);
-        
+
         if (successCounter == null || failureCounter == null) {
             return 100.0;
         }
-        
+
         double total = successCounter.count() + failureCounter.count();
         if (total == 0) {
             return 100.0;

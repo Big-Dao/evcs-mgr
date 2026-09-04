@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * 支付服务集成测试
- * 
+ *
  * 测试覆盖：
  * 1. 完整支付流程（创建 → 支付 → 回调 → 查询）
  * 2. 退款流程（全额/部分退款）

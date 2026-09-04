@@ -65,7 +65,7 @@ public class JwtUtil {
         }
         log.info("JwtUtil 初始化完成（issuer={}, expire={}s）", issuer, expire);
     }
-    
+
     /**
      * 生成JWT Token
      */
@@ -164,7 +164,7 @@ public class JwtUtil {
             return false;
         }
     }
-    
+
     /**
      * 获取用户ID
      */
@@ -189,7 +189,7 @@ public class JwtUtil {
             return null;
         }
     }
-    
+
     /**
      * 获取用户名
      */
@@ -202,7 +202,7 @@ public class JwtUtil {
             return null;
         }
     }
-    
+
     /**
      * 获取租户ID
      */
@@ -231,7 +231,7 @@ public class JwtUtil {
             return List.of();
         }
     }
-    
+
     /**
      * 检查Token是否过期
      */

@@ -29,7 +29,7 @@ public class TenantContextFilter extends OncePerRequestFilter {
         try {
             String tenantIdHeader = request.getHeader("X-Tenant-Id");
             String userIdHeader = request.getHeader("X-User-Id");
-            
+
             if (tenantIdHeader != null) {
                 Long tenantId = Long.parseLong(tenantIdHeader);
                 TenantContext.setCurrentTenantId(tenantId);
@@ -37,13 +37,13 @@ public class TenantContextFilter extends OncePerRequestFilter {
             } else {
                 log.warn("未收到X-Tenant-Id header，请求路径: {}", request.getRequestURI());
             }
-            
+
             if (userIdHeader != null) {
                 Long userId = Long.parseLong(userIdHeader);
                 TenantContext.setCurrentUserId(userId);
                 log.info("从Header设置用户ID: {}", userId);
             }
-            
+
             filterChain.doFilter(request, response);
         } finally {
             // 请求结束后清理上下文

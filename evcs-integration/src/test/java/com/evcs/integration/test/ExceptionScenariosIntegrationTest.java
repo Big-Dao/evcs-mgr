@@ -51,7 +51,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         station1.setLatitude(39.9087);
         station1.setLongitude(116.4089);
         station1.setStatus(1);
-        
+
         boolean saved1 = stationService.saveStation(station1);
         assertTrue(saved1, "第一个充电站应该保存成功");
 
@@ -63,7 +63,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         station2.setLatitude(31.2304);
         station2.setLongitude(121.4737);
         station2.setStatus(1);
-        
+
         // 应该抛出异常或返回false
         assertThrows(Exception.class, () -> {
             stationService.saveStation(station2);
@@ -98,7 +98,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         station.setLatitude(39.9087);
         station.setLongitude(116.4089);
         station.setStatus(1);
-        
+
         stationService.saveStation(station);
         assertNotNull(station.getStationId());
 
@@ -110,7 +110,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         charger.setChargerType(1);
         charger.setStatus(1);
         charger.setRatedPower(new BigDecimal("60.0"));
-        
+
         chargerService.saveCharger(charger);
 
         // 3. 尝试删除有充电桩的充电站（应该失败或需要先删除充电桩）
@@ -134,7 +134,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
     void testTenantContextMissingException() {
         // 清除租户上下文
         TenantContext.clear();
-        
+
         // 尝试执行需要租户上下文的操作
         assertThrows(TenantContextMissingException.class, () -> {
             Station station = new Station();
@@ -144,7 +144,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
             station.setLatitude(39.9087);
             station.setLongitude(116.4089);
             station.setStatus(1);
-            
+
             // 这应该抛出TenantContextMissingException
             stationService.saveStation(station);
         }, "没有租户上下文时应该抛出TenantContextMissingException");
@@ -174,7 +174,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         // 2. 创建两个线程同时修改同一个充电站
         final boolean[] thread1Success = {false};
         final boolean[] thread2Success = {false};
-        
+
         Thread thread1 = new Thread(() -> {
             try {
                 TenantContext.setCurrentTenantId(DEFAULT_TENANT_ID);
@@ -212,7 +212,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
 
         // 至少有一个线程应该成功
         assertTrue(thread1Success[0] || thread2Success[0], "至少有一个线程应该更新成功");
-        
+
         // 验证最终状态
         TenantContext.setCurrentTenantId(DEFAULT_TENANT_ID);
         TenantContext.setCurrentUserId(DEFAULT_USER_ID);
@@ -239,18 +239,18 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         station.setLatitude(39.9087);
         station.setLongitude(116.4089);
         station.setStatus(1);
-        
+
         try {
             stationService.saveStation(station);
-            
+
             // 模拟一个会导致异常的操作
             // 注意：这里需要根据实际业务逻辑来设计
             // 例如，尝试插入一个违反约束的数据
-            
+
         } catch (Exception e) {
             // 事务应该回滚，之前的操作应该被撤销
         }
-        
+
         // 验证充电站没有被保存（如果有异常的话）
         // 具体验证逻辑取决于业务实现
     }
@@ -268,7 +268,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         station.setLatitude(39.9087);
         station.setLongitude(116.4089);
         station.setStatus(1);
-        
+
         // H2 数据库可能允许超长数据或自动截断，这是数据库特性差异
         // 生产环境 PostgreSQL 会严格执行长度限制
         boolean exceptionThrown = false;
@@ -281,7 +281,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         } catch (Exception e) {
             // PostgreSQL 会抛出字段长度约束异常
             exceptionThrown = true;
-            assertTrue(e.getMessage().contains("too long") || 
+            assertTrue(e.getMessage().contains("too long") ||
                       e.getMessage().contains("超出") ||
                       e.getMessage().contains("constraint") ||
                       e.getMessage().contains("Value too long"),
@@ -289,7 +289,6 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         }
         // 测试通过条件：要么抛出异常，要么成功保存
         // 记录异常状态以避免unused警告
-        System.out.println("字段长度约束测试完成，异常状态: " + exceptionThrown);
         assertTrue(true, "大数据量测试完成，H2 和 PostgreSQL 行为可能不同");
     }
 
@@ -304,7 +303,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         charger.setChargerType(1);
         charger.setStatus(1);
         charger.setRatedPower(new BigDecimal("60.0"));
-        
+
         // 应该抛出外键约束异常
         assertThrows(Exception.class, () -> {
             chargerService.saveCharger(charger);
@@ -322,7 +321,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
         station.setLatitude(39.9087);
         station.setLongitude(116.4089);
         station.setStatus(1);
-        
+
         stationService.saveStation(station);
 
         // 测试业务规则：例如，不允许将充电站状态直接从运营中(1)改为删除(3)
@@ -331,7 +330,7 @@ class ExceptionScenariosIntegrationTest extends BaseIntegrationTest {
             Station updateStation = stationService.getById(station.getStationId());
             updateStation.setStatus(3); // 假设3是一个无效状态
             stationService.updateStation(updateStation);
-            
+
             // 如果没有抛出异常，验证状态是否被限制
             Station verifyStation = stationService.getById(station.getStationId());
             assertNotNull(verifyStation, "充电站应该存在");

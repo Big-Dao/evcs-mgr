@@ -120,10 +120,10 @@ public class AuthServiceImpl implements IAuthService {
         BeanUtils.copyProperties(request, user);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setStatus(1); // 默认启用
-        
+
         Long tenantId = TenantContext.getTenantId();
         // 如果没有租户上下文，这里可能会有问题，但在Service层我们假设上下文已由Controller或Filter设置
-        
+
         userService.createUser(user, tenantId);
     }
 
@@ -133,11 +133,11 @@ public class AuthServiceImpl implements IAuthService {
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
-        
+
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
             throw new BusinessException("旧密码错误");
         }
-        
+
         userService.resetPassword(userId, passwordEncoder.encode(newPassword), user.getTenantId(), userId);
     }
 
@@ -146,12 +146,12 @@ public class AuthServiceImpl implements IAuthService {
         if (!jwtUtil.verifyToken(token)) {
              throw new BusinessException(401, "Token无效或已过期");
         }
-        
+
         String newToken = jwtUtil.refreshToken(token);
         if (newToken == null) {
             throw new BusinessException(401, "Token刷新失败");
         }
-        
+
         return LoginResponse.builder()
                 .accessToken(newToken)
                 .tokenType("Bearer")

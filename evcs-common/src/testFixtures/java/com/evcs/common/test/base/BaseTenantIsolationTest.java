@@ -10,12 +10,12 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * 多租户隔离测试基类
  * 提供租户隔离测试的通用方法和断言
- * 
+ *
  * 使用方法：
  * <pre>
  * @SpringBootTest(classes = YourApplication.class)
  * class YourTenantIsolationTest extends BaseTenantIsolationTest {
- *     
+ *
  *     @Test
  *     void testDataIsolation() {
  *         // 租户1创建数据
@@ -23,7 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
  *             // 创建数据的代码
  *             return createdDataId;
  *         });
- *         
+ *
  *         // 租户2不能访问租户1的数据
  *         runAsTenant(2L, () -> {
  *             Data data = dataService.getById(dataId);
@@ -57,7 +57,7 @@ public abstract class BaseTenantIsolationTest {
 
     /**
      * 以指定租户身份执行操作
-     * 
+     *
      * @param tenantId 租户ID
      * @param action 要执行的操作
      */
@@ -72,7 +72,7 @@ public abstract class BaseTenantIsolationTest {
 
     /**
      * 以指定租户身份执行操作并返回结果
-     * 
+     *
      * @param tenantId 租户ID
      * @param supplier 要执行的操作
      * @return 操作结果
@@ -90,7 +90,7 @@ public abstract class BaseTenantIsolationTest {
 
     /**
      * 以指定租户和用户身份执行操作
-     * 
+     *
      * @param tenantId 租户ID
      * @param userId 用户ID
      * @param action 要执行的操作
@@ -121,28 +121,28 @@ public abstract class BaseTenantIsolationTest {
 
     /**
      * 断言当前租户ID
-     * 
+     *
      * @param expectedTenantId 期望的租户ID
      */
     protected void assertCurrentTenant(Long expectedTenantId) {
-        assertEquals(expectedTenantId, TenantContext.getCurrentTenantId(), 
+        assertEquals(expectedTenantId, TenantContext.getCurrentTenantId(),
                     "当前租户ID应该是 " + expectedTenantId);
     }
 
     /**
      * 断言数据属于指定租户
-     * 
+     *
      * @param expectedTenantId 期望的租户ID
      * @param actualTenantId 实际的租户ID
      */
     protected void assertDataBelongsToTenant(Long expectedTenantId, Long actualTenantId) {
-        assertEquals(expectedTenantId, actualTenantId, 
+        assertEquals(expectedTenantId, actualTenantId,
                     "数据应该属于租户 " + expectedTenantId);
     }
 
     /**
      * 断言租户1不能访问租户2的数据
-     * 
+     *
      * @param data 数据对象
      * @param message 错误消息
      */

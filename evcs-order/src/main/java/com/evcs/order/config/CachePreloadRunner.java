@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 /**
  * 缓存预热启动器
  * 应用启动时预加载热点站点的计费计划到Redis缓存
- * 
+ *
  * @author EVCS Team
  * @since M4 - Week 4 Performance Optimization
  */
@@ -21,18 +21,18 @@ import org.springframework.stereotype.Component;
 @Profile("!test")  // 测试环境排除此组件
 @RequiredArgsConstructor
 public class CachePreloadRunner implements ApplicationRunner {
-    
+
     private final IBillingPlanCacheService billingPlanCacheService;
     private final TenantProperties tenantProperties;
     private final OrderCachePreloadProperties cachePreloadProperties;
-    
+
     @Override
     public void run(ApplicationArguments args) throws Exception {
         log.info("Starting cache preload for hot stations...");
-        
+
         try {
             TenantContext.setCurrentTenantId(tenantProperties.getDefaultTenantId());
-            
+
             if (cachePreloadProperties.getHotStations() != null
                 && !cachePreloadProperties.getHotStations().isEmpty()) {
                 log.info("Preloading {} hot stations: {}",
@@ -42,7 +42,7 @@ public class CachePreloadRunner implements ApplicationRunner {
             } else {
                 log.info("No hot stations configured for preload");
             }
-            
+
             log.info("Cache preload completed successfully");
         } catch (Exception e) {
             log.error("Failed to preload cache", e);

@@ -8,12 +8,12 @@ import org.springframework.context.ApplicationEvent;
  */
 @Getter
 public class ChargingStopEvent extends ApplicationEvent {
-    
+
     private final String sessionId;
     private final Double energy;
     private final Long duration;
     private final Long tenantId;
-    
+
     public ChargingStopEvent(Object source, String sessionId, Double energy, Long duration, Long tenantId) {
         super(source);
         this.sessionId = sessionId;

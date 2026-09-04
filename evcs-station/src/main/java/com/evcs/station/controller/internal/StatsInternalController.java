@@ -3,6 +3,7 @@ package com.evcs.station.controller.internal;
 import com.evcs.common.result.Result;
 import com.evcs.station.dto.stats.ChargerCodeRow;
 import com.evcs.station.dto.stats.ChargerStatusStats;
+import com.evcs.station.dto.stats.StationBriefRow;
 import com.evcs.station.dto.stats.StationNameRow;
 import com.evcs.station.service.StationStatsService;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,11 @@ import java.util.List;
 public class StatsInternalController {
 
     private final StationStatsService stationStatsService;
+
+    @GetMapping("/stations/by-id/{stationId}")
+    public Result<StationBriefRow> stationBrief(@org.springframework.web.bind.annotation.PathVariable("stationId") Long stationId) {
+        return Result.success(stationStatsService.getStationBrief(stationId));
+    }
 
     @GetMapping("/stations/names")
     public Result<List<StationNameRow>> stationNames(@RequestParam("tenantIds") List<Long> tenantIds) {

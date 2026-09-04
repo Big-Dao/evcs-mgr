@@ -1,7 +1,15 @@
 package com.evcs.protocol.config;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.core.*;
+import org.springframework.amqp.core.Binding;
+import org.springframework.amqp.core.BindingBuilder;
+import org.springframework.amqp.core.DirectExchange;
+import org.springframework.amqp.core.ExchangeBuilder;
+import org.springframework.amqp.core.Message;
+import org.springframework.amqp.core.Queue;
+import org.springframework.amqp.core.AcknowledgeMode;
+import org.springframework.amqp.core.QueueBuilder;
+import org.springframework.amqp.core.TopicExchange;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -22,17 +30,17 @@ public class RabbitMQConfig {
 
     // 交换机名称
     public static final String PROTOCOL_EXCHANGE = "evcs.protocol.events";
-    
+
     // 队列名称
     public static final String HEARTBEAT_QUEUE = "evcs.protocol.heartbeat";
     public static final String STATUS_QUEUE = "evcs.protocol.status";
     public static final String CHARGING_QUEUE = "evcs.protocol.charging";
     public static final String TELEMETRY_QUEUE = "evcs.protocol.telemetry";
-    
+
     // 死信交换机和队列
     public static final String DLX_EXCHANGE = "evcs.protocol.dlx";
     public static final String DLX_QUEUE = "evcs.protocol.dlx.queue";
-    
+
     // 路由键
     public static final String HEARTBEAT_ROUTING_KEY = "protocol.heartbeat.*";
     public static final String STATUS_ROUTING_KEY = "protocol.status.*";
@@ -200,7 +208,7 @@ public class RabbitMQConfig {
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, MessageConverter messageConverter) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
         template.setMessageConverter(messageConverter);
-        
+
         // 启用发布确认
         template.setConfirmCallback((correlationData, ack, cause) -> {
             if (ack) {
@@ -209,16 +217,16 @@ public class RabbitMQConfig {
                 log.error("Message send failed, correlationData: {}, cause: {}", correlationData, cause);
             }
         });
-        
+
         // 启用返回回调（消息无法路由时触发）
         template.setReturnsCallback(returned -> {
             log.error("Message returned: {}, replyCode: {}, replyText: {}, exchange: {}, routingKey: {}",
                     returned.getMessage(), returned.getReplyCode(), returned.getReplyText(),
                     returned.getExchange(), returned.getRoutingKey());
         });
-        
+
         template.setMandatory(true);
-        
+
         return template;
     }
 
@@ -232,17 +240,17 @@ public class RabbitMQConfig {
         SimpleRabbitListenerContainerFactory factory = new SimpleRabbitListenerContainerFactory();
         factory.setConnectionFactory(connectionFactory);
         factory.setMessageConverter(messageConverter);
-        
+
         // 设置手动确认模式
         factory.setAcknowledgeMode(AcknowledgeMode.MANUAL);
-        
+
         // 设置并发消费者数量
         factory.setConcurrentConsumers(3);
         factory.setMaxConcurrentConsumers(10);
-        
+
         // 设置预取数量
         factory.setPrefetchCount(10);
-        
+
         return factory;
     }
 }

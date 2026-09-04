@@ -56,7 +56,6 @@ class BillingPlanCacheServiceTest {
     void testCacheInvalidationBroadcast() {
         // 跳过测试如果Redis未配置
         if (cacheService == null || redisTemplate == null) {
-            System.out.println("Redis not configured, skipping cache test");
             return;
         }
 
@@ -77,7 +76,6 @@ class BillingPlanCacheServiceTest {
     void testCachePreload() {
         // 跳过测试如果Redis未配置
         if (cacheService == null) {
-            System.out.println("Redis not configured, skipping cache test");
             return;
         }
 
@@ -97,7 +95,6 @@ class BillingPlanCacheServiceTest {
     void testInvalidateDefault() {
         // 跳过测试如果Redis未配置
         if (cacheService == null) {
-            System.out.println("Redis not configured, skipping cache test");
             return;
         }
 
@@ -117,7 +114,6 @@ class BillingPlanCacheServiceTest {
     void testInvalidateSegments() {
         // 跳过测试如果Redis未配置
         if (cacheService == null) {
-            System.out.println("Redis not configured, skipping cache test");
             return;
         }
 

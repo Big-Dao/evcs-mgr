@@ -486,7 +486,7 @@ public class PaymentServiceImpl extends ServiceImpl<PaymentOrderMapper, PaymentO
     @DataScope
     @Transactional(rollbackFor = Exception.class)
     public RefundResponse refund(RefundRequest request) {
-        log.info("处理退款请求: paymentId={}, amount={}", 
+        log.info("处理退款请求: paymentId={}, amount={}",
             request.getPaymentId(), request.getRefundAmount());
 
         // 查询支付订单

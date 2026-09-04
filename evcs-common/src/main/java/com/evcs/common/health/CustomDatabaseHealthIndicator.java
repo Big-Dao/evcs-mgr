@@ -30,14 +30,14 @@ public class CustomDatabaseHealthIndicator implements HealthIndicator {
     public Health health() {
         try {
             long startTime = System.currentTimeMillis();
-            
+
             try (Connection connection = dataSource.getConnection();
                  Statement statement = connection.createStatement();
                  ResultSet resultSet = statement.executeQuery("SELECT 1")) {
-                
+
                 if (resultSet.next()) {
                     long responseTime = System.currentTimeMillis() - startTime;
-                    
+
                     return Health.up()
                             .withDetail("database", "PostgreSQL")
                             .withDetail("responseTime", responseTime + "ms")
@@ -45,11 +45,11 @@ public class CustomDatabaseHealthIndicator implements HealthIndicator {
                             .build();
                 }
             }
-            
+
             return Health.down()
                     .withDetail("error", "No response from database")
                     .build();
-                    
+
         } catch (Exception e) {
             log.error("Database health check failed", e);
             return Health.down()

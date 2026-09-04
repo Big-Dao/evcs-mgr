@@ -37,11 +37,11 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
             station.setLatitude(39.9087);
             station.setLongitude(116.4089);
             station.setStatus(1);
-            
+
             stationService.saveStation(station);
             assertNotNull(station.getStationId(), "租户1充电站ID应该被生成");
             assertEquals(1L, station.getTenantId(), "充电站应该属于租户1");
-            
+
             return station.getStationId();
         });
 
@@ -54,11 +54,11 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
             station.setLatitude(31.2304);
             station.setLongitude(121.4737);
             station.setStatus(1);
-            
+
             stationService.saveStation(station);
             assertNotNull(station.getStationId(), "租户2充电站ID应该被生成");
             assertEquals(2L, station.getTenantId(), "充电站应该属于租户2");
-            
+
             return station.getStationId();
         });
 
@@ -102,10 +102,10 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
                 station.setLatitude(39.9087);
                 station.setLongitude(116.4089);
                 station.setStatus(1);
-                
+
                 stationService.saveStation(station);
                 assertEquals(1L, station.getTenantId(), "并发场景下租户1的数据应该属于租户1");
-                
+
                 // 模拟一些处理时间
                 try {
                     Thread.sleep(100);
@@ -124,10 +124,10 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
                 station.setLatitude(31.2304);
                 station.setLongitude(121.4737);
                 station.setStatus(1);
-                
+
                 stationService.saveStation(station);
                 assertEquals(2L, station.getTenantId(), "并发场景下租户2的数据应该属于租户2");
-                
+
                 // 模拟一些处理时间
                 try {
                     Thread.sleep(100);
@@ -142,7 +142,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
         thread2.start();
         thread1.join(5000);
         thread2.join(5000);
-        
+
         assertFalse(thread1.isAlive(), "线程1应该已完成");
         assertFalse(thread2.isAlive(), "线程2应该已完成");
     }
@@ -152,7 +152,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
     void testMissingTenantContextException() {
         // 清除租户上下文
         TenantContext.clear();
-        
+
         // 尝试在没有租户上下文的情况下执行操作
         assertThrows(Exception.class, () -> {
             Station station = new Station();
@@ -162,7 +162,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
             station.setLatitude(39.9087);
             station.setLongitude(116.4089);
             station.setStatus(1);
-            
+
             // 这应该抛出异常，因为没有租户上下文
             stationService.saveStation(station);
         }, "在没有租户上下文时应该抛出异常");
@@ -180,7 +180,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
             station.setLatitude(39.9087);
             station.setLongitude(116.4089);
             station.setStatus(1);
-            
+
             stationService.saveStation(station);
             return station.getStationId();
         });
@@ -189,7 +189,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
         runAsTenant(2L, () -> {
             // 验证租户上下文已切换
             assertCurrentTenant(2L);
-            
+
             // 尝试访问租户1的数据
             Station station = stationService.getById(stationId1);
             assertNull(station, "在租户2的上下文中不应该能访问租户1的数据");
@@ -199,7 +199,7 @@ class TenantIsolationIntegrationTest extends BaseTenantIsolationTest {
         runAsTenant(1L, () -> {
             // 验证租户上下文已切换回来
             assertCurrentTenant(1L);
-            
+
             // 验证可以访问自己的数据
             Station station = stationService.getById(stationId1);
             assertNotNull(station, "在租户1的上下文中应该能访问自己的数据");

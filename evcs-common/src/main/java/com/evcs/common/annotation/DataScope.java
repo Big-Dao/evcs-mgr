@@ -1,6 +1,10 @@
 package com.evcs.common.annotation;
 
-import java.lang.annotation.*;
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  * 数据权限注解
@@ -97,7 +101,7 @@ public @interface DataScope {
     interface DataScopeHandler {
         /**
          * 检查数据访问权限
-         * 
+         *
          * @param targetTenantId 目标租户ID
          * @param targetUserId   目标用户ID
          * @param operation      操作类型

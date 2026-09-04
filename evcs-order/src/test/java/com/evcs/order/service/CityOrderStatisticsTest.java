@@ -59,11 +59,11 @@ class CityOrderStatisticsTest extends BaseServiceTest {
     void setUp() {
         // Mock billing service to return a fixed amount
         when(billingService.calculateAmount(
-            any(LocalDateTime.class), 
-            any(LocalDateTime.class), 
-            anyDouble(), 
-            anyLong(), 
-            anyLong(), 
+            any(LocalDateTime.class),
+            any(LocalDateTime.class),
+            anyDouble(),
+            anyLong(),
+            anyLong(),
             anyLong()))
             .thenReturn(new BigDecimal("50.00"));
     }
@@ -73,7 +73,7 @@ class CityOrderStatisticsTest extends BaseServiceTest {
     void testGetCityOrderStatistics_shouldReturnCityAggregatedData() {
         // Given: 设置租户上下文和Mock数据
         TenantContext.setCurrentTenantId(TEST_TENANT_ID);
-        
+
         CityOrderStatistics stat1 = new CityOrderStatistics();
         stat1.setProvince("北京市");
         stat1.setCity("北京市");
@@ -81,7 +81,7 @@ class CityOrderStatisticsTest extends BaseServiceTest {
         stat1.setStationCount(10L);
         stat1.setTotalEnergy(1000.0);
         stat1.setTotalAmount(new BigDecimal("5000.0"));
-        
+
         CityOrderStatistics stat2 = new CityOrderStatistics();
         stat2.setProvince("上海市");
         stat2.setCity("上海市");
@@ -89,18 +89,18 @@ class CityOrderStatisticsTest extends BaseServiceTest {
         stat2.setStationCount(8L);
         stat2.setTotalEnergy(800.0);
         stat2.setTotalAmount(new BigDecimal("4000.0"));
-        
+
         when(chargingOrderMapper.getCityOrderStatistics(eq(TEST_TENANT_ID), any(), any()))
             .thenReturn(Arrays.asList(stat1, stat2));
-        
+
         try {
             // When: 获取城市统计数据
             List<CityOrderStatistics> statistics = chargingOrderService.getCityOrderStatistics(null, null);
-            
+
             // Then: 验证返回结果
             assertThat(statistics).isNotNull();
             assertThat(statistics).hasSize(2);
-            
+
             // 验证第一个城市统计
             assertThat(statistics.get(0).getProvince()).isEqualTo("北京市");
             assertThat(statistics.get(0).getCity()).isEqualTo("北京市");
@@ -108,7 +108,7 @@ class CityOrderStatisticsTest extends BaseServiceTest {
             assertThat(statistics.get(0).getStationCount()).isEqualTo(10L);
             assertThat(statistics.get(0).getTotalEnergy()).isEqualTo(1000.0);
             assertThat(statistics.get(0).getTotalAmount()).isEqualByComparingTo(new BigDecimal("5000.0"));
-            
+
             // 验证第二个城市统计
             assertThat(statistics.get(1).getProvince()).isEqualTo("上海市");
             assertThat(statistics.get(1).getCity()).isEqualTo("上海市");
@@ -126,15 +126,15 @@ class CityOrderStatisticsTest extends BaseServiceTest {
         TenantContext.setCurrentTenantId(TEST_TENANT_ID);
         LocalDateTime startTime = LocalDateTime.now().minusDays(30);
         LocalDateTime endTime = LocalDateTime.now();
-        
+
         // Mock返回空列表
         when(chargingOrderMapper.getCityOrderStatistics(eq(TEST_TENANT_ID), eq(startTime), eq(endTime)))
             .thenReturn(Collections.emptyList());
-        
+
         try {
             // When: 获取指定时间范围的城市统计数据
             List<CityOrderStatistics> statistics = chargingOrderService.getCityOrderStatistics(startTime, endTime);
-            
+
             // Then: 验证返回结果
             assertThat(statistics).isNotNull();
             assertThat(statistics).isEmpty();
@@ -148,7 +148,7 @@ class CityOrderStatisticsTest extends BaseServiceTest {
     void testGetCityOrderStatistics_noTenantContext() {
         // Given: 清空租户上下文
         TenantContext.clear();
-        
+
         try {
             // When & Then: 在没有租户上下文的情况下调用应抛出BusinessException
             assertThatThrownBy(() -> chargingOrderService.getCityOrderStatistics(null, null))

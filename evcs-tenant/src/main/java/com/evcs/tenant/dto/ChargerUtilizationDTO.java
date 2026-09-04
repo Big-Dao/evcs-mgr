@@ -7,17 +7,17 @@ import lombok.Data;
  */
 @Data
 public class ChargerUtilizationDTO {
-    
+
     /**
      * 充电桩ID
      */
     private Long id;
-    
+
     /**
      * 充电桩编码
      */
     private String code;
-    
+
     /**
      * 利用率（百分比）
      */

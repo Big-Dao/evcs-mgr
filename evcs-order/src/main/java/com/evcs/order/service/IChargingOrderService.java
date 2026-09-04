@@ -38,11 +38,11 @@ public interface IChargingOrderService extends IService<ChargingOrder> {
 
     ChargingOrder getBySessionId(String sessionId);
     IPage<ChargingOrder> pageOrders(Page<ChargingOrder> page, Long stationId, Long chargerId, Long userId, Integer status);
-    
+
     /**
      * 获取城市级别订单统计
      * 用于地图可视化分析
-     * 
+     *
      * @param startTime 开始时间（可选）
      * @param endTime 结束时间（可选）
      * @return 城市订单统计列表

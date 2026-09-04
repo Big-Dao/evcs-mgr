@@ -14,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Tenant Context Concurrency and Isolation Tests
  * Tests for Week 1 - Day 4: Tenant Context Security
- * 
+ *
  * Validates that TenantContext properly isolates tenant data across threads
  * and prevents cross-tenant data leaks in concurrent scenarios.
  */
@@ -130,10 +130,10 @@ class TenantContextConcurrencyTest {
         executor.shutdown();
 
         assertTrue(completed, "Test should complete within timeout");
-        
+
         if (errorCount.get() > 0) {
             errors.forEach(System.err::println);
-            fail(String.format("Found %d tenant isolation errors. First 10 errors logged above.", 
+            fail(String.format("Found %d tenant isolation errors. First 10 errors logged above.",
                                errorCount.get()));
         }
     }
@@ -152,16 +152,16 @@ class TenantContextConcurrencyTest {
                 try {
                     // Simulate request without cleanup
                     TenantContext.setTenantId(tenantId);
-                    
+
                     // Simulate work
                     Thread.sleep(5);
-                    
+
                     // Verify context is set
                     assertNotNull(TenantContext.getTenantId());
-                    
+
                     // Clear context
                     TenantContext.clear();
-                    
+
                     // Verify context is cleared
                     if (TenantContext.getTenantId() != null) {
                         leakCount.incrementAndGet();
@@ -265,22 +265,22 @@ class TenantContextConcurrencyTest {
         // Submit 20 tasks to 5 threads
         for (int i = 0; i < 20; i++) {
             final long tenantId = i + 1;
-            
+
             Future<Boolean> future = threadPool.submit(() -> {
                 try {
                     // Verify thread starts clean
-                    assertNull(TenantContext.getTenantId(), 
+                    assertNull(TenantContext.getTenantId(),
                               "Thread should start with clean context");
 
                     // Set tenant context
                     TenantContext.setTenantId(tenantId);
-                    
+
                     // Do work
                     Thread.sleep(10);
-                    
+
                     // Verify context is still correct
                     assertEquals(tenantId, TenantContext.getTenantId());
-                    
+
                     return true;
                 } catch (AssertionError | InterruptedException e) {
                     return false;
@@ -289,7 +289,7 @@ class TenantContextConcurrencyTest {
                     TenantContext.clear();
                 }
             });
-            
+
             futures.add(future);
         }
 

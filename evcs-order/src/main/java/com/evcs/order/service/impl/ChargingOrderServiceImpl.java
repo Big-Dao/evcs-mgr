@@ -8,6 +8,7 @@ import com.evcs.common.tenant.TenantContext;
 import com.evcs.order.dto.CityOrderStatistics;
 import com.evcs.order.dto.OrderDTO;
 import com.evcs.order.entity.ChargingOrder;
+import com.evcs.order.client.StationDirectoryClient;
 import com.evcs.order.mapper.ChargingOrderMapper;
 import com.evcs.order.service.IChargingOrderService;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,28 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     private final IBillingService billingService;
     private final MeterRegistry meterRegistry;
     private final OrderMetrics orderMetrics;
+    private final StationDirectoryClient stationDirectoryClient;
+
+    /**
+     * 站点/充电桩展示信息反范式化：写入时经 station 内部 API 解析并冗余到订单行，
+     * 查询期不再 JOIN station 服务表。解析失败放行（展示字段为空不应阻断建单）。
+     */
+    private void applyStationDisplayInfo(ChargingOrder order) {
+        try {
+            StationDirectoryClient.StationBrief brief = stationDirectoryClient.getStationBrief(order.getStationId());
+            if (brief != null) {
+                order.setStationName(brief.stationName());
+                order.setProvince(brief.province());
+                order.setCity(brief.city());
+            }
+            String chargerCode = stationDirectoryClient.getChargerCode(order.getChargerId());
+            if (chargerCode != null) {
+                order.setChargerCode(chargerCode);
+            }
+        } catch (Exception e) {
+            log.debug("站点展示信息解析失败，订单展示列将为空: stationId={}", order.getStationId(), e);
+        }
+    }
 
     @Override
     public IPage<OrderDTO> getOrderPage(Page<OrderDTO> page, ChargingOrder queryParams) {
@@ -58,7 +81,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     public boolean createOrderOnStart(Long stationId, Long chargerId, String sessionId, Long userId, Long billingPlanId) {
         // 记录订单创建时间
         Timer.Sample sample = Timer.start(meterRegistry);
-        
+
         try {
             // 幂等：同一租户+sessionId 已存在则直接返回成功
             // MyBatis Plus自动添加tenant_id过滤
@@ -69,7 +92,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
                 orderMetrics.recordOrderStarted();
                 return true;
             }
-            
+
             ChargingOrder order = new ChargingOrder();
             order.setTenantId(TenantContext.getCurrentTenantId());
             order.setStationId(stationId);
@@ -83,9 +106,10 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
             order.setBillingPlanId(billingPlanId);
             order.setAmount(BigDecimal.ZERO);
             order.setVersion(0);
-            
+            applyStationDisplayInfo(order);
+
             boolean result = this.save(order);
-            
+
             if (result) {
                 orderMetrics.recordOrderCreated();
                 orderMetrics.recordOrderStarted();
@@ -94,7 +118,7 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
                 orderMetrics.recordOrderCreatedFailure();
                 log.error("Failed to create order: sessionId={}", sessionId);
             }
-            
+
             return result;
         } catch (Exception e) {
             orderMetrics.recordOrderCreatedFailure();
@@ -124,22 +148,22 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
                 orderMetrics.recordOrderStopped();
                 return true;
             }
-            
+
             order.setEndTime(LocalDateTime.now());
             meterRegistry.counter("evcs.order.completed").increment();
 
             order.setEnergy(energy);
             order.setDuration(duration);
             order.setStatus(1); // COMPLETED
-            
+
             // 计费：按配置/计划进行
             try {
                 BigDecimal amount = billingService.calculateAmount(
-                    order.getStartTime(), 
-                    order.getEndTime(), 
-                    energy, 
-                    order.getStationId(), 
-                    order.getChargerId(), 
+                    order.getStartTime(),
+                    order.getEndTime(),
+                    energy,
+                    order.getStationId(),
+                    order.getChargerId(),
                     order.getBillingPlanId()
                 );
                 order.setAmount(amount);
@@ -150,18 +174,18 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
                 // 继续完成订单，但计费失败
                 order.setAmount(BigDecimal.ZERO);
             }
-            
+
             boolean result = this.updateById(order);
-            
+
             if (result) {
                 orderMetrics.recordOrderStopped();
-                log.info("Order completed successfully: sessionId={}, orderId={}, amount={}", 
+                log.info("Order completed successfully: sessionId={}, orderId={}, amount={}",
                     sessionId, order.getId(), order.getAmount());
             } else {
                 orderMetrics.recordOrderStoppedFailure();
                 log.error("Failed to complete order: sessionId={}", sessionId);
             }
-            
+
             return result;
         } catch (Exception e) {
             orderMetrics.recordOrderStoppedFailure();
@@ -187,7 +211,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
                 .last("limit 1"));
-        if (order == null) return false;
+                if (order == null) {
+            return false;
+        }
         // 允许从 COMPLETED(1) 进入 TO_PAY(10)，幂等允许重复设置
         if (order.getStatus() != null && (order.getStatus() == 10 || order.getStatus() == 1)) {
             order.setStatus(10);
@@ -204,7 +230,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
                 .last("limit 1"));
-        if (order == null) return false;
+                if (order == null) {
+            return false;
+        }
         // 允许从 TO_PAY(10) 进入 PAID(11)，幂等允许重复设置
         if (order.getStatus() != null && (order.getStatus() == 11 || order.getStatus() == 10)) {
             order.setStatus(11);
@@ -221,7 +249,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
                 .last("limit 1"));
-        if (order == null) return null;
+                if (order == null) {
+            return null;
+        }
         // 进入待支付
         meterRegistry.counter("evcs.order.payment.create").increment();
 
@@ -246,15 +276,23 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     public boolean paymentCallback(String tradeId, boolean success) {
         meterRegistry.counter("evcs.order.paid").increment();
 
-        if (tradeId == null || tradeId.isEmpty()) return false;
+                if (tradeId == null || tradeId.isEmpty()) {
+            return false;
+        }
         // MyBatis Plus自动添加tenant_id过滤
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("payment_trade_id", tradeId)
                 .last("limit 1"));
-        if (order == null) return false;
-        if (!success) return false;
+                if (order == null) {
+            return false;
+        }
+                if (!success) {
+            return false;
+        }
         // 已支付幂等
-        if (order.getStatus() != null && order.getStatus() == 11) return true;
+                if (order.getStatus() != null && order.getStatus() == 11) {
+            return true;
+        }
         order.setStatus(11);
         order.setPaidTime(LocalDateTime.now());
         return this.updateById(order);
@@ -269,7 +307,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
                 .last("limit 1"));
-        if (order == null) return false;
+                if (order == null) {
+            return false;
+        }
         // 未支付的订单允许取消（非已支付/已退款）
         Integer st = order.getStatus();
         if (st == null || st == 0 || st == 1 || st == 10) {
@@ -287,7 +327,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
                 .last("limit 1"));
-        if (order == null) return false;
+                if (order == null) {
+            return false;
+        }
         if (order.getStatus() != null && (order.getStatus() == 11 || order.getStatus() == 12)) {
             order.setStatus(12);
             return this.updateById(order);
@@ -303,7 +345,9 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
         ChargingOrder order = this.getOne(new QueryWrapper<ChargingOrder>()
                 .eq("id", orderId)
                 .last("limit 1"));
-        if (order == null) return false;
+                if (order == null) {
+            return false;
+        }
         if (order.getStatus() != null && (order.getStatus() == 12 || order.getStatus() == 13)) {
             order.setStatus(13);
             return this.updateById(order);
@@ -316,10 +360,18 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
     public IPage<ChargingOrder> pageOrders(Page<ChargingOrder> page, Long stationId, Long chargerId, Long userId, Integer status) {
         QueryWrapper<ChargingOrder> wrapper = new QueryWrapper<>();
         // MyBatis Plus自动添加tenant_id过滤
-        if (stationId != null) wrapper.eq("station_id", stationId);
-        if (chargerId != null) wrapper.eq("charger_id", chargerId);
-        if (userId != null) wrapper.eq("user_id", userId);
-        if (status != null) wrapper.eq("status", status);
+                if (stationId != null) {
+            wrapper.eq("station_id", stationId);
+        }
+                if (chargerId != null) {
+            wrapper.eq("charger_id", chargerId);
+        }
+                if (userId != null) {
+            wrapper.eq("user_id", userId);
+        }
+                if (status != null) {
+            wrapper.eq("status", status);
+        }
         wrapper.orderByDesc("id");
         return this.page(page, wrapper);
     }
@@ -332,10 +384,10 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
             log.warn("TenantContext is null when getting city order statistics");
             return java.util.Collections.emptyList();
         }
-        
-        log.info("Getting city order statistics for tenant: {}, startTime: {}, endTime: {}", 
+
+        log.info("Getting city order statistics for tenant: {}, startTime: {}, endTime: {}",
             tenantId, startTime, endTime);
-        
+
         return baseMapper.getCityOrderStatistics(tenantId, startTime, endTime);
     }
 }

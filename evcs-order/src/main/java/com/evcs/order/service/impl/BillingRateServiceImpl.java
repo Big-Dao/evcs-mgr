@@ -18,7 +18,9 @@ public class BillingRateServiceImpl extends ServiceImpl<BillingRateMapper, Billi
                     .eq("station_id", stationId)
                     .eq("status", 1)
                     .orderByDesc("id").last("limit 1"));
-            if (stationRate != null) return stationRate;
+                        if (stationRate != null) {
+                return stationRate;
+            }
         }
         return this.getOne(new QueryWrapper<BillingRate>()
                 .isNull("station_id")

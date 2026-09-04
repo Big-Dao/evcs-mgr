@@ -80,7 +80,7 @@ public class ChargingProfileServiceImpl extends ServiceImpl<ChargingProfileMappe
         // ChargingSchedule also needs chargingRateUnit (A or W).
         schedule.put("chargingRateUnit", "W"); // Using Watts for kW input
         schedule.put("chargingSchedulePeriod", java.util.Collections.singletonList(period));
-        
+
         // Convert kW to Watts
         if (profile.getLimitKw() != null) {
              period.put("limit", profile.getLimitKw().multiply(new java.math.BigDecimal(1000)));

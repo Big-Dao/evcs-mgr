@@ -100,7 +100,7 @@ class FullFlowIntegrationTest extends BaseIntegrationTest {
         ChargingOrder order = orderService.getBySessionId(sessionId);
         assertNotNull(order);
         // Status 1 = UNPAID/COMPLETED
-        assertEquals(1, order.getStatus()); 
+        assertEquals(1, order.getStatus());
 
         // 4. Prepare for Payment (Generate Trade ID)
         PayParams payParams = orderService.createPayment(order.getId());
@@ -111,12 +111,12 @@ class FullFlowIntegrationTest extends BaseIntegrationTest {
         // 5. Create Payment
         PaymentRequest payReq = new PaymentRequest();
         payReq.setOrderId(order.getId());
-        payReq.setAmount(new BigDecimal("10.00")); 
+        payReq.setAmount(new BigDecimal("10.00"));
         payReq.setPaymentMethod(PaymentMethod.ALIPAY_APP);
         payReq.setDescription("EV Charging");
         payReq.setTradeNo(tradeId); // Pass the tradeId from Order Service
         payReq.setUserId(1001L);
-        
+
         PaymentResponse payResp = paymentService.createPayment(payReq);
         assertNotNull(payResp);
         assertEquals(tradeId, payResp.getTradeNo());
@@ -124,7 +124,7 @@ class FullFlowIntegrationTest extends BaseIntegrationTest {
         // 6. Payment Callback
         boolean handled = paymentService.handlePaymentCallback(tradeId, true);
         assertTrue(handled, "Callback should be handled");
-        
+
         // Manually trigger the order update because RestTemplate was mocked and we want to ensure the loop closes
         // In real env, OrderSyncService calls this via HTTP
         orderController.paymentCallback(tradeId, true);
@@ -132,6 +132,6 @@ class FullFlowIntegrationTest extends BaseIntegrationTest {
         // 7. Verify Final Order Status
         ChargingOrder finalOrder = orderService.getById(order.getId());
         // Status 11 = PAID
-        assertEquals(11, finalOrder.getStatus()); 
+        assertEquals(11, finalOrder.getStatus());
     }
 }

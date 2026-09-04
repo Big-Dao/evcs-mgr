@@ -18,27 +18,27 @@ public class CityOrderStatistics {
      * 省份名称
      */
     private String province;
-    
+
     /**
      * 城市名称
      */
     private String city;
-    
+
     /**
      * 订单数量
      */
     private Long orderCount;
-    
+
     /**
      * 充电站数量
      */
     private Long stationCount;
-    
+
     /**
      * 总充电量(kWh)
      */
     private Double totalEnergy;
-    
+
     /**
      * 总金额
      */

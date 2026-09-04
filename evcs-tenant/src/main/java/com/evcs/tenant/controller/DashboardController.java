@@ -10,7 +10,10 @@ import com.evcs.tenant.dto.RecentOrderDTO;
 import com.evcs.tenant.service.IDashboardService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 
@@ -24,9 +27,9 @@ import java.util.List;
 @RequiredArgsConstructor
 @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR', 'TENANT_ADMIN', 'USER')")
 public class DashboardController {
-    
+
     private final IDashboardService dashboardService;
-    
+
     /**
      * 获取Dashboard统计数据 (兼容前端 /statistics 路径)
      */
@@ -97,7 +100,7 @@ public class DashboardController {
         } catch (Exception ignore) { /* 解析失败则按默认今天 */ }
         return Result.success(dashboardService.getOrderPeriodDistribution(d, granularity, stationId));
     }
-    
+
     /**
      * 获取最近订单列表
      */
@@ -111,7 +114,7 @@ public class DashboardController {
         List<RecentOrderDTO> orders = dashboardService.getRecentOrders(limit);
         return Result.success(orders);
     }
-    
+
     /**
      * 获取充电站订单排名（Top 5）
      */
@@ -122,7 +125,7 @@ public class DashboardController {
     public Result<List<com.evcs.tenant.dto.StationRankingDTO>> getStationRanking() {
         return Result.success(dashboardService.getStationRanking());
     }
-    
+
     /**
      * 获取充电桩利用率排名（Top 5）
      */

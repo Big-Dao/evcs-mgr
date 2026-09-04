@@ -10,7 +10,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * 协议指令控制控制器
@@ -31,11 +34,11 @@ public class ProtocolCommandController {
     @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR', 'TENANT_ADMIN')")
     public Result<ProtocolResponse> startCharging(@RequestBody ProtocolRequest request) {
         log.info("Received remote start command: deviceCode={}, sessionId={}", request.getDeviceCode(), request.getSessionId());
-        
+
         if (request.getProtocolType() == null) {
              request.setProtocolType(protocolManager.getProtocolType(request.getDeviceCode()));
         }
-        
+
         try {
              IProtocolService service = protocolManager.getProtocolService(request.getProtocolType());
              ProtocolResponse response = service.startCharging(request);
@@ -55,11 +58,11 @@ public class ProtocolCommandController {
     @PreAuthorize("hasAnyRole('ADMIN', 'OPERATOR', 'TENANT_ADMIN')")
     public Result<ProtocolResponse> stopCharging(@RequestBody ProtocolRequest request) {
         log.info("Received remote stop command: deviceCode={}, sessionId={}", request.getDeviceCode(), request.getSessionId());
-        
+
         if (request.getProtocolType() == null) {
              request.setProtocolType(protocolManager.getProtocolType(request.getDeviceCode()));
         }
-        
+
         try {
              IProtocolService service = protocolManager.getProtocolService(request.getProtocolType());
              ProtocolResponse response = service.stopCharging(request);
@@ -78,11 +81,11 @@ public class ProtocolCommandController {
     @PostMapping("/reserve")
     public Result<ProtocolResponse> reserveNow(@RequestBody ProtocolRequest request) {
         log.info("Received reserve command: deviceCode={}", request.getDeviceCode());
-        
+
         if (request.getProtocolType() == null) {
              request.setProtocolType(protocolManager.getProtocolType(request.getDeviceCode()));
         }
-        
+
         try {
              IProtocolService service = protocolManager.getProtocolService(request.getProtocolType());
              ProtocolResponse response = service.reserveNow(request);

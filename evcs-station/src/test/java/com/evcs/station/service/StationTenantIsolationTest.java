@@ -127,7 +127,7 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
                 station.setStationId(stationId);
                 station.setStationName("尝试修改");
                 station.setAddress("尝试修改地址");
-                
+
                 // 由于租户隔离，租户2看不到租户1的数据，会抛出"充电站不存在"异常
                 stationService.updateStation(station);
             });
@@ -198,7 +198,7 @@ class StationTenantIsolationTest extends BaseTenantIsolationTest {
             station.setLatitude(39.9087);
             station.setLongitude(116.4089);
             station.setStatus(1);
-            
+
             // 不同租户可以使用相同编码
             boolean result = stationService.saveStation(station);
             assertTrue(result, "不同租户应该可以使用相同的充电站编码");

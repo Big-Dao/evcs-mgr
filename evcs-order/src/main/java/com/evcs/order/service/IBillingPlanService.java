@@ -43,7 +43,7 @@ public interface IBillingPlanService extends IService<BillingPlan> {
     BillingPlan clonePlan(Long sourcePlanId, BillingPlan newPlan);
     boolean validateSegments(java.util.List<BillingPlanSegment> segments, boolean requireFullDay);
     void evictCache(Long planId);
-    
+
     /**
      * 填充计划的统计信息（分段数、站点数）
      * @param plans 计划列表

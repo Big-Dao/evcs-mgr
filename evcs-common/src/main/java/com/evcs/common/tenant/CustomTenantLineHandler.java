@@ -17,13 +17,13 @@ import net.sf.jsqlparser.schema.Column;
  */
 @Slf4j
 public class CustomTenantLineHandler implements TenantLineHandler {
-    
+
     /**
      * 线程本地变量：用于临时禁用租户拦截器
      * 当设置为 true 时，租户拦截器将跳过所有表的租户过滤
      */
     private static final ThreadLocal<Boolean> IGNORE_TENANT_FILTER = new ThreadLocal<>();
-    
+
     /**
      * 禁用租户拦截器
      * 在需要跨租户查询（如父子租户聚合）时调用
@@ -32,7 +32,7 @@ public class CustomTenantLineHandler implements TenantLineHandler {
         IGNORE_TENANT_FILTER.set(true);
         log.debug("已禁用租户拦截器");
     }
-    
+
     /**
      * 启用租户拦截器（恢复默认行为）
      */
@@ -40,7 +40,7 @@ public class CustomTenantLineHandler implements TenantLineHandler {
         IGNORE_TENANT_FILTER.remove();
         log.debug("已启用租户拦截器");
     }
-    
+
     /**
      * 检查是否禁用了租户拦截器
      */
@@ -48,7 +48,7 @@ public class CustomTenantLineHandler implements TenantLineHandler {
         Boolean disabled = IGNORE_TENANT_FILTER.get();
         return disabled != null && disabled;
     }
-    
+
     /**
      * 不需要进行租户隔离的表名列表
      */
@@ -59,19 +59,19 @@ public class CustomTenantLineHandler implements TenantLineHandler {
         "sys_dict_data",        // 字典数据表
         "sys_config",           // 系统配置表
         "sys_log",              // 系统日志表
-        
+
         // 基础数据表（如果有全局共享的基础数据）
         "base_region",          // 行政区域表
         "base_bank",            // 银行信息表
-        
+
         // 统计分析表（如果需要跨租户统计）
         "stat_global",          // 全局统计表
-        
+
         // 临时表或缓存表
         "temp_",               // 临时表前缀
         "cache_"               // 缓存表前缀
     );
-    
+
     /**
      * 获取租户字段名
      */
@@ -79,7 +79,7 @@ public class CustomTenantLineHandler implements TenantLineHandler {
     public String getTenantIdColumn() {
         return "tenant_id";
     }
-    
+
     /**
      * 获取租户ID值
      */
@@ -90,11 +90,11 @@ public class CustomTenantLineHandler implements TenantLineHandler {
             log.error("租户上下文中未找到租户ID，无法执行SQL操作");
             throw new TenantContextMissingException("执行数据库操作时租户上下文缺失，请确保已正确设置租户信息");
         }
-        
+
         log.debug("SQL租户过滤 - 租户ID: {}", tenantId);
         return new LongValue(tenantId);
     }
-    
+
     /**
      * 判断是否忽略租户隔离
      */
@@ -105,27 +105,27 @@ public class CustomTenantLineHandler implements TenantLineHandler {
             log.debug("租户拦截器已禁用，跳过表 {} 的租户过滤", tableName);
             return true;
         }
-        
+
         // 检查表名是否在忽略列表中
         for (String ignoreTable : IGNORE_TABLES) {
-            if (tableName.equals(ignoreTable) || 
+            if (tableName.equals(ignoreTable) ||
                 (ignoreTable.endsWith("_") && tableName.startsWith(ignoreTable))) {
                 log.debug("忽略租户隔离的表: {}", tableName);
                 return true;
             }
         }
-        
+
         // 对于系统管理员，某些操作可能需要跨租户访问
         if (TenantContext.isSystemAdmin()) {
             log.debug("系统管理员访问表: {}", tableName);
             // 系统管理员仍然需要租户隔离，除非特殊指定
             // 这里可以根据业务需求进行调整
         }
-        
+
         log.debug("应用租户隔离的表: {}", tableName);
         return false;
     }
-    
+
     /**
      * 在INSERT语句中是否忽略租户字段
      * 返回true表示不自动添加租户字段，由业务代码自行处理
@@ -136,19 +136,19 @@ public class CustomTenantLineHandler implements TenantLineHandler {
         boolean hasColumn = columns.stream()
             .map(Column::getColumnName)
             .anyMatch(column -> column.equalsIgnoreCase(tenantIdColumn));
-            
+
         if (hasColumn) {
             log.debug("INSERT语句已包含租户字段，跳过自动添加");
             return true;
         }
-        
+
         // 检查当前是否有租户上下文：缺失时 fail-closed，禁止写入无租户归属的数据
         Long tenantId = TenantContext.getTenantId();
         if (tenantId == null) {
             log.error("INSERT操作缺少租户上下文，拒绝执行");
             throw new TenantContextMissingException("执行数据库写入时租户上下文缺失，请确保已正确设置租户信息");
         }
-        
+
         log.debug("INSERT语句自动添加租户字段: {} = {}", tenantIdColumn, tenantId);
         return false; // 自动添加租户字段
     }
