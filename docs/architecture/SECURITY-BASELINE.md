@@ -133,6 +133,18 @@ EVCS 是多租户充电站管理平台，**租户数据隔离**与**认证授权
 
 - 2026-07-29：初版创建，统一安全基线；修复 gateway/auth/station/payment 安全姿态；
   标记 order/tenant/protocol/monitoring 为待达标。
+- 2026-09-05：企业级加固批次——
+  ① station 安全链修复：StationSecurityConfig 的 @Bean 缺失导致整链未注册已修复，
+     /actuator/** 白名单收窄为 health/info；
+  ② 网关剥离列表补齐 X-Tenant-Type/X-Tenant-Ancestors，auth 停止绑定不可信头；
+  ③ 租户输入侧批量赋值面封堵：Tenant/Station/Charger/BillingPlan/BillingRate 的
+     创建/更新端点全部改用输入 DTO（内部字段与设备运行时字段不在绑定面）；
+  ④ 跨服务 SQL 清零：仪表盘统计迁移至 station/order/auth 内部统计端点
+     （/internal/api/**，网关边缘封锁 + X-Internal-Token），order 摆脱
+     charging_station JOIN（站点信息写入时冗余）；
+  ⑤ 质量门禁：checkstyle/SpotBugs（117→0）/JaCoCo 覆盖率棘轮阈值全部转强制，
+     连同双异步门禁统一随 ./gradlew check 执行；
+  ⑥ jwt.secret 拒绝 CHANGE-ME 占位符；JWT 过期键名对齐（docker 配置）。
 
 ---
 

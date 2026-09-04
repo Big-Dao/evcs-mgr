@@ -111,15 +111,20 @@ Controller ← Service ← Domain/Repository ← Entity
 ---
 
 ## 严格禁止的模式
-- 直接访问他库表或跨边界聚合
+- 直接访问他库表或跨边界聚合（跨服务统计数据一律通过归属服务的
+  /internal/api/** 内部端点获取，参考 StationUsageClient / OrderStatsClient 模式）
 - 在代码中硬编码环境/密钥
 - 在领域层引入 Web/外部框架依赖
+- 控制器创建/更新端点直接绑定实体（@RequestBody Entity）——必须使用输入 DTO，
+  内部字段（审计人/逻辑删除/乐观锁/运行时量测）不得进入绑定面
 
 ---
 
 ## 质量与性能要求
 - 测试：核心路径必须具备单元测试与必要的集成测试；覆盖率达到团队门槛
-- 代码质量：静态检查（SpotBugs/Checkstyle）与安全审计通过；关键路径考虑缓存与性能
+  （JaCoCo 按模块棘轮阈值已在根 build.gradle 强制，模块覆盖率提升后同步上调阈值表）
+- 代码质量：静态检查（SpotBugs/Checkstyle）与安全审计通过（两者均已强制：违规即构建失败，
+  豁免项分别记录于 config/spotbugs/exclude.xml 与 checkstyle suppressions 注释）；关键路径考虑缓存与性能
 - 门禁：`./gradlew check` 默认包含 `forbidThreadingPrimitives`，生产代码出现 `new Thread(...)` / `Executors.*` 等将直接失败（需改为 Spring `@Async/@Scheduled` 或上下文传播执行器）。
 - 门禁开关：支持 `off|warn|fail` 三种模式，通过 `-Devcs.gate.threading=warn`（或环境变量 `EVCS_GATE_THREADING=warn`）配置；默认 `fail`。
 - 例外：如确有必要（例如极底层封装且已审阅），可在文件头 40 行内添加 `// EVCS_ALLOW_THREADING_PRIMITIVES: <reason>` 进行豁免；必须写明原因并控制影响范围。
