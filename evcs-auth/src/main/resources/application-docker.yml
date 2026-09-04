@@ -73,7 +73,7 @@ management:
     health:
       show-details: always
 
-# JWT配置
+# JWT配置（expire 单位秒，与 JwtUtil 的 jwt.expire 键一致；有效期待遇与 config-repo 对齐为 2 小时）
 jwt:
   secret: ${JWT_SECRET}
-  expiration: 86400000
+  expire: ${JWT_EXPIRE:7200}

@@ -63,6 +63,12 @@ public class JwtUtil {
                     "jwt.secret 过短（当前 " + secret.length() + " 字符）。请使用至少 32 字符的随机密钥。"
             );
         }
+        // 拦截部署清单中的占位符（k8s Secret 模板恰好满足 32 字符长度校验）
+        if (secret.startsWith("CHANGE-ME")) {
+            throw new IllegalStateException(
+                    "jwt.secret 是部署占位符（CHANGE-ME...），拒绝以可猜测密钥运行。请由部署流水线注入真实的随机密钥。"
+            );
+        }
         log.info("JwtUtil 初始化完成（issuer={}, expire={}s）", issuer, expire);
     }
 

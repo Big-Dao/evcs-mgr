@@ -46,6 +46,18 @@ class JwtUtilTest {
     }
 
     @Test
+    @DisplayName("占位符 jwt.secret（CHANGE-ME...，恰好满足长度校验）应被拒绝")
+    void validateSecret_failsWhenSecretIsPlaceholder() {
+        ReflectionTestUtils.setField(jwtUtil, "secret", "CHANGE-ME-IN-DEPLOY-pipeline-must-inject-32plus-char-random");
+
+        IllegalStateException ex = assertThrows(
+                IllegalStateException.class,
+                () -> ReflectionTestUtils.invokeMethod(jwtUtil, "validateSecret")
+        );
+        assertTrue(ex.getMessage().contains("占位符"));
+    }
+
+    @Test
     @DisplayName("过短 jwt.secret（< 32 字符）时 validateSecret 应抛出 IllegalStateException")
     void validateSecret_failsWhenSecretTooShort() {
         ReflectionTestUtils.setField(jwtUtil, "secret", "short-only-16chars"); // 16 字符
