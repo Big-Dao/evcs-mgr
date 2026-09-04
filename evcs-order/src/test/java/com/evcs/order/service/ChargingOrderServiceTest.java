@@ -3,6 +3,7 @@ package com.evcs.order.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.test.base.BaseServiceTest;
+import com.evcs.common.tenant.TenantContext;
 import com.evcs.order.OrderServiceApplication;
 import com.evcs.order.config.TestConfig;
 import com.evcs.order.entity.BillingPlan;
@@ -18,6 +19,8 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -62,6 +65,29 @@ class ChargingOrderServiceTest extends BaseServiceTest {
         // Mock计费服务，返回固定金额用于测试
         when(billingService.calculateAmount(any(), any(), any(), anyLong(), anyLong(), anyLong()))
             .thenReturn(new BigDecimal("50.00"));
+    }
+
+    @Test
+    @DisplayName("停止充电 - 审计归属应为订单用户（事件线程无用户上下文）")
+    void testCompleteOrderOnStop_AttributesToOrderUser() {
+        // Given: 订单属于用户 31；停机事件线程没有用户上下文
+        TenantContext.setCurrentTenantId(DEFAULT_TENANT_ID);
+        TenantContext.setUserId(31L);
+        org.junit.jupiter.api.Assertions.assertTrue(
+                chargingOrderService.createOrderOnStart(11L, 21L, "ATTR-S1", 31L, null));
+        TenantContext.clear();
+        TenantContext.setCurrentTenantId(DEFAULT_TENANT_ID);
+
+        // When: 完成订单
+        org.junit.jupiter.api.Assertions.assertTrue(
+                chargingOrderService.completeOrderOnStop("ATTR-S1", 12.5, 60L));
+
+        // Then: updateBy 应回填为订单用户
+        ChargingOrder reloaded = chargingOrderService.getBySessionId("ATTR-S1");
+        assertNotNull(reloaded);
+        assertNotNull(reloaded.getUpdateBy(), "updateBy 应被 updateFill 填充");
+        assertEquals(31L, reloaded.getUpdateBy());
+        TenantContext.clear();
     }
 
     @Test

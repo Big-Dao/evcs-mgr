@@ -149,6 +149,12 @@ public class ChargingOrderServiceImpl extends ServiceImpl<ChargingOrderMapper, C
                 return true;
             }
 
+            // 审计归属：停止事件契约不带 userId，从订单本身还原，
+            // 使 updateFill 能正确填充 updateBy
+            if (order.getUserId() != null) {
+                TenantContext.setUserId(order.getUserId());
+            }
+
             order.setEndTime(LocalDateTime.now());
             meterRegistry.counter("evcs.order.completed").increment();
 
