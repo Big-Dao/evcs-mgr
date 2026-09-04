@@ -45,7 +45,7 @@ public class OrderUsageService {
                 Long tenantId = readLong(row, "tenant_id");
                 Long cnt = readLong(row, "cnt");
                 if (tenantId != null) {
-                    counts.put(tenantId, cnt == null ? 0L : cnt);
+                    counts.put(tenantId, cnt == null ? Long.valueOf(0L) : cnt);
                 }
             }
 

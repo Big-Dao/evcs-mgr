@@ -7,7 +7,7 @@ plugins {
     id 'jacoco' // 代码覆盖率
     id 'checkstyle' // 代码风格检查
     // id 'pmd' // 代码质量检查
-    // id 'com.github.spotbugs' version '6.0.25' apply false // 静态代码分析
+    id 'com.github.spotbugs' version '6.0.25' apply false // 静态代码分析
 }
 
 group = 'com.evcs'
@@ -48,7 +48,7 @@ subprojects {
     // Temporarily disabled checkstyle due to configuration issues
     apply plugin: 'checkstyle'
     // apply plugin: 'pmd'
-    // apply plugin: 'com.github.spotbugs'
+    apply plugin: 'com.github.spotbugs'
     // Quality checks re-enabled to verify warning resolution
 
     group = rootProject.group
@@ -185,14 +185,20 @@ subprojects {
         showViolations = true
     }
 
-    // SpotBugs配置
-    // spotbugs {
-    //     toolVersion = '4.8.6'
-    //     ignoreFailures = true // Allow build to continue with minor warnings
-    //     showStackTraces = true
-    //     showProgress = true
-    //     excludeFilter = file("${rootDir}/config/spotbugs/exclude.xml")
-    // }
+    // SpotBugs配置（企业级门禁：发现即构建失败；豁免项见 exclude.xml 注释）
+    spotbugs {
+        toolVersion = '4.8.6'
+        ignoreFailures = false
+        showStackTraces = true
+        excludeFilter = file("${rootDir}/config/spotbugs/exclude.xml")
+    }
+
+    tasks.withType(com.github.spotbugs.snom.SpotBugsTask).configureEach {
+        reports {
+            xml.required = true
+            html.required = false
+        }
+    }
 
     // 编译配置
     tasks.withType(JavaCompile) {

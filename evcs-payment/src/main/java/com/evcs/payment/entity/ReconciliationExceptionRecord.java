@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 
 @Data
 @TableName("reconciliation_exception")
-public class ReconciliationException {
+public class ReconciliationExceptionRecord {
 
     @TableId(type = IdType.AUTO)
     private Long id;

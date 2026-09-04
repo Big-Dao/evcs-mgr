@@ -19,6 +19,14 @@ public abstract class BusinessMetrics {
 
     protected BusinessMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
+    }
+
+    /**
+     * 指标注册延迟到依赖注入完成后执行：
+     * 在构造器中调用可重写方法会让子类字段初始化滞后于注册过程。
+     */
+    @jakarta.annotation.PostConstruct
+    void initMetrics() {
         registerMetrics();
     }
 

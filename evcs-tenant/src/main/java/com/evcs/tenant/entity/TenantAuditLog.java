@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * <p>记录跨层级管理行为，包括创建子租户、禁用/恢复、配额变更等
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
+@EqualsAndHashCode(callSuper = true)
 @TableName("tenant_audit_log")
 public class TenantAuditLog extends BaseEntity {
 

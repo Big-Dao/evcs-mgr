@@ -119,7 +119,7 @@ public class UserController {
         user.setEmail(request.getEmail());
         user.setGender(request.getGender());
         user.setStatus(request.getStatus());
-        user.setUserType(request.getUserType() == null ? 2 : request.getUserType());
+        user.setUserType(request.getUserType() == null ? Integer.valueOf(2) : request.getUserType());
         user.setCreateBy(operatorId);
         user.setUpdateBy(operatorId);
         user.setCreateTime(LocalDateTime.now());

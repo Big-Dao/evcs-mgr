@@ -123,9 +123,9 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
     @Override
     public boolean verifySignature(String channel, CallbackRequest request) {
         if ("wechat".equalsIgnoreCase(channel)) {
-            Boolean verified = verifyWechatSignature(request);
-            if (verified != null) {
-                return verified;
+            java.util.Optional<Boolean> verified = verifyWechatSignature(request);
+            if (verified.isPresent()) {
+                return verified.get();
             }
         }
 
@@ -148,29 +148,29 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
         }
     }
 
-    private Boolean verifyWechatSignature(CallbackRequest request) {
+    private java.util.Optional<Boolean> verifyWechatSignature(CallbackRequest request) {
         Map<String, String> headers = request.getHeaders();
         if (headers == null || headers.isEmpty()) {
             log.warn("微信回调缺少请求头信息，无法验证签名");
-            return null;
+            return java.util.Optional.empty();
         }
 
         if (wechatPayClientFactory.isEmpty()) {
             log.warn("微信支付客户端工厂不可用，无法验证签名");
-            return false;
+            return Optional.of(false);
         }
 
         if (!wechatPayClientFactory.get().isActive()) {
             // 非真实接入场景（未完整配置）不应收到生产回调，允许跳过验签以便本地/测试场景运行。
             log.info("微信支付未启用真实接入（配置不完整），跳过签名验证");
-            return true;
+            return Optional.of(true);
         }
 
         Optional<NotificationParser> parserOptional = wechatPayClientFactory
             .flatMap(WechatPayClientFactory::getNotificationParser);
         if (parserOptional.isEmpty()) {
             log.warn("微信支付通知解析器不可用，无法验证签名");
-            return false;
+            return Optional.of(false);
         }
 
         String serial = getHeader(headers, "Wechatpay-Serial");
@@ -183,17 +183,17 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
             || !StringUtils.hasText(timestamp) || !StringUtils.hasText(nonce)) {
             log.warn("微信回调缺少必要签名参数 serial={}, signature={}, timestamp={}, nonce={}",
                 serial, signature, timestamp, nonce);
-            return false;
+            return Optional.of(false);
         }
 
         if (!isWechatTimestampAcceptable(timestamp)) {
             log.warn("微信回调timestamp超出允许偏差范围，拒绝处理: timestamp={}", timestamp);
-            return false;
+            return Optional.of(false);
         }
 
         if (!StringUtils.hasText(request.getRawData())) {
             log.warn("微信回调原始数据为空，无法验证签名");
-            return false;
+            return Optional.of(false);
         }
 
         try {
@@ -207,10 +207,10 @@ public class PaymentCallbackServiceImpl implements PaymentCallbackService {
                 .build();
             NotificationParser parser = parserOptional.get();
             parser.parse(requestParam, Notification.class);
-            return true;
+            return Optional.of(true);
         } catch (Exception ex) {
             log.warn("微信签名验证失败", ex);
-            return false;
+            return Optional.of(false);
         }
     }
 

@@ -1,6 +1,6 @@
 package com.evcs.payment.service.reconciliation;
 
-import com.evcs.payment.dto.ReconciliationException;
+import com.evcs.payment.dto.ReconciliationExceptionItem;
 import com.evcs.payment.dto.ReconciliationExceptionCandidate;
 import com.evcs.payment.service.reconciliation.impl.ReconciliationExceptionServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +27,7 @@ class ReconciliationExceptionServiceImplTest {
     void detectExceptions_shouldBuildStructuredExceptions() {
         List<ReconciliationExceptionCandidate> candidates = List.of(
             ReconciliationExceptionCandidate.builder()
-                .type(ReconciliationException.ExceptionType.AMOUNT_MISMATCH)
+                .type(ReconciliationExceptionItem.ExceptionType.AMOUNT_MISMATCH)
                 .description("金额差异2.50元")
                 .systemTradeNo("SYS001")
                 .channelTradeNo("ALI001")
@@ -39,22 +39,22 @@ class ReconciliationExceptionServiceImplTest {
                 .build()
         );
 
-        List<ReconciliationException> exceptions = service.detectExceptions("recon-1", candidates);
+        List<ReconciliationExceptionItem> exceptions = service.detectExceptions("recon-1", candidates);
 
         assertEquals(1, exceptions.size());
-        ReconciliationException exception = exceptions.get(0);
-        assertEquals(ReconciliationException.ExceptionType.AMOUNT_MISMATCH, exception.getType());
-        assertEquals(ReconciliationException.ExceptionLevel.MEDIUM, exception.getLevel());
+        ReconciliationExceptionItem exception = exceptions.get(0);
+        assertEquals(ReconciliationExceptionItem.ExceptionType.AMOUNT_MISMATCH, exception.getType());
+        assertEquals(ReconciliationExceptionItem.ExceptionLevel.MEDIUM, exception.getLevel());
         assertEquals("SYS001", exception.getSystemTradeNo());
         assertEquals(new BigDecimal("2.50"), exception.getAmountDifference());
     }
 
     @Test
     void handleException_shouldResolveAndAddRemark() {
-        ReconciliationException exception = ReconciliationException.builder()
+        ReconciliationExceptionItem exception = ReconciliationExceptionItem.builder()
             .id("ex-1")
             .reconciliationId("recon-1")
-            .type(ReconciliationException.ExceptionType.AMOUNT_MISMATCH)
+            .type(ReconciliationExceptionItem.ExceptionType.AMOUNT_MISMATCH)
             .systemTradeNo("SYS002")
             .channelTradeNo("ALI002")
             .systemAmount(new BigDecimal("120.00"))
@@ -62,13 +62,13 @@ class ReconciliationExceptionServiceImplTest {
             .amountDifference(new BigDecimal("2.00"))
             .systemStatus("SUCCESS")
             .channelStatus("TRADE_SUCCESS")
-            .status(ReconciliationException.ExceptionStatus.PENDING)
+            .status(ReconciliationExceptionItem.ExceptionStatus.PENDING)
             .build();
 
         boolean handled = service.handleException(exception);
 
         assertTrue(handled);
-        assertEquals(ReconciliationException.ExceptionStatus.RESOLVED, exception.getStatus());
+        assertEquals(ReconciliationExceptionItem.ExceptionStatus.RESOLVED, exception.getStatus());
         assertNotNull(exception.getHandleRemark());
         assertTrue(exception.getHandleRemark().contains("金额差异"));
         assertNotNull(exception.getHandleTime());
@@ -78,7 +78,7 @@ class ReconciliationExceptionServiceImplTest {
     void generateExceptionReport_shouldReuseLatestDetectionResult() {
         List<ReconciliationExceptionCandidate> candidates = List.of(
             ReconciliationExceptionCandidate.builder()
-                .type(ReconciliationException.ExceptionType.TRADE_NOT_FOUND)
+                .type(ReconciliationExceptionItem.ExceptionType.TRADE_NOT_FOUND)
                 .description("系统缺少渠道交易")
                 .channelTradeNo("ALI003")
                 .channelAmount(new BigDecimal("88.00"))

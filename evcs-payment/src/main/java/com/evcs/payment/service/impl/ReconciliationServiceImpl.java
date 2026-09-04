@@ -3,7 +3,7 @@ package com.evcs.payment.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
-import com.evcs.payment.dto.ReconciliationException;
+import com.evcs.payment.dto.ReconciliationExceptionItem;
 import com.evcs.payment.dto.ReconciliationExceptionCandidate;
 import com.evcs.payment.dto.ReconciliationQuery;
 import com.evcs.payment.dto.ReconciliationRequest;
@@ -221,7 +221,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
                                     transaction.getTradeStatus());
                                 exceptions.add(msg);
                                 addExceptionCandidate(exceptionCandidates,
-                                    ReconciliationException.ExceptionType.STATUS_MISMATCH,
+                                    ReconciliationExceptionItem.ExceptionType.STATUS_MISMATCH,
                                     msg, order, transaction, null);
                             }
                             break;
@@ -231,7 +231,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
                                 order.getTradeNo(), order.getPaidTime(), transaction.getTradeTime());
                             exceptions.add(message);
                             addExceptionCandidate(exceptionCandidates,
-                                ReconciliationException.ExceptionType.TRADE_TIME_MISMATCH,
+                                ReconciliationExceptionItem.ExceptionType.TRADE_TIME_MISMATCH,
                                 message, order, transaction, null);
                         }
                     } else {
@@ -240,7 +240,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
                             order.getTradeNo(), order.getAmount(), transaction.getAmount(), amountDiff);
                         exceptions.add(message);
                         addExceptionCandidate(exceptionCandidates,
-                            ReconciliationException.ExceptionType.AMOUNT_MISMATCH,
+                            ReconciliationExceptionItem.ExceptionType.AMOUNT_MISMATCH,
                             message, order, transaction, amountDiff);
                     }
                 }
@@ -282,7 +282,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
                     order.getTradeNo(), order.getAmount(), order.getPaidTime());
                 exceptions.add(reason);
                 addExceptionCandidate(exceptionCandidates,
-                    ReconciliationException.ExceptionType.TRADE_NOT_FOUND,
+                    ReconciliationExceptionItem.ExceptionType.TRADE_NOT_FOUND,
                     reason, order, null, null);
                 log.warn(reason);
             } else if (log.isDebugEnabled()) {
@@ -300,7 +300,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
                         transaction.getOutTradeNo(), transaction.getAmount(), transaction.getTradeTime());
                     exceptions.add(message);
                     addExceptionCandidate(exceptionCandidates,
-                        ReconciliationException.ExceptionType.DUPLICATE_TRADE,
+                        ReconciliationExceptionItem.ExceptionType.DUPLICATE_TRADE,
                         message, null, transaction, null);
                 }
             }
@@ -408,7 +408,7 @@ public class ReconciliationServiceImpl implements IReconciliationService {
     }
 
     private void addExceptionCandidate(List<ReconciliationExceptionCandidate> candidates,
-                                       ReconciliationException.ExceptionType type,
+                                       ReconciliationExceptionItem.ExceptionType type,
                                        String description,
                                        PaymentOrder systemOrder,
                                        com.evcs.payment.dto.ReconciliationStatement.StatementTransaction statementTransaction,

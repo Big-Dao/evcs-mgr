@@ -17,7 +17,7 @@ import jakarta.validation.constraints.Pattern;
  * 租户实体
  */
 @Data
-@EqualsAndHashCode(callSuper = false)  // 不包含父类字段
+@EqualsAndHashCode(callSuper = true)  // 不包含父类字段
 @TableName("sys_tenant")
 public class SysTenant extends BaseEntity {
     /**

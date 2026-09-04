@@ -1,6 +1,6 @@
 package com.evcs.payment.dto;
 
-import com.evcs.payment.dto.ReconciliationException.ExceptionType;
+import com.evcs.payment.dto.ReconciliationExceptionItem.ExceptionType;
 import lombok.Builder;
 import lombok.Data;
 

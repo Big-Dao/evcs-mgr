@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
  */
 @Data
 @Builder
-public class ReconciliationException {
+public class ReconciliationExceptionItem {
 
     /**
      * 异常ID

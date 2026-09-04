@@ -142,8 +142,10 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
         }
 
         // 校验分段不重叠
-        if (segments != null && !segments.isEmpty()) {
-            boolean ok = validateNoOverlap(segments, requireFullDay);
+        // 语义：null 分段 = 清空该计划全部分段（先删后插，插入空列表）
+        List<BillingPlanSegment> safeSegments = segments == null ? List.of() : segments;
+        if (!safeSegments.isEmpty()) {
+            boolean ok = validateNoOverlap(safeSegments, requireFullDay);
             if (!ok) {
                 throw new RuntimeException("分段存在时间重叠或非法时间");
             }
@@ -152,7 +154,7 @@ public class BillingPlanServiceImpl extends ServiceImpl<BillingPlanMapper, Billi
         segmentCache.remove(planId);
         segmentMapper.delete(new QueryWrapper<BillingPlanSegment>().eq("plan_id", planId));
         int i = 1;
-        for (BillingPlanSegment s : segments) {
+        for (BillingPlanSegment s : safeSegments) {
             s.setPlanId(planId);
                         if (s.getSegmentIndex() == null) {
                 s.setSegmentIndex(i++);

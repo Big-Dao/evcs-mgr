@@ -454,9 +454,7 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
             record.setOtherAccount(fields[10].trim());        // 对方账号
             record.setTotalAmount(parseAmount(fields[11]));   // 订单金额
 
-            if (fields.length > 12) {
-                record.setMerchantRedAmount(parseAmount(fields[12])); // 商家红包
-            }
+            record.setMerchantRedAmount(parseAmount(fields[12])); // 商家红包（前序守卫已确保 >=24 列）
             if (fields.length > 24) {
                 record.setRefundAmount(parseAmount(fields[24]));      // 退款金额
             }
@@ -589,11 +587,11 @@ public class ReconciliationStatementServiceImpl implements ReconciliationStateme
 
         try {
             // 微信支付对账单字段映射（根据实际格式调整）
-            String tradeTimeStr = fields.length > 0 ? fields[0].trim() : "";      // 交易时间
-            String wechatTradeNo = fields.length > 5 ? fields[5].trim() : "";     // 微信订单号
-            String outTradeNo = fields.length > 6 ? fields[6].trim() : "";        // 商户订单号
-            String tradeType = fields.length > 8 ? fields[8].trim() : "";         // 交易类型
-            String tradeStatus = fields.length > 9 ? fields[9].trim() : "";       // 交易状态
+            String tradeTimeStr = fields[0].trim();      // 交易时间
+            String wechatTradeNo = fields[5].trim();     // 微信订单号
+            String outTradeNo = fields[6].trim();        // 商户订单号
+            String tradeType = fields[8].trim();         // 交易类型
+            String tradeStatus = fields[9].trim();       // 交易状态
             String totalFee = fields.length > 24 ? fields[24].trim() : "";        // 订单金额（单位：分）
             String refundFee = fields.length > 16 ? fields[16].trim() : "";       // 退款金额（单位：分）
 

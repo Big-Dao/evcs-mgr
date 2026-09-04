@@ -89,7 +89,7 @@ public class OrderStatsService {
 
         List<HourlyCount> histogram = new ArrayList<>();
         for (Map<String, Object> row : selectMaps(query)) {
-            Integer hour = readLong(row, "h") == null ? null : readLong(row, "h").intValue();
+            Long hour = readLong(row, "h");
             if (hour != null) {
                 histogram.add(new HourlyCount(hour, readLong(row, "cnt")));
             }
@@ -122,8 +122,7 @@ public class OrderStatsService {
         for (Map<String, Object> row : selectMaps(query)) {
             Long chargerId = readLong(row, "charger_id");
             if (chargerId != null) {
-                rows.add(new ChargerActiveDays(chargerId, readLong(row, "active_days") == null ? 0
-                        : readLong(row, "active_days").intValue()));
+                rows.add(new ChargerActiveDays(chargerId, readLong(row, "active_days")));
             }
         }
         return rows;

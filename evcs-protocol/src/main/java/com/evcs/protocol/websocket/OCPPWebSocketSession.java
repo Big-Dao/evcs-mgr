@@ -129,8 +129,8 @@ public class OCPPWebSocketSession {
         if (webSocketSession == null) {
             return null;
         }
-        return webSocketSession.getRemoteAddress() != null ?
-               webSocketSession.getRemoteAddress().toString() : "unknown";
+        java.net.InetSocketAddress remote = webSocketSession.getRemoteAddress();
+        return remote != null ? remote.toString() : "unknown";
     }
 
     /**

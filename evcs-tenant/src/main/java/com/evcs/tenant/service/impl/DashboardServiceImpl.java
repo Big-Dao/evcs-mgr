@@ -80,7 +80,7 @@ public class DashboardServiceImpl implements IDashboardService {
                     .userCount(userCount)
                     .stationCount(stationCount)
                     .chargerCount(chargerCount)
-                    .todayOrderCount(summary.orderCount() == null ? 0L : summary.orderCount())
+                    .todayOrderCount(summary.orderCount() == null ? Long.valueOf(0L) : summary.orderCount())
                     .todayChargingAmount(summary.energy() == null ? BigDecimal.ZERO : summary.energy())
                     .todayRevenue(summary.revenue() == null ? BigDecimal.ZERO : summary.revenue())
                     .build();
@@ -147,7 +147,7 @@ public class DashboardServiceImpl implements IDashboardService {
             List<Long> tenantIds = tenantScope(tenantId);
             Map<Long, Long> orderCounts = new HashMap<>();
             for (StationOrderCount count : orderStatsClient.getStationOrderCounts(tenantIds)) {
-                orderCounts.put(count.stationId(), count.orderCount() == null ? 0L : count.orderCount());
+                orderCounts.put(count.stationId(), count.orderCount() == null ? Long.valueOf(0L) : count.orderCount());
             }
 
             List<StationRankingDTO> merged = new ArrayList<>();
@@ -183,7 +183,7 @@ public class DashboardServiceImpl implements IDashboardService {
             LocalDate since = LocalDate.now().minusDays(UTILIZATION_WINDOW_DAYS - 1L);
             Map<Long, Integer> activeDays = new HashMap<>();
             for (var row : orderStatsClient.getChargerActiveDays(since, tenantIds)) {
-                activeDays.put(row.chargerId(), row.activeDays() == null ? 0 : row.activeDays());
+                activeDays.put(row.chargerId(), row.activeDays() == null ? Integer.valueOf(0) : row.activeDays());
             }
 
             List<ChargerUtilizationDTO> merged = new ArrayList<>();
@@ -284,7 +284,7 @@ public class DashboardServiceImpl implements IDashboardService {
             Map<Integer, Long> byHour = new HashMap<>();
             for (OrderHourlyCount h : orderStatsClient.getHourlyHistogram(date, tenantIds, stationId)) {
                 if (h.hour() != null) {
-                    byHour.put(h.hour(), h.count() == null ? 0L : h.count());
+                    byHour.put(h.hour(), h.count() == null ? Long.valueOf(0L) : h.count());
                 }
             }
 

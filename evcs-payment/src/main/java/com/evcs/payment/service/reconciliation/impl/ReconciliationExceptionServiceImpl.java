@@ -1,6 +1,6 @@
 package com.evcs.payment.service.reconciliation.impl;
 
-import com.evcs.payment.dto.ReconciliationException;
+import com.evcs.payment.dto.ReconciliationExceptionItem;
 import com.evcs.payment.dto.ReconciliationExceptionCandidate;
 import com.evcs.payment.service.reconciliation.ReconciliationExceptionService;
 import lombok.extern.slf4j.Slf4j;
@@ -26,10 +26,10 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
     /**
      * 最近一次检测到的异常缓存，方便生成报告或复查
      */
-    private final Map<String, List<ReconciliationException>> latestExceptionCache = new ConcurrentHashMap<>();
+    private final Map<String, List<ReconciliationExceptionItem>> latestExceptionCache = new ConcurrentHashMap<>();
 
     @Override
-    public List<ReconciliationException> detectExceptions(String reconciliationId,
+    public List<ReconciliationExceptionItem> detectExceptions(String reconciliationId,
                                                           List<ReconciliationExceptionCandidate> candidates) {
         log.info("检测对账异常: reconciliationId={}, candidateCount={}",
             reconciliationId, candidates == null ? 0 : candidates.size());
@@ -40,10 +40,10 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
         }
 
         LocalDateTime now = LocalDateTime.now();
-        List<ReconciliationException> exceptions = new ArrayList<>(candidates.size());
+        List<ReconciliationExceptionItem> exceptions = new ArrayList<>(candidates.size());
 
         for (ReconciliationExceptionCandidate candidate : candidates) {
-            ReconciliationException exception = buildExceptionFromCandidate(reconciliationId, candidate, now);
+            ReconciliationExceptionItem exception = buildExceptionFromCandidate(reconciliationId, candidate, now);
             exceptions.add(exception);
         }
 
@@ -53,11 +53,11 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
     }
 
     @Override
-    public boolean handleException(ReconciliationException exception) {
+    public boolean handleException(ReconciliationExceptionItem exception) {
         log.info("处理对账异常: exceptionId={}, type={}", exception.getId(), exception.getType());
 
         try {
-            exception.setStatus(ReconciliationException.ExceptionStatus.PROCESSING);
+            exception.setStatus(ReconciliationExceptionItem.ExceptionStatus.PROCESSING);
             exception.setUpdateTime(LocalDateTime.now());
 
             String handleRemark;
@@ -77,7 +77,7 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
             }
 
             // 标记为已解决
-            exception.setStatus(ReconciliationException.ExceptionStatus.RESOLVED);
+            exception.setStatus(ReconciliationExceptionItem.ExceptionStatus.RESOLVED);
             exception.setHandleTime(LocalDateTime.now());
             exception.setHandleRemark(handleRemark);
             exception.setUpdateTime(LocalDateTime.now());
@@ -87,7 +87,7 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
 
         } catch (Exception e) {
             log.error("处理对账异常失败: exceptionId={}", exception.getId(), e);
-            exception.setStatus(ReconciliationException.ExceptionStatus.PENDING);
+            exception.setStatus(ReconciliationExceptionItem.ExceptionStatus.PENDING);
             exception.setHandleRemark("处理失败: " + e.getMessage());
             exception.setUpdateTime(LocalDateTime.now());
             return false;
@@ -95,14 +95,14 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
     }
 
     @Override
-    public ReconciliationExceptionHandleResult handleExceptions(List<ReconciliationException> exceptions) {
+    public ReconciliationExceptionHandleResult handleExceptions(List<ReconciliationExceptionItem> exceptions) {
         log.info("批量处理对账异常: count={}", exceptions.size());
 
         AtomicInteger successCount = new AtomicInteger(0);
         AtomicInteger failureCount = new AtomicInteger(0);
         List<String> errors = new ArrayList<>();
 
-        for (ReconciliationException exception : exceptions) {
+        for (ReconciliationExceptionItem exception : exceptions) {
             try {
                 boolean success = handleException(exception);
                 if (success) {
@@ -129,7 +129,7 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
         log.info("生成异常报告: reconciliationId={}", reconciliationId);
 
         try {
-            List<ReconciliationException> exceptions = latestExceptionCache.getOrDefault(
+            List<ReconciliationExceptionItem> exceptions = latestExceptionCache.getOrDefault(
                 reconciliationId, Collections.emptyList());
             if (exceptions.isEmpty()) {
                 log.warn("未找到异常缓存: reconciliationId={}", reconciliationId);
@@ -145,7 +145,7 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
 
             // 按类型分组统计
             report.append("异常类型统计:\n");
-            for (ReconciliationException.ExceptionType type : ReconciliationException.ExceptionType.values()) {
+            for (ReconciliationExceptionItem.ExceptionType type : ReconciliationExceptionItem.ExceptionType.values()) {
                 long count = exceptions.stream()
                     .filter(e -> e.getType() == type)
                     .count();
@@ -156,7 +156,7 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
 
             // 按级别分组统计
             report.append("\n异常级别统计:\n");
-            for (ReconciliationException.ExceptionLevel level : ReconciliationException.ExceptionLevel.values()) {
+            for (ReconciliationExceptionItem.ExceptionLevel level : ReconciliationExceptionItem.ExceptionLevel.values()) {
                 long count = exceptions.stream()
                     .filter(e -> e.getLevel() == level)
                     .count();
@@ -168,7 +168,7 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
             // 异常详情
             report.append("\n异常详情:\n");
             for (int i = 0; i < exceptions.size(); i++) {
-                ReconciliationException exception = exceptions.get(i);
+                ReconciliationExceptionItem exception = exceptions.get(i);
                 report.append(i + 1).append(". ").append(exception.getType().getDescription())
                     .append(" (").append(exception.getLevel().getDescription()).append(")\n");
                 report.append("   系统交易号: ").append(exception.getSystemTradeNo()).append("\n");
@@ -185,7 +185,7 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
         }
     }
 
-    private ReconciliationException buildExceptionFromCandidate(String reconciliationId,
+    private ReconciliationExceptionItem buildExceptionFromCandidate(String reconciliationId,
                                                                 ReconciliationExceptionCandidate candidate,
                                                                 LocalDateTime now) {
         BigDecimal amountDifference = candidate.getAmountDifference();
@@ -193,9 +193,9 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
             amountDifference = amountDifference.abs();
         }
 
-        ReconciliationException.ExceptionLevel level = determineExceptionLevel(candidate, amountDifference);
+        ReconciliationExceptionItem.ExceptionLevel level = determineExceptionLevel(candidate, amountDifference);
 
-        return ReconciliationException.builder()
+        return ReconciliationExceptionItem.builder()
             .id(UUID.randomUUID().toString())
             .reconciliationId(reconciliationId)
             .type(candidate.getType())
@@ -208,43 +208,43 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
             .systemStatus(candidate.getSystemStatus())
             .channelStatus(candidate.getChannelStatus())
             .level(level)
-            .status(ReconciliationException.ExceptionStatus.PENDING)
+            .status(ReconciliationExceptionItem.ExceptionStatus.PENDING)
             .createTime(now)
             .updateTime(now)
             .build();
     }
 
-    private ReconciliationException.ExceptionLevel determineExceptionLevel(
+    private ReconciliationExceptionItem.ExceptionLevel determineExceptionLevel(
             ReconciliationExceptionCandidate candidate, BigDecimal amountDifference) {
-        if (candidate.getType() == ReconciliationException.ExceptionType.TRADE_NOT_FOUND
-            || candidate.getType() == ReconciliationException.ExceptionType.DUPLICATE_TRADE) {
-            return ReconciliationException.ExceptionLevel.HIGH;
+        if (candidate.getType() == ReconciliationExceptionItem.ExceptionType.TRADE_NOT_FOUND
+            || candidate.getType() == ReconciliationExceptionItem.ExceptionType.DUPLICATE_TRADE) {
+            return ReconciliationExceptionItem.ExceptionLevel.HIGH;
         }
 
-        if (candidate.getType() == ReconciliationException.ExceptionType.AMOUNT_MISMATCH) {
+        if (candidate.getType() == ReconciliationExceptionItem.ExceptionType.AMOUNT_MISMATCH) {
             if (amountDifference != null) {
                 if (amountDifference.compareTo(new BigDecimal("5")) > 0) {
-                    return ReconciliationException.ExceptionLevel.HIGH;
+                    return ReconciliationExceptionItem.ExceptionLevel.HIGH;
                 }
                 if (amountDifference.compareTo(new BigDecimal("1")) > 0) {
-                    return ReconciliationException.ExceptionLevel.MEDIUM;
+                    return ReconciliationExceptionItem.ExceptionLevel.MEDIUM;
                 }
             }
-            return ReconciliationException.ExceptionLevel.LOW;
+            return ReconciliationExceptionItem.ExceptionLevel.LOW;
         }
 
-        if (candidate.getType() == ReconciliationException.ExceptionType.STATUS_MISMATCH) {
-            return ReconciliationException.ExceptionLevel.MEDIUM;
+        if (candidate.getType() == ReconciliationExceptionItem.ExceptionType.STATUS_MISMATCH) {
+            return ReconciliationExceptionItem.ExceptionLevel.MEDIUM;
         }
 
-        if (candidate.getType() == ReconciliationException.ExceptionType.TRADE_TIME_MISMATCH) {
-            return ReconciliationException.ExceptionLevel.LOW;
+        if (candidate.getType() == ReconciliationExceptionItem.ExceptionType.TRADE_TIME_MISMATCH) {
+            return ReconciliationExceptionItem.ExceptionLevel.LOW;
         }
 
-        return ReconciliationException.ExceptionLevel.LOW;
+        return ReconciliationExceptionItem.ExceptionLevel.LOW;
     }
 
-    private String handleTradeNotFoundException(ReconciliationException exception) {
+    private String handleTradeNotFoundException(ReconciliationExceptionItem exception) {
         String remark;
         if (exception.getChannelTradeNo() != null && exception.getSystemTradeNo() == null) {
             remark = "渠道存在交易但系统缺失，已触发补录与人工复核流程";
@@ -257,7 +257,7 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
         return remark;
     }
 
-    private String handleAmountMismatchException(ReconciliationException exception) {
+    private String handleAmountMismatchException(ReconciliationExceptionItem exception) {
         BigDecimal diff = exception.getAmountDifference() == null
             ? BigDecimal.ZERO : exception.getAmountDifference().abs();
         String remark;
@@ -271,7 +271,7 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
         return remark;
     }
 
-    private String handleStatusMismatchException(ReconciliationException exception) {
+    private String handleStatusMismatchException(ReconciliationExceptionItem exception) {
         String systemStatus = normalizeStatus(exception.getSystemStatus());
         String channelStatus = normalizeStatus(exception.getChannelStatus());
 
@@ -289,7 +289,7 @@ public class ReconciliationExceptionServiceImpl implements ReconciliationExcepti
         return remark;
     }
 
-    private String handleGenericException(ReconciliationException exception) {
+    private String handleGenericException(ReconciliationExceptionItem exception) {
         String remark = "异常类型 " + exception.getType().getDescription() + " 已记录等待人工确认";
         log.info("处理通用异常: type={}, remark={}", exception.getType(), remark);
         return remark;

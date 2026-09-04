@@ -5,6 +5,7 @@ import com.evcs.protocol.enums.OCPPMessageType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -122,10 +123,12 @@ public class OCPPWebSocketHandler implements WebSocketHandler {
     /**
      * 从WebSocket会话中提取充电站编码
      */
+    @Nullable
     private String extractChargerCode(WebSocketSession session) {
         // 从URI路径中提取充电站编码
         // 例如: /ocpp/CHARGER_001/websocket
-        String path = session.getUri() != null ? session.getUri().getPath() : null;
+        java.net.URI uri = session.getUri();
+        String path = uri != null ? uri.getPath() : null;
         if (path != null && path.startsWith("/ocpp/")) {
             String[] parts = path.split("/");
             if (parts.length >= 3) {
@@ -134,8 +137,8 @@ public class OCPPWebSocketHandler implements WebSocketHandler {
         }
 
         // 从查询参数中提取
-        if (session.getUri() != null) {
-            String query = session.getUri().getQuery();
+        if (uri != null) {
+            String query = uri.getQuery();
             if (query != null) {
                 String[] params = query.split("&");
                 for (String param : params) {
