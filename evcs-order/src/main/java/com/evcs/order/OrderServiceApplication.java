@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 @ConfigurationPropertiesScan(basePackages = "com.evcs")
 @EnableDiscoveryClient
 @EnableTransactionManagement
-@MapperScan("evcs.order.mapper")
+@MapperScan("com.evcs.order.mapper")
 public class OrderServiceApplication {
 
     public static void main(String[] args) {
