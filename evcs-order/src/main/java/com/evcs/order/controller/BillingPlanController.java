@@ -3,6 +3,7 @@ package com.evcs.order.controller;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
 import com.evcs.order.dto.BillingPlanResponse;
+import com.evcs.order.dto.BillingPlanUpsertRequest;
 import com.evcs.order.dto.BillingPlanSegmentResponse;
 import com.evcs.order.entity.BillingPlan;
 import com.evcs.order.entity.BillingPlanSegment;
@@ -37,8 +38,8 @@ public class BillingPlanController {
     @PostMapping
     @Operation(summary = "创建计费计划")
     @DataScope
-    public Result<BillingPlanResponse> create(@Valid @RequestBody BillingPlan plan) {
-        IBillingPlanService.PlanWriteOutcome outcome = planService.createPlan(plan);
+    public Result<BillingPlanResponse> create(@Valid @RequestBody BillingPlanUpsertRequest request) {
+        IBillingPlanService.PlanWriteOutcome outcome = planService.createPlan(request.toEntity());
         return outcome.success() ? Result.success(BillingPlanResponse.from(outcome.plan())) : Result.fail(outcome.error());
     }
     @GetMapping
@@ -84,15 +85,16 @@ public class BillingPlanController {
     @PutMapping
     @Operation(summary = "更新计费计划")
     @DataScope
-    public Result<Boolean> update(@Valid @RequestBody BillingPlan plan) {
-        IBillingPlanService.PlanWriteOutcome outcome = planService.updatePlan(plan);
+    public Result<Boolean> update(@Valid @RequestBody BillingPlanUpsertRequest request) {
+        IBillingPlanService.PlanWriteOutcome outcome = planService.updatePlan(request.toEntity());
         if (!outcome.success()) {
             return Result.fail(outcome.error());
         }
-        // 缓存在事务提交后失效
-        if (plan.getStationId() != null) {
-            cacheService.invalidate(plan.getStationId(), plan.getId());
-            cacheService.invalidateDefault(plan.getStationId());
+        // 缓存在事务提交后失效（stationId 为定位/失效键，来自请求白名单字段）
+        var saved = request.toEntity();
+        if (saved.getStationId() != null) {
+            cacheService.invalidate(saved.getStationId(), saved.getId());
+            cacheService.invalidateDefault(saved.getStationId());
         }
         return Result.success(true);
     }
@@ -165,8 +167,8 @@ public class BillingPlanController {
     @PostMapping("/{planId}/clone")
     @Operation(summary = "克隆计费计划")
     @DataScope
-    public Result<BillingPlanResponse> clonePlan(@PathVariable Long planId, @RequestBody BillingPlan payload) {
-        BillingPlan np = planService.clonePlan(planId, payload);
+    public Result<BillingPlanResponse> clonePlan(@PathVariable Long planId, @RequestBody BillingPlanUpsertRequest payload) {
+        BillingPlan np = planService.clonePlan(planId, payload.toEntity());
         return np != null ? Result.success(BillingPlanResponse.from(np)) : Result.fail("克隆失败");
     }
 }

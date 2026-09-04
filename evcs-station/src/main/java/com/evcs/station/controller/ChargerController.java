@@ -8,6 +8,7 @@ import com.evcs.station.dto.ChargerConnectorCurvePointResponse;
 import com.evcs.station.dto.ChargerConnectorResponse;
 import com.evcs.station.dto.ChargerConnectorSessionResponse;
 import com.evcs.station.dto.ChargerResponse;
+import com.evcs.station.dto.ChargerUpsertRequest;
 import com.evcs.station.entity.Charger;
 import com.evcs.station.service.IChargerService;
 import com.evcs.station.entity.ChargerConnector;
@@ -221,7 +222,8 @@ public class ChargerController {
     @Operation(summary = "新增充电桩", description = "创建新的充电桩")
     @PostMapping
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:add')")
-    public Result<Void> addCharger(@Parameter(description = "充电桩信息") @RequestBody @Valid Charger charger) {
+    public Result<Void> addCharger(@Parameter(description = "充电桩信息") @RequestBody @Valid ChargerUpsertRequest request) {
+        Charger charger = request.toEntity();
         try {
             boolean success = chargerService.saveCharger(charger);
             if (success) {
@@ -241,10 +243,10 @@ public class ChargerController {
     @PutMapping
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'charger:edit')")
     @DataScope(value = DataScope.DataScopeType.USER)
-    public Result<Void> updateCharger(@Parameter(description = "充电桩信息") @RequestBody @Valid Charger charger) {
-        if (charger.getId() == null) {
-            return Result.fail("充电桩ID不能为空");
-        }
+    public Result<Void> updateCharger(@Parameter(description = "充电桩信息") @RequestBody @Valid ChargerUpsertRequest request) {
+        // id 为定位主键，由原请求体提供；其余字段仅应用可写白名单（运行时字段不在绑定面）
+        Charger charger = request.toEntity();
+        charger.setId(request.getId());
 
         try {
             boolean success = chargerService.updateCharger(charger);

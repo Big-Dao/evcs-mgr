@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
 import com.evcs.order.dto.BillingRateResponse;
+import com.evcs.order.dto.BillingRateUpsertRequest;
 import com.evcs.order.entity.BillingRate;
 import com.evcs.order.service.IBillingRateService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -29,7 +30,8 @@ public class BillingRateController {
     @PostMapping
     @Operation(summary = "新增计费策略")
     @DataScope
-    public Result<BillingRateResponse> create(@Valid @RequestBody BillingRate rate) {
+    public Result<BillingRateResponse> create(@Valid @RequestBody BillingRateUpsertRequest request) {
+        BillingRate rate = request.toEntity();
         rateService.save(rate);
         return Result.success(BillingRateResponse.from(rate));
     }
@@ -37,7 +39,8 @@ public class BillingRateController {
     @PutMapping
     @Operation(summary = "更新计费策略")
     @DataScope
-    public Result<Boolean> update(@Valid @RequestBody BillingRate rate) {
+    public Result<Boolean> update(@Valid @RequestBody BillingRateUpsertRequest request) {
+        BillingRate rate = request.toEntity();
         return Result.success(rateService.updateById(rate));
     }
 

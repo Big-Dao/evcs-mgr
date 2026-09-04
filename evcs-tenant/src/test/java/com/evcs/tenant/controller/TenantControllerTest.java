@@ -79,6 +79,42 @@ class TenantControllerTest extends BaseControllerTest {
     }
 
     @Test
+    @DisplayName("创建租户 - 内部字段（id/version/deleted/ancestors）注入应被忽略")
+    void testCreateTenant_IgnoreInternalFields() throws Exception {
+        // Given: 请求体夹带内部字段（批量赋值攻击面）
+        String requestBody = """
+            {
+                "id": 987654,
+                "tenantCode": "MASS_ASSIGN_001",
+                "tenantName": "批量赋值测试租户",
+                "contactPerson": "测试联系人",
+                "contactPhone": "13800138000",
+                "ancestors": "0,1,hacked",
+                "version": 99,
+                "deleted": 1,
+                "tenantType": 2,
+                "status": 1
+            }
+            """;
+
+        // When & Then: 创建成功，但内部字段不得入库
+        mockMvc.perform(post("/tenant")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(requestBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.tenantCode").value("MASS_ASSIGN_001"));
+
+        SysTenant saved = sysTenantService.lambdaQuery()
+                .eq(SysTenant::getTenantCode, "MASS_ASSIGN_001")
+                .one();
+        org.junit.jupiter.api.Assertions.assertNotEquals(987654L, saved.getId(), "id 不得由调用方指定");
+        org.junit.jupiter.api.Assertions.assertNotEquals(99, saved.getVersion(), "version 不得由调用方指定");
+        org.junit.jupiter.api.Assertions.assertEquals(0, saved.getDeleted(), "deleted 不得由调用方指定");
+        org.junit.jupiter.api.Assertions.assertNotEquals("0,1,hacked", saved.getAncestors(), "ancestors 不得由调用方指定");
+    }
+
+    @Test
     @DisplayName("更新租户 - 返回成功")
     void testUpdateTenant() throws Exception {
         // Given: 创建租户

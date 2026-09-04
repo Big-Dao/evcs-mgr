@@ -4,6 +4,7 @@ import com.evcs.common.annotation.DataScope;
 import com.evcs.common.page.PageQuery;
 import com.evcs.common.result.Result;
 import com.evcs.tenant.dto.TenantResponse;
+import com.evcs.tenant.dto.TenantUpsertRequest;
 import com.evcs.tenant.entity.SysTenant;
 import com.evcs.tenant.service.ISysTenantService;
 import com.baomidou.mybatisplus.core.metadata.IPage;
@@ -42,7 +43,8 @@ public class TenantController {
     @DataScope(value = DataScope.DataScopeType.TENANT_HIERARCHY,
               description = "只能在当前租户下创建子租户")
     @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
-    public Result<TenantResponse> createTenant(@Valid @RequestBody SysTenant tenant) {
+    public Result<TenantResponse> createTenant(@Valid @RequestBody TenantUpsertRequest request) {
+        SysTenant tenant = request.toEntity();
         boolean created = tenantService.saveTenant(tenant);
         SysTenant payload = created ? tenantService.getTenantById(tenant.getId()) : null;
         return Result.success("租户创建成功", TenantResponse.from(payload));
@@ -57,7 +59,8 @@ public class TenantController {
     @PreAuthorize("hasAnyRole('ADMIN', 'TENANT_ADMIN')")
     public Result<TenantResponse> updateTenant(
             @Parameter(description = "租户ID") @PathVariable Long id,
-            @Valid @RequestBody SysTenant tenant) {
+            @Valid @RequestBody TenantUpsertRequest request) {
+        SysTenant tenant = request.toEntity();
         tenant.setId(id);
         boolean ok = tenantService.updateTenant(tenant);
         SysTenant updated = ok ? tenantService.getTenantById(id) : null;

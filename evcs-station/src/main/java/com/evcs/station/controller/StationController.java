@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.evcs.common.annotation.DataScope;
 import com.evcs.common.result.Result;
 import com.evcs.station.dto.StationResponse;
+import com.evcs.station.dto.StationUpsertRequest;
 import com.evcs.station.entity.Station;
 import com.evcs.station.service.IStationService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -83,9 +84,9 @@ public class StationController {
     @Operation(summary = "新增充电站", description = "创建新的充电站")
     @PostMapping
     @PreAuthorize("@simplePermissionEvaluator.hasPermission(authentication, null, 'station:add')")
-    public Result<Void> addStation(@Parameter(description = "充电站信息") @RequestBody @Valid Station station) {
+    public Result<Void> addStation(@Parameter(description = "充电站信息") @RequestBody @Valid StationUpsertRequest request) {
         try {
-            boolean success = stationService.saveStation(station);
+            boolean success = stationService.saveStation(request.toEntity());
             if (success) {
                 return Result.successMessage("新增充电站成功");
             } else {
@@ -105,12 +106,10 @@ public class StationController {
     @DataScope(value = DataScope.DataScopeType.USER)
     public Result<Void> updateStation(
             @Parameter(description = "充电站ID") @PathVariable @NotNull Long stationId,
-            @Parameter(description = "充电站信息") @RequestBody @Valid Station station) {
-        if (station.getStationId() == null) {
-            station.setStationId(stationId);
-        } else if (!stationId.equals(station.getStationId())) {
-            return Result.fail("路径ID与请求体中的充电站ID不一致");
-        }
+            @Parameter(description = "充电站信息") @RequestBody @Valid StationUpsertRequest request) {
+        // 路径ID为准；仅应用可写业务字段（内部/运行时字段不在绑定面）
+        Station station = request.toEntity();
+        station.setStationId(stationId);
 
         try {
             boolean success = stationService.updateStation(station);
