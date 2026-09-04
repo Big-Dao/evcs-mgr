@@ -3,145 +3,93 @@
         "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
         "https://checkstyle.org/dtds/configuration_1_3.dtd">
 
+<!--
+  EVCS Checkstyle 规则集（企业级质量门禁）
+  原则：聚焦真实质量缺陷与命名规范，不做纯格式噪音检查；
+  规则集调整需经架构评审并在本文件记录。
+-->
 <module name="Checker">
     <property name="charset" value="UTF-8"/>
-    <property name="severity" value="warning"/>
-    <property name="fileExtensions" value="java, properties, xml"/>
+    <property name="severity" value="error"/>
+    <property name="fileExtensions" value="java"/>
 
-    <!-- Excludes all 'module-info.java' files -->
     <module name="BeforeExecutionExclusionFileFilter">
         <property name="fileNamePattern" value="module\-info\.java$"/>
     </module>
 
-    <!-- Suppression filter removed due to missing suppressions.xml -->
+    <module name="SuppressionFilter">
+        <property name="file" value="${config_loc}/suppressions.xml"/>
+        <property name="optional" value="false"/>
+    </module>
 
-    <!-- Checks for whether files contain tabs -->
+    <!-- 禁止 Tab 缩进与行尾空白 -->
     <module name="FileTabCharacter">
         <property name="eachLine" value="true"/>
     </module>
 
-    <module name="RegexpHeader">
-        <property name="headerFile" value="${configFolder}/java.header"/>
-        <property name="fileExtensions" value="java"/>
+    <!-- 行长上限（放宽注释与 URL） -->
+    <module name="LineLength">
+        <property name="max" value="160"/>
+        <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
 
     <module name="RegexpSingleline">
         <property name="format" value="\s+$"/>
-        <property name="message" value="Trailing whitespace"/>
+        <property name="message" value="行尾不允许空白字符"/>
     </module>
 
+    <!-- 生产代码禁止 System.out / printStackTrace（统一走日志） -->
     <module name="RegexpSingleline">
-        <property name="format" value="System\.out\.println"/>
-        <property name="message" value="Use logger instead of System.out.println"/>
+        <property name="format" value="System\.out\.println|System\.err\.println|printStackTrace\("/>
+        <property name="message" value="禁止直接输出，请使用日志框架"/>
+    </module>
+
+    <!-- 单文件过长告警（企业级可维护性上限） -->
+    <module name="FileLength">
+        <property name="max" value="1200"/>
     </module>
 
     <module name="TreeWalker">
+        <!-- 文件与类型 -->
         <module name="OuterTypeFilename"/>
-        <module name="IllegalTokenText"/>
-        <module name="AvoidEscapedUnicodeCharacters"/>
-        <module name="LineLength">
-            <property name="max" value="120"/>
-            <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
-        </module>
-
-        <module name="AvoidStarImport"/>
         <module name="OneTopLevelClass"/>
-        <module name="NoLineWrap"/>
+        <module name="TypeName"/>
+        <module name="MemberName"/>
+        <module name="ParameterName"/>
+        <module name="LambdaParameterName"/>
+        <module name="CatchParameterName"/>
+        <module name="LocalVariableName"/>
+        <module name="ClassTypeParameterName"/>
+        <module name="MethodTypeParameterName"/>
+        <module name="InterfaceTypeParameterName"/>
+        <module name="PackageName">
+            <property name="format" value="^[a-z]+(\.[a-z][a-z0-9]*)*$"/>
+        </module>
+        <module name="AvoidStarImport"/>
+        <module name="ArrayTrailingComma"/>
+
+        <!-- 结构与控制流 -->
+        <module name="NeedBraces"/>
+        <module name="OneStatementPerLine"/>
+        <module name="MultipleVariableDeclarations"/>
+        <module name="ModifierOrder"/>
+        <module name="MissingSwitchDefault"/>
+        <module name="FallThrough"/>
+        <module name="DefaultComesLast"/>
         <module name="EmptyBlock">
             <property name="option" value="TEXT"/>
             <property name="tokens"
                       value="LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_SWITCH"/>
         </module>
+        <module name="EqualsHashCode"/>
+        <module name="NoFinalizer"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="StringLiteralEquality"/>
+        <module name="EqualsAvoidNull"/>
 
-        <module name="NeedBraces"/>
-        <module name="LeftCurly"/>
-        <module name="RightCurly"/>
-        <module name="WhitespaceAround"/>
-        <module name="OneStatementPerLine"/>
-        <module name="MultipleVariableDeclarations"/>
-        <module name="ArrayTypeStyle"/>
-        <module name="MissingSwitchDefault"/>
-        <module name="FallThrough"/>
+        <!-- 常量与字面量 -->
         <module name="UpperEll"/>
-        <module name="ModifierOrder"/>
-        <module name="EmptyLineSeparator"/>
-        <module name="SeparatorWrap"/>
-        <module name="PackageName"/>
-        <module name="TypeName"/>
-        <module name="MemberName"/>
-        <module name="ParameterName"/>
-        <module name="LambdaParameterName"/>
-        <module name="CatchParameterName"/>
-        <module name="LocalVariableName"/>
-        <module name="ClassTypeParameterName"/>
-        <module name="MethodTypeParameterName"/>
-        <module name="InterfaceTypeParameterName"/>
-        <module name="NoFinalizer"/>
-        <module name="GenericWhitespace"/>
-        <module name="Indentation"/>
-        <module name="AbbreviationAsWordInName"/>
-        <module name="OverloadMethodsDeclarationOrder"/>
-        <module name="VariableDeclarationUsageDistance"/>
-        <module name="CustomImportOrder"/>
-        <module name="MethodParamPad"/>
-        <module name="ParenPad"/>
-        <module name="OperatorWrap"/>
-        <module name="AnnotationLocation"/>
-        <module name="NonEmptyAtclauseDescription"/>
-        <module name="JavadocMethod"/>
-        <module name="JavadocType"/>
-        <module name="JavadocVariable"/>
-        <module name="JavadocStyle"/>
-        <module name="EmptyForIteratorPad"/>
-        <module name="GenericWhitespace"/>
-        <module name="Indentation"/>
-        <module name="NoWhitespaceBefore"/>
-        <module name="NoWhitespaceAfter"/>
-        <module name="NoWhitespaceBeforeCaseDefaultColon"/>
-        <module name="NoWhitespaceAfter"/>
-        <module name="NoWhitespaceBefore"/>
-        <module name="OperatorWrap"/>
-        <module name="ParenPad"/>
-        <module name="TypecastParenPad"/>
-        <module name="NoWhitespaceAfter"/>
-        <module name="NoWhitespaceBefore"/>
-        <module name="NoTrailingWhitespace"/>
-        <module name="WhitespaceAfter"/>
-        <module name="WhitespaceAround"/>
-        <module name="OneStatementPerLine"/>
-        <module name="MultipleVariableDeclarations"/>
         <module name="ArrayTypeStyle"/>
-        <module name="MissingSwitchDefault"/>
-        <module name="FallThrough"/>
-        <module name="UpperEll"/>
-        <module name="ModifierOrder"/>
-        <module name="EmptyLineSeparator"/>
-        <module name="SeparatorWrap"/>
-        <module name="PackageName"/>
-        <module name="TypeName"/>
-        <module name="MemberName"/>
-        <module name="ParameterName"/>
-        <module name="LambdaParameterName"/>
-        <module name="CatchParameterName"/>
-        <module name="LocalVariableName"/>
-        <module name="ClassTypeParameterName"/>
-        <module name="MethodTypeParameterName"/>
-        <module name="InterfaceTypeParameterName"/>
-        <module name="NoFinalizer"/>
-        <module name="GenericWhitespace"/>
-        <module name="Indentation"/>
-        <module name="AbbreviationAsWordInName"/>
-        <module name="OverloadMethodsDeclarationOrder"/>
-        <module name="VariableDeclarationUsageDistance"/>
-        <module name="CustomImportOrder"/>
-        <module name="MethodParamPad"/>
-        <module name="ParenPad"/>
-        <module name="OperatorWrap"/>
-        <module name="AnnotationLocation"/>
-        <module name="NonEmptyAtclauseDescription"/>
-        <module name="JavadocMethod"/>
-        <module name="JavadocType"/>
-        <module name="JavadocVariable"/>
-        <module name="JavadocStyle"/>
+
     </module>
 </module>

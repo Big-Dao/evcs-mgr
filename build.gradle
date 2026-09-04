@@ -5,7 +5,7 @@ plugins {
     id 'com.palantir.docker' version '0.35.0' apply false
     id 'com.google.cloud.tools.jib' version '3.4.4' apply false
     id 'jacoco' // 代码覆盖率
-    // id 'checkstyle' // 代码风格检查
+    id 'checkstyle' // 代码风格检查
     // id 'pmd' // 代码质量检查
     // id 'com.github.spotbugs' version '6.0.25' apply false // 静态代码分析
 }
@@ -46,7 +46,7 @@ subprojects {
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'jacoco'
     // Temporarily disabled checkstyle due to configuration issues
-    // apply plugin: 'checkstyle'
+    apply plugin: 'checkstyle'
     // apply plugin: 'pmd'
     // apply plugin: 'com.github.spotbugs'
     // Quality checks re-enabled to verify warning resolution
@@ -142,30 +142,48 @@ subprojects {
         }
     }
     
-    // JaCoCo覆盖率验证
+    // JaCoCo覆盖率门禁（企业级质量门禁：按模块棘轮式阈值，随覆盖率提升逐步上调）
     def coverageGateEnabled = ((findProperty('evcsCoverageGate')
             ?: System.getenv('EVCS_COVERAGE_GATE')
-            ?: 'false').toString().toBoolean())
+            ?: 'true').toString().toBoolean())
+
+    // 指令覆盖率下限（2026-09 实测基线下调约 2 个百分点；模块覆盖率提升后应同步上调本表）
+    def jacocoMinInstructionCoverage = [
+            'evcs-common'  : 0.44,
+            'evcs-gateway' : 0.63,
+            'evcs-auth'    : 0.40,
+            'evcs-order'   : 0.34,
+            'evcs-payment' : 0.40,
+            'evcs-protocol': 0.41,
+            'evcs-station' : 0.43,
+            'evcs-tenant'  : 0.59,
+    ]
 
     jacocoTestCoverageVerification {
+        enabled = coverageGateEnabled
         violationRules {
             rule {
-                enabled = coverageGateEnabled
+                enabled = jacocoMinInstructionCoverage.containsKey(project.name)
                 limit {
-                    minimum = 0.60 // 60%覆盖率
+                    counter = 'INSTRUCTION'
+                    value = 'COVEREDRATIO'
+                    minimum = jacocoMinInstructionCoverage.getOrDefault(project.name, 0.0)
                 }
             }
         }
     }
 
-    // Checkstyle配置
-    // checkstyle {
-    //     toolVersion = '10.12.4'
-    //     configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
-    //     ignoreFailures = false
-    //     maxWarnings = 0
-    //     maxErrors = 0
-    // }
+    tasks.named('check') {
+        dependsOn jacocoTestCoverageVerification
+    }
+
+    // Checkstyle配置（企业级门禁：违规即构建失败）
+    checkstyle {
+        toolVersion = '10.12.4'
+        configFile = file("${rootDir}/config/checkstyle/checkstyle.xml")
+        ignoreFailures = false
+        showViolations = true
+    }
 
     // SpotBugs配置
     // spotbugs {

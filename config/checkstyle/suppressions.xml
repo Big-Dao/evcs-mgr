@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<!DOCTYPE suppressions PUBLIC
+        "-//Checkstyle//DTD SuppressionFilter Configuration 1.2//EN"
+        "https://checkstyle.org/dtds/suppressions_1_2.dtd">
+<suppressions>
+    <!-- 测试与测试基建代码允许星号导入（JUnit/Mockito 静态导入惯例），生产代码仍严格禁止 -->
+    <suppress checks="AvoidStarImport" files="[\\/]src[\\/](test|testFixtures)[\\/]"/>
+    <!-- 测试代码允许较长行（测试数据/长属性串） -->
+    <suppress checks="LineLength" files="[\\/]src[\\/]test[\\/]"/>
+</suppressions>
