@@ -1,6 +1,7 @@
 package com.evcs.payment.service.listener;
 
 import com.evcs.common.trace.TraceMdc;
+import com.evcs.common.tenant.TenantContext;
 import com.evcs.payment.dto.message.PaymentMessage;
 import com.rabbitmq.client.Channel;
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class PaymentMessageListener {
                     message.getMessageId(), message.getOrderId(), message.getTradeNo());
 
             try {
+                bindTenantContext(message);
                 // 处理支付成功消息
                 processPaymentSuccessMessage(message);
 
@@ -46,6 +48,8 @@ public class PaymentMessageListener {
             } catch (Exception e) {
                 log.error("处理支付成功消息失败: messageId={}", message.getMessageId(), e);
                 handleProcessingFailure(message, channel, deliveryTag, e);
+            } finally {
+                TenantContext.clear();
             }
         }
     }
@@ -64,6 +68,7 @@ public class PaymentMessageListener {
                     message.getMessageId(), message.getOrderId(), message.getTradeNo());
 
             try {
+                bindTenantContext(message);
                 // 处理支付失败消息
                 processPaymentFailureMessage(message);
 
@@ -74,6 +79,8 @@ public class PaymentMessageListener {
             } catch (Exception e) {
                 log.error("处理支付失败消息失败: messageId={}", message.getMessageId(), e);
                 handleProcessingFailure(message, channel, deliveryTag, e);
+            } finally {
+                TenantContext.clear();
             }
         }
     }
@@ -92,6 +99,7 @@ public class PaymentMessageListener {
                     message.getMessageId(), message.getOrderId(), message.getTradeNo());
 
             try {
+                bindTenantContext(message);
                 // 处理退款成功消息
                 processRefundSuccessMessage(message);
 
@@ -102,6 +110,8 @@ public class PaymentMessageListener {
             } catch (Exception e) {
                 log.error("处理退款成功消息失败: messageId={}", message.getMessageId(), e);
                 handleProcessingFailure(message, channel, deliveryTag, e);
+            } finally {
+                TenantContext.clear();
             }
         }
     }
@@ -121,6 +131,7 @@ public class PaymentMessageListener {
                     message.getMessageId(), message.getMessageType(), message.getRetryCount());
 
             try {
+                bindTenantContext(message);
                 // 记录死信消息，用于人工干预
                 processDeadLetterMessage(message, deathHeader);
 
@@ -135,7 +146,25 @@ public class PaymentMessageListener {
                 } catch (IOException ioException) {
                     log.error("确认死信消息失败", ioException);
                 }
+            } finally {
+                TenantContext.clear();
             }
+        }
+    }
+
+    /**
+     * 消息携带的租户/用户上下文绑定：后续任何落库逻辑都依赖租户过滤，
+     * 处理结束（含异常）必须清理。
+     */
+    private void bindTenantContext(PaymentMessage message) {
+        if (message == null) {
+            return;
+        }
+        if (message.getTenantId() != null) {
+            TenantContext.setCurrentTenantId(message.getTenantId());
+        }
+        if (message.getUserId() != null) {
+            TenantContext.setUserId(message.getUserId());
         }
     }
 
