@@ -1,6 +1,7 @@
 package com.evcs.tenant.service;
 
 import com.evcs.common.audit.TenantAuditService;
+import com.evcs.tenant.client.AuthStatsClient;
 import com.evcs.tenant.client.StationUsageClient;
 import com.evcs.tenant.dto.StationUsageCount;
 import com.evcs.tenant.entity.QuotaCheckResult;
@@ -30,13 +31,15 @@ class TenantQuotaServiceImplTest {
 
     private SysTenantMapper mapper;
     private StationUsageClient stationUsageClient;
+    private AuthStatsClient authStatsClient;
     private TenantQuotaServiceImpl service;
 
     @BeforeEach
     void setUp() {
         mapper = mock(SysTenantMapper.class);
         stationUsageClient = mock(StationUsageClient.class);
-        service = new TenantQuotaServiceImpl(mapper, mock(TenantAuditService.class), stationUsageClient);
+        authStatsClient = mock(AuthStatsClient.class);
+        service = new TenantQuotaServiceImpl(mapper, mock(TenantAuditService.class), stationUsageClient, authStatsClient);
     }
 
     private SysTenant tenant(Long id, Integer maxStations, Integer maxChargers) {
@@ -47,6 +50,13 @@ class TenantQuotaServiceImplTest {
         tenant.setParentId(null);
         tenant.setMaxStations(maxStations);
         tenant.setMaxChargers(maxChargers);
+        tenant.setMaxUsers(null);
+        return tenant;
+    }
+
+    private SysTenant tenantWithUsers(Long id, Integer maxUsers) {
+        SysTenant tenant = tenant(id, null, null);
+        tenant.setMaxUsers(maxUsers);
         return tenant;
     }
 
@@ -87,6 +97,29 @@ class TenantQuotaServiceImplTest {
 
         assertFalse(result.allowed(), "充电桩数已达配额时应拒绝");
         assertEquals("chargers", result.resourceType());
+    }
+
+    @Test
+    @DisplayName("新增用户 - auth 服务计数达到配额应拒绝")
+    void checkCanAddUserShouldDenyWhenQuotaReached() {
+        when(mapper.selectById(8L)).thenReturn(tenantWithUsers(8L, 2));
+        when(authStatsClient.countActiveUsers(List.of(8L))).thenReturn(2L);
+
+        QuotaCheckResult result = service.checkCanAddUser(8L);
+
+        assertFalse(result.allowed(), "用户数已达配额时应拒绝");
+        assertEquals("users", result.resourceType());
+    }
+
+    @Test
+    @DisplayName("新增用户 - 未达配额应允许")
+    void checkCanAddUserShouldAllowUnderQuota() {
+        when(mapper.selectById(8L)).thenReturn(tenantWithUsers(8L, 5));
+        when(authStatsClient.countActiveUsers(List.of(8L))).thenReturn(2L);
+
+        QuotaCheckResult result = service.checkCanAddUser(8L);
+
+        assertTrue(result.allowed());
     }
 
     @Test

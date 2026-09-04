@@ -1,6 +1,7 @@
 package com.evcs.tenant.service.impl;
 
 import com.evcs.common.audit.TenantAuditService;
+import com.evcs.tenant.client.AuthStatsClient;
 import com.evcs.tenant.client.StationUsageClient;
 import com.evcs.tenant.dto.StationUsageCount;
 import com.evcs.tenant.entity.QuotaCheckResult;
@@ -26,6 +27,7 @@ public class TenantQuotaServiceImpl implements ITenantQuotaService {
     private final SysTenantMapper tenantMapper;
     private final TenantAuditService tenantAuditService;
     private final StationUsageClient stationUsageClient;
+    private final AuthStatsClient authStatsClient;
 
     @Override
     public QuotaCheckResult checkCanCreateChildTenant(Long parentId) {
@@ -90,15 +92,14 @@ public class TenantQuotaServiceImpl implements ITenantQuotaService {
     public QuotaCheckResult checkCanAddUser(Long tenantId) {
         SysTenant tenant = getTenantOrThrow(tenantId);
 
-        // 用户统计需要从 auth 服务获取，当前使用 0 表示不限制
-        // 生产环境需要实现 UserClient Feign 接口调用 evcs-auth 服务
-        int currentCount = 0;
+        // 用户数据归属 auth 服务，经内部 API 实时统计（当前租户，fail-closed）
+        long currentCount = authStatsClient.countActiveUsers(List.of(tenantId));
         Integer maxUsers = tenant.getMaxUsers();
 
         if (maxUsers != null && maxUsers > 0 && currentCount >= maxUsers) {
             return QuotaCheckResult.denied(
                     String.format("用户数量已达上限 (%d/%d)", currentCount, maxUsers),
-                    currentCount, maxUsers, "users"
+                    (int) currentCount, maxUsers, "users"
             );
         }
 
@@ -206,7 +207,9 @@ public class TenantQuotaServiceImpl implements ITenantQuotaService {
         // 递归检查所有上级租户
         while (parentId != null && parentId != 0) {
             SysTenant parent = tenantMapper.selectById(parentId);
-            if (parent == null) break;
+                        if (parent == null) {
+                break;
+            }
 
             // 计算上级租户下所有子租户的资源总量
             List<Long> descendantIds = getAllDescendantIds(parentId);
