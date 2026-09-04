@@ -65,7 +65,7 @@ server:
 # MyBatis Plus配置
 mybatis-plus:
   configuration:
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.slf4j.Slf4jImpl
     map-underscore-to-camel-case: true
   global-config:
     db-config:
@@ -77,8 +77,8 @@ mybatis-plus:
 logging:
   level:
     root: INFO
-    com.evcs.station: DEBUG
-    com.evcs.common.tenant: DEBUG
+    com.evcs.station: INFO
+    com.evcs.common.tenant: INFO
     org.hibernate.SQL: DEBUG
     org.hibernate.type.descriptor.sql.BasicBinder: TRACE
     com.zaxxer.hikari: DEBUG

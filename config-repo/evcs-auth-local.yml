@@ -112,7 +112,7 @@ knife4j:
     enable-footer-custom: true
     footer-custom-content: Copyright © 2025 EVCS Manager
     enable-dynamic-parameter: false
-    enable-debug: true
+    enable-debug: false
     enable-open-api: true
     enable-group: true
   cors: false

@@ -30,8 +30,8 @@ management:
   endpoints:
     web:
       exposure:
-        # 暴露所有监控端点
-        include: health,info,metrics,prometheus,env,beans,conditions
+        # 只暴露监控必需端点；env/beans/conditions 可泄漏配置与内部结构，禁止暴露
+        include: health,info,metrics,prometheus
       base-path: /actuator
   endpoint:
     health:
