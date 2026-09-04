@@ -1,6 +1,6 @@
 package com.evcs.station.config;
 
-import com.evcs.protocol.config.RabbitMQConfig;
+import com.evcs.protocol.mq.ProtocolMqConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -27,17 +27,17 @@ public class StationProtocolTelemetryQueueConfig {
     public Queue stationTelemetryQueue() {
         return QueueBuilder
             .durable(STATION_TELEMETRY_QUEUE)
-            .withArgument("x-dead-letter-exchange", RabbitMQConfig.DLX_EXCHANGE)
+            .withArgument("x-dead-letter-exchange", ProtocolMqConstants.DLX_EXCHANGE)
             .withArgument("x-dead-letter-routing-key", "dlx")
             .build();
     }
 
     @Bean
     public Binding stationTelemetryBinding(Queue stationTelemetryQueue, TopicExchange stationProtocolExchange) {
-        log.info("Binding station telemetry queue to routing key: {}", RabbitMQConfig.TELEMETRY_ROUTING_KEY);
+        log.info("Binding station telemetry queue to routing key: {}", ProtocolMqConstants.TELEMETRY_ROUTING_KEY);
         return BindingBuilder
             .bind(stationTelemetryQueue)
             .to(stationProtocolExchange)
-            .with(RabbitMQConfig.TELEMETRY_ROUTING_KEY);
+            .with(ProtocolMqConstants.TELEMETRY_ROUTING_KEY);
     }
 }

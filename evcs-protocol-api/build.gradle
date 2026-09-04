@@ -1,0 +1,22 @@
+plugins {
+    id 'java-library'
+}
+
+description = 'EVCS 协议服务契约模块：协议接口、事件、DTO 与 MQ 常量（供 order/station 等消费方依赖，消除对协议服务实现模块的编译期耦合）'
+
+dependencies {
+    // 契约类仅依赖 Lombok 与 SLF4J；@Component 注解由宿主服务在运行期提供（compileOnly）
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    api 'org.slf4j:slf4j-api'
+    compileOnly 'org.springframework:spring-context'
+}
+
+// 纯契约库：不产生 Spring Boot fat jar
+tasks.named('bootJar') {
+    enabled = false
+}
+tasks.named('jar') {
+    archiveClassifier = ''
+}

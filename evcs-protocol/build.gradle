@@ -18,6 +18,7 @@ bootJar {
 }
 
 dependencies {
+    implementation project(":evcs-protocol-api")
     implementation project(':evcs-common')
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-websocket'

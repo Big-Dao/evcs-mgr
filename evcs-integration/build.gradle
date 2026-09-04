@@ -25,7 +25,7 @@ repositories {
 
 dependencies {
     implementation project(':evcs-common')
-    implementation project(':evcs-protocol')  // 需要ProtocolEventListener接口
+    implementation project(':evcs-protocol-api') // 需要 ProtocolEventListener 接口
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.cloud:spring-cloud-starter-netflix-eureka-client'
     implementation 'org.springframework.cloud:spring-cloud-starter-config'
@@ -43,6 +43,7 @@ dependencies {
     
     // Test dependencies for integration tests
     testImplementation project(':evcs-station')
+    testImplementation project(":evcs-protocol-api")
     testImplementation project(':evcs-order')
     testImplementation project(':evcs-payment')
     testImplementation project(':evcs-tenant')

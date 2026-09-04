@@ -2,7 +2,7 @@ package com.evcs.order.mq;
 
 import com.evcs.common.trace.TraceMdc;
 import com.evcs.common.tenant.TenantContext;
-import com.evcs.protocol.config.RabbitMQConfig;
+import com.evcs.protocol.mq.ProtocolMqConstants;
 import com.evcs.protocol.event.StartEvent;
 import com.evcs.protocol.event.StopEvent;
 import com.evcs.protocol.event.ProtocolEvent;
@@ -20,7 +20,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @RabbitListener(
-        queues = RabbitMQConfig.CHARGING_QUEUE,
+        queues = ProtocolMqConstants.CHARGING_QUEUE,
         containerFactory = "protocolRabbitListenerContainerFactory"
 )
 public class ProtocolChargingEventListener {

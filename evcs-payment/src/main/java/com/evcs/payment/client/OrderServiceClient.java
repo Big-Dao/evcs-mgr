@@ -8,7 +8,6 @@ import com.evcs.payment.config.OrderSyncConfig;
 import com.evcs.payment.entity.PaymentOrder;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.github.resilience4j.retry.Retry;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
@@ -16,6 +15,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -31,11 +31,21 @@ import java.util.function.Supplier;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class OrderServiceClient {
 
     private final RestTemplate restTemplate;
     private final OrderSyncConfig orderSyncConfig;
+
+    public OrderServiceClient(
+            @Qualifier("orderSyncRestTemplate") RestTemplate restTemplate,
+            OrderSyncConfig orderSyncConfig,
+            CircuitBreaker orderServiceCircuitBreaker,
+            Retry orderServiceRetry) {
+        this.restTemplate = restTemplate;
+        this.orderSyncConfig = orderSyncConfig;
+        this.orderServiceCircuitBreaker = orderServiceCircuitBreaker;
+        this.orderServiceRetry = orderServiceRetry;
+    }
     private final CircuitBreaker orderServiceCircuitBreaker;
     private final Retry orderServiceRetry;
 

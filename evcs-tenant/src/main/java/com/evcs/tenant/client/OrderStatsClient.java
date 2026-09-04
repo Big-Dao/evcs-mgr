@@ -46,7 +46,8 @@ public class OrderStatsClient {
     private final RestTemplate restTemplate;
     private final InternalApiTokenProperties internalApiTokenProperties;
 
-    public OrderStatsClient(RestTemplate restTemplate,
+    public OrderStatsClient(
+            @org.springframework.beans.factory.annotation.Qualifier("remoteServiceRestTemplate") RestTemplate restTemplate,
                             InternalApiTokenProperties internalApiTokenProperties) {
         this.restTemplate = restTemplate;
         this.internalApiTokenProperties = internalApiTokenProperties;

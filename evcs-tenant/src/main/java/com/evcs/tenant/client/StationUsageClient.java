@@ -40,7 +40,8 @@ public class StationUsageClient {
     private final RestTemplate restTemplate;
     private final InternalApiTokenProperties internalApiTokenProperties;
 
-    public StationUsageClient(RestTemplate restTemplate,
+    public StationUsageClient(
+            @org.springframework.beans.factory.annotation.Qualifier("remoteServiceRestTemplate") RestTemplate restTemplate,
                               InternalApiTokenProperties internalApiTokenProperties) {
         this.restTemplate = restTemplate;
         this.internalApiTokenProperties = internalApiTokenProperties;

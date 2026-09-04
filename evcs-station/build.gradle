@@ -52,7 +52,7 @@ dependencies {
     implementation "com.github.xiaoymin:knife4j-openapi3-spring-boot-starter:${knife4jVersion}"
     
     // Protocol module
-    implementation project(":evcs-protocol")
+    implementation project(":evcs-protocol-api")
     // Order module - 注释掉以避免循环依赖，使用API调用替代
     // implementation project(":evcs-order")
     

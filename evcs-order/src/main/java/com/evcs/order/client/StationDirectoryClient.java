@@ -7,6 +7,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
@@ -43,8 +44,9 @@ public class StationDirectoryClient {
     private final Map<Long, CacheEntry<StationBrief>> stationCache = new ConcurrentHashMap<>();
     private final Map<Long, CacheEntry<String>> chargerCodeCache = new ConcurrentHashMap<>();
 
-    public StationDirectoryClient(RestTemplate restTemplate,
-                                  InternalApiTokenProperties internalApiTokenProperties) {
+    public StationDirectoryClient(
+            @Qualifier("orderRemoteServiceRestTemplate") RestTemplate restTemplate,
+            InternalApiTokenProperties internalApiTokenProperties) {
         this.restTemplate = restTemplate;
         this.internalApiTokenProperties = internalApiTokenProperties;
     }

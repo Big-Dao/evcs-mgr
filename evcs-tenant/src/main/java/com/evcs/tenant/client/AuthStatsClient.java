@@ -31,7 +31,8 @@ public class AuthStatsClient {
     private final RestTemplate restTemplate;
     private final InternalApiTokenProperties internalApiTokenProperties;
 
-    public AuthStatsClient(RestTemplate restTemplate,
+    public AuthStatsClient(
+            @org.springframework.beans.factory.annotation.Qualifier("remoteServiceRestTemplate") RestTemplate restTemplate,
                            InternalApiTokenProperties internalApiTokenProperties) {
         this.restTemplate = restTemplate;
         this.internalApiTokenProperties = internalApiTokenProperties;

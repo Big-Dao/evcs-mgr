@@ -1,6 +1,6 @@
 package com.evcs.station.config;
 
-import com.evcs.protocol.config.RabbitMQConfig;
+import com.evcs.protocol.mq.ProtocolMqConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -29,7 +29,7 @@ public class StationProtocolChargingQueueConfig {
     @Bean
     public TopicExchange stationProtocolExchange() {
         return ExchangeBuilder
-            .topicExchange(RabbitMQConfig.PROTOCOL_EXCHANGE)
+            .topicExchange(ProtocolMqConstants.PROTOCOL_EXCHANGE)
             .durable(true)
             .build();
     }
@@ -37,7 +37,7 @@ public class StationProtocolChargingQueueConfig {
     @Bean
     public DirectExchange stationProtocolDlxExchange() {
         return ExchangeBuilder
-            .directExchange(RabbitMQConfig.DLX_EXCHANGE)
+            .directExchange(ProtocolMqConstants.DLX_EXCHANGE)
             .durable(true)
             .build();
     }
@@ -46,26 +46,26 @@ public class StationProtocolChargingQueueConfig {
     public Queue stationChargingQueue() {
         return QueueBuilder
             .durable(STATION_CHARGING_QUEUE)
-            .withArgument("x-dead-letter-exchange", RabbitMQConfig.DLX_EXCHANGE)
+            .withArgument("x-dead-letter-exchange", ProtocolMqConstants.DLX_EXCHANGE)
             .withArgument("x-dead-letter-routing-key", "dlx")
             .build();
     }
 
     @Bean
     public Binding stationChargingStartBinding(Queue stationChargingQueue, TopicExchange stationProtocolExchange) {
-        log.info("Binding station charging queue to routing key: {}", RabbitMQConfig.CHARGING_START_ROUTING_KEY);
+        log.info("Binding station charging queue to routing key: {}", ProtocolMqConstants.CHARGING_START_ROUTING_KEY);
         return BindingBuilder
             .bind(stationChargingQueue)
             .to(stationProtocolExchange)
-            .with(RabbitMQConfig.CHARGING_START_ROUTING_KEY);
+            .with(ProtocolMqConstants.CHARGING_START_ROUTING_KEY);
     }
 
     @Bean
     public Binding stationChargingStopBinding(Queue stationChargingQueue, TopicExchange stationProtocolExchange) {
-        log.info("Binding station charging queue to routing key: {}", RabbitMQConfig.CHARGING_STOP_ROUTING_KEY);
+        log.info("Binding station charging queue to routing key: {}", ProtocolMqConstants.CHARGING_STOP_ROUTING_KEY);
         return BindingBuilder
             .bind(stationChargingQueue)
             .to(stationProtocolExchange)
-            .with(RabbitMQConfig.CHARGING_STOP_ROUTING_KEY);
+            .with(ProtocolMqConstants.CHARGING_STOP_ROUTING_KEY);
     }
 }

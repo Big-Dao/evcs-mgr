@@ -2,7 +2,7 @@ package com.evcs.station.mq;
 
 import com.evcs.common.trace.TraceMdc;
 import com.evcs.common.tenant.TenantContext;
-import com.evcs.protocol.config.RabbitMQConfig;
+import com.evcs.protocol.mq.ProtocolMqConstants;
 import com.evcs.protocol.event.HeartbeatEvent;
 import com.evcs.protocol.event.StatusEvent;
 import com.evcs.station.service.IChargerConnectorService;
@@ -25,7 +25,7 @@ public class ProtocolHeartbeatStatusEventListener {
     private final IChargerConnectorService chargerConnectorService;
 
     @RabbitListener(
-            queues = RabbitMQConfig.HEARTBEAT_QUEUE,
+            queues = ProtocolMqConstants.HEARTBEAT_QUEUE,
             containerFactory = "protocolRabbitListenerContainerFactory"
     )
     public void onHeartbeat(HeartbeatEvent event, Message message, Channel channel) throws IOException {
@@ -82,7 +82,7 @@ public class ProtocolHeartbeatStatusEventListener {
     }
 
     @RabbitListener(
-            queues = RabbitMQConfig.STATUS_QUEUE,
+            queues = ProtocolMqConstants.STATUS_QUEUE,
             containerFactory = "protocolRabbitListenerContainerFactory"
     )
     public void onStatus(StatusEvent event, Message message, Channel channel) throws IOException {

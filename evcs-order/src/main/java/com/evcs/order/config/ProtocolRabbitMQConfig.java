@@ -1,6 +1,6 @@
 package com.evcs.order.config;
 
-import com.evcs.protocol.config.RabbitMQConfig;
+import com.evcs.protocol.mq.ProtocolMqConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
@@ -40,7 +40,7 @@ public class ProtocolRabbitMQConfig {
         factory.setMaxConcurrentConsumers(6);
         factory.setPrefetchCount(10);
 
-        log.info("Protocol Rabbit listener factory configured for queue: {}", RabbitMQConfig.CHARGING_QUEUE);
+        log.info("Protocol Rabbit listener factory configured for queue: {}", ProtocolMqConstants.CHARGING_QUEUE);
 
         return factory;
     }

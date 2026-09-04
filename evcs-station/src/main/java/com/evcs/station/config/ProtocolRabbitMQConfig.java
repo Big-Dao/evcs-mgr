@@ -1,6 +1,6 @@
 package com.evcs.station.config;
 
-import com.evcs.protocol.config.RabbitMQConfig;
+import com.evcs.protocol.mq.ProtocolMqConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.AcknowledgeMode;
 import org.springframework.amqp.rabbit.config.SimpleRabbitListenerContainerFactory;
@@ -42,8 +42,8 @@ public class ProtocolRabbitMQConfig {
 
         log.info(
                 "Protocol Rabbit listener factory configured for queues: {}, {}",
-                RabbitMQConfig.HEARTBEAT_QUEUE,
-                RabbitMQConfig.STATUS_QUEUE
+                ProtocolMqConstants.HEARTBEAT_QUEUE,
+                ProtocolMqConstants.STATUS_QUEUE
         );
 
         return factory;

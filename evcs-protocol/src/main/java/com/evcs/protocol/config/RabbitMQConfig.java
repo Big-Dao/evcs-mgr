@@ -1,5 +1,6 @@
 package com.evcs.protocol.config;
 
+import com.evcs.protocol.mq.ProtocolMqConstants;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.core.BindingBuilder;
@@ -29,24 +30,24 @@ import org.springframework.context.annotation.Configuration;
 public class RabbitMQConfig {
 
     // 交换机名称
-    public static final String PROTOCOL_EXCHANGE = "evcs.protocol.events";
+    public static final String PROTOCOL_EXCHANGE = ProtocolMqConstants.PROTOCOL_EXCHANGE;
 
     // 队列名称
-    public static final String HEARTBEAT_QUEUE = "evcs.protocol.heartbeat";
-    public static final String STATUS_QUEUE = "evcs.protocol.status";
-    public static final String CHARGING_QUEUE = "evcs.protocol.charging";
-    public static final String TELEMETRY_QUEUE = "evcs.protocol.telemetry";
+    public static final String HEARTBEAT_QUEUE = ProtocolMqConstants.HEARTBEAT_QUEUE;
+    public static final String STATUS_QUEUE = ProtocolMqConstants.STATUS_QUEUE;
+    public static final String CHARGING_QUEUE = ProtocolMqConstants.CHARGING_QUEUE;
+    public static final String TELEMETRY_QUEUE = ProtocolMqConstants.TELEMETRY_QUEUE;
 
     // 死信交换机和队列
-    public static final String DLX_EXCHANGE = "evcs.protocol.dlx";
-    public static final String DLX_QUEUE = "evcs.protocol.dlx.queue";
+    public static final String DLX_EXCHANGE = ProtocolMqConstants.DLX_EXCHANGE;
+    public static final String DLX_QUEUE = ProtocolMqConstants.DLX_QUEUE;
 
     // 路由键
-    public static final String HEARTBEAT_ROUTING_KEY = "protocol.heartbeat.*";
-    public static final String STATUS_ROUTING_KEY = "protocol.status.*";
-    public static final String TELEMETRY_ROUTING_KEY = "protocol.telemetry.*";
-    public static final String CHARGING_START_ROUTING_KEY = "protocol.charging.start";
-    public static final String CHARGING_STOP_ROUTING_KEY = "protocol.charging.stop";
+    public static final String HEARTBEAT_ROUTING_KEY = ProtocolMqConstants.HEARTBEAT_ROUTING_KEY;
+    public static final String STATUS_ROUTING_KEY = ProtocolMqConstants.STATUS_ROUTING_KEY;
+    public static final String TELEMETRY_ROUTING_KEY = ProtocolMqConstants.TELEMETRY_ROUTING_KEY;
+    public static final String CHARGING_START_ROUTING_KEY = ProtocolMqConstants.CHARGING_START_ROUTING_KEY;
+    public static final String CHARGING_STOP_ROUTING_KEY = ProtocolMqConstants.CHARGING_STOP_ROUTING_KEY;
 
     /**
      * 声明Topic类型交换机
