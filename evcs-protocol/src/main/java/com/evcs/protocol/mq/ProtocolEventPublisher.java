@@ -209,6 +209,7 @@ public class ProtocolEventPublisher {
     public StopEvent publishChargingStop(
         Long chargerId,
         Long tenantId,
+        Long userId,
         String protocolType,
         String sessionId,
         String orderNo,
@@ -222,6 +223,7 @@ public class ProtocolEventPublisher {
             chargerId,
             null,
             tenantId,
+            userId,
             protocolType,
             sessionId,
             orderNo,
@@ -240,6 +242,7 @@ public class ProtocolEventPublisher {
         Long chargerId,
         Integer connectorId,
         Long tenantId,
+        Long userId,
         String protocolType,
         String sessionId,
         String orderNo,
@@ -254,6 +257,7 @@ public class ProtocolEventPublisher {
             .chargerId(chargerId)
             .connectorId(connectorId)
             .tenantId(tenantId)
+            .userId(userId)
             .eventType(ProtocolEvent.EventType.CHARGING_STOP)
             .eventTime(LocalDateTime.now())
             .protocolType(protocolType)

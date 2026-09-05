@@ -110,7 +110,7 @@ class CloudChargeProtocolServiceImplTest {
         assertTrue(service.stopCharging(1L));
 
         verify(publisher).publishChargingStop(
-            eq(1L), eq(5L), eq("CloudCharge"), any(), any(), anyDouble(), anyLong(),
+            eq(1L), eq(5L), isNull(), eq("CloudCharge"), any(), any(), anyDouble(), anyLong(),
             anyString(), anyBoolean(), anyString());
     }
 
@@ -122,7 +122,7 @@ class CloudChargeProtocolServiceImplTest {
         assertFalse(service.stopCharging(1L), "解析不到充电器信息时应返回失败");
 
         verify(publisher, never()).publishChargingStop(
-            anyLong(), anyLong(), anyString(), any(), any(), anyDouble(), anyLong(),
+            anyLong(), anyLong(), any(), anyString(), any(), any(), anyDouble(), anyLong(),
             anyString(), anyBoolean(), anyString());
         assertFalse(listener.stopAcks.get(0).success());
     }

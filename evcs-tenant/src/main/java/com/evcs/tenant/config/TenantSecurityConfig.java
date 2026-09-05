@@ -4,6 +4,7 @@ import com.evcs.tenant.security.TenantJwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.access.expression.method.MethodSecurityExpressionHandler;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -46,5 +47,17 @@ public class TenantSecurityConfig {
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * 显式绑定租户权限评估器：否则 hasPermission() 落入 DenyAllPermissionEvaluator，
+     * 所有 @PreAuthorize("hasPermission(...)") 一律 403。
+     */
+    @Bean
+    public MethodSecurityExpressionHandler methodSecurityExpressionHandler(
+            com.evcs.tenant.config.TenantRolePermissionEvaluator evaluator) {
+        var handler = new org.springframework.security.access.expression.method.DefaultMethodSecurityExpressionHandler();
+        handler.setPermissionEvaluator(evaluator);
+        return handler;
     }
 }

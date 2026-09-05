@@ -114,6 +114,9 @@ public class ProtocolChargingEventListener {
         try (TraceMdc ignored = TraceMdc.withTraceId(traceId)) {
             try {
                 TenantContext.setCurrentTenantId(event.getTenantId());
+                if (event.getUserId() != null) {
+                    TenantContext.setUserId(event.getUserId());
+                }
 
                 boolean ok = chargingOrderService.completeOrderOnStop(
                         event.getSessionId(),

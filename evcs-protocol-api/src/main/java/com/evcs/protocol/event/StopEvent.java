@@ -42,6 +42,12 @@ public class StopEvent extends ProtocolEvent {
     private String reason;
 
     /**
+     * 用户ID（可空：OCPP 停止事件可能无用户上下文，
+     * 消费端应回退到订单自身的用户归属）
+     */
+    private Long userId;
+
+    /**
      * 是否成功
      */
     private Boolean success;

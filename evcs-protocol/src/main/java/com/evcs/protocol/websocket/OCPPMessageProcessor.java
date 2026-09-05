@@ -430,6 +430,7 @@ public class OCPPMessageProcessor {
                         info.getId(),
                         connectorId,
                         info.getTenantId(),
+                        null,
                         "OCPP",
                         sessionId,
                         null,

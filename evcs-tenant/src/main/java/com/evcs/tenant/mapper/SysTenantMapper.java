@@ -1,5 +1,6 @@
 package com.evcs.tenant.mapper;
 
+import com.baomidou.mybatisplus.annotation.InterceptorIgnore;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.evcs.tenant.entity.SysTenant;
 import org.apache.ibatis.annotations.Mapper;
@@ -33,6 +34,7 @@ public interface SysTenantMapper extends BaseMapper<SysTenant> {
     /**
      * 查询指定租户的所有后代租户ID（递归）
      */
+    @InterceptorIgnore(tenantLine = "1")
     @Select("WITH RECURSIVE descendant_tree AS (" +
             "  SELECT id FROM sys_tenant WHERE id = #{tenantId} AND deleted = 0" +
             "  UNION ALL" +

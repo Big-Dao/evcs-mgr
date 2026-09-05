@@ -11,13 +11,44 @@ export default defineConfig({
     }
   },
   server: {
-    host: '127.0.0.1', // 明确指定IPv4地址
+    host: '127.0.0.1',
     port: 3000,
-    strictPort: true, // 端口被占用时报错而不是尝试其他端口
+    strictPort: true,
     proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true
+      '/api/auth': {
+        target: 'http://127.0.0.1:8081',
+        changeOrigin: true,
+        rewrite: (p: string) => p.replace(/^\/api/, '')
+      },
+      '/api/station': {
+        target: 'http://127.0.0.1:8082',
+        changeOrigin: true,
+        rewrite: (p: string) => p.replace(/^\/api/, '')
+      },
+      '/api/charger': {
+        target: 'http://127.0.0.1:8082',
+        changeOrigin: true,
+        rewrite: (p: string) => p.replace(/^\/api/, '')
+      },
+      '/api/dashboard': {
+        target: 'http://127.0.0.1:8086',
+        changeOrigin: true,
+        rewrite: (p: string) => p.replace(/^\/api/, '')
+      },
+      '/api/order': {
+        target: 'http://127.0.0.1:8083',
+        changeOrigin: true,
+        rewrite: (p: string) => p.replace(/^\/api/, '')
+      },
+      '/api/billing': {
+        target: 'http://127.0.0.1:8083',
+        changeOrigin: true,
+        rewrite: (p: string) => p.replace(/^\/api/, '')
+      },
+      '/api/tenant': {
+        target: 'http://127.0.0.1:8086',
+        changeOrigin: true,
+        rewrite: (p: string) => p.replace(/^\/api/, '')
       }
     }
   }

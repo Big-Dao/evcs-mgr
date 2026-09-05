@@ -337,6 +337,7 @@ public class OCPPProtocolServiceImpl extends BaseProtocolService {
                     eventPublisher.publishChargingStop(
                         request.getChargerId(),
                         request.getTenantId(),
+                        null,
                         "OCPP",
                         sessionId,
                         null,

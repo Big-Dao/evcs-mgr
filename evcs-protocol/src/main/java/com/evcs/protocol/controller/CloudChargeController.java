@@ -260,6 +260,7 @@ public class CloudChargeController {
                 protocolRequest.getChargerId(),
                 connectorId,
                 protocolRequest.getTenantId(),
+                protocolRequest.getUserId(),
                 "CLOUD_CHARGE",
                 request.getSessionId(),
                 null,

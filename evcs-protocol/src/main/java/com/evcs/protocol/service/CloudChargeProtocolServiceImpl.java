@@ -95,7 +95,7 @@ public class CloudChargeProtocolServiceImpl implements ICloudChargeProtocolServi
 
         // 发布到RabbitMQ
         try {
-            eventPublisher.publishChargingStop(chargerId, info.getTenantId(), "CloudCharge", null, null,
+            eventPublisher.publishChargingStop(chargerId, info.getTenantId(), null, "CloudCharge", null, null,
                     0.0, 0L, "Manual stop", true, "OK");
         } catch (Exception e) {
             log.warn("Failed to publish charging stop event to MQ", e);

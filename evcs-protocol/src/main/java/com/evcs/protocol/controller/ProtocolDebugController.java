@@ -166,6 +166,7 @@ public class ProtocolDebugController {
             eventPublisher.publishChargingStop(
                 request.getChargerId(),
                 request.getTenantId(),
+                null,
                 request.getProtocolType(),
                 request.getSessionId(),
                 request.getOrderNo(),

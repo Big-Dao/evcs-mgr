@@ -127,4 +127,43 @@ class ProtocolChargingEventListenerTest {
             TenantContext.clear();
         }
     }
+
+    @Test
+    @DisplayName("停止充电 - 携带 userId 的事件应在处理期间绑定用户上下文")
+    void onStopShouldBindUserFromEvent() throws Exception {
+        IChargingOrderService orderService = Mockito.mock(IChargingOrderService.class);
+        Channel channel = Mockito.mock(Channel.class);
+        ProtocolChargingEventListener listener = new ProtocolChargingEventListener(orderService);
+
+        StopEvent event = StopEvent.builder()
+                .eventId("t-user")
+                .tenantId(1L)
+                .chargerId(10L)
+                .eventType(ProtocolEvent.EventType.CHARGING_STOP)
+                .eventTime(LocalDateTime.now())
+                .protocolType("CLOUD_CHARGE")
+                .sessionId("SESSION_USER")
+                .userId(100L)
+                .success(true)
+                .build();
+
+        // 哨兵用户：事件 userId 应覆盖它
+        java.util.concurrent.atomic.AtomicReference<Long> capturedUser = new java.util.concurrent.atomic.AtomicReference<>(999L);
+        Mockito.when(orderService.completeOrderOnStop(Mockito.eq("SESSION_USER"), Mockito.any(), Mockito.any()))
+                .thenAnswer(inv -> {
+                    capturedUser.set(TenantContext.getCurrentUserId());
+                    return true;
+                });
+
+        try {
+            TenantContext.setUserId(999L); // 哨兵
+            listener.onStop(event, messageWithTag(3L), channel);
+
+            assertEquals(100L, capturedUser.get().longValue(), "处理期间应绑定事件携带的 userId");
+            Mockito.verify(channel).basicAck(3L, false);
+            assertNull(TenantContext.getCurrentUserId(), "处理完成后应清理上下文");
+        } finally {
+            TenantContext.clear();
+        }
+    }
 }
