@@ -141,3 +141,13 @@ curl -fsS http://localhost:8080/actuator/health
 ## 7. 许可证
 
 许可证信息以仓库声明为准。
+
+### 6.1 开发计划分析（2026年2月最新）
+
+针对"下一步开发计划"的深度分析已完成，包含详细的任务拆解、风险评估和时间规划：
+
+- 📊 **执行摘要**（管理层）：[docs/overview/DEVELOPMENT-PLAN-EXECUTIVE-SUMMARY.md](docs/overview/DEVELOPMENT-PLAN-EXECUTIVE-SUMMARY.md)
+- 📘 **深度分析**（技术团队）：[docs/overview/DEVELOPMENT-PLAN-ANALYSIS-2026-02.md](docs/overview/DEVELOPMENT-PLAN-ANALYSIS-2026-02.md)
+- 🗓️ **可视化路线图**（全员）：[docs/overview/ROADMAP-VISUAL-2026.md](docs/overview/ROADMAP-VISUAL-2026.md)
+
+**核心结论**：项目已完成 P0 风险修复，建议立即启动多层级租户测试与协议栈真实对接，4-6周内完成质量巩固与性能基线建立。

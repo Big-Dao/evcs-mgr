@@ -36,6 +36,8 @@
 - 版本历史记录：[docs/overview/VERSION-HISTORY.md](overview/VERSION-HISTORY.md)
 - 规划/路线图：[docs/overview/NEXT-PLAN.md](overview/NEXT-PLAN.md)（含待办事项跟踪）
 - 规划快速参考：[docs/overview/PLANNING-QUICK-REFERENCE.md](overview/PLANNING-QUICK-REFERENCE.md)
+- **开发计划深度分析**：[docs/overview/DEVELOPMENT-PLAN-ANALYSIS-2026-02.md](overview/DEVELOPMENT-PLAN-ANALYSIS-2026-02.md)（详细分析与风险评估）
+- **可视化路线图**：[docs/overview/ROADMAP-VISUAL-2026.md](overview/ROADMAP-VISUAL-2026.md)（时间线与里程碑）
 - 日志规范：[docs/overview/LOGGING-STANDARDS.md](overview/LOGGING-STANDARDS.md)
 - 错误码规范：[docs/overview/ERROR-CODE-STANDARDS.md](overview/ERROR-CODE-STANDARDS.md)
 
